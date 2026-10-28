@@ -1,0 +1,178 @@
+// Messagerie : canaux, messages privés, réactions et non-lus. Les fonctions ici ne connaissent pas Socket.IO.
+import { db } from './db.js';
+import { LIMITS, REACTIONS } from './options.js';
+import { config } from './config.js';
+
+const PAGE = 50;
+
+export class ChatError extends Error {}
+
+export function dmScope(a, b) {
+  return a < b ? `dm:${a}:${b}` : `dm:${b}:${a}`;
+}
+
+// Vérifie que l'utilisateur peut lire et écrire dans ce scope ; renvoie ce qu'on sait du scope.
+export function checkScope(scope, userId) {
+  const m = /^(c|dm):(\d+)(?::(\d+))?$/.exec(String(scope));
+  if (!m) throw new ChatError('Conversation introuvable.');
+  if (m[1] === 'c') {
+    const channel = db.prepare('SELECT id FROM channels WHERE id = ?').get(Number(m[2]));
+    if (!channel) throw new ChatError("Ce canal n'existe plus.");
+    return { kind: 'channel', channelId: channel.id };
+  }
+  const a = Number(m[2]);
+  const b = Number(m[3]);
+  if (!(a < b) || (userId !== a && userId !== b)) throw new ChatError('Conversation introuvable.');
+  const other = userId === a ? b : a;
+  if (!db.prepare('SELECT 1 FROM users WHERE id = ?').get(other)) throw new ChatError("Cette personne n'a plus de compte.");
+  return { kind: 'dm', members: [a, b] };
+}
+
+function withReactions(rows) {
+  if (!rows.length) return [];
+  const ids = rows.map((r) => r.id);
+  const reacts = db
+    .prepare(`SELECT message_id, user_id, emoji FROM reactions WHERE message_id IN (${ids.map(() => '?').join(',')}) ORDER BY rowid`)
+    .all(...ids);
+  return rows.map((r) => {
+    const reactions = {};
+    for (const x of reacts) if (x.message_id === r.id) (reactions[x.emoji] ??= []).push(x.user_id);
+    return { id: r.id, scope: r.scope, userId: r.user_id, body: r.body, createdAt: r.created_at, reactions };
+  });
+}
+
+export function history(scope, before) {
+  const rows = before
+    ? db.prepare('SELECT * FROM messages WHERE scope = ? AND id < ? ORDER BY id DESC LIMIT ?').all(scope, Number(before), PAGE)
+    : db.prepare('SELECT * FROM messages WHERE scope = ? ORDER BY id DESC LIMIT ?').all(scope, PAGE);
+  return { messages: withReactions(rows.reverse()), complete: rows.length < PAGE };
+}
+
+export function getMessage(id) {
+  const row = db.prepare('SELECT * FROM messages WHERE id = ?').get(Number(id));
+  return row ? withReactions([row])[0] : null;
+}
+
+export function cleanBody(body) {
+  const text = String(body ?? '').replace(/\r\n?/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim();
+  if (!text) throw new ChatError('Le message est vide.');
+  if (text.length > LIMITS.messageMax) throw new ChatError(`Le message dépasse ${LIMITS.messageMax} caractères.`);
+  return text;
+}
+
+export function postMessage(scope, userId, body) {
+  const { lastInsertRowid } = db
+    .prepare('INSERT INTO messages (scope, user_id, body, created_at) VALUES (?, ?, ?, ?)')
+    .run(scope, userId, cleanBody(body), Date.now());
+  markRead(userId, scope, Number(lastInsertRowid));
+  return getMessage(lastInsertRowid);
+}
+
+export function toggleReaction(messageId, userId, emoji) {
+  if (!REACTIONS.includes(emoji)) throw new ChatError('Réaction inconnue.');
+  const msg = getMessage(messageId);
+  if (!msg) throw new ChatError("Ce message n'existe plus.");
+  const had = db.prepare('DELETE FROM reactions WHERE message_id = ? AND user_id = ? AND emoji = ?').run(msg.id, userId, emoji);
+  if (!had.changes) db.prepare('INSERT INTO reactions (message_id, user_id, emoji) VALUES (?, ?, ?)').run(msg.id, userId, emoji);
+  return getMessage(msg.id);
+}
+
+export function deleteMessage(id) {
+  const msg = getMessage(id);
+  if (!msg) throw new ChatError("Ce message n'existe plus.");
+  db.prepare('DELETE FROM messages WHERE id = ?').run(msg.id);
+  return msg;
+}
+
+export function markRead(userId, scope, lastId) {
+  db.prepare(
+    `INSERT INTO reads (user_id, scope, last_id) VALUES (?, ?, ?)
+     ON CONFLICT(user_id, scope) DO UPDATE SET last_id = MAX(last_id, excluded.last_id)`,
+  ).run(userId, scope, Number(lastId) || 0);
+}
+
+// Au départ, un nouveau compte n'a rien en retard dans les canaux.
+export function markAllChannelsRead(userId) {
+  for (const { id } of db.prepare('SELECT id FROM channels').all()) {
+    const last = db.prepare('SELECT MAX(id) AS id FROM messages WHERE scope = ?').get(`c:${id}`).id;
+    if (last) markRead(userId, `c:${id}`, last);
+  }
+}
+
+// Nombre de messages non lus par scope (canaux et messages privés de la personne).
+export function unreadCounts(userId) {
+  const rows = db
+    .prepare(
+      `SELECT m.scope, COUNT(*) AS n FROM messages m
+       LEFT JOIN reads r ON r.user_id = ? AND r.scope = m.scope
+       WHERE m.id > COALESCE(r.last_id, 0) AND m.user_id != ?
+         AND (m.scope LIKE 'c:%' OR m.scope LIKE ? OR m.scope LIKE ?)
+       GROUP BY m.scope`,
+    )
+    .all(userId, userId, `dm:${userId}:%`, `dm:%:${userId}`);
+  const out = {};
+  for (const r of rows) out[r.scope] = r.n;
+  return out;
+}
+
+// Conversations privées de la personne, la plus récente d'abord.
+export function dmList(userId) {
+  const rows = db
+    .prepare(
+      `SELECT scope, MAX(id) AS last_id, MAX(created_at) AS last_at FROM messages
+       WHERE scope LIKE ? OR scope LIKE ? GROUP BY scope ORDER BY last_id DESC`,
+    )
+    .all(`dm:${userId}:%`, `dm:%:${userId}`);
+  return rows.map((r) => {
+    const [a, b] = r.scope.split(':').slice(1).map(Number);
+    return { scope: r.scope, otherId: a === userId ? b : a, lastAt: r.last_at };
+  });
+}
+
+export function listChannels() {
+  return db.prepare('SELECT id, name, topic, position FROM channels ORDER BY position, id').all();
+}
+
+export function cleanChannel({ name, topic }) {
+  const clean = String(name ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\p{L}\p{N}_-]/gu, '');
+  if (clean.length < 2 || clean.length > LIMITS.channelNameMax) {
+    throw new ChatError(`Le nom du canal doit faire de 2 à ${LIMITS.channelNameMax} caractères (lettres, chiffres, tirets).`);
+  }
+  const t = String(topic ?? '').trim();
+  if (t.length > LIMITS.topicMax) throw new ChatError(`La description dépasse ${LIMITS.topicMax} caractères.`);
+  return { name: clean, topic: t };
+}
+
+export function createChannel(input) {
+  const { name, topic } = cleanChannel(input);
+  if (db.prepare('SELECT 1 FROM channels WHERE name = ?').get(name)) throw new ChatError('Un canal porte déjà ce nom.');
+  const pos = db.prepare('SELECT COALESCE(MAX(position), 0) + 1 AS p FROM channels').get().p;
+  db.prepare('INSERT INTO channels (name, topic, position, created_at) VALUES (?, ?, ?, ?)').run(name, topic, pos, Date.now());
+}
+
+export function updateChannel(id, input) {
+  const { name, topic } = cleanChannel(input);
+  const clash = db.prepare('SELECT id FROM channels WHERE name = ?').get(name);
+  if (clash && clash.id !== Number(id)) throw new ChatError('Un canal porte déjà ce nom.');
+  const res = db.prepare('UPDATE channels SET name = ?, topic = ? WHERE id = ?').run(name, topic, Number(id));
+  if (!res.changes) throw new ChatError("Ce canal n'existe plus.");
+}
+
+export function deleteChannel(id) {
+  if (db.prepare('SELECT COUNT(*) AS n FROM channels').get().n <= 1) throw new ChatError('Il faut garder au moins un canal.');
+  const scope = `c:${Number(id)}`;
+  db.prepare('DELETE FROM messages WHERE scope = ?').run(scope);
+  db.prepare('DELETE FROM reads WHERE scope = ?').run(scope);
+  const res = db.prepare('DELETE FROM channels WHERE id = ?').run(Number(id));
+  if (!res.changes) throw new ChatError("Ce canal n'existe plus.");
+}
+
+// Efface les messages de plus d'un an (décision du 23/10/2026).
+export function purgeOldMessages() {
+  const limit = Date.now() - config.messageRetentionDays * 86400_000;
+  return db.prepare('DELETE FROM messages WHERE created_at < ?').run(limit).changes;
+}

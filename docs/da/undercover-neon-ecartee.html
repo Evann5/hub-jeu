@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undercover — direction artistique</title>
+<link rel="stylesheet" href="../../public/css/app.css">
+<style>
+  /* Couleurs propres au jeu, posées sur les variables Néon de Hubuno. */
+  :root {
+    --uc-folder: #F7C64B;
+    --uc-folder-dark: #D9A92E;
+    --uc-civil: #C8F26B;
+    --uc-under: #F28B5E;
+    --uc-white: #F6F6F8;
+    --uc-stamp: #FF4D3F;
+    --uc-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  body { overflow: auto; background: #050506; }
+  .board { max-width: 1500px; margin: 0 auto; padding: 48px 24px 96px; }
+  .board > header { margin-bottom: 40px; }
+  .board h1 { margin: 0; font: 800 clamp(2rem, 1.2rem + 3vw, 3.4rem)/1 var(--font-display); letter-spacing: -0.04em; }
+  .board > header p { margin: 12px 0 0; max-width: 70ch; color: var(--ink-2); font-size: 1.05rem; }
+  .board h2.section { margin: 56px 0 18px; font: 700 1.3rem var(--font-display); letter-spacing: -0.02em; }
+  .tokens-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .swatch { display: grid; gap: 6px; width: 132px; font-size: 0.8125rem; color: var(--ink-2); }
+  .swatch span { height: 64px; border-radius: 18px; }
+  .swatch b { color: var(--ink); font-size: 0.875rem; }
+
+  .phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 32px 24px; }
+  figure { margin: 0; display: grid; gap: 12px; justify-items: center; }
+  figcaption { max-width: 340px; color: var(--ink-2); font-size: 0.9rem; text-align: center; }
+  figcaption b { display: block; color: var(--ink); font-family: var(--font-display); font-size: 0.95rem; margin-bottom: 2px; }
+
+  .phone {
+    position: relative;
+    width: 340px;
+    height: 700px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 44px;
+    background: var(--bg-2);
+    box-shadow: 0 0 0 10px #18181C, 0 0 0 11px #2A2A30, 0 30px 60px rgb(0 0 0 / 0.6);
+    --ring: var(--bg-2);
+  }
+  .phone .status { height: 34px; flex: none; }
+  .phone .screen { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 0 14px 14px; }
+
+  /* En-tête du jeu : nom de l'opération + manche + minuteur */
+  .uc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .uc-title { display: grid; gap: 2px; }
+  .uc-title strong { font: 800 1.05rem/1 var(--font-display); letter-spacing: -0.03em; }
+  .uc-file { font: 500 0.72rem var(--uc-mono); color: var(--ink-3); letter-spacing: 0.04em; }
+  .timer {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--bg-3) 0);
+    font: 700 0.85rem var(--font-display);
+  }
+  .timer::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--bg-2); }
+  .timer span { position: relative; }
+  .timer.hot { background: conic-gradient(var(--uc-stamp) calc(var(--p) * 1%), var(--bg-3) 0); }
+
+  .phase-pill { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: var(--bg-3); font-size: 0.8rem; font-weight: 650; }
+  .phase-pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+  /* L'élément signature : la chemise cartonnée avec son onglet */
+  .folder {
+    position: relative;
+    margin-top: 18px;
+    padding: 22px 20px 20px;
+    border-radius: 0 26px 26px 26px;
+    background: var(--uc-folder);
+    color: var(--on-color);
+  }
+  .folder::before {
+    content: attr(data-tab);
+    position: absolute;
+    left: 0;
+    top: -26px;
+    height: 27px;
+    padding: 6px 18px 0 14px;
+    border-radius: 14px 18px 0 0;
+    background: inherit;
+    font: 700 0.7rem var(--uc-mono);
+    letter-spacing: 0.08em;
+  }
+  .folder.white { background: var(--uc-white); }
+  .folder.civil { background: var(--uc-civil); }
+  .folder.under { background: var(--uc-under); }
+  .folder.violet { background: var(--violet); }
+  .folder .meta { display: flex; justify-content: space-between; font: 600 0.75rem var(--uc-mono); opacity: 0.75; }
+  .folder .word { margin: 18px 0 6px; font: 800 2.6rem/1 var(--font-display); letter-spacing: -0.04em; overflow-wrap: anywhere; }
+  .folder .hint { margin: 0; font-size: 0.875rem; font-weight: 550; opacity: 0.8; }
+  .folder .lines { display: grid; gap: 7px; margin: 18px 0 12px; }
+  .folder .lines span { height: 12px; border-radius: 6px; background: rgb(0 0 0 / 0.14); }
+  .folder .lines span:nth-child(2) { width: 70%; }
+  .folder .lines span:nth-child(3) { width: 45%; }
+
+  .hold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 56px;
+    border-radius: 999px;
+    background: var(--on-color);
+    color: #fff;
+    font-weight: 700;
+  }
+  .hold .ring { width: 26px; height: 26px; border-radius: 50%; border: 3px solid rgb(255 255 255 / 0.25); border-top-color: var(--uc-folder); }
+
+  /* Tampons */
+  .stamp {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 3px solid currentColor;
+    border-radius: 8px;
+    color: var(--uc-stamp);
+    font: 800 1.15rem/1 var(--font-display);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    transform: rotate(-9deg);
+    mix-blend-mode: normal;
+    box-shadow: inset 0 0 0 2px rgb(0 0 0 / 0.04);
+  }
+  .stamp.civil { color: #3E6A12; }
+  .stamp.big { font-size: 1.7rem; padding: 10px 18px; border-width: 4px; }
+
+  /* Agents (joueurs) */
+  .agents { display: grid; gap: 6px; }
+  .agent {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 54px;
+    padding: 8px 12px 8px 8px;
+    border-radius: 18px;
+    background: var(--bg-1);
+  }
+  .agent .token { --s: 38px; }
+  .agent .who { display: grid; min-width: 0; }
+  .agent .who b { font-weight: 700; }
+  .agent .who small { color: var(--ink-3); font: 500 0.7rem var(--uc-mono); }
+  .agent .clue { justify-self: end; padding: 6px 12px; border-radius: 12px; background: var(--bg-3); font-weight: 650; }
+  .agent .clue.typing { color: var(--ink-3); font-weight: 500; }
+  .agent.turn { box-shadow: inset 0 0 0 2px var(--accent); }
+  .agent.out { opacity: 0.5; }
+  .agent.out .who b { text-decoration: line-through; }
+  .agent .mini-stamp { justify-self: end; padding: 3px 8px; border: 2px solid currentColor; border-radius: 6px; font: 800 0.6rem var(--font-display); text-transform: uppercase; transform: rotate(-6deg); }
+  .mini-stamp.under { color: var(--uc-under); }
+  .mini-stamp.civil { color: var(--uc-civil); }
+  .mini-stamp.white { color: var(--uc-white); }
+
+  .input-row { display: flex; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: var(--bg-3); box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgb(200 242 107 / 0.18); }
+  .input-row span { flex: 1; align-self: center; color: var(--ink); }
+  .input-row span.ph { color: var(--ink-3); }
+  .input-row .btn { width: 46px; padding: 0; }
+  .note { margin: 0; color: var(--ink-3); font-size: 0.8rem; text-align: center; }
+  .spacer { flex: 1; }
+
+  /* Récap des indices (épinglé pendant le débat) */
+  .recap { display: grid; gap: 4px; padding: 12px; border-radius: 18px; background: var(--bg-1); }
+  .recap b { font: 600 0.7rem var(--uc-mono); color: var(--ink-3); letter-spacing: 0.06em; }
+  .recap div { display: flex; flex-wrap: wrap; gap: 6px; }
+  .recap span { padding: 4px 10px; border-radius: 10px; background: var(--bg-3); font-size: 0.8rem; }
+  .recap span em { color: var(--ink-3); font-style: normal; margin-right: 4px; }
+
+  .chat { display: grid; gap: 8px; align-content: end; flex: 1; min-height: 0; }
+  .bubble { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start; }
+  .bubble .token { --s: 28px; }
+  .bubble p { margin: 0; padding: 8px 12px; border-radius: 4px 16px 16px 16px; background: var(--bg-3); font-size: 0.875rem; }
+  .bubble p b { display: block; font-size: 0.75rem; color: var(--a); }
+
+  /* Vote */
+  .vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .vote-card { position: relative; display: grid; justify-items: center; gap: 8px; padding: 16px 8px 12px; border-radius: 22px; background: var(--bg-1); text-align: center; }
+  .vote-card .token { --s: 52px; }
+  .vote-card b { font-size: 0.9rem; }
+  .vote-card small { color: var(--ink-3); font-size: 0.75rem; }
+  .vote-card.selected { background: color-mix(in srgb, var(--uc-stamp) 16%, var(--bg-1)); box-shadow: inset 0 0 0 2px var(--uc-stamp); }
+  .vote-card .target { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--uc-stamp); color: #fff; font-size: 0.75rem; font-weight: 800; }
+  .voted-row { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 0.8rem; }
+  .voted-row .token { --s: 22px; }
+
+  /* Révélation */
+  .reveal { flex: 1; display: grid; align-content: center; justify-items: center; gap: 16px; text-align: center; }
+  .reveal .token { --s: 96px; }
+  .reveal h3 { margin: 0; font: 800 1.6rem var(--font-display); letter-spacing: -0.03em; }
+  .reveal p { margin: 0; color: var(--ink-2); max-width: 28ch; }
+  .tally { display: grid; gap: 6px; width: 100%; }
+  .tally div { display: grid; grid-template-columns: 70px 1fr 18px; align-items: center; gap: 8px; font-size: 0.8rem; text-align: left; }
+  .tally i { height: 10px; border-radius: 6px; background: var(--uc-stamp); }
+  .tally div:not(:first-child) i { background: var(--bg-4); }
+
+  /* Fin */
+  .win { padding: 22px 18px; border-radius: 28px; background: var(--uc-civil); color: var(--on-color); }
+  .win h3 { margin: 14px 0 0; font: 800 2rem/0.95 var(--font-display); letter-spacing: -0.04em; }
+  .win .words { display: flex; gap: 8px; margin-top: 14px; }
+  .win .words span { padding: 6px 12px; border-radius: 12px; background: rgb(0 0 0 / 0.1); font-weight: 700; font-size: 0.85rem; }
+
+  /* Ordinateur */
+  .desktop { width: 100%; max-width: 1280px; aspect-ratio: 16 / 9.4; margin: 0 auto; display: grid; grid-template-columns: 80px minmax(0, 1fr) 320px; gap: 10px; padding: 10px 10px 10px 0; border-radius: 22px; background: var(--bg-0); box-shadow: 0 0 0 1px #2A2A30, 0 30px 60px rgb(0 0 0 / 0.6); overflow: hidden; }
+  .d-rail { display: grid; align-content: start; justify-items: center; gap: 22px; padding-top: 8px; }
+  .d-rail .brand-mark { width: 44px; height: 44px; }
+  .d-rail i { width: 40px; height: 34px; border-radius: 12px; background: var(--bg-2); }
+  .d-rail i.on { background: var(--violet); }
+  .d-main { display: flex; flex-direction: column; gap: 18px; padding: 28px; border-radius: 24px; background: var(--bg-2); overflow: hidden; }
+  .d-main .uc-title strong { font-size: 1.6rem; }
+  .d-cols { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; flex: 1; min-height: 0; }
+  .d-side { display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 24px; background: var(--bg-2); min-height: 0; }
+  .d-side h4 { margin: 0; font: 700 0.95rem var(--font-display); }
+  .rounds { display: grid; gap: 10px; align-content: start; }
+  .round-row { display: grid; grid-template-columns: 110px repeat(2, minmax(0, 1fr)); gap: 8px; align-items: center; }
+  .round-row.head span { color: var(--ink-3); font: 600 0.72rem var(--uc-mono); letter-spacing: 0.06em; }
+  .round-row .name { display: flex; align-items: center; gap: 8px; font-weight: 650; }
+  .round-row .name .token { --s: 30px; }
+  .round-row .c { min-height: 37px; padding: 8px 12px; border-radius: 12px; background: var(--bg-1); font-weight: 600; }
+  .round-row .c.empty { color: var(--ink-3); font-weight: 500; background: transparent; box-shadow: inset 0 0 0 1px var(--bg-3); }
+  .lobby-rule { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--bg-1); }
+  .lobby-rule b { font-weight: 650; }
+  .stepper { display: flex; align-items: center; gap: 10px; }
+  .stepper span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--bg-3); font-weight: 700; }
+  .toggle { width: 46px; height: 28px; border-radius: 999px; background: var(--accent); position: relative; }
+  .toggle::after { content: ''; position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--on-color); }
+  .seats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .seat-slot { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border-radius: 18px; background: var(--bg-1); font-size: 0.75rem; }
+  .seat-slot .token { --s: 40px; }
+  .seat-slot.empty { background: transparent; box-shadow: inset 0 0 0 2px dashed; outline: 2px dashed var(--bg-4); outline-offset: -2px; color: var(--ink-3); }
+  .seat-slot.empty i { width: 40px; height: 40px; border-radius: 32%; background: var(--bg-3); }
+</style>
+</head>
+<body>
+<main class="board">
+  <header>
+    <h1>Undercover — direction artistique</h1>
+    <p>Ambiance « Dossier secret » dans l'univers Néon de Hubuno. Signature : la chemise cartonnée à onglet qu'on retourne pour découvrir son mot, et les tampons qui révèlent les rôles. Maquettes statiques, pseudos inventés.</p>
+  </header>
+
+  <h2 class="section">Couleurs du jeu</h2>
+  <div class="tokens-row">
+    <div class="swatch"><span style="background:var(--uc-folder)"></span><b>Dossier</b>La carte secrète, ton mot</div>
+    <div class="swatch"><span style="background:var(--uc-civil)"></span><b>Civil</b>Rôle révélé, victoire civile</div>
+    <div class="swatch"><span style="background:var(--uc-under)"></span><b>Undercover</b>Rôle révélé</div>
+    <div class="swatch"><span style="background:var(--uc-white)"></span><b>Mr. White</b>Aucun mot</div>
+    <div class="swatch"><span style="background:var(--uc-stamp)"></span><b>Tampon</b>Vote, élimination, chrono final</div>
+    <div class="swatch"><span style="background:var(--violet)"></span><b>Violet Hubuno</b>Salon, navigation</div>
+  </div>
+
+  <h2 class="section">Sur téléphone, dans l'ordre d'une partie</h2>
+  <div class="phones">
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Opération Undercover</strong><span class="uc-file">DOSSIER N° 0423 · SALON</span></div></div>
+        <div class="seats-grid">
+          <div class="seat-slot"><span class="token" style="--c:#A77BF3"><span>🦊</span></span>minh</div>
+          <div class="seat-slot"><span class="token" style="--c:#3CC4D0"><span>🐸</span></span>lea_k</div>
+          <div class="seat-slot"><span class="token" style="--c:#F39237"><span>⭐</span></span>Sam.R</div>
+          <div class="seat-slot"><span class="token" style="--c:#4C8DF6"><span>🐙</span></span>tom</div>
+          <div class="seat-slot"><span class="token" style="--c:#F078B5"><span>🦄</span></span>ines</div>
+          <div class="seat-slot empty"><i></i>libre</div>
+          <div class="seat-slot empty"><i></i>libre</div>
+          <div class="seat-slot empty"><i></i>libre</div>
+        </div>
+        <div class="lobby-rule"><b>Undercover</b><div class="stepper"><span>−</span>1<span>+</span></div></div>
+        <div class="lobby-rule"><b>Mr. White</b><div class="toggle"></div></div>
+        <div class="lobby-rule"><b>Débat</b><span>90 s</span></div>
+        <p class="note">5 agents : 3 civils, 1 Undercover, 1 Mr. White</p>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost btn-block">Inviter des membres</button>
+        <button class="btn btn-block">Lancer la mission</button>
+      </div></div>
+      <figcaption><b>1. Salon</b>Les places se remplissent, l'hôte règle la composition (conseillée selon le nombre) et lance.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Ton mot secret</strong><span class="uc-file">AGENT LEA_K · MANCHE 1</span></div></div>
+        <div class="folder" data-tab="CONFIDENTIEL">
+          <div class="meta"><span>N° 0423</span><span>À détruire</span></div>
+          <div class="lines"><span></span><span></span><span></span></div>
+          <p class="hint">Maintiens le bouton pour lire ton mot. Personne ne doit voir ton écran.</p>
+        </div>
+        <div class="spacer"></div>
+        <div class="hold"><span class="ring"></span>Maintenir pour voir mon mot</div>
+        <p class="note">Tu ne sais pas si tu es civil ou Undercover : seul ton mot compte.</p>
+      </div></div>
+      <figcaption><b>2. Le dossier fermé</b>La carte arrive retournée : on la garde à l'abri des regards.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Ton mot secret</strong><span class="uc-file">AGENT LEA_K · MANCHE 1</span></div></div>
+        <div class="folder" data-tab="CONFIDENTIEL">
+          <div class="meta"><span>N° 0423</span><span>À détruire</span></div>
+          <p class="word">pizza</p>
+          <p class="hint">Donne un indice qui prouve que tu l'as, sans le dire.</p>
+        </div>
+        <div class="folder white" data-tab="CLASSÉ X" style="margin-top:34px">
+          <div class="meta"><span>Variante</span><span>Mr. White</span></div>
+          <p class="word" style="font-size:1.9rem">Aucun mot</p>
+          <p class="hint">Tu es Mr. White. Écoute les indices et bluffe.</p>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn-block">C'est mémorisé</button>
+      </div></div>
+      <figcaption><b>3. Le mot révélé</b>Le dossier jaune pour un mot, le dossier blanc pour Mr. White.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Indices</strong><span class="uc-file">MANCHE 1 · 3/5</span></div><div class="timer" style="--p:62"><span>37</span></div></div>
+        <div class="agents">
+          <div class="agent"><span class="token" style="--c:#F39237"><span>⭐</span></span><span class="who"><b>Sam.R</b><small>AGENT 01</small></span><span class="clue">Italie</span></div>
+          <div class="agent"><span class="token" style="--c:#4C8DF6"><span>🐙</span></span><span class="who"><b>tom</b><small>AGENT 02</small></span><span class="clue">four</span></div>
+          <div class="agent turn"><span class="token" style="--c:#3CC4D0"><span>🐸</span></span><span class="who"><b>lea_k</b><small>À TOI</small></span><span class="clue typing">écrit…</span></div>
+          <div class="agent"><span class="token" style="--c:#F078B5"><span>🦄</span></span><span class="who"><b>ines</b><small>AGENT 04</small></span><span></span></div>
+          <div class="agent"><span class="token" style="--c:#A77BF3"><span>🦊</span></span><span class="who"><b>minh</b><small>AGENT 05</small></span><span></span></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="folder" data-tab="TON MOT" style="padding:12px 16px"><div class="meta"><span>pizza</span><span>maintenir pour cacher</span></div></div>
+        <div class="input-row"><span>fromage</span><button class="btn">➤</button></div>
+        <p class="note">Un mot ou une courte expression, sans ton mot.</p>
+      </div></div>
+      <figcaption><b>4. Tour des indices</b>Chacun son tour, avec un chrono en anneau. Ton mot reste à portée, replié.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Débat</strong><span class="uc-file">MANCHE 1</span></div><div class="timer" style="--p:40"><span>54</span></div></div>
+        <div class="recap"><b>INDICES DE LA MANCHE</b><div>
+          <span><em>Sam</em>Italie</span><span><em>tom</em>four</span><span><em>lea</em>fromage</span><span><em>ines</em>pâte</span><span><em>minh</em>rond</span></div></div>
+        <div class="chat">
+          <div class="bubble" style="--a:#F39237"><span class="token" style="--c:#F39237"><span>⭐</span></span><p><b>Sam.R</b>« pâte » c'est bizarre non ?</p></div>
+          <div class="bubble" style="--a:#F078B5"><span class="token" style="--c:#F078B5"><span>🦄</span></span><p><b>ines</b>Mais non, y a de la pâte dedans !</p></div>
+          <div class="bubble" style="--a:#A77BF3"><span class="token" style="--c:#A77BF3"><span>🦊</span></span><p><b>minh</b>« rond » c'est vague, je dis ça…</p></div>
+        </div>
+        <div class="input-row" style="box-shadow:none"><span class="ph">Écrire à la table</span><button class="btn">➤</button></div>
+        <button class="btn btn-ghost btn-block">Je suis prêt à voter · 2/5</button>
+      </div></div>
+      <figcaption><b>5. Débat</b>Les indices restent épinglés en haut. Le vote démarre au chrono ou quand tout le monde est prêt.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Vote</strong><span class="uc-file">QUI EST L'INTRUS ?</span></div><div class="timer hot" style="--p:22"><span>13</span></div></div>
+        <div class="vote-grid">
+          <div class="vote-card"><span class="token" style="--c:#F39237"><span>⭐</span></span><b>Sam.R</b><small>Italie</small></div>
+          <div class="vote-card"><span class="token" style="--c:#4C8DF6"><span>🐙</span></span><b>tom</b><small>four</small></div>
+          <div class="vote-card selected"><span class="target">✕</span><span class="token" style="--c:#F078B5"><span>🦄</span></span><b>ines</b><small>pâte</small></div>
+          <div class="vote-card"><span class="token" style="--c:#A77BF3"><span>🦊</span></span><b>minh</b><small>rond</small></div>
+        </div>
+        <div class="voted-row">Ont voté :
+          <span class="token" style="--c:#F39237"><span>⭐</span></span><span class="token" style="--c:#4C8DF6"><span>🐙</span></span><span class="token" style="--c:#A77BF3"><span>🦊</span></span>3/5</div>
+        <div class="spacer"></div>
+        <button class="btn btn-danger-solid btn-block">Voter contre ines</button>
+        <p class="note">Ton vote reste secret jusqu'au résultat.</p>
+      </div></div>
+      <figcaption><b>6. Vote</b>On touche une carte, on confirme. Le chrono vire au rouge à la fin.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Résultat du vote</strong><span class="uc-file">MANCHE 1</span></div></div>
+        <div class="reveal">
+          <span class="token" style="--c:#F078B5"><span>🦄</span></span>
+          <h3>Le vote désigne ines</h3>
+          <span class="stamp big" style="margin:6px 0 4px">Undercover démasqué</span>
+          <p>Son mot était « quiche ». Il reste 1 intrus parmi vous.</p>
+          <div class="tally">
+            <div>ines <i style="width:100%"></i>3</div>
+            <div>minh <i style="width:34%"></i>1</div>
+            <div>Sam.R <i style="width:34%"></i>1</div>
+          </div>
+        </div>
+        <button class="btn btn-block">Manche suivante</button>
+      </div></div>
+      <figcaption><b>7. Révélation</b>Le tampon tombe sur la carte. Rouge pour un intrus démasqué, vert « Civil » si la table s'est trompée.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="uc-head"><div class="uc-title"><strong>Dernière chance</strong><span class="uc-file">MR. WHITE DÉMASQUÉ</span></div><div class="timer hot" style="--p:70"><span>42</span></div></div>
+        <div class="folder white" data-tab="CLASSÉ X">
+          <div class="meta"><span>tom</span><span>Mr. White</span></div>
+          <p class="word" style="font-size:1.7rem">Devine le mot des civils</p>
+          <p class="hint">Si tu trouves, tu gagnes seul la partie.</p>
+        </div>
+        <div class="recap"><b>TOUS LES INDICES</b><div>
+          <span><em>Sam</em>Italie</span><span><em>lea</em>fromage</span><span><em>minh</em>rond</span><span><em>Sam</em>livraison</span><span><em>lea</em>parts</span></div></div>
+        <div class="spacer"></div>
+        <div class="input-row"><span>pizza</span><button class="btn">➤</button></div>
+        <p class="note">Les autres attendent, suspense…</p>
+      </div></div>
+      <figcaption><b>8. Mr. White démasqué</b>Il voit tous les indices et tente de deviner le mot des civils.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="win">
+          <span class="stamp civil" style="color:#2F5410">Mission réussie</span>
+          <h3>Les civils gagnent</h3>
+          <div class="words"><span>Civils : pizza</span><span>Undercover : quiche</span></div>
+        </div>
+        <div class="agents">
+          <div class="agent"><span class="token" style="--c:#3CC4D0"><span>🐸</span></span><span class="who"><b>lea_k</b><small>pizza</small></span><span class="mini-stamp civil">Civil</span></div>
+          <div class="agent"><span class="token" style="--c:#F39237"><span>⭐</span></span><span class="who"><b>Sam.R</b><small>pizza</small></span><span class="mini-stamp civil">Civil</span></div>
+          <div class="agent"><span class="token" style="--c:#A77BF3"><span>🦊</span></span><span class="who"><b>minh</b><small>pizza</small></span><span class="mini-stamp civil">Civil</span></div>
+          <div class="agent out"><span class="token" style="--c:#F078B5"><span>🦄</span></span><span class="who"><b>ines</b><small>quiche · manche 1</small></span><span class="mini-stamp under">Undercover</span></div>
+          <div class="agent out"><span class="token" style="--c:#4C8DF6"><span>🐙</span></span><span class="who"><b>tom</b><small>aucun mot · manche 2</small></span><span class="mini-stamp white">Mr. White</span></div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn-block">Rejouer avec la même table</button>
+        <button class="btn btn-ghost btn-block">Retour au hub</button>
+      </div></div>
+      <figcaption><b>9. Fin de mission</b>Tous les dossiers s'ouvrent : rôles, mots et manche d'élimination.</figcaption>
+    </figure>
+  </div>
+
+  <h2 class="section">Sur ordinateur : tour des indices</h2>
+  <div class="desktop">
+    <div class="d-rail"><span class="brand-mark">H</span><i></i><i class="on"></i><i></i><i></i></div>
+    <div class="d-main">
+      <div class="uc-head"><div class="uc-title"><strong>Opération Undercover</strong><span class="uc-file">DOSSIER N° 0423 · MANCHE 2 · INDICES</span></div><div class="timer" style="--p:62"><span>37</span></div></div>
+      <div class="d-cols">
+        <div style="display:grid;align-content:start;gap:12px">
+          <div class="folder" data-tab="CONFIDENTIEL">
+            <div class="meta"><span>AGENT LEA_K</span><span>À détruire</span></div>
+            <p class="word">pizza</p>
+            <p class="hint">Survole pour cacher ton mot.</p>
+          </div>
+          <div class="input-row"><span class="ph">Ton indice</span><button class="btn">➤</button></div>
+        </div>
+        <div class="rounds">
+          <div class="round-row head"><span>AGENT</span><span>MANCHE 1</span><span>MANCHE 2</span></div>
+          <div class="round-row"><span class="name"><span class="token" style="--c:#F39237"><span>⭐</span></span>Sam.R</span><span class="c">Italie</span><span class="c">livraison</span></div>
+          <div class="round-row"><span class="name"><span class="token" style="--c:#3CC4D0"><span>🐸</span></span>lea_k</span><span class="c">fromage</span><span class="c empty">à toi…</span></div>
+          <div class="round-row"><span class="name"><span class="token" style="--c:#A77BF3"><span>🦊</span></span>minh</span><span class="c">rond</span><span class="c empty"></span></div>
+          <div class="round-row"><span class="name"><span class="token" style="--c:#4C8DF6"><span>🐙</span></span>tom</span><span class="c">four</span><span class="c empty"></span></div>
+          <div class="round-row" style="opacity:.45"><span class="name"><span class="token" style="--c:#F078B5"><span>🦄</span></span>ines</span><span class="c">pâte</span><span class="mini-stamp under" style="justify-self:start">Undercover</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="d-side">
+      <h4>Table · chat</h4>
+      <div class="chat">
+        <div class="bubble" style="--a:#F39237"><span class="token" style="--c:#F39237"><span>⭐</span></span><p><b>Sam.R</b>tom t'as dit « four » au premier tour, suspect</p></div>
+        <div class="bubble" style="--a:#4C8DF6"><span class="token" style="--c:#4C8DF6"><span>🐙</span></span><p><b>tom</b>une pizza ça se cuit au four !!</p></div>
+      </div>
+      <div class="input-row" style="box-shadow:none"><span class="ph">Écrire à la table</span><button class="btn">➤</button></div>
+      <p class="note">3 spectateurs regardent</p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

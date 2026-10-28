@@ -1,0 +1,48 @@
+// État partagé entre les écrans : qui je suis, les membres, les canaux, les non-lus, les conversations chargées.
+
+export const state = {
+  options: null,
+  socket: null,
+  me: null,
+  users: new Map(),
+  channels: [],
+  dms: [], // [{ scope, otherId, lastAt }]
+  unread: {},
+  online: new Set(),
+  mutedUntil: 0,
+  route: { view: 'home', id: null },
+  convs: new Map(), // scope -> { messages, complete, loaded, pendingRead }
+  typing: new Map(), // scope -> Map(userId -> timer)
+};
+
+// Actions fournies par app.js au démarrage (évite les imports circulaires).
+export const actions = {
+  logout: () => {},
+};
+
+export function go(hash) {
+  if (location.hash === hash) window.dispatchEvent(new HashChangeEvent('hashchange'));
+  else location.hash = hash;
+}
+
+export function dmScope(otherId) {
+  const me = state.me.id;
+  return me < otherId ? `dm:${me}:${otherId}` : `dm:${otherId}:${me}`;
+}
+
+export function otherOf(scope) {
+  const [a, b] = scope.split(':').slice(1).map(Number);
+  return a === state.me.id ? b : a;
+}
+
+export function unreadTotal() {
+  return Object.values(state.unread).reduce((a, b) => a + b, 0);
+}
+
+export const isAdmin = () => state.me?.role === 'admin';
+
+// Membres triés : en ligne d'abord, puis par pseudo.
+export function sortedUsers() {
+  return [...state.users.values()].sort((a, b) =>
+    Number(state.online.has(b.id)) - Number(state.online.has(a.id)) || a.pseudo.localeCompare(b.pseudo, 'fr'));
+}

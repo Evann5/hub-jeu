@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undercover — direction artistique</title>
+<style>
+  @font-face { font-family: 'Marker'; src: url('../../games/undercover/assets/fonts/permanent-marker.woff2') format('woff2'); font-display: swap; }
+  @font-face { font-family: 'Kalam'; src: url('../../games/undercover/assets/fonts/kalam-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Kalam'; src: url('../../games/undercover/assets/fonts/kalam-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Caveat'; src: url('../../games/undercover/assets/fonts/caveat.woff2') format('woff2-variations'); font-weight: 400 700; font-display: swap; }
+  @font-face { font-family: 'Courier Prime'; src: url('../../games/undercover/assets/fonts/courier-prime-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Stencil'; src: url('../../games/undercover/assets/fonts/stencil.woff2') format('woff2-variations'); font-weight: 100 900; font-display: swap; }
+
+  :root {
+    --kraft: #C49D63;
+    --paper: #F7F2E7;
+    --paper-line: #CFE0EE;
+    --margin-line: #E7A5A0;
+    --ink: #24201B;
+    --ink-soft: #5E5448;
+    --stamp: #C8281C;
+    --civil: #2E6B3A;
+    --blue-pen: #2346A0;
+    --highlight: #F6E34E;
+    --marker: 'Marker', 'Comic Sans MS', cursive;
+    --body: 'Kalam', 'Comic Sans MS', cursive;
+    --hand: 'Caveat', cursive;
+    --type: 'Courier Prime', 'Courier New', monospace;
+    --stencil: 'Stencil', 'Arial Narrow', sans-serif;
+    /* Contours au crayon : chaque coin a son propre arrondi. */
+    --wobble-1: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    --wobble-2: 15px 225px 15px 255px / 255px 15px 225px 15px;
+    --wobble-3: 225px 20px 245px 12px / 18px 255px 12px 225px;
+    --fibers: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #2A221C; color: var(--ink); font: 400 16px/1.4 var(--body); }
+  svg.doodle { display: block; overflow: visible; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+  .board { max-width: 1500px; margin: 0 auto; padding: 48px 24px 96px; }
+  .board > header { position: relative; margin-bottom: 36px; color: var(--paper); }
+  .board h1 { margin: 0; font: 400 clamp(2.4rem, 1.4rem + 3.5vw, 4.4rem)/1 var(--marker); }
+  .board > header p { margin: 14px 0 0; max-width: 70ch; color: #DCCFB8; font-size: 1.1rem; }
+  h2.section { margin: 60px 0 22px; color: var(--paper); font: 400 1.9rem var(--marker); }
+  h2.section .doodle { width: 220px; height: 14px; margin-top: 2px; color: var(--highlight); }
+
+  /* Le kit : les éléments dessinés */
+  .kit { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 18px; }
+  .kit-item { display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 150px; padding: 16px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: var(--wobble-1); box-shadow: 4px 4px 0 var(--ink); text-align: center; transform: rotate(var(--r, 0deg)); }
+  .kit-item:nth-child(even) { border-radius: var(--wobble-2); }
+  .kit-item small { font-size: 0.9rem; color: var(--ink-soft); }
+  .fonts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-top: 18px; }
+
+  .phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 40px 24px; }
+  figure { margin: 0; display: grid; gap: 14px; justify-items: center; }
+  figcaption { max-width: 340px; color: #DCCFB8; font-size: 0.95rem; text-align: center; }
+  figcaption b { display: block; color: var(--paper); font: 400 1.3rem var(--marker); }
+
+  .phone {
+    position: relative;
+    width: 340px;
+    height: 700px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 44px;
+    background: var(--fibers), var(--kraft);
+    box-shadow: 0 0 0 10px #111, 0 0 0 11px #3A3A3A, 0 30px 60px rgb(0 0 0 / 0.6);
+  }
+  .phone .status { height: 34px; flex: none; }
+  .screen { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 8px 16px 18px; overflow: hidden; }
+  .coffee { position: absolute; width: 150px; height: 150px; color: rgb(110 70 30 / 0.28); pointer-events: none; }
+
+  /* Titres au gros feutre, soulignés à la main */
+  .file-head { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .title { margin: 0; font: 400 1.95rem/1.05 var(--marker); transform: rotate(-1.5deg); transform-origin: left; }
+  .title .doodle { width: 150px; height: 12px; margin-top: -2px; color: var(--stamp); stroke-width: 4; }
+  .code { display: block; margin-top: 4px; font: 700 0.7rem var(--type); letter-spacing: 0.06em; color: #3B2F22; }
+
+  /* Chrono dessiné */
+  .watch { position: relative; flex: none; width: 62px; height: 62px; display: grid; place-items: center; font: 700 1.25rem/1 var(--body); }
+  .watch .doodle { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .watch .face { fill: var(--paper); }
+  .watch.hot { color: var(--stamp); }
+
+  /* Feuilles : contour au crayon, ombre dure, légère rotation */
+  .sheet {
+    position: relative;
+    padding: 18px 16px 16px;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: var(--wobble-1);
+    box-shadow: 4px 4px 0 var(--ink);
+    transform: rotate(var(--r, 0deg));
+  }
+  .sheet.alt { border-radius: var(--wobble-2); }
+  .sheet.alt2 { border-radius: var(--wobble-3); }
+  .sheet.lined { background: linear-gradient(90deg, transparent 30px, var(--margin-line) 30px 32px, transparent 32px), repeating-linear-gradient(var(--paper) 0 29px, var(--paper-line) 29px 31px); padding-left: 42px; }
+  .label { font: 700 0.68rem var(--type); letter-spacing: 0.08em; color: var(--ink-soft); }
+  /* Scotch aux bords déchirés */
+  .tape { position: absolute; top: -13px; left: 50%; width: 92px; height: 26px; background: rgb(255 244 200 / 0.78); transform: translateX(-50%) rotate(-4deg); clip-path: polygon(0 8%, 6% 0, 11% 10%, 17% 2%, 23% 9%, 30% 1%, 37% 8%, 44% 0, 51% 9%, 58% 1%, 65% 8%, 72% 0, 79% 9%, 86% 2%, 93% 9%, 100% 3%, 100% 94%, 94% 100%, 88% 91%, 81% 99%, 74% 92%, 67% 100%, 60% 91%, 53% 99%, 46% 92%, 39% 100%, 32% 92%, 25% 99%, 18% 91%, 11% 99%, 5% 92%, 0 100%); }
+  .tack { position: absolute; top: -12px; left: 50%; width: 26px; height: 26px; transform: translateX(-50%); }
+
+  .top-secret { flex: none; padding: 2px 8px; border: 2.5px solid var(--stamp); border-radius: var(--wobble-2); color: var(--stamp); font: 800 0.95rem var(--stencil); letter-spacing: 0.08em; transform: rotate(-5deg); }
+
+  /* Signature : le mot caché sous des coups de feutre noir */
+  .secret { position: relative; display: inline-block; margin: 14px 0 6px; font: 700 2.5rem/1.05 var(--body); }
+  .secret .redact { position: absolute; inset: -10px -16px; width: calc(100% + 32px); height: calc(100% + 20px); color: #141210; }
+  .secret .redact { fill: currentColor; stroke: none; }
+
+  /* Boutons : contour tremblé, ombre dure, ils s'enfoncent quand on appuie */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 54px;
+    border: 2.5px solid var(--ink);
+    border-radius: var(--wobble-3);
+    background: var(--ink);
+    color: var(--paper);
+    font: 700 1.1rem var(--body);
+    box-shadow: 4px 4px 0 rgb(0 0 0 / 0.35);
+  }
+  .btn.paper { background: var(--paper); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); border-radius: var(--wobble-1); }
+  .btn.red { background: var(--stamp); border-color: var(--ink); }
+  .btn.pressed { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn .doodle { width: 26px; height: 26px; }
+
+  /* Polaroïds */
+  .pins { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 12px; padding: 6px 2px 0; }
+  .polaroid {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0;
+    padding: 7px 7px 2px;
+    background: #FCF9F2;
+    border: 2px solid var(--ink);
+    border-radius: 3px 6px 4px 7px;
+    box-shadow: 3px 3px 0 var(--ink);
+    transform: rotate(var(--r, 0deg));
+  }
+  .polaroid .photo { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border: 1.5px solid var(--ink); background: var(--c, #ccc); font-size: 2rem; }
+  .polaroid .name { font: 700 1.35rem/1.15 var(--hand); }
+  .polaroid .tack { top: -14px; }
+  .polaroid.empty { background: transparent; border: 2.5px dashed rgb(36 32 27 / 0.55); box-shadow: none; }
+  .polaroid.empty .photo { border: 0; background: transparent; font: 400 0.9rem var(--body); color: #3B2F22; }
+  .polaroid.out .photo { filter: grayscale(1); opacity: 0.75; }
+  .polaroid .cross { position: absolute; inset: 6px 6px 26px; width: calc(100% - 12px); height: calc(100% - 32px); color: var(--stamp); stroke-width: 5; }
+  .polaroid .on-stamp { position: absolute; top: 38%; left: 50%; padding: 3px 8px; border: 3px solid currentColor; border-radius: var(--wobble-2); color: var(--stamp); background: rgb(252 249 242 / 0.6); font: 800 1rem/1 var(--stencil); letter-spacing: 0.05em; text-transform: uppercase; transform: translate(-50%, -50%) rotate(-14deg); white-space: nowrap; }
+  .polaroid .circle { position: absolute; inset: -18px -16px; width: calc(100% + 32px); height: calc(100% + 36px); color: var(--stamp); stroke-width: 4; }
+  .polaroid .check { position: absolute; bottom: 2px; right: -10px; width: 30px; height: 30px; color: var(--civil); stroke-width: 4.5; }
+
+  /* Rapport d'indices */
+  .row { position: relative; display: grid; grid-template-columns: 30px 76px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 42px; }
+  .row .mini { width: 28px; height: 28px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 4px 7px 5px 6px; background: var(--c); font-size: 0.95rem; }
+  .row .who { font: 700 1.35rem/1 var(--hand); }
+  .row .clue { font-weight: 700; font-size: 1.05rem; }
+  .row .clue.wait { color: var(--ink-soft); font-weight: 400; }
+  /* Coup de surligneur irrégulier */
+  .row.turn::before { content: ''; position: absolute; inset: 7px -6px 6px -4px; z-index: -1; background: var(--highlight); border-radius: 40% 12% 35% 10% / 30% 50% 25% 45%; transform: rotate(-0.8deg); opacity: 0.9; }
+  .row .arrow { position: absolute; left: -46px; top: 6px; width: 40px; height: 28px; color: var(--stamp); }
+
+  .write { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: var(--wobble-2); box-shadow: 4px 4px 0 var(--ink); }
+  .write > span:first-child { flex: 1; font-size: 1.15rem; font-weight: 700; }
+  .write .ph { color: var(--ink-soft); font-weight: 400; }
+  .write .send { display: grid; place-items: center; width: 46px; height: 42px; background: var(--ink); color: var(--paper); border-radius: var(--wobble-3); }
+  .write .send .doodle { width: 24px; height: 24px; stroke-width: 2.6; }
+  .note { margin: 0; color: #2E2418; font-size: 0.95rem; text-align: center; }
+  .pen { font: 700 1.45rem/1.1 var(--hand); color: var(--blue-pen); }
+  .spacer { flex: 1; }
+
+  .msg { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: baseline; line-height: 31px; }
+  .msg b { font: 700 1.35rem/1 var(--hand); color: var(--c); }
+  .msg p { margin: 0; font-size: 1rem; line-height: 31px; }
+
+  .reveal { flex: 1; display: grid; align-content: center; justify-items: center; gap: 18px; text-align: center; }
+  .reveal .polaroid { width: 175px; }
+  .reveal .polaroid .photo { font-size: 4rem; }
+  .reveal .polaroid .on-stamp { font-size: 1.6rem; border-width: 4px; padding: 4px 12px; }
+  .reveal h3 { margin: 0; font: 400 1.7rem/1.05 var(--marker); }
+  .reveal p { margin: 0; max-width: 30ch; font-size: 1.05rem; }
+  .tally { width: 100%; display: grid; gap: 4px; }
+  .tally div { display: grid; grid-template-columns: 70px 1fr 24px; gap: 10px; align-items: center; text-align: left; font-size: 1.05rem; }
+  .tally .marks { font: 700 1.6rem/1 var(--hand); letter-spacing: 0.08em; }
+  .tally div:first-child .marks { color: var(--stamp); }
+
+  .big-stamp { display: inline-block; padding: 6px 14px; border: 4px solid var(--civil); border-radius: var(--wobble-2); color: var(--civil); font: 800 1.5rem/1 var(--stencil); letter-spacing: 0.04em; text-transform: uppercase; transform: rotate(-7deg); }
+  .final h3 { margin: 12px 0 0; font: 400 2.1rem/1 var(--marker); }
+  .roster div { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 31px; }
+  .roster .who { font: 700 1.35rem/1 var(--hand); }
+  .roster .who small { font: 400 0.85rem var(--body); color: var(--ink-soft); margin-left: 6px; }
+  .tag { display: inline-block; padding: 0 7px; border: 2.5px solid currentColor; border-radius: var(--wobble-1); font: 800 0.72rem/1.5 var(--stencil); letter-spacing: 0.05em; text-transform: uppercase; transform: rotate(-4deg); }
+  .tag.civil { color: var(--civil); } .tag.under { color: var(--stamp); } .tag.white { color: var(--blue-pen); }
+
+  /* Ordinateur */
+  .desktop { position: relative; width: 100%; max-width: 1280px; aspect-ratio: 16 / 9.4; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 26px; padding: 28px 30px; border-radius: 18px; background: var(--fibers), var(--kraft); box-shadow: 0 0 0 1px #3A3A3A, 0 30px 60px rgb(0 0 0 / 0.6); overflow: hidden; }
+  .desktop .title { font-size: 3.2rem; }
+  .desktop .title .doodle { width: 330px; height: 16px; }
+  .back-hub { position: absolute; top: 20px; right: 24px; z-index: 2; padding: 4px 14px; background: var(--paper); border: 2px solid var(--ink); border-radius: var(--wobble-2); box-shadow: 3px 3px 0 var(--ink); font-weight: 700; }
+  .d-main { display: flex; flex-direction: column; gap: 24px; min-height: 0; }
+  .d-cols { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .d-side { display: flex; flex-direction: column; gap: 12px; padding-top: 52px; min-height: 0; }
+  .d-side .sheet { flex: 1; display: flex; flex-direction: column; }
+  .grid { display: grid; grid-template-columns: 130px repeat(2, minmax(0, 1fr)); position: relative; }
+  .grid > div { position: relative; min-height: 46px; display: flex; align-items: center; padding: 0 10px; }
+  .grid .h { font: 700 0.7rem var(--type); letter-spacing: 0.08em; color: var(--ink-soft); }
+  .grid .n { gap: 8px; font: 700 1.45rem/1 var(--hand); }
+  .grid .n i { width: 26px; height: 26px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 4px 7px 5px 6px; background: var(--c); font-style: normal; font-size: 0.85rem; }
+  .grid .c { font-weight: 700; font-size: 1.05rem; }
+  .grid .hl::before { content: ''; position: absolute; inset: 8px 0 7px; z-index: -1; background: var(--highlight); border-radius: 40% 12% 35% 10% / 30% 50% 25% 45%; transform: rotate(-0.6deg); }
+  .grid .x { color: var(--ink-soft); }
+  .grid .x .strike { position: absolute; left: 6px; right: 6px; top: 50%; height: 10px; margin-top: -5px; color: var(--stamp); stroke-width: 3.5; }
+</style>
+</head>
+<body>
+
+<!-- Les dessins à la main, réutilisables -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="d-underline" viewBox="0 0 200 14"><path d="M3 9 C30 3 55 12 85 7 S140 3 165 9 S190 8 197 5"/></symbol>
+    <symbol id="d-circle" viewBox="0 0 200 220"><path d="M108 10 C164 8 196 52 192 108 C188 168 140 210 92 206 C40 202 6 160 8 108 C10 52 52 12 120 18 C150 22 168 34 178 46"/></symbol>
+    <symbol id="d-arrow" viewBox="0 0 44 30"><path d="M3 22 C12 8 24 6 38 13"/><path d="M29 6 L39 13 L30 21"/></symbol>
+    <symbol id="d-check" viewBox="0 0 30 30"><path d="M4 16 C8 19 10 22 12 26 C16 16 21 9 27 3"/></symbol>
+    <symbol id="d-cross" viewBox="0 0 100 100"><path d="M8 10 C35 38 62 66 92 92"/><path d="M90 8 C64 36 38 62 10 90"/></symbol>
+    <symbol id="d-strike" viewBox="0 0 100 10"><path d="M2 6 C25 3 50 8 75 4 S96 6 98 5"/></symbol>
+    <symbol id="d-send" viewBox="0 0 24 24"><path d="M3 12 C9 11 15 12 20 12"/><path d="M14 6 L20 12 L14 18"/></symbol>
+    <symbol id="d-star" viewBox="0 0 40 40"><path d="M20 3 L24 15 L37 15 L27 23 L31 36 L20 28 L9 36 L13 23 L3 15 L16 15 Z"/></symbol>
+    <symbol id="d-watch" viewBox="0 0 62 62"><circle class="face" cx="31" cy="33" r="25" stroke="none"/><path d="M31 7 C47 6 57 19 56 34 C55 49 44 59 30 58 C15 57 5 46 6 32 C7 18 17 9 34 9"/><path d="M27 2 L35 2 M31 2 L31 7"/><path d="M50 12 L54 8"/></symbol>
+    <symbol id="d-tack" viewBox="0 0 26 26"><circle cx="13" cy="11" r="8" fill="#C8281C" stroke="#24201B" stroke-width="2"/><circle cx="10" cy="8" r="2.5" fill="#fff" stroke="none" opacity=".7"/><path d="M13 19 L13 25" stroke="#24201B" stroke-width="2"/></symbol>
+    <symbol id="d-coffee" viewBox="0 0 150 150"><path d="M75 12 C112 10 138 38 137 76 C136 112 108 138 72 137 C36 136 12 108 14 72 C16 38 42 14 80 14" stroke-width="7" opacity=".6"/><path d="M76 20 C108 20 130 44 129 76 C128 106 104 130 74 129" stroke-width="2.5" opacity=".5"/></symbol>
+    <symbol id="d-redact" viewBox="0 0 220 60" preserveAspectRatio="none">
+      <path d="M10 11 C70 8 150 12 211 9 L210 51 C150 54 70 50 9 53 Z"/>
+      <path d="M6 14 C40 6 80 12 120 8 C160 5 190 10 214 7 L216 24 C180 28 130 22 90 26 C50 29 22 25 4 28 Z"/>
+      <path d="M3 24 C44 20 92 27 140 22 C176 19 200 24 217 21 L214 40 C170 44 120 38 76 42 C42 45 18 41 5 44 Z"/>
+      <path d="M8 38 C50 34 100 42 150 37 C182 34 204 38 214 36 L212 53 C176 57 126 51 82 55 C46 58 20 54 7 56 Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="board">
+  <header>
+    <h1>Undercover · Dossier fait main</h1>
+    <p>Une chemise kraft où tout est tracé à la main : titres au gros feutre, texte manuscrit, contours au crayon qui tremblent, scotch déchiré, punaises, mot caché sous des coups de feutre noir, suspect entouré au feutre rouge, bâtons de comptage pour les votes. Maquettes statiques, pseudos inventés.</p>
+  </header>
+
+  <h2 class="section">Le kit dessiné<svg class="doodle"><use href="#d-underline"/></svg></h2>
+  <div class="kit">
+    <div class="kit-item" style="--r:-1deg"><span class="secret" style="margin:0;font-size:1.8rem">pizza<svg class="doodle redact" viewBox="0 0 220 60" preserveAspectRatio="none"><use href="#d-redact"/></svg></span><small>Le mot caché au feutre</small></div>
+    <div class="kit-item" style="--r:1deg"><svg class="doodle" style="width:110px;height:120px;color:var(--stamp);stroke-width:4"><use href="#d-circle"/></svg><small>Cercle du vote</small></div>
+    <div class="kit-item" style="--r:-2deg"><span class="watch" style="width:80px;height:80px;font-size:1.5rem"><svg class="doodle"><use href="#d-watch"/></svg><span style="position:relative">37</span></span><small>Chrono dessiné</small></div>
+    <div class="kit-item" style="--r:1.5deg"><span style="font:700 2.4rem/1 var(--hand);letter-spacing:.08em;color:var(--stamp)">|||| ||</span><small>Bâtons de comptage</small></div>
+    <div class="kit-item" style="--r:-1deg"><div style="display:flex;gap:16px;align-items:center"><svg class="doodle" style="width:44px;height:30px;color:var(--stamp)"><use href="#d-arrow"/></svg><svg class="doodle" style="width:34px;height:34px;color:var(--civil);stroke-width:4.5"><use href="#d-check"/></svg><svg class="doodle" style="width:40px;height:40px;color:var(--highlight);stroke:var(--ink);stroke-width:2;fill:var(--highlight)"><use href="#d-star"/></svg></div><small>Flèche, coche, étoile</small></div>
+    <div class="kit-item" style="--r:2deg"><span class="tag under" style="font-size:1rem">Undercover</span><span class="tag civil" style="font-size:1rem">Civil</span><small>Tampons encreurs</small></div>
+  </div>
+  <div class="fonts">
+    <div class="kit-item" style="--r:-1deg;min-height:110px"><div style="font:400 2.2rem/1 var(--marker)">Qui est l'intrus ?</div><small>Permanent Marker : titres au gros feutre</small></div>
+    <div class="kit-item" style="--r:1deg;min-height:110px"><div style="font:700 1.4rem var(--body)">Donne ton indice sans dire ton mot.</div><small>Kalam : tout le texte, lisible</small></div>
+    <div class="kit-item" style="--r:-1.5deg;min-height:110px"><div style="font:700 2rem/1 var(--hand);color:var(--blue-pen)">c'est louche ça…</div><small>Caveat : pseudos et notes au stylo</small></div>
+  </div>
+
+  <h2 class="section">Sur téléphone, dans l'ordre d'une partie<svg class="doodle"><use href="#d-underline"/></svg></h2>
+  <div class="phones">
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <svg class="doodle coffee" style="right:-40px;bottom:120px"><use href="#d-coffee"/></svg>
+        <div class="file-head"><div><h3 class="title">Opération<br>Undercover<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">DOSSIER N° 0423 · RECRUTEMENT</span></div><span class="top-secret">TOP SECRET</span></div>
+        <div class="pins">
+          <div class="polaroid" style="--r:-4deg;--c:#B79BE0"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🦊</span><span class="name">minh</span></div>
+          <div class="polaroid" style="--r:3deg;--c:#8FCFD6"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🐸</span><span class="name">lea_k</span></div>
+          <div class="polaroid" style="--r:-1deg;--c:#EFB57C"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">⭐</span><span class="name">Sam.R</span></div>
+          <div class="polaroid" style="--r:2deg;--c:#94B4EC"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🐙</span><span class="name">tom</span></div>
+          <div class="polaroid" style="--r:-3deg;--c:#EDA6C8"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🦄</span><span class="name">ines</span></div>
+          <div class="polaroid empty" style="--r:1deg"><span class="photo">place<br>libre</span><span class="name">&nbsp;</span></div>
+        </div>
+        <div class="sheet lined alt" style="--r:-1deg;padding-top:12px"><span class="tape"></span>
+          <div class="label">ORDRE DE MISSION</div>
+          <div class="msg"><b style="--c:var(--ink)">Undercover</b><p>1, avec Mr. White</p></div>
+          <div class="msg"><b style="--c:var(--ink)">Débat</b><p>1 min 30</p></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="btn paper">Inviter des agents</div>
+        <div class="btn">Lancer la mission<svg class="doodle"><use href="#d-send"/></svg></div>
+      </div></div>
+      <figcaption><b>1. Recrutement</b>Chaque joueur qui rejoint punaise son polaroïd. L'hôte règle l'ordre de mission.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="file-head"><div><h3 class="title">Ton mot<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">AGENT LEA_K · MANCHE 1</span></div></div>
+        <div class="sheet" style="--r:1deg;margin-top:14px"><span class="tape"></span>
+          <div class="label">PIÈCE N° 1 · NE PAS DIVULGUER</div>
+          <span class="secret">pizza<svg class="doodle redact" viewBox="0 0 220 60" preserveAspectRatio="none"><use href="#d-redact"/></svg></span>
+          <p style="margin:8px 0 0">Maintiens le bouton pour lever le feutre. Cache ton écran.</p>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:6px;margin:10px 0 0 10px">
+          <svg class="doodle" style="width:44px;height:30px;color:var(--blue-pen);transform:rotate(200deg)"><use href="#d-arrow"/></svg>
+          <p class="pen" style="margin:0;transform:rotate(-3deg)">civil ou Undercover ?<br>personne ne le sait…</p>
+        </div>
+        <div class="spacer"></div>
+        <div class="btn pressed">Maintenir pour lire</div>
+        <p class="note">(bouton enfoncé : le feutre se lève pendant l'appui)</p>
+      </div></div>
+      <figcaption><b>2. Le mot caché</b>Trois coups de feutre noir, aux bords irréguliers. On maintient pour les lever.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="file-head"><div><h3 class="title">Ton mot<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">AGENT LEA_K · MANCHE 1</span></div></div>
+        <div class="sheet" style="--r:1deg;margin-top:14px"><span class="tape"></span>
+          <div class="label">PIÈCE N° 1 · NE PAS DIVULGUER</div>
+          <span class="secret">pizza</span>
+          <p style="margin:8px 0 0">Donne un indice qui prouve que tu l'as, sans le dire.</p>
+        </div>
+        <div class="sheet alt2" style="--r:-2deg;margin-top:20px"><svg class="tack" style="top:-14px"><use href="#d-tack"/></svg>
+          <div class="label">VARIANTE · MR. WHITE</div>
+          <p class="pen" style="margin:10px 0 4px;font-size:1.8rem">Page blanche.</p>
+          <p class="pen" style="margin:0">Tu n'as aucun mot.<br>Écoute… et bluffe.</p>
+        </div>
+        <div class="spacer"></div>
+        <div class="btn">C'est mémorisé</div>
+      </div></div>
+      <figcaption><b>3. Le mot révélé</b>Le feutre se lève. Mr. White reçoit une page blanche avec un mot au stylo bleu.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="file-head"><div><h3 class="title">Indices<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">MANCHE 1 · 3 SUR 5</span></div><span class="watch"><svg class="doodle"><use href="#d-watch"/></svg><span style="position:relative">37</span></span></div>
+        <div class="sheet lined alt" style="--r:-0.8deg;padding-top:14px"><span class="tape"></span>
+          <div class="label" style="margin-bottom:2px">RAPPORT D'INDICES</div>
+          <div class="row"><span class="mini" style="--c:#EFB57C">⭐</span><span class="who">Sam.R</span><span class="clue">Italie</span></div>
+          <div class="row"><span class="mini" style="--c:#94B4EC">🐙</span><span class="who">tom</span><span class="clue">four</span></div>
+          <div class="row turn"><svg class="doodle arrow"><use href="#d-arrow"/></svg><span class="mini" style="--c:#8FCFD6">🐸</span><span class="who">lea_k</span><span class="clue wait">écrit…</span></div>
+          <div class="row"><span class="mini" style="--c:#EDA6C8">🦄</span><span class="who">ines</span><span class="clue wait"></span></div>
+          <div class="row"><span class="mini" style="--c:#B79BE0">🦊</span><span class="who">minh</span><span class="clue wait"></span></div>
+        </div>
+        <div class="spacer"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0 6px"><span class="label">TON MOT</span><span class="secret" style="font-size:1.2rem;margin:0">pizza<svg class="doodle redact" viewBox="0 0 220 60" preserveAspectRatio="none"><use href="#d-redact"/></svg></span></div>
+        <div class="write"><span>fromage</span><span class="send"><svg class="doodle"><use href="#d-send"/></svg></span></div>
+        <p class="note">Un mot ou une courte expression, jamais ton mot.</p>
+      </div></div>
+      <figcaption><b>4. Tour des indices</b>Sur papier d'écolier. Un coup de surligneur et une flèche rouge montrent à qui c'est le tour.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="file-head"><div><h3 class="title">Débat<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">MANCHE 1</span></div><span class="watch"><svg class="doodle"><use href="#d-watch"/></svg><span style="position:relative">54</span></span></div>
+        <div class="sheet alt2" style="--r:1deg;padding:12px 14px"><svg class="tack"><use href="#d-tack"/></svg>
+          <div class="label">LES INDICES</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0 14px;margin-top:4px"><span>Sam <b>Italie</b></span><span>tom <b>four</b></span><span>lea <b>fromage</b></span><span>ines <b>pâte</b></span><span>minh <b>rond</b></span></div>
+        </div>
+        <div class="sheet lined" style="--r:-1deg;flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-top:14px">
+          <div class="msg" style="--c:#B5651D"><b>Sam.R</b><p>« pâte » c'est bizarre non ?</p></div>
+          <div class="msg" style="--c:#A23B72"><b>ines</b><p>y a de la pâte dedans !</p></div>
+          <div class="msg" style="--c:#5B3FA0"><b>minh</b><p>« rond » c'est vague…</p></div>
+        </div>
+        <div class="write"><span class="ph">Écrire à la table</span><span class="send"><svg class="doodle"><use href="#d-send"/></svg></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="pen" style="color:var(--ink)">prêts : <span style="color:var(--stamp)">||</span> sur 5</span><div class="btn paper" style="min-height:44px;padding:0 16px;font-size:1rem">Je suis prêt</div></div>
+      </div></div>
+      <figcaption><b>5. Débat</b>Les indices punaisés en haut, la discussion sur une feuille d'écolier avec sa marge rouge.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="file-head"><div><h3 class="title">Qui est<br>l'intrus ?<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">VOTE · MANCHE 1</span></div><span class="watch hot"><svg class="doodle"><use href="#d-watch"/></svg><span style="position:relative">13</span></span></div>
+        <div class="pins" style="grid-template-columns:repeat(2,1fr);gap:24px 26px;padding:10px 18px">
+          <div class="polaroid" style="--r:-4deg;--c:#EFB57C"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">⭐</span><span class="name">Sam.R</span><svg class="doodle check"><use href="#d-check"/></svg></div>
+          <div class="polaroid" style="--r:3deg;--c:#94B4EC"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🐙</span><span class="name">tom</span><svg class="doodle check"><use href="#d-check"/></svg></div>
+          <div class="polaroid" style="--r:1deg;--c:#EDA6C8"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🦄</span><span class="name">ines</span><svg class="doodle circle" viewBox="0 0 200 220" preserveAspectRatio="none"><use href="#d-circle"/></svg></div>
+          <div class="polaroid" style="--r:-2deg;--c:#B79BE0"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🦊</span><span class="name">minh</span><svg class="doodle check"><use href="#d-check"/></svg></div>
+        </div>
+        <p class="pen" style="margin:0 0 0 6px;font-size:1.25rem">✓ = a déjà voté (3 sur 5)</p>
+        <div class="spacer"></div>
+        <div class="btn red">Voter contre ines</div>
+        <p class="note">Ton vote reste secret jusqu'au dépouillement.</p>
+      </div></div>
+      <figcaption><b>6. Vote</b>On entoure son suspect au feutre rouge. Les coches vertes montrent qui a voté, jamais pour qui.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="file-head"><div><h3 class="title">Dépouillement<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">MANCHE 1</span></div></div>
+        <div class="reveal">
+          <div class="polaroid out" style="--r:-3deg;--c:#EDA6C8"><svg class="tack"><use href="#d-tack"/></svg><span class="photo">🦄</span><span class="name">ines</span><svg class="doodle cross" viewBox="0 0 100 100" preserveAspectRatio="none"><use href="#d-cross"/></svg><span class="on-stamp">Undercover</span></div>
+          <h3>Le vote désigne ines</h3>
+          <p>Son mot était <b>quiche</b>.<br>Il reste 1 intrus dans la pièce.</p>
+          <div class="tally">
+            <div>ines <span class="marks">|||</span><b>3</b></div>
+            <div>minh <span class="marks">|</span><b>1</b></div>
+            <div>Sam.R <span class="marks">|</span><b>1</b></div>
+          </div>
+        </div>
+        <div class="btn">Manche suivante</div>
+      </div></div>
+      <figcaption><b>7. Dépouillement</b>Le polaroïd est barré d'une croix rouge, le tampon tombe, les voix se comptent en bâtons.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <div class="file-head"><div><h3 class="title">Dernière<br>chance<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">MR. WHITE DÉMASQUÉ</span></div><span class="watch hot"><svg class="doodle"><use href="#d-watch"/></svg><span style="position:relative">42</span></span></div>
+        <div class="sheet alt2" style="--r:-1.5deg"><span class="tape"></span>
+          <div class="label">À L'ATTENTION DE TOM</div>
+          <p class="pen" style="margin:8px 0 0">Devine le mot des civils.<br>Si tu trouves, tu gagnes seul.</p>
+        </div>
+        <div class="sheet lined" style="--r:1deg;padding-top:12px">
+          <div class="label">TOUS LES INDICES</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0 14px;line-height:31px"><span>Italie</span><span>fromage</span><span>rond</span><span>livraison</span><span>parts</span><span>four</span></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="write"><span>pizza ?</span><span class="send"><svg class="doodle"><use href="#d-send"/></svg></span></div>
+        <p class="note">Les autres agents retiennent leur souffle…</p>
+      </div></div>
+      <figcaption><b>8. Mr. White démasqué</b>Un mot au stylo bleu, tous les indices, une seule tentative.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="status"></div><div class="screen">
+        <svg class="doodle coffee" style="left:-50px;top:300px"><use href="#d-coffee"/></svg>
+        <div class="file-head"><div><h3 class="title">Rapport<br>de mission<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">DOSSIER N° 0423 · CLOS</span></div><svg class="doodle" style="width:42px;height:42px;fill:var(--highlight);stroke:var(--ink);stroke-width:2;transform:rotate(12deg)"><use href="#d-star"/></svg></div>
+        <div class="sheet lined final alt" style="--r:0.8deg;padding-top:18px"><span class="tape"></span>
+          <span class="big-stamp">Mission accomplie</span>
+          <h3>Les civils gagnent !</h3>
+          <div class="roster" style="margin-top:6px">
+            <div><span class="who">lea_k<small>pizza</small></span><span class="tag civil">Civil</span></div>
+            <div><span class="who">Sam.R<small>pizza</small></span><span class="tag civil">Civil</span></div>
+            <div><span class="who">minh<small>pizza</small></span><span class="tag civil">Civil</span></div>
+            <div><span class="who">ines<small>quiche, manche 1</small></span><span class="tag under">Undercover</span></div>
+            <div><span class="who">tom<small>aucun mot, manche 2</small></span><span class="tag white">Mr. White</span></div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <div class="btn">Rejouer avec la même équipe</div>
+        <div class="btn paper">Retour au hub</div>
+      </div></div>
+      <figcaption><b>9. Rapport de mission</b>Le dossier est clos : tampon de victoire, étoile au feutre, rôles et mots de chacun.</figcaption>
+    </figure>
+  </div>
+
+  <h2 class="section">Sur ordinateur : tour des indices<svg class="doodle"><use href="#d-underline"/></svg></h2>
+  <div class="desktop">
+    <span class="back-hub">← Retour au hub</span>
+    <svg class="doodle coffee" style="left:520px;bottom:-40px;width:190px;height:190px"><use href="#d-coffee"/></svg>
+    <div class="d-main">
+      <div class="file-head" style="padding-right:30px"><div><h3 class="title">Opération Undercover<svg class="doodle"><use href="#d-underline"/></svg></h3><span class="code">DOSSIER N° 0423 · MANCHE 2 · INDICES</span></div><span class="watch" style="width:76px;height:76px;font-size:1.5rem"><svg class="doodle"><use href="#d-watch"/></svg><span style="position:relative">37</span></span></div>
+      <div class="d-cols">
+        <div style="display:grid;align-content:start;gap:22px">
+          <div class="sheet" style="--r:-1.5deg"><span class="tape"></span>
+            <div class="label">PIÈCE N° 1 · AGENT LEA_K</div>
+            <span class="secret">pizza</span>
+            <p style="margin:6px 0 0">Survole pour remettre le feutre.</p>
+          </div>
+          <div class="write"><span class="ph">Ton indice</span><span class="send"><svg class="doodle"><use href="#d-send"/></svg></span></div>
+          <div style="display:flex;align-items:flex-start;gap:6px">
+            <svg class="doodle" style="width:44px;height:30px;color:var(--blue-pen);transform:rotate(-30deg)"><use href="#d-arrow"/></svg>
+            <p class="pen" style="margin:0;transform:rotate(-2deg)">tom a dit « four »…<br>suspect ?</p>
+          </div>
+        </div>
+        <div class="sheet lined alt" style="--r:0.5deg;padding-top:14px"><span class="tape"></span>
+          <div class="label" style="margin-bottom:4px">RAPPORT D'INDICES</div>
+          <div class="grid">
+            <div class="h">AGENT</div><div class="h">MANCHE 1</div><div class="h">MANCHE 2</div>
+            <div class="n"><i style="--c:#EFB57C">⭐</i>Sam.R</div><div class="c">Italie</div><div class="c">livraison</div>
+            <div class="n hl"><i style="--c:#8FCFD6">🐸</i>lea_k</div><div class="c hl">fromage</div><div class="c hl" style="font-weight:400;color:var(--ink-soft)">écrit…</div>
+            <div class="n"><i style="--c:#B79BE0">🦊</i>minh</div><div class="c">rond</div><div class="c"></div>
+            <div class="n"><i style="--c:#94B4EC">🐙</i>tom</div><div class="c">four</div><div class="c"></div>
+            <div class="n x"><i style="--c:#EDA6C8">🦄</i>ines<svg class="doodle strike" viewBox="0 0 100 10" preserveAspectRatio="none"><use href="#d-strike"/></svg></div><div class="c x">pâte<svg class="doodle strike" viewBox="0 0 100 10" preserveAspectRatio="none"><use href="#d-strike"/></svg></div><div class="c"><span class="tag under">Undercover</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-side">
+      <div class="sheet lined alt2" style="--r:1deg;padding-top:16px"><svg class="tack"><use href="#d-tack"/></svg>
+        <div class="label">TABLE · DISCUSSION</div>
+        <div class="spacer"></div>
+        <div class="msg" style="--c:#B5651D"><b>Sam.R</b><p>tom, ton « four » au tour 1 est suspect</p></div>
+        <div class="msg" style="--c:#2F5E9E"><b>tom</b><p>une pizza ça se cuit au four !!</p></div>
+        <div class="write" style="margin-top:10px;box-shadow:none"><span class="ph">Écrire à la table</span><span class="send"><svg class="doodle"><use href="#d-send"/></svg></span></div>
+      </div>
+      <p class="note" style="color:#2A1F14">3 spectateurs regardent</p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

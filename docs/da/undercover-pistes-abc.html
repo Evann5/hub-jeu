@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Undercover — trois pistes</title>
+<style>
+  @font-face { font-family: 'DM Serif'; src: url('fonts/dm-serif.woff2') format('woff2'); font-display: swap; }
+  @font-face { font-family: 'DM Serif'; src: url('fonts/dm-serif-italic.woff2') format('woff2'); font-style: italic; font-display: swap; }
+  @font-face { font-family: 'Rubik'; src: url('fonts/rubik.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+  @font-face { font-family: 'Syne'; src: url('fonts/syne.woff2') format('woff2-variations'); font-weight: 400 800; font-display: swap; }
+  @font-face { font-family: 'Inter Tight'; src: url('fonts/inter-tight.woff2') format('woff2-variations'); font-weight: 100 900; font-display: swap; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #E9E7E2; color: #161616; font: 400 16px/1.45 'Inter Tight', system-ui, sans-serif; }
+  .page { max-width: 1240px; margin: 0 auto; padding: 56px 24px 96px; }
+  .page > h1 { margin: 0; font: 800 clamp(2rem, 1.3rem + 2.5vw, 3.2rem)/1 'Inter Tight', sans-serif; letter-spacing: -0.03em; }
+  .page > p { margin: 12px 0 0; max-width: 64ch; color: #555; }
+
+  .piste { display: grid; grid-template-columns: minmax(260px, 1fr) auto; gap: 32px; align-items: center; margin-top: 64px; padding-top: 40px; border-top: 1px solid #CFCBC3; }
+  .piste h2 { margin: 0 0 10px; font: 800 2rem/1 'Inter Tight', sans-serif; letter-spacing: -0.03em; }
+  .piste h2 span { color: #888; font-weight: 500; }
+  .piste p { margin: 0 0 10px; max-width: 46ch; color: #444; }
+  .piste ul { margin: 12px 0 0; padding-left: 18px; color: #444; }
+  .piste li { margin: 4px 0; }
+  .swatches { display: flex; gap: 6px; margin-top: 16px; }
+  .swatches i { width: 34px; height: 34px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); }
+  .duo { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; }
+
+  .phone { position: relative; width: 320px; height: 660px; overflow: hidden; display: flex; flex-direction: column; border-radius: 42px; box-shadow: 0 0 0 9px #141414, 0 0 0 10px #444, 0 28px 50px rgb(0 0 0 / 0.28); }
+  .phone .status { height: 40px; flex: none; }
+  .scr { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 20px 22px; }
+  .grow { flex: 1; }
+
+  @media (max-width: 900px) { .piste { grid-template-columns: 1fr; } }
+
+  /* ————— A. CLASSIFIED ————— */
+  .a { background: radial-gradient(120% 70% at 50% 0%, #2A2622 0%, #131211 55%, #0D0C0B 100%); color: #EDE6DA; }
+  .a .kick { font-size: 0.78rem; letter-spacing: 0.02em; color: #A69C8C; }
+  .a h3 { margin: 6px 0 0; font: 400 2.35rem/0.98 'DM Serif', serif; letter-spacing: -0.01em; }
+  .a h3 em { font-style: italic; color: #D7263D; }
+  .a .rule { height: 1px; margin: 18px 0; background: linear-gradient(90deg, #EDE6DA55, transparent); }
+  .envelope { position: relative; margin-top: 8px; padding: 46px 22px 26px; border-radius: 6px; background: #EDE6DA; color: #151311; box-shadow: 0 24px 40px rgb(0 0 0 / 0.5); }
+  .envelope::before { content: ''; position: absolute; inset: 0 0 auto; height: 70px; background: linear-gradient(to bottom right, transparent 49.5%, #D8CFBF 50%) left / 50% 100% no-repeat, linear-gradient(to bottom left, transparent 49.5%, #D8CFBF 50%) right / 50% 100% no-repeat; transform: scaleY(-1); border-radius: 6px 6px 0 0; }
+  .seal { position: absolute; top: 42px; left: 50%; display: grid; place-items: center; width: 54px; height: 54px; margin-left: -27px; border-radius: 50% 48% 52% 47%; background: radial-gradient(circle at 35% 30%, #F0465B, #B3172B 70%); box-shadow: 0 3px 8px rgb(0 0 0 / 0.35), inset 0 -3px 6px rgb(0 0 0 / 0.25); color: #FFD9DE; font: italic 400 1.5rem/1 'DM Serif', serif; }
+  .seal.broken { clip-path: polygon(0 0, 46% 0, 52% 38%, 44% 60%, 54% 100%, 0 100%); }
+  .seal.broken + .seal-half { position: absolute; top: 42px; left: 50%; width: 54px; height: 54px; margin-left: -21px; border-radius: 50% 48% 52% 47%; background: radial-gradient(circle at 35% 30%, #F0465B, #B3172B 70%); clip-path: polygon(52% 0, 100% 0, 100% 100%, 60% 100%, 50% 62%, 58% 38%); transform: rotate(14deg); }
+  .envelope .word { margin: 58px 0 4px; font: italic 400 3.4rem/1 'DM Serif', serif; text-align: center; }
+  .envelope small { display: block; text-align: center; color: #6E665A; }
+  .a .hint { margin: 18px 0 0; color: #A69C8C; font-size: 0.9rem; text-align: center; }
+  .a .btn { display: grid; place-items: center; min-height: 54px; border-radius: 2px; background: #D7263D; color: #fff; font-weight: 650; letter-spacing: 0.01em; }
+  .a .btn.ghost { background: transparent; box-shadow: inset 0 0 0 1px #EDE6DA66; color: #EDE6DA; }
+  .a .timer { display: flex; align-items: center; gap: 10px; color: #A69C8C; font-size: 0.85rem; }
+  .a .timer i { flex: 1; height: 2px; background: linear-gradient(90deg, #D7263D 34%, #EDE6DA22 34%); }
+  .suspects { display: grid; gap: 0; margin-top: 8px; }
+  .suspect { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 14px; min-height: 64px; border-bottom: 1px solid #EDE6DA1F; }
+  .suspect .face { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #EDE6DA14; font-size: 1.2rem; filter: grayscale(1) contrast(1.1); }
+  .suspect b { font: 400 1.55rem/1 'DM Serif', serif; }
+  .suspect small { display: block; margin-top: 3px; color: #A69C8C; font-size: 0.8rem; }
+  .suspect .mark { width: 30px; height: 30px; border-radius: 50%; box-shadow: inset 0 0 0 1px #EDE6DA44; }
+  .suspect.on b { font-style: italic; color: #fff; }
+  .suspect.on .face { filter: none; background: #D7263D33; }
+  .suspect.on .mark { position: relative; box-shadow: inset 0 0 0 2px #D7263D; }
+  .suspect.on .mark::before, .suspect.on .mark::after { content: ''; position: absolute; background: #D7263D; }
+  .suspect.on .mark::before { left: 50%; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; }
+  .suspect.on .mark::after { top: 50%; left: -6px; right: -6px; height: 2px; margin-top: -1px; }
+
+  /* ————— B. MISSION POP ————— */
+  .b { background: #9FD3FF; color: #111; font-family: 'Rubik', sans-serif; }
+  .b .top { display: flex; align-items: center; justify-content: space-between; }
+  .b .chip { padding: 6px 12px; border: 2.5px solid #111; border-radius: 999px; background: #fff; font-weight: 700; font-size: 0.85rem; box-shadow: 3px 3px 0 #111; }
+  .b .chip.time { background: #FFD43B; }
+  .b h3 { margin: 18px 0 0; font: 900 2.5rem/0.95 'Rubik', sans-serif; letter-spacing: -0.03em; }
+  .b .wordcard { position: relative; margin-top: 22px; padding: 26px 20px 22px; border: 3px solid #111; border-radius: 26px; background: #FF7A1A; box-shadow: 7px 7px 0 #111; transform: rotate(-2.5deg); }
+  .b .wordcard .lbl { display: inline-block; padding: 4px 10px; border: 2.5px solid #111; border-radius: 10px; background: #fff; font-weight: 800; font-size: 0.8rem; transform: rotate(3deg); }
+  .b .wordcard .word { margin: 16px 0 6px; font: 900 3.6rem/1 'Rubik', sans-serif; letter-spacing: -0.04em; color: #111; }
+  .b .wordcard p { margin: 0; font-weight: 600; }
+  .b .sticker { position: absolute; top: -26px; right: -8px; display: grid; place-items: center; width: 68px; height: 68px; border: 3px solid #111; border-radius: 50%; background: #FF8FB1; font-size: 1.9rem; transform: rotate(12deg); box-shadow: 3px 3px 0 #111; }
+  .b .btn { display: grid; place-items: center; min-height: 58px; border: 3px solid #111; border-radius: 18px; background: #111; color: #fff; font-weight: 800; font-size: 1.05rem; box-shadow: 5px 5px 0 #FFD43B; }
+  .b .btn.yellow { background: #FFD43B; color: #111; box-shadow: 5px 5px 0 #111; }
+  .b .vote { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+  .b .vcard { position: relative; display: grid; justify-items: center; gap: 6px; padding: 14px 8px 12px; border: 3px solid #111; border-radius: 22px; background: #fff; box-shadow: 4px 4px 0 #111; font-weight: 800; }
+  .b .vcard small { font-weight: 500; color: #444; }
+  .b .vcard.on { background: #FFD43B; transform: rotate(-2deg); }
+  .b .vcard .x { position: absolute; top: -12px; right: -10px; display: grid; place-items: center; width: 40px; height: 40px; border: 3px solid #111; border-radius: 50%; background: #FF5A5F; color: #fff; font-weight: 900; font-size: 1.3rem; transform: rotate(10deg); }
+  .b .spy { width: 64px; height: 64px; }
+  .b .voted { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-weight: 700; font-size: 0.9rem; }
+  .b .voted .dots { display: flex; gap: 4px; }
+  .b .voted .dots i { width: 14px; height: 14px; border: 2.5px solid #111; border-radius: 50%; background: #3DDC97; }
+  .b .voted .dots i.no { background: #fff; }
+
+  /* ————— C. CODE ————— */
+  .c { color: #fff; font-family: 'Inter Tight', sans-serif; }
+  .c.cobalt { background: #2E4BFF; }
+  .c.red { background: #F2382D; }
+  .c .phase { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 0.85rem; }
+  .c .steps { display: flex; gap: 5px; }
+  .c .steps i { width: 22px; height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.35); }
+  .c .steps i.on { background: #fff; }
+  .c h3 { margin: 22px 0 0; font: 800 2.05rem/0.95 'Syne', sans-serif; letter-spacing: -0.02em; text-transform: uppercase; }
+  .c .card { position: relative; flex: none; margin: 26px auto 0; width: 230px; height: 320px; display: grid; place-items: center; border-radius: 26px; background: #fff; color: #111; box-shadow: 0 30px 50px rgb(0 0 30 / 0.35); transform: rotate(-3deg); }
+  .c .card .corner { position: absolute; display: grid; justify-items: center; font: 800 1.1rem/1 'Syne', sans-serif; color: #2E4BFF; }
+  .c .card .corner.tl { top: 16px; left: 18px; }
+  .c .card .corner.br { bottom: 16px; right: 18px; transform: rotate(180deg); }
+  .c .card .corner svg { width: 18px; height: 18px; margin-top: 4px; }
+  .c .card .word { font: 800 2.5rem/1 'Syne', sans-serif; letter-spacing: -0.02em; }
+  .c .card .round { position: absolute; bottom: 64px; color: #777; font-size: 0.8rem; font-weight: 600; }
+  .c .hint { margin: 26px 0 0; text-align: center; font-weight: 600; opacity: 0.9; }
+  .c .btn { display: grid; place-items: center; min-height: 58px; border-radius: 999px; background: #fff; color: #111; font-weight: 750; font-size: 1.05rem; }
+  .c .big-time { font: 800 2.6rem/1 'Syne', sans-serif; }
+  .c .rows { display: grid; gap: 8px; margin-top: 20px; }
+  .c .r { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px; min-height: 60px; padding: 0 16px 0 10px; border-radius: 999px; background: rgb(255 255 255 / 0.16); font-weight: 700; font-size: 1.05rem; }
+  .c .r .av { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #fff; font-size: 1.2rem; }
+  .c .r small { font-weight: 500; opacity: 0.8; }
+  .c .r.on { background: #111; }
+  .c .r.on em { font-style: normal; padding: 4px 10px; border-radius: 999px; background: #fff; color: #111; font-size: 0.8rem; font-weight: 800; }
+  .c .strip { display: flex; gap: 6px; margin-top: 16px; }
+  .c-strip { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .c-strip span { padding: 6px 12px; border-radius: 999px; color: #fff; font-size: 0.8rem; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Avatar d'espion pour la piste B : visage, chapeau, lunettes -->
+    <symbol id="spy" viewBox="0 0 64 64">
+      <circle cx="32" cy="36" r="22" fill="var(--f)" stroke="#111" stroke-width="3"/>
+      <path d="M10 26 C14 12 50 12 54 26 Z" fill="#111"/>
+      <rect x="6" y="24" width="52" height="6" rx="3" fill="#111"/>
+      <rect x="15" y="34" width="14" height="9" rx="4" fill="#111"/>
+      <rect x="35" y="34" width="14" height="9" rx="4" fill="#111"/>
+      <path d="M29 38 H35" stroke="#111" stroke-width="3"/>
+      <path d="M25 50 C29 53 35 53 39 50" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="eye" viewBox="0 0 24 24"><path d="M2 12 C5 6 19 6 22 12 C19 18 5 18 2 12 Z" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<main class="page">
+  <h1>Undercover : trois nouvelles pistes</h1>
+  <p>Chacune est montrée sur les deux écrans qui comptent le plus : ton mot, et le vote. Aucune ne reprend le style du hub. Pseudos inventés.</p>
+
+  <!-- A -->
+  <section class="piste">
+    <div>
+      <h2>A. Classified <span>thriller chic</span></h2>
+      <p>Un générique de film d'espionnage : anthracite chaud, couleur os, une seule couleur vive, le rouge cramoisi. Grande police à empattements, en italique pour les moments forts.</p>
+      <ul>
+        <li>Ton mot arrive dans une enveloppe fermée par un cachet de cire qu'on brise.</li>
+        <li>Au vote, une mire de viseur se pose sur ton suspect.</li>
+        <li>Ambiance : sérieux, élégant, tendu.</li>
+      </ul>
+      <div class="swatches"><i style="background:#131211"></i><i style="background:#2A2622"></i><i style="background:#EDE6DA"></i><i style="background:#D7263D"></i></div>
+    </div>
+    <div class="duo">
+      <div class="phone a"><div class="status"></div><div class="scr">
+        <span class="kick">Dossier 0423 · Manche 1</span>
+        <h3>Ton <em>mot</em></h3>
+        <div class="envelope"><span class="seal broken">U</span><span class="seal-half"></span><div class="word">pizza</div><small>Ne le montre à personne.</small></div>
+        <p class="hint">Relâche pour refermer l'enveloppe.</p>
+        <div class="grow"></div>
+        <div class="btn">C'est mémorisé</div>
+      </div></div>
+      <div class="phone a"><div class="status"></div><div class="scr">
+        <span class="kick">Vote · Manche 1</span>
+        <h3>Qui est <em>l'intrus&nbsp;?</em></h3>
+        <div class="timer" style="margin-top:14px">0:13 <i></i></div>
+        <div class="suspects">
+          <div class="suspect"><span class="face">⭐</span><span><b>Sam.R</b><small>a dit « Italie »</small></span><span class="mark"></span></div>
+          <div class="suspect"><span class="face">🐙</span><span><b>tom</b><small>a dit « four »</small></span><span class="mark"></span></div>
+          <div class="suspect on"><span class="face">🦄</span><span><b>ines</b><small>a dit « pâte »</small></span><span class="mark"></span></div>
+          <div class="suspect"><span class="face">🦊</span><span><b>minh</b><small>a dit « rond »</small></span><span class="mark"></span></div>
+        </div>
+        <div class="grow"></div>
+        <div class="btn">Accuser ines</div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="piste">
+    <div>
+      <h2>B. Mission Pop <span>jeu de soirée</span></h2>
+      <p>Coloré, jeune et drôle, comme une appli de party game. Gros contours noirs, ombres franches, couleurs pleines sur fond bleu ciel, police ronde très grasse.</p>
+      <ul>
+        <li>Chaque joueur a un avatar d'espion dessiné (chapeau, lunettes noires) à sa couleur.</li>
+        <li>Les cartes penchent, des pastilles « chut » 🤫 et des croix rouges ponctuent le jeu.</li>
+        <li>Ambiance : fun, énergique, on rigole.</li>
+      </ul>
+      <div class="swatches"><i style="background:#9FD3FF"></i><i style="background:#FF7A1A"></i><i style="background:#FFD43B"></i><i style="background:#FF8FB1"></i><i style="background:#3DDC97"></i><i style="background:#111"></i></div>
+    </div>
+    <div class="duo">
+      <div class="phone b"><div class="status"></div><div class="scr">
+        <div class="top"><span class="chip">Manche 1</span><span class="chip time">⏱ 0:37</span></div>
+        <h3>Ton mot secret</h3>
+        <div class="wordcard"><span class="sticker">🤫</span><span class="lbl">TOP SECRET</span><div class="word">pizza</div><p>Donne un indice sans le dire !</p></div>
+        <div class="grow"></div>
+        <div class="btn yellow">Je cache mon écran</div>
+      </div></div>
+      <div class="phone b"><div class="status"></div><div class="scr">
+        <div class="top"><span class="chip">Vote</span><span class="chip time">⏱ 0:13</span></div>
+        <h3>Qui est l'intrus&nbsp;?</h3>
+        <div class="vote">
+          <div class="vcard"><svg class="spy" style="--f:#FFB36B"><use href="#spy"/></svg>Sam.R<small>« Italie »</small></div>
+          <div class="vcard"><svg class="spy" style="--f:#7FB2FF"><use href="#spy"/></svg>tom<small>« four »</small></div>
+          <div class="vcard on"><span class="x">✕</span><svg class="spy" style="--f:#FF8FB1"><use href="#spy"/></svg>ines<small>« pâte »</small></div>
+          <div class="vcard"><svg class="spy" style="--f:#B99CFF"><use href="#spy"/></svg>minh<small>« rond »</small></div>
+        </div>
+        <div class="voted">Ont voté <span class="dots"><i></i><i></i><i></i><i class="no"></i><i class="no"></i></span></div>
+        <div class="grow"></div>
+        <div class="btn">Voter contre ines</div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="piste">
+    <div>
+      <h2>C. Code <span>jeu de cartes moderne</span></h2>
+      <p>Épuré et graphique. Chaque phase de la partie prend sa couleur en plein écran, si bien qu'on sait d'un coup d'œil où on en est. Typographie large et grasse, cartes blanches nettes.</p>
+      <ul>
+        <li>Ton mot est une carte à jouer, avec un œil barré dans les coins.</li>
+        <li>Une couleur par phase : mot en bleu, indices en sarcelle, débat en ambre, vote en rouge.</li>
+        <li>Ambiance : moderne, lisible, design.</li>
+      </ul>
+      <div class="c-strip"><span style="background:#2E4BFF">Mot</span><span style="background:#00A389">Indices</span><span style="background:#E79A00">Débat</span><span style="background:#F2382D">Vote</span><span style="background:#111">Résultat</span></div>
+    </div>
+    <div class="duo">
+      <div class="phone c cobalt"><div class="status"></div><div class="scr">
+        <div class="phase"><span>Manche 1 · Ton mot</span><span class="steps"><i class="on"></i><i></i><i></i><i></i></span></div>
+        <h3>Garde&#8209;le<br>pour toi</h3>
+        <div class="card">
+          <span class="corner tl">U<svg><use href="#eye"/></svg></span>
+          <span class="word">pizza</span>
+          <span class="round">Carte de lea_k</span>
+          <span class="corner br">U<svg><use href="#eye"/></svg></span>
+        </div>
+        <div class="grow"></div>
+        <div class="btn">Retourner la carte</div>
+      </div></div>
+      <div class="phone c red"><div class="status"></div><div class="scr">
+        <div class="phase"><span>Manche 1 · Vote</span><span class="big-time" style="font-size:1.6rem">0:13</span></div>
+        <h3>Qui est<br>l'intrus&nbsp;?</h3>
+        <div class="rows">
+          <div class="r"><span class="av">⭐</span><span>Sam.R <small>· Italie</small></span><span></span></div>
+          <div class="r"><span class="av">🐙</span><span>tom <small>· four</small></span><span></span></div>
+          <div class="r on"><span class="av">🦄</span><span>ines <small>· pâte</small></span><em>Ton vote</em></div>
+          <div class="r"><span class="av">🦊</span><span>minh <small>· rond</small></span><span></span></div>
+        </div>
+        <div class="grow"></div>
+        <div class="btn">Confirmer mon vote</div>
+      </div></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
