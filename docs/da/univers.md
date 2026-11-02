@@ -44,5 +44,5 @@ Précision de Minh (29/10/2026) : **« un style différent à chaque jeu, pas vi
 | Télépathie | `games/telepathie` | Cosmos en verre dépoli : aurores boréales, dégradés doux et lumineux, cartes translucides |
 | Un seul mot | `games/un-seul-mot` | Mur de post-it fluo, punaises colorées |
 | Même longueur d'onde | `games/onde` | Studio de stream : ondes néon, cadran fluo, aiguille qui rebondit |
-| Crânes et roses | `games/cranes` | Fête des morts fluo : calaveras et roses aux couleurs vives sur fond nuit |
+| Crânes et roses | `games/cranes` | Fête des morts fluo : calaveras et roses sur fond bleu-noir, rose et turquoise (pour ne pas ressembler au violet de Complot) |
 | Complot | `games/complot` | Dark fantasy de jeu vidéo moderne : cartes de personnages illustrées en flat, violet profond et or lumineux |

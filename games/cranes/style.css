@@ -1,14 +1,14 @@
-/* Crânes et roses : fête des morts fluo. Fond nuit, guirlande de papel picado, calaveras et roses en stickers
+/* Crânes et roses : fête des morts fluo. Fond bleu-noir, rose et turquoise, guirlande de papel picado, calaveras et roses en stickers
    aux couleurs vives, gros contours et ombres franches. Tout en Rubik, très gras. Tout est sous .g-cranes. */
 
 @font-face { font-family: 'CR Rubik'; src: url('assets/fonts/rubik.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
 
 .g-cranes {
-  --bg: #14052E;
-  --bg-2: #2B0F66;
-  --ink: #0B0220;
+  --bg: #061226;
+  --bg-2: #0C2A45;
+  --ink: #03101F;
   --white: #FFFFFF;
-  --soft: #D6C8F5;
+  --soft: #BDEFF0;
   --lemon: #F6FF3D;
   --pink: #FF2E93;
   --teal: #00E5C8;
@@ -17,7 +17,7 @@
   --cr-display: 'CR Rubik', system-ui, sans-serif;
   --cr-text: 'CR Rubik', system-ui, sans-serif;
   background:
-    radial-gradient(900px 420px at 50% -8%, #5A1FC4 0%, transparent 70%),
+    radial-gradient(900px 420px at 50% -8%, #0B6E86 0%, transparent 70%),
     radial-gradient(circle at 10% 90%, rgb(255 46 147 / 0.22) 0 150px, transparent 151px),
     radial-gradient(circle at 94% 66%, rgb(0 229 200 / 0.18) 0 130px, transparent 131px),
     var(--bg);
@@ -60,7 +60,7 @@
 .g-cranes .cr-time[hidden] { display: none; }
 
 /* Bandeau d'état */
-.g-cranes .cr-banner { padding: 14px 16px; border-radius: 24px; border: 3px solid var(--ink); background: linear-gradient(135deg, #7B2CFF, #FF2E93); box-shadow: 0 6px 0 var(--ink); }
+.g-cranes .cr-banner { padding: 14px 16px; border-radius: 24px; border: 3px solid var(--ink); background: linear-gradient(135deg, #00A8B5, #FF2E93); box-shadow: 0 6px 0 var(--ink); }
 .g-cranes .cr-banner h2 { margin: 0; font: 900 clamp(1.4rem, 1.1rem + 1.6vw, 1.9rem)/1.1 var(--cr-display); color: var(--lemon); text-shadow: 0 3px 0 var(--ink); overflow-wrap: anywhere; }
 .g-cranes .cr-banner p { margin: 6px 0 0; color: var(--white); font-size: 0.95rem; font-weight: 600; }
 

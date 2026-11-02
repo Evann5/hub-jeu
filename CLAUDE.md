@@ -2,8 +2,13 @@
 
 Hub privé de jeux de société en ligne pour la classe de Minh (études sup, 20 à 40 étudiants majeurs), avec messagerie façon Discord. Projet perso, sans date, durée de vie d'au moins 2 ans. Brief : `docs/brief.md` ; historique des décisions : `docs/decisions.md` ; questions en attente : `docs/questions-ouvertes.md`.
 
+## Où on en est (02/11/2026)
+- Étape 1 (comptes, messagerie, présence, admin) et étape 2 (tables de jeu) construites.
+- 29 jeux dans `games/`, chacun avec son univers visuel (registre : `docs/da/univers.md`) et ses tests de règles (`node --test games/*/rules.test.js`).
+- Pas encore en ligne : il faut la version de Node et l'adresse sur O2Switch, et le code de classe (`docs/questions-ouvertes.md`, guide `docs/mise-en-ligne.md`).
+
 ## Règles de chaque session
-- **Pas d'agents** : l'assistant principal code Hubuno lui-même, en utilisant les skills et les fiches des agents (design, développement, pièges connus) (demande de Minh, 23/10/2026).
+- **Pas d'agents** pour le hub : l'assistant principal le code lui-même, en utilisant les skills et les fiches des agents (design, développement, pièges connus) (demande de Minh, 23/10/2026). Exception du 29/10/2026 : des agents peuvent écrire de nouveaux jeux, chacun ne touchant qu'à son dossier de `games/`.
 - Trois personnes : Minh (le hub), un élève qui écrit les jeux, un élève qui gère et paie O2Switch. Minh ne déploie pas lui-même.
 - Une seule appli Node.js sur O2Switch (cPanel, Passenger), **une seule instance** : Express + Socket.IO, front en JS sans build, SQLite via `node:sqlite` (Node 22.13 ou plus). Aucune dépendance native.
 - L'appli doit marcher à n'importe quelle adresse, sous-dossier compris : URL relatives côté client, `BASE_PATH` côté serveur.

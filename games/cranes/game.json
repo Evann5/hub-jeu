@@ -13,8 +13,8 @@
   "maxPlayers": 6,
   "duration": "15 min",
   "emoji": "💀",
-  "color": "#D45BFF",
-  "ink": "#1B0B2E",
+  "color": "#FF2E93",
+  "ink": "#061226",
   "order": 55,
   "options": [
     { "key": "turnTime", "label": "Temps pour jouer", "help": "À la fin, le jeu joue pour toi", "type": "choice", "default": 60,

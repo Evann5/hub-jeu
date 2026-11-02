@@ -5,21 +5,21 @@ const SVG = 'http://www.w3.org/2000/svg';
 
 // Dessins des disques (constantes, jamais de données dans le HTML des SVG).
 const ART = {
-  back: '<circle cx="32" cy="32" r="29" fill="#7B2CFF" stroke="#0B0220" stroke-width="4"/>'
+  back: '<circle cx="32" cy="32" r="29" fill="#0FA3B1" stroke="#03101F" stroke-width="4"/>'
     + '<circle cx="32" cy="32" r="21" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="1 6" stroke-linecap="round"/>'
-    + '<path d="M32 14l4.2 13.8L50 32l-13.8 4.2L32 50l-4.2-13.8L14 32l13.8-4.2z" fill="#F6FF3D" stroke="#0B0220" stroke-width="2.5" stroke-linejoin="round"/>'
+    + '<path d="M32 14l4.2 13.8L50 32l-13.8 4.2L32 50l-4.2-13.8L14 32l13.8-4.2z" fill="#F6FF3D" stroke="#03101F" stroke-width="2.5" stroke-linejoin="round"/>'
     + '<ellipse cx="22" cy="15" rx="9" ry="4.5" transform="rotate(-30 22 15)" fill="#fff" opacity="0.4"/>',
-  rose: '<circle cx="32" cy="32" r="29" fill="#F6FF3D" stroke="#0B0220" stroke-width="4"/>'
-    + '<path d="M13 44c4-8 10-6 12-2-4 4-9 6-12 2zM51 44c-4-8-10-6-12-2 4 4 9 6 12 2z" fill="#00E5C8" stroke="#0B0220" stroke-width="2"/>'
-    + '<g fill="#FF2E93" stroke="#0B0220" stroke-width="2"><circle cx="32" cy="17" r="8"/><circle cx="46" cy="27" r="8"/><circle cx="41" cy="43" r="8"/><circle cx="23" cy="43" r="8"/><circle cx="18" cy="27" r="8"/></g>'
-    + '<circle cx="32" cy="32" r="9" fill="#FF8A1F" stroke="#0B0220" stroke-width="2"/><circle cx="29" cy="29" r="2.6" fill="#fff" opacity="0.8"/>',
-  skull: '<circle cx="32" cy="32" r="29" fill="#00E5C8" stroke="#0B0220" stroke-width="4"/>'
-    + '<path d="M32 11c-10 0-16 6-16 15 0 5 2 8 5 10v8c0 2 1 3 3 3h16c2 0 3-1 3-3v-8c3-2 5-5 5-10 0-9-6-15-16-15z" fill="#fff" stroke="#0B0220" stroke-width="2.5" stroke-linejoin="round"/>'
-    + '<circle cx="24.5" cy="27" r="6" fill="#0B0220"/><circle cx="39.5" cy="27" r="6" fill="#0B0220"/>'
+  rose: '<circle cx="32" cy="32" r="29" fill="#F6FF3D" stroke="#03101F" stroke-width="4"/>'
+    + '<path d="M13 44c4-8 10-6 12-2-4 4-9 6-12 2zM51 44c-4-8-10-6-12-2 4 4 9 6 12 2z" fill="#00E5C8" stroke="#03101F" stroke-width="2"/>'
+    + '<g fill="#FF2E93" stroke="#03101F" stroke-width="2"><circle cx="32" cy="17" r="8"/><circle cx="46" cy="27" r="8"/><circle cx="41" cy="43" r="8"/><circle cx="23" cy="43" r="8"/><circle cx="18" cy="27" r="8"/></g>'
+    + '<circle cx="32" cy="32" r="9" fill="#FF8A1F" stroke="#03101F" stroke-width="2"/><circle cx="29" cy="29" r="2.6" fill="#fff" opacity="0.8"/>',
+  skull: '<circle cx="32" cy="32" r="29" fill="#00E5C8" stroke="#03101F" stroke-width="4"/>'
+    + '<path d="M32 11c-10 0-16 6-16 15 0 5 2 8 5 10v8c0 2 1 3 3 3h16c2 0 3-1 3-3v-8c3-2 5-5 5-10 0-9-6-15-16-15z" fill="#fff" stroke="#03101F" stroke-width="2.5" stroke-linejoin="round"/>'
+    + '<circle cx="24.5" cy="27" r="6" fill="#03101F"/><circle cx="39.5" cy="27" r="6" fill="#03101F"/>'
     + '<circle cx="24.5" cy="27" r="3" fill="#FF2E93"/><circle cx="39.5" cy="27" r="3" fill="#F6FF3D"/>'
-    + '<path d="M32 33l-3.2 5h6.4z" fill="#0B0220"/><path d="M25 45v5M32 45v5M39 45v5" stroke="#0B0220" stroke-width="2.4" stroke-linecap="round"/>'
-    + '<circle cx="32" cy="12" r="3.4" fill="#FF8A1F" stroke="#0B0220" stroke-width="1.8"/><circle cx="23" cy="14" r="2.8" fill="#FF2E93" stroke="#0B0220" stroke-width="1.8"/><circle cx="41" cy="14" r="2.8" fill="#FF2E93" stroke="#0B0220" stroke-width="1.8"/>',
-  star: '<path d="M32 4l7 20 21 1-17 12 6 21-17-12-17 12 6-21L4 25l21-1z" fill="currentColor" stroke="#0B0220" stroke-width="4" stroke-linejoin="round" paint-order="stroke"/>',
+    + '<path d="M32 33l-3.2 5h6.4z" fill="#03101F"/><path d="M25 45v5M32 45v5M39 45v5" stroke="#03101F" stroke-width="2.4" stroke-linecap="round"/>'
+    + '<circle cx="32" cy="12" r="3.4" fill="#FF8A1F" stroke="#03101F" stroke-width="1.8"/><circle cx="23" cy="14" r="2.8" fill="#FF2E93" stroke="#03101F" stroke-width="1.8"/><circle cx="41" cy="14" r="2.8" fill="#FF2E93" stroke="#03101F" stroke-width="1.8"/>',
+  star: '<path d="M32 4l7 20 21 1-17 12 6 21-17-12-17 12 6-21L4 25l21-1z" fill="currentColor" stroke="#03101F" stroke-width="4" stroke-linejoin="round" paint-order="stroke"/>',
 };
 
 function art(kind, cls = '') {
@@ -31,7 +31,7 @@ function art(kind, cls = '') {
   return svg;
 }
 
-const FLAGS = ['#FF2E93', '#F6FF3D', '#00E5C8', '#FF8A1F', '#9B6BFF', '#3D8BFF'];
+const FLAGS = ['#FF2E93', '#F6FF3D', '#00E5C8', '#FF8A1F', '#5BF0FF', '#3D8BFF'];
 
 export function mount(root, api) {
   const { h } = api;
