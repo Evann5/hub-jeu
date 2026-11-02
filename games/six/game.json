@@ -1,0 +1,25 @@
+{
+  "name": "Six cornes",
+  "tagline": "Pose ta carte, évite la 6e.",
+  "description": "Tout le monde choisit une carte en même temps. Les cartes s'alignent dans les rangées, et celui qui pose la 6e ramasse les têtes de bœuf. Le moins de têtes gagne.",
+  "how": [
+    "Chacun a 10 cartes. Quatre rangées sont lancées au milieu de la table. Chaque tour, tout le monde choisit une carte en secret, puis elles sont révélées.",
+    "En commençant par la plus petite, chaque carte va à la fin de la rangée dont la dernière carte est juste en dessous d'elle.",
+    "Celui qui pose la 6e carte d'une rangée ramasse les 5 autres : chaque carte compte des têtes (1 de base, 2 pour les multiples de 5, 3 pour les multiples de 10, 5 pour les doubles comme 33, et 7 pour le 55).",
+    "Une carte plus petite que toutes les fins de rangée oblige son joueur à choisir une rangée à ramasser.",
+    "Les manches s'enchaînent jusqu'à ce qu'un joueur atteigne le seuil de têtes. Celui qui en a le moins gagne."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 10,
+  "duration": "20 min",
+  "emoji": "🐂",
+  "color": "#9BD84E",
+  "ink": "#10230A",
+  "order": 50,
+  "options": [
+    { "key": "target", "label": "Fin de partie", "help": "Quand un joueur atteint ce nombre de têtes", "type": "choice", "default": 66,
+      "choices": [{ "value": 33, "label": "33" }, { "value": 66, "label": "66" }, { "value": 99, "label": "99" }] },
+    { "key": "timer", "label": "Minuteur de choix", "help": "À la fin, une carte au hasard est posée", "type": "choice", "default": 60,
+      "choices": [{ "value": 0, "label": "Sans" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }] }
+  ]
+}

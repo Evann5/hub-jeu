@@ -1,0 +1,5 @@
+Polices du jeu Petits chevaux, libres d'usage.
+
+SIL Open Font License 1.1 (texte : OFL.txt)
+- Unbounded : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
+- Rubik : Copyright 2015 The Rubik Project Authors (https://github.com/googlefonts/rubik)

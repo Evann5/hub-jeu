@@ -1,0 +1,46 @@
+{
+  "name": "Quatre à la suite",
+  "tagline": "Fais tomber tes jetons, aligne-en quatre.",
+  "description": "Une grille de 7 colonnes sur 6 lignes. Chacun son tour, tu laisses tomber un jeton dans une colonne : le premier qui en aligne quatre gagne.",
+  "how": [
+    "À tour de rôle, tu choisis une colonne : ton jeton tombe tout en bas, ou sur le dernier jeton posé.",
+    "Le premier qui aligne quatre jetons de sa couleur gagne : en ligne, en colonne ou en diagonale.",
+    "Si la grille est pleine sans alignement, c'est match nul.",
+    "Avec le minuteur, si tu ne joues pas à temps, un jeton tombe au hasard dans une colonne libre.",
+    "Au clavier : flèches gauche et droite pour changer de colonne, Entrée ou Espace pour lâcher le jeton, ou les chiffres 1 à 7."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "duration": "5 min",
+  "emoji": "🟣",
+  "color": "#FFE23D",
+  "ink": "#2A0F6E",
+  "order": 20,
+  "options": [
+    {
+      "key": "timer",
+      "label": "Minuteur par coup",
+      "help": "Si le temps est écoulé, un jeton tombe au hasard.",
+      "type": "choice",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Sans"
+        },
+        {
+          "value": 30,
+          "label": "30 s"
+        },
+        {
+          "value": 60,
+          "label": "1 min"
+        },
+        {
+          "value": 120,
+          "label": "2 min"
+        }
+      ]
+    }
+  ]
+}

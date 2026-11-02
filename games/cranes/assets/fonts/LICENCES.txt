@@ -1,0 +1,3 @@
+Police du jeu Crânes et roses, sous SIL Open Font License 1.1 (texte complet : OFL.txt).
+
+- Rubik (rubik.woff2) : Copyright 2015 The Rubik Project Authors (https://github.com/googlefonts/rubik)

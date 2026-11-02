@@ -1,0 +1,213 @@
+/* Télépathie — cosmos en verre dépoli : nuit bleu-vert, aurores boréales qui ondulent doucement, étoiles qui pétillent,
+   cartes en bulles translucides teintées (turquoise → lilas → rose → pêche). Doux, lumineux, kawaii.
+   Toutes les règles commencent par .g-telepathie (sauf @font-face). */
+
+@font-face { font-family: 'TP Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'TP Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-telepathie {
+  --night: #0C1B3A;
+  --ink: #FFFFFF;
+  --ink-2: #D6E6FF;
+  --mint: #8EF5DC;
+  --lilac: #C3A8FF;
+  --rose: #FF9FD2;
+  --peach: #FFC9A0;
+  --glass: rgb(255 255 255 / 0.14);
+  --glass-line: rgb(255 255 255 / 0.55);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(175deg, #0A1636 0%, #12285A 50%, #2A1B5E 100%);
+  color: var(--ink);
+  font: 500 1rem/1.45 'TP Figtree', system-ui, sans-serif;
+}
+
+/* Ciel : aurores et étoiles à quatre branches */
+.g-telepathie .tp-sky { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.g-telepathie .tp-nebula { position: absolute; inset: -20%; filter: blur(36px); }
+.g-telepathie .tp-nebula::before, .g-telepathie .tp-nebula::after { content: ''; position: absolute; inset: 0; }
+.g-telepathie .tp-nebula::before {
+  background:
+    radial-gradient(ellipse 55% 22% at 30% 22%, rgb(110 255 205 / 0.55), transparent 70%),
+    radial-gradient(ellipse 45% 18% at 75% 34%, rgb(160 120 255 / 0.50), transparent 70%);
+  animation: tp-aurora 14s ease-in-out infinite alternate;
+}
+.g-telepathie .tp-nebula::after {
+  background:
+    radial-gradient(ellipse 50% 20% at 62% 12%, rgb(255 150 210 / 0.40), transparent 70%),
+    radial-gradient(ellipse 60% 24% at 25% 62%, rgb(90 200 255 / 0.30), transparent 70%);
+  animation: tp-aurora 19s ease-in-out infinite alternate-reverse;
+}
+@keyframes tp-aurora { from { transform: translate(-6%, -3%) skewX(-6deg); } to { transform: translate(6%, 4%) skewX(6deg); } }
+.g-telepathie .tp-sky i {
+  position: absolute; width: var(--s, 12px); height: var(--s, 12px);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  background: #fff; opacity: 0.8; animation: tp-sparkle 3s ease-in-out infinite;
+}
+.g-telepathie .tp-sky i.c1 { background: var(--mint); }
+.g-telepathie .tp-sky i.c2 { background: var(--rose); }
+.g-telepathie .tp-sky i.c3 { background: var(--peach); }
+@keyframes tp-sparkle { 0%, 100% { transform: scale(0.4) rotate(0deg); opacity: 0.25; } 50% { transform: scale(1.1) rotate(25deg); opacity: 1; } }
+
+.g-telepathie .tp {
+  position: relative; z-index: 1; flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  width: min(680px, 100%); margin: 0 auto; padding: 14px 16px 28px; overflow-y: auto;
+}
+.g-telepathie .tp > * { flex: none; max-width: 100%; }
+.g-telepathie .tp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Verre dépoli : base commune */
+.g-telepathie .tp-level, .g-telepathie .tp-crew li, .g-telepathie .tp-notice, .g-telepathie .tp-star.is-open, .g-telepathie .tp-card, .g-telepathie .tp-btn.is-ghost {
+  background: var(--glass); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border: 1.5px solid var(--glass-line); box-shadow: 0 8px 24px rgb(5 10 40 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.5);
+}
+
+/* En-tête */
+.g-telepathie .tp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+.g-telepathie .tp-level { display: flex; align-items: baseline; gap: 6px; padding: 6px 16px; border-radius: 999px; }
+.g-telepathie .tp-level small, .g-telepathie .tp-level span { color: var(--ink-2); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.g-telepathie .tp-level b { font: 800 1.7rem/1 'TP Unbounded', sans-serif; color: var(--mint); }
+.g-telepathie .tp-meter { display: grid; justify-items: end; gap: 2px; }
+.g-telepathie .tp-meter-label { color: var(--ink-2); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.g-telepathie .tp-meter-icons { display: flex; gap: 3px; font-size: 1.3rem; line-height: 1; }
+.g-telepathie .tp-meter-icons i { font-style: normal; color: rgb(255 255 255 / 0.25); }
+.g-telepathie .tp-meter-icons i.is-on { color: var(--rose); text-shadow: 0 0 14px rgb(255 159 210 / 0.9); }
+.g-telepathie .tp-meter:nth-of-type(3) .tp-meter-icons i.is-on { color: var(--peach); text-shadow: 0 0 14px rgb(255 201 160 / 0.9); }
+
+/* Équipage */
+.g-telepathie .tp-crew { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; margin: 0; padding: 0; list-style: none; }
+.g-telepathie .tp-crew li { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 3px 14px 3px 8px; border-radius: 999px; font-size: 0.875rem; }
+.g-telepathie .tp-crew li.is-me { border-color: var(--mint); }
+.g-telepathie .tp-crew li.is-ready { border-color: var(--peach); background: rgb(255 201 160 / 0.2); }
+.g-telepathie .tp-crew li.is-gone { opacity: 0.55; }
+.g-telepathie .tp-av { font-size: 1.15rem; }
+.g-telepathie .tp-pseudo { max-width: 11ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
+.g-telepathie .tp-crew small { color: var(--ink-2); font-weight: 700; }
+.g-telepathie .tp-pips { display: flex; align-items: center; gap: 3px; }
+.g-telepathie .tp-pips i { width: 9px; height: 13px; border-radius: 5px; background: linear-gradient(var(--mint), var(--lilac)); box-shadow: 0 0 8px rgb(142 245 220 / 0.7); }
+
+/* Cartes : bulles de verre teintées, reflet doux */
+.g-telepathie .tp-orb {
+  --h: var(--hue, 220);
+  position: relative; display: grid; place-items: center; flex: none;
+  width: 54px; height: 54px; border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 24%, rgb(255 255 255 / 0.75) 0 7%, transparent 22%),
+    radial-gradient(circle at 50% 120%, hsl(var(--h) 100% 78% / 0.75), transparent 62%),
+    linear-gradient(160deg, hsl(var(--h) 95% 78% / 0.55), hsl(var(--h) 90% 62% / 0.35));
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border: 2px solid rgb(255 255 255 / 0.7);
+  box-shadow: 0 6px 20px hsl(var(--h) 90% 60% / 0.45), inset 0 -6px 14px hsl(var(--h) 100% 85% / 0.35);
+  color: #fff; font-family: 'TP Unbounded', sans-serif; text-shadow: 0 1px 6px rgb(10 20 70 / 0.65);
+}
+.g-telepathie .tp-orb b { position: relative; font-weight: 800; font-size: 1.1rem; line-height: 1; }
+.g-telepathie .tp-orb.is-small { width: 48px; height: 48px; }
+.g-telepathie .tp-orb.is-small b { font-size: 0.95rem; }
+.g-telepathie .tp-orb.is-mini { width: 34px; height: 34px; border-width: 1.5px; box-shadow: 0 3px 10px hsl(var(--h) 90% 60% / 0.4); }
+.g-telepathie .tp-orb.is-mini b { font-size: 0.8125rem; }
+.g-telepathie .tp-orb.is-big { width: 92px; height: 92px; }
+.g-telepathie .tp-orb.is-big b { font-size: 2rem; padding-top: 10px; }
+.g-telepathie .tp-orb.tp-top { width: 136px; height: 136px; box-shadow: 0 10px 40px hsl(var(--h) 100% 65% / 0.65), inset 0 -10px 22px hsl(var(--h) 100% 85% / 0.35); }
+.g-telepathie .tp-orb.tp-top b { font-size: 3rem; padding-top: 14px; }
+/* Yeux kawaii */
+.g-telepathie .tp-orb.tp-top b::before, .g-telepathie .tp-orb.is-big b::before {
+  content: ''; position: absolute; left: 50%; top: -0.5em; width: 0.26em; height: 0.34em; margin-left: -0.85em; border-radius: 50%;
+  background: #fff; box-shadow: 1.1em 0 0 #fff, 0 0 8px rgb(10 20 70 / 0.5); text-shadow: none;
+}
+.g-telepathie .tp-orb.tp-top.is-new { animation: tp-pop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.g-telepathie .tp-orb.is-empty { width: 136px; height: 136px; background: rgb(255 255 255 / 0.06); border: 2px dashed rgb(255 255 255 / 0.55); box-shadow: none; color: var(--ink-2); text-shadow: none; backdrop-filter: none; }
+.g-telepathie .tp-orb.is-empty b { font-size: 2.4rem; opacity: 0.6; padding: 0; }
+@keyframes tp-pop { 0% { transform: scale(0.4) translateY(-24px); opacity: 0; } 55% { transform: scale(1.14, 0.92); opacity: 1; } 80% { transform: scale(0.97, 1.04); } 100% { transform: scale(1); } }
+
+/* Pile commune */
+.g-telepathie .tp-pile { position: relative; display: grid; justify-items: center; gap: 10px; padding: 8px 0 0; }
+.g-telepathie .tp-halo {
+  position: absolute; left: 50%; top: 0; width: 250px; height: 250px; margin-left: -125px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgb(190 170 255 / 0.35), transparent 68%); animation: tp-breathe 5s ease-in-out infinite;
+}
+.g-telepathie .tp-pile > .tp-orb, .g-telepathie .tp-pile > p, .g-telepathie .tp-pile > ol { position: relative; }
+.g-telepathie .tp-pile-info { margin: 0; color: var(--ink-2); font-size: 0.875rem; font-weight: 700; text-align: center; }
+.g-telepathie .tp-trail { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; padding: 0 0 4px; list-style: none; }
+@keyframes tp-breathe { 0%, 100% { transform: scale(0.92); opacity: 0.7; } 50% { transform: scale(1.06); opacity: 1; } }
+
+/* Messages */
+.g-telepathie .tp-notice { margin: 0; max-width: 46ch; padding: 8px 18px; border-radius: 20px; text-align: center; text-wrap: balance; font-weight: 700; }
+.g-telepathie .tp-notice.is-bad { background: rgb(255 120 170 / 0.4); border-color: var(--rose); }
+.g-telepathie .tp-silence { margin: 0; color: var(--ink-2); font-size: 0.875rem; font-weight: 600; text-align: center; text-wrap: balance; }
+.g-telepathie .tp-small { margin: 0; color: var(--ink-2); font-size: 0.875rem; text-align: center; }
+.g-telepathie .tp-watch, .g-telepathie .tp-wait { margin: 0; color: var(--ink-2); font-weight: 700; text-align: center; }
+
+/* Ma main */
+.g-telepathie .tp-hand { display: grid; justify-items: center; gap: 14px; width: 100%; }
+.g-telepathie .tp-card {
+  display: grid; justify-items: center; gap: 8px; min-width: 130px; min-height: 44px; padding: 12px 22px 14px;
+  border-radius: 32px; color: #fff; cursor: pointer;
+  font: 800 0.8125rem/1 'TP Figtree', sans-serif; text-transform: uppercase; letter-spacing: 0.1em;
+  transition: transform 0.15s cubic-bezier(0.3, 1.5, 0.5, 1), background 0.15s ease;
+}
+.g-telepathie .tp-card:hover:not(:disabled) { transform: translateY(-4px) scale(1.03); background: rgb(255 255 255 / 0.24); }
+.g-telepathie .tp-card:active:not(:disabled) { transform: scale(0.96, 0.94); }
+.g-telepathie .tp-card:disabled { opacity: 0.55; cursor: default; }
+.g-telepathie .tp-rest { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 0; padding: 0; list-style: none; }
+
+/* Étoile filante */
+.g-telepathie .tp-star { display: grid; justify-items: center; gap: 8px; max-width: 46ch; text-align: center; }
+.g-telepathie .tp-star p { margin: 0; }
+.g-telepathie .tp-star small { color: var(--ink-2); font-weight: 600; }
+.g-telepathie .tp-star.is-open { padding: 16px 18px; border-radius: 26px; border-color: var(--peach); }
+.g-telepathie .tp-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+/* Boutons */
+.g-telepathie .tp-btn {
+  min-height: 48px; padding: 0 24px; border: 0; border-radius: 999px; color: #0C1B3A; cursor: pointer;
+  background: linear-gradient(135deg, var(--mint), var(--lilac)); box-shadow: 0 6px 20px rgb(142 245 220 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.7);
+  font: 800 1rem/1 'TP Figtree', sans-serif; transition: transform 0.15s cubic-bezier(0.3, 1.5, 0.5, 1), filter 0.15s;
+}
+.g-telepathie .tp-btn.is-ghost { color: #fff; }
+.g-telepathie .tp-btn.is-main { min-height: 56px; padding: 0 44px; font-size: 1.15rem; background: linear-gradient(135deg, var(--peach), var(--rose)); box-shadow: 0 6px 24px rgb(255 159 210 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.7); }
+.g-telepathie .tp-btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); filter: brightness(1.06); }
+.g-telepathie .tp-btn:active:not(:disabled) { transform: scale(0.96, 0.93); }
+.g-telepathie .tp-btn:disabled { opacity: 0.5; cursor: default; }
+.g-telepathie .tp-btn:focus-visible, .g-telepathie .tp-card:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* Concentration / fin */
+.g-telepathie .tp-focus, .g-telepathie .tp-end { display: grid; justify-items: center; gap: 12px; margin-top: 8px; text-align: center; }
+.g-telepathie .tp-focus h2, .g-telepathie .tp-end h2 { margin: 0; font: 800 clamp(1.7rem, 1.2rem + 3vw, 2.6rem)/1.1 'TP Unbounded', sans-serif; color: var(--mint); text-shadow: 0 0 24px rgb(142 245 220 / 0.6); text-wrap: balance; }
+.g-telepathie .tp-focus p, .g-telepathie .tp-end p { margin: 0; max-width: 44ch; text-wrap: balance; }
+.g-telepathie .tp-breath { position: relative; width: 110px; height: 110px; margin-bottom: 4px; }
+.g-telepathie .tp-breath i { position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 2.5px var(--mint), 0 0 18px rgb(142 245 220 / 0.5); animation: tp-ring 5s ease-out infinite; }
+.g-telepathie .tp-breath i:nth-child(2) { animation-delay: 1.7s; }
+.g-telepathie .tp-breath i:nth-child(3) { animation-delay: 3.4s; }
+@keyframes tp-ring { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
+.g-telepathie .tp-planets { display: flex; justify-content: center; gap: 8px; }
+.g-telepathie .tp-planets .tp-orb { animation: tp-bob 3s ease-in-out infinite; }
+.g-telepathie .tp-planets .tp-orb:nth-child(2) { animation-delay: 0.5s; }
+.g-telepathie .tp-planets .tp-orb:nth-child(3) { animation-delay: 1s; }
+@keyframes tp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* Confettis de victoire */
+.g-telepathie .tp-confetti { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.g-telepathie .tp-confetti i { position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 5px; animation: tp-fall 3.4s ease-in forwards; }
+.g-telepathie .tp-confetti i.c0 { background: var(--mint); }
+.g-telepathie .tp-confetti i.c1 { background: var(--rose); }
+.g-telepathie .tp-confetti i.c2 { background: var(--peach); }
+.g-telepathie .tp-confetti i.c3 { background: var(--lilac); }
+.g-telepathie .tp-confetti i.c4 { background: #fff; }
+@keyframes tp-fall { to { transform: translate(var(--dx), 110vh) rotate(720deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-telepathie .tp-nebula::before, .g-telepathie .tp-nebula::after, .g-telepathie .tp-sky i, .g-telepathie .tp-halo, .g-telepathie .tp-breath i,
+  .g-telepathie .tp-orb.tp-top.is-new, .g-telepathie .tp-planets .tp-orb { animation: none; }
+  .g-telepathie .tp-sky i { opacity: 0.7; }
+  .g-telepathie .tp-breath i { opacity: 0.6; transform: none; }
+  .g-telepathie .tp-breath i:nth-child(n+2) { display: none; }
+  .g-telepathie .tp-card, .g-telepathie .tp-btn { transition: none; }
+  .g-telepathie .tp-confetti { display: none; }
+}
+@media (max-width: 480px) {
+  .g-telepathie .tp { gap: 10px; padding: 10px 12px 24px; }
+  .g-telepathie .tp-orb.tp-top, .g-telepathie .tp-orb.is-empty { width: 116px; height: 116px; }
+  .g-telepathie .tp-orb.tp-top b { font-size: 2.5rem; }
+  .g-telepathie .tp-orb.is-big { width: 78px; height: 78px; }
+}

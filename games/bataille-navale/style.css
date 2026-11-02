@@ -1,0 +1,168 @@
+/* Bataille navale : des bateaux jouets dans une baignoire turquoise, éclaboussures cartoon.
+   Fond acidulé, bord de baignoire blanc, gros contours indigo, volumes bonbon. Toutes les règles commencent par .g-bataille-navale. */
+
+@font-face { font-family: 'BN Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'BN Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-bataille-navale {
+  --bn-ink: #1e1b4b;
+  --bn-water-1: #3df2e2;
+  --bn-water-2: #14b4ee;
+  --bn-pink: #ff4fa8;
+  --bn-lemon: #ffe74a;
+  --bn-violet: #8f5bff;
+  --bn-orange: #ff9a3c;
+  --bn-mint: #8cff6a;
+  --bn-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --bn-display: 'BN Unbounded', system-ui, sans-serif;
+  --bn-text: 'BN Figtree', system-ui, sans-serif;
+  color: var(--bn-ink);
+  font-family: var(--bn-text);
+  background:
+    radial-gradient(circle at 12% 18%, rgb(255 255 255 / 0.9) 0 14px, transparent 15px),
+    radial-gradient(circle at 18% 26%, rgb(255 255 255 / 0.7) 0 8px, transparent 9px),
+    radial-gradient(circle at 88% 12%, rgb(255 255 255 / 0.8) 0 18px, transparent 19px),
+    radial-gradient(circle at 80% 30%, rgb(255 255 255 / 0.6) 0 9px, transparent 10px),
+    linear-gradient(165deg, #ffd6f3 0%, #d9ccff 48%, #b9f3ff 100%);
+}
+
+.g-bataille-navale .bn {
+  container-type: inline-size;
+  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: clamp(12px, 3cqw, 24px) clamp(10px, 3cqw, 24px) 28px; overflow-y: auto;
+}
+
+/* ——— Haut : statut, minuteur, bulle du dernier tir ——— */
+.g-bataille-navale .bn-top { width: min(100%, 880px); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.g-bataille-navale .bn-status { margin: 0; flex: 1; min-width: 0; font: 800 clamp(0.95rem, 0.8rem + 1.2cqw, 1.25rem)/1.25 var(--bn-display); letter-spacing: -0.02em; }
+.g-bataille-navale .bn-status[data-tone='turn'] { display: inline-block; flex: 0 1 auto; padding: 8px 16px; border: 3px solid var(--bn-ink); border-radius: 999px; background: var(--bn-lemon); box-shadow: 0 4px 0 var(--bn-ink); animation: bn-bob 1.2s ease-in-out infinite; }
+.g-bataille-navale .bn-status[data-tone='win'] { color: #d4147f; }
+.g-bataille-navale .bn-status[data-tone='lose'] { color: #5b3cc4; }
+.g-bataille-navale .bn-timer { flex: none; min-width: 64px; padding: 6px 14px; text-align: center; border: 3px solid var(--bn-ink); border-radius: 999px; background: var(--bn-lemon); box-shadow: 0 3px 0 var(--bn-ink); font: 800 1rem var(--bn-text); font-variant-numeric: tabular-nums; }
+.g-bataille-navale .bn-timer[hidden] { display: none; }
+.g-bataille-navale .bn-timer.is-low { background: var(--bn-pink); color: #fff; animation: bn-bob 0.5s ease-in-out infinite; }
+@keyframes bn-bob { 50% { transform: translateY(-3px) scale(1.04); } }
+.g-bataille-navale .bn-report {
+  position: relative; width: fit-content; max-width: min(100%, 880px); min-height: 0; margin: 0; padding: 8px 16px; border: 3px solid var(--bn-ink); border-radius: 18px;
+  background: #fff; box-shadow: 0 4px 0 var(--bn-ink); font-weight: 800; font-size: 0.9375rem; align-self: flex-start;
+}
+.g-bataille-navale .bn-report:empty { display: none; }
+.g-bataille-navale .bn-report[data-result='hit'] { background: #ffd0e8; }
+.g-bataille-navale .bn-report[data-result='sunk'] { background: var(--bn-violet); color: #fff; }
+.g-bataille-navale .bn-report.is-new { animation: bn-say 0.45s var(--bn-pop); }
+@keyframes bn-say { from { transform: scale(0.6); opacity: 0; } }
+
+/* ——— Les deux baignoires ——— */
+.g-bataille-navale .bn { --full: min(44px, calc((100cqw - 48px) / 11.2)); --pair: min(42px, calc((100cqw - 110px) / 19.8)); }
+.g-bataille-navale .bn-boards { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.g-bataille-navale .bn-pane { display: grid; gap: 8px; justify-items: start; }
+.g-bataille-navale .bn-pane[hidden] { display: none; }
+.g-bataille-navale .bn-pane-target { --cell: var(--full); }
+.g-bataille-navale .bn-pane-mine { --cell: calc(var(--full) * 0.68); }
+.g-bataille-navale .bn[data-phase='placing'] .bn-pane-mine,
+.g-bataille-navale .bn[data-phase='over'] .bn-pane-mine { --cell: var(--full); }
+@container (min-width: 740px) {
+  .g-bataille-navale .bn-boards { flex-direction: row; justify-content: center; align-items: flex-start; gap: 32px; }
+  .g-bataille-navale .bn-pane-target { --cell: var(--pair); }
+  .g-bataille-navale .bn-pane-mine { --cell: calc(var(--pair) * 0.78); }
+  .g-bataille-navale .bn[data-phase='over'] .bn-pane-mine, .g-bataille-navale .bn[data-phase='over'] .bn-pane-target { --cell: calc(var(--pair) * 0.9); }
+  .g-bataille-navale .bn[data-phase='placing'] .bn-pane-mine { --cell: min(44px, calc((100cqw - 80px) / 11.2)); }
+}
+.g-bataille-navale .bn-title { margin: 0; font: 800 0.9375rem var(--bn-display); letter-spacing: -0.01em; }
+
+/* Le bord blanc de la baignoire, l'eau turquoise à l'intérieur. */
+.g-bataille-navale .bn-board { position: relative; display: grid; gap: 2px; padding: 8px 10px 12px; border: 4px solid var(--bn-ink); border-radius: 30px; background: #fff; box-shadow: 0 7px 0 var(--bn-ink), inset 0 -5px 0 rgb(30 27 75 / 0.08); }
+.g-bataille-navale .bn-board.is-live { box-shadow: 0 7px 0 var(--bn-ink), 0 0 0 6px var(--bn-lemon); }
+.g-bataille-navale .bn-axis { display: grid; grid-template-columns: calc(var(--cell) * 0.6) repeat(10, var(--cell)); }
+.g-bataille-navale .bn-axis span, .g-bataille-navale .bn-axis-left { display: grid; place-items: center; font: 900 clamp(0.6875rem, calc(var(--cell) * 0.4), 0.9375rem)/1 var(--bn-text); }
+.g-bataille-navale .bn-axis-left { width: calc(var(--cell) * 0.6); color: #fff; text-shadow: 0 1px 0 rgb(30 27 75 / 0.6), 0 0 4px rgb(30 27 75 / 0.4); }
+.g-bataille-navale .bn-grid { position: relative; display: grid; overflow: hidden; border: 3px solid var(--bn-ink); border-radius: 20px; background: linear-gradient(170deg, var(--bn-water-1), var(--bn-water-2)); }
+.g-bataille-navale .bn-grid::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 20% 0%, rgb(255 255 255 / 0.45), transparent 55%), radial-gradient(circle at 85% 90%, rgb(255 255 255 / 0.22) 0 12%, transparent 13%); }
+.g-bataille-navale .bn-row { display: grid; grid-template-columns: calc(var(--cell) * 0.6) repeat(10, var(--cell)); }
+
+.g-bataille-navale .bn-cell {
+  position: relative; width: var(--cell); height: var(--cell); padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font-size: var(--cell);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3); cursor: default; touch-action: manipulation;
+  --bw: clamp(1.5px, calc(var(--cell) * 0.07), 3px);
+}
+.g-bataille-navale .bn-cell:focus-visible { outline: 3px solid var(--bn-ink); outline-offset: -3px; z-index: 3; background: rgb(255 255 255 / 0.35); }
+.g-bataille-navale .bn-cell.is-aim { cursor: crosshair; }
+.g-bataille-navale .bn-cell.is-aim:hover, .g-bataille-navale .bn-cell.is-aim:focus-visible { background: rgb(255 231 74 / 0.75); }
+.g-bataille-navale .bn-cell.is-aim:hover::before, .g-bataille-navale .bn-cell.is-aim:focus-visible::before { content: ''; position: absolute; inset: 24%; border: 3px solid var(--bn-ink); border-radius: 50%; }
+
+/* Bateaux jouets : pastilles de couleur cernées d'indigo, avec un hublot. */
+.g-bataille-navale .bn-cell.is-ship { background: linear-gradient(180deg, color-mix(in srgb, var(--boat, #ff9a3c) 55%, #fff), var(--boat, #ff9a3c) 55%, color-mix(in srgb, var(--boat, #ff9a3c) 80%, #000)); z-index: 1; }
+.g-bataille-navale .bn[data-phase='firing'] .bn-cell.is-ship:not(.is-hit):not(.is-sunk) { animation: bn-float 3s ease-in-out infinite; }
+.g-bataille-navale .ship-c5 { --boat: #ff9a3c; }
+.g-bataille-navale .ship-c4 { --boat: #ff4fa8; }
+.g-bataille-navale .ship-c3 { --boat: #8f5bff; }
+.g-bataille-navale .ship-c2 { --boat: #ffe74a; }
+@keyframes bn-float { 50% { transform: translateY(-1.5px); } }
+.g-bataille-navale .bn-cell.ship-h { border-block: var(--bw) solid var(--bn-ink); }
+.g-bataille-navale .bn-cell.ship-v { border-inline: var(--bw) solid var(--bn-ink); }
+.g-bataille-navale .bn-cell.ship-h.ship-first { border-left: var(--bw) solid var(--bn-ink); border-radius: 50% 0 0 50%; }
+.g-bataille-navale .bn-cell.ship-h.ship-last { border-right: var(--bw) solid var(--bn-ink); border-radius: 0 50% 50% 0; }
+.g-bataille-navale .bn-cell.ship-v.ship-first { border-top: var(--bw) solid var(--bn-ink); border-radius: 50% 50% 0 0; }
+.g-bataille-navale .bn-cell.ship-v.ship-last { border-bottom: var(--bw) solid var(--bn-ink); border-radius: 0 0 50% 50%; }
+.g-bataille-navale .bn-cell.ship-mid::after { content: ''; position: absolute; inset: 28%; border: var(--bw) solid var(--bn-ink); border-radius: 50%; background: #fff; }
+.g-bataille-navale .bn-cell.is-revealed { opacity: 0.85; animation: none; }
+.g-bataille-navale .bn-cell.is-ghost { background: rgb(140 255 106 / 0.8); }
+.g-bataille-navale .bn-cell.is-ghost-bad { background: rgb(255 79 168 / 0.8); }
+
+/* Éclaboussure (à l'eau), explosion (touché), coulé : chaque marque a sa forme, pas seulement sa couleur. */
+.g-bataille-navale .bn-cell.is-miss::before { content: ''; position: absolute; left: 50%; top: 50%; width: 0.34em; height: 0.34em; margin: -0.17em 0 0 -0.17em; border: 0.07em solid #fff; border-radius: 50%; box-shadow: 0 0 0 0.04em var(--bn-ink); }
+.g-bataille-navale .bn-cell.is-miss::after { content: ''; position: absolute; left: 50%; top: 50%; width: 0.1em; height: 0.1em; margin: -0.05em 0 0 -0.05em; border-radius: 50%; background: #fff;
+  box-shadow: -0.27em -0.2em 0 #fff, 0.27em -0.2em 0 #fff, 0 -0.32em 0 #fff, -0.3em 0.16em 0 #fff, 0.3em 0.16em 0 #fff; }
+.g-bataille-navale .bn-cell.is-hit::before { content: ''; position: absolute; inset: 8%; background: radial-gradient(circle, #fff7a8 0 22%, #ffd23a 40%, #ff5a36 75%); clip-path: polygon(50% 0, 61% 20%, 82% 10%, 78% 33%, 100% 38%, 82% 55%, 96% 76%, 72% 74%, 66% 98%, 50% 82%, 34% 98%, 28% 74%, 4% 76%, 18% 55%, 0 38%, 22% 33%, 18% 10%, 39% 20%); z-index: 2; }
+.g-bataille-navale .bn-cell.is-sunk { background: linear-gradient(180deg, #4b3fa8, var(--bn-ink)); animation: none; }
+.g-bataille-navale .bn-cell.is-sunk::before, .g-bataille-navale .bn-cell.is-sunk::after { content: ''; position: absolute; left: 22%; right: 22%; top: calc(50% - var(--bw)); height: calc(var(--bw) * 2); border-radius: 3px; background: #fff; transform: rotate(45deg); }
+.g-bataille-navale .bn-cell.is-sunk::after { transform: rotate(-45deg); inset: auto; left: 22%; right: 22%; top: calc(50% - var(--bw)); width: auto; margin: 0; border: 0; }
+.g-bataille-navale .bn-cell.is-last { box-shadow: inset 0 0 0 3px var(--bn-lemon); }
+.g-bataille-navale .bn-cell.is-last.is-hit::before { animation: bn-boom 0.6s var(--bn-pop); }
+.g-bataille-navale .bn-cell.is-last.is-miss::before, .g-bataille-navale .bn-cell.is-last.is-miss::after { animation: bn-splash 0.7s var(--bn-pop); }
+.g-bataille-navale .bn-cell.is-last.is-sunk { animation: bn-boom 0.6s var(--bn-pop); }
+@keyframes bn-boom { 0% { transform: scale(0.2) rotate(-30deg); } 100% { transform: none; } }
+@keyframes bn-splash { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+/* Flottes restantes : de petits bateaux de couleur, barrés quand ils sont coulés. */
+.g-bataille-navale .bn-fleet[hidden] { display: none; }
+.g-bataille-navale .bn-fleet { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 22px; }
+.g-bataille-navale .bn-fleet-label { font: 800 0.75rem var(--bn-display); }
+.g-bataille-navale .bn-pips { display: inline-flex; gap: 1px; padding: 2px; border: 2px solid var(--bn-ink); border-radius: 999px; background: var(--boat); }
+.g-bataille-navale .bn-pips.c5 { --boat: #ff9a3c; } .g-bataille-navale .bn-pips.c4 { --boat: #ff4fa8; } .g-bataille-navale .bn-pips.c3 { --boat: #8f5bff; } .g-bataille-navale .bn-pips.c2 { --boat: #ffe74a; }
+.g-bataille-navale .bn-pips i { width: 7px; height: 10px; border-radius: 2px; background: rgb(255 255 255 / 0.55); }
+.g-bataille-navale .bn-pips.is-sunk { background: var(--bn-ink); opacity: 0.8; }
+.g-bataille-navale .bn-pips.is-sunk i { background: #fff; opacity: 0.4; }
+
+/* ——— Pose de la flotte ——— */
+.g-bataille-navale .bn-dock { width: min(100%, 560px); display: grid; gap: 12px; }
+.g-bataille-navale .bn-dock[hidden] { display: none; }
+.g-bataille-navale .bn-ships { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.g-bataille-navale .bn-ship { --boat: #ff9a3c; display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 6px 14px; border: 3px solid var(--bn-ink); border-radius: 999px; background: #fff; color: var(--bn-ink); font: 900 0.9375rem var(--bn-text); box-shadow: 0 3px 0 var(--bn-ink); transition: transform 0.15s var(--bn-pop); }
+.g-bataille-navale .bn-ship.c5 { --boat: #ff9a3c; } .g-bataille-navale .bn-ship.c4 { --boat: #ff4fa8; } .g-bataille-navale .bn-ship.c3 { --boat: #8f5bff; } .g-bataille-navale .bn-ship.c2 { --boat: #ffe74a; }
+.g-bataille-navale .bn-ship-body { display: inline-flex; gap: 2px; padding: 2px 4px; border: 2px solid var(--bn-ink); border-radius: 999px; background: var(--boat); }
+.g-bataille-navale .bn-ship-body i { width: 11px; height: 14px; border-radius: 3px; background: rgb(255 255 255 / 0.5); }
+.g-bataille-navale .bn-ship.is-placed { opacity: 0.55; }
+.g-bataille-navale .bn-ship.is-selected { background: var(--bn-lemon); opacity: 1; transform: translateY(-3px) scale(1.05); }
+.g-bataille-navale .bn-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.g-bataille-navale .bn-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 3px solid var(--bn-ink); border-radius: 999px; background: var(--bn-lemon); color: var(--bn-ink); font: 800 0.9375rem var(--bn-display); letter-spacing: -0.01em; box-shadow: 0 4px 0 var(--bn-ink), inset 0 3px 0 rgb(255 255 255 / 0.55); transition: transform 0.15s var(--bn-pop); touch-action: manipulation; }
+.g-bataille-navale .bn-btn:hover:not(:disabled) { transform: scale(1.04); }
+.g-bataille-navale .bn-btn:active:not(:disabled) { transform: translateY(3px) scale(1.02, 0.96); box-shadow: 0 1px 0 var(--bn-ink), inset 0 3px 0 rgb(255 255 255 / 0.55); }
+.g-bataille-navale .bn-btn-ic { font-size: 1.15rem; line-height: 1; }
+.g-bataille-navale .bn-btn-quiet { background: #fff; }
+.g-bataille-navale .bn-btn-go { background: linear-gradient(180deg, #b9ff9a, var(--bn-mint) 50%, #4fe02e); padding: 0 32px; }
+.g-bataille-navale .bn-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: 0 2px 0 var(--bn-ink); }
+.g-bataille-navale .bn-btn:focus-visible, .g-bataille-navale .bn-ship:focus-visible { outline: 4px solid var(--bn-violet); outline-offset: 3px; }
+.g-bataille-navale .bn-notice { margin: 0; padding: 6px 14px; border: 3px solid var(--bn-ink); border-radius: 14px; background: #ffd0e8; font-weight: 800; text-align: center; }
+
+/* ——— Confettis ——— */
+.g-bataille-navale .bn-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 30; }
+.g-bataille-navale .bn-confetti i { position: absolute; top: -16px; width: 10px; height: 16px; border-radius: 3px; animation: bn-fall 3s linear forwards; }
+@keyframes bn-fall { to { transform: translateY(110vh) rotate(var(--r)); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-bataille-navale .bn[data-phase='firing'] .bn-cell.is-ship, .g-bataille-navale .bn-status, .g-bataille-navale .bn-timer, .g-bataille-navale .bn-report.is-new,
+  .g-bataille-navale .bn-cell.is-last, .g-bataille-navale .bn-cell.is-last::before, .g-bataille-navale .bn-cell.is-last::after { animation: none; }
+  .g-bataille-navale .bn-ship, .g-bataille-navale .bn-btn { transition: none; }
+  .g-bataille-navale .bn-confetti { display: none; }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Loups-garous",
+  "tagline": "Le village dort, les loups rôdent.",
+  "description": "Jeu de rôles caché : chaque nuit les loups dévorent un villageois, chaque jour le village débat et élimine un suspect.",
+  "how": [
+    "Chacun reçoit en secret un rôle : villageois, loup-garou, ou un rôle spécial (Voyante, Sorcière, Chasseur, Cupidon).",
+    "La nuit, les loups choisissent ensemble une victime. La Voyante découvre le rôle d'un joueur, Cupidon unit deux amoureux la première nuit, la Sorcière peut sauver la victime ou empoisonner quelqu'un (une fois chacune).",
+    "Le jour, on annonce les morts (leur rôle est révélé), on débat dans le chat de la table, puis le village vote : le plus voté est éliminé, une égalité n'élimine personne.",
+    "Le Chasseur, en mourant, tire sur quelqu'un. Si l'un des amoureux meurt, l'autre le suit.",
+    "Le village gagne quand tous les loups sont morts. Les loups gagnent quand ils sont au moins aussi nombreux que les autres. Deux amoureux (un loup et un villageois) gagnent seuls s'ils restent les deux derniers."
+  ],
+  "minPlayers": 5,
+  "maxPlayers": 18,
+  "duration": "20 à 40 min",
+  "emoji": "🐺",
+  "color": "#E8618C",
+  "ink": "#0B0B0D",
+  "order": 50,
+  "options": [
+    { "key": "wolves", "label": "Loups-garous", "help": "0 = répartition conseillée selon le nombre de joueurs", "type": "number", "min": 0, "max": 5, "default": 0 },
+    { "key": "seer", "label": "Voyante", "type": "bool", "default": true },
+    { "key": "witch", "label": "Sorcière", "type": "bool", "default": true },
+    { "key": "hunter", "label": "Chasseur", "type": "bool", "default": true },
+    { "key": "cupid", "label": "Cupidon", "type": "bool", "default": true },
+    { "key": "night", "label": "Durée d'une phase de nuit", "type": "choice", "default": 45,
+      "choices": [{ "value": 30, "label": "30 s" }, { "value": 45, "label": "45 s" }, { "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }] },
+    { "key": "debate", "label": "Durée du débat", "type": "choice", "default": 120,
+      "choices": [{ "value": 60, "label": "1 min" }, { "value": 120, "label": "2 min" }, { "value": 180, "label": "3 min" }, { "value": 300, "label": "5 min" }] },
+    { "key": "vote", "label": "Durée du vote", "type": "choice", "default": 45,
+      "choices": [{ "value": 30, "label": "30 s" }, { "value": 45, "label": "45 s" }, { "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }] }
+  ]
+}

@@ -1,0 +1,4 @@
+Polices du jeu Président, toutes sous licence SIL Open Font License 1.1 (texte complet : OFL.txt).
+
+- Unbounded : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
+- Inter Tight : Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter)

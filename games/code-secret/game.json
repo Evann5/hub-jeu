@@ -1,0 +1,86 @@
+{
+  "name": "Code secret",
+  "tagline": "Devine le code avant l'autre.",
+  "description": "Chacun règle la combinaison de son coffre, puis vous cherchez celle de l'autre en même temps. Les voyants te guident. Le plus rapide gagne.",
+  "how": [
+    "Chacun compose en secret un code de 4 couleurs (parmi 6) que l'adversaire devra trouver.",
+    "Ensuite, vous cherchez en même temps le code de l'autre. À chaque manche, chacun propose un essai ; les indications arrivent quand les deux ont joué.",
+    "Voyant vert : une couleur bien placée. Voyant ambre : une bonne couleur, mais mal placée.",
+    "Tu as 10 essais. Celui qui trouve le code en moins d'essais gagne ; si vous le trouvez à la même manche, c'est une égalité.",
+    "Réglages possibles : 5 trous, 8 couleurs, doublons autorisés, et un minuteur par manche."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "duration": "10 min",
+  "emoji": "🔐",
+  "color": "#E3B94F",
+  "ink": "#1E1608",
+  "order": 40,
+  "options": [
+    {
+      "key": "holes",
+      "label": "Trous",
+      "help": "Longueur du code",
+      "type": "choice",
+      "default": 4,
+      "choices": [
+        {
+          "value": 4,
+          "label": "4"
+        },
+        {
+          "value": 5,
+          "label": "5"
+        }
+      ]
+    },
+    {
+      "key": "colors",
+      "label": "Couleurs",
+      "type": "choice",
+      "default": 6,
+      "choices": [
+        {
+          "value": 6,
+          "label": "6"
+        },
+        {
+          "value": 8,
+          "label": "8"
+        }
+      ]
+    },
+    {
+      "key": "doubles",
+      "label": "Doublons autorisés",
+      "help": "Une même couleur plusieurs fois",
+      "type": "bool",
+      "default": false
+    },
+    {
+      "key": "timer",
+      "label": "Minuteur par manche",
+      "help": "À la fin, un code ou un essai au hasard est joué",
+      "type": "choice",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Sans"
+        },
+        {
+          "value": 30,
+          "label": "30 s"
+        },
+        {
+          "value": 60,
+          "label": "1 min"
+        },
+        {
+          "value": 120,
+          "label": "2 min"
+        }
+      ]
+    }
+  ]
+}

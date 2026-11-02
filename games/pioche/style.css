@@ -1,0 +1,236 @@
+/* Pioche ! : direction « Pop sticker ». Nuit indigo à pois, cartes autocollants aux couleurs franches,
+   gros chiffres en Rubik. Une forme par couleur (rond, étoile, triangle, carré) pour ne jamais se fier à la seule teinte.
+   Toutes les règles commencent par .g-pioche. */
+
+@font-face {
+  font-family: 'Pioche Rubik';
+  src: url('assets/fonts/rubik.woff2') format('woff2-variations'), url('assets/fonts/rubik.woff2') format('woff2');
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+.g-pioche {
+  --pi-night: #1B1340;
+  --pi-night-2: #2A1F68;
+  --pi-cream: #FFFFFF; /* blanc franc */
+  --pi-R: #FF5C9A;
+  --pi-J: #FFD23F;
+  --pi-V: #3DDC97;
+  --pi-B: #4DA3FF;
+  --pi-bad: #FF7B6B;
+  --pi-font: 'Pioche Rubik', 'Rubik', ui-rounded, system-ui, sans-serif;
+  --cw: 76px; /* carte en main */
+  --ch: 114px;
+  --step: 46px; /* largeur visible de chaque carte dans l'éventail */
+  --tw: 124px; /* cartes de la table */
+  --th: 186px;
+  background-color: var(--pi-night);
+  background-image:
+    radial-gradient(60% 38% at 100% 0%, rgb(255 92 154 / 0.30), transparent 70%),
+    radial-gradient(60% 38% at 0% 100%, rgb(77 163 255 / 0.26), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.07) 1.5px, transparent 1.7px);
+  background-size: auto, auto, 20px 20px;
+  color: #fff;
+  font-family: var(--pi-font);
+}
+@media (min-width: 900px) {
+  .g-pioche { --cw: 92px; --ch: 138px; --step: 60px; --tw: 144px; --th: 216px; }
+}
+
+.g-pioche .pi { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 14px; }
+.g-pioche .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.g-pioche button { font-family: var(--pi-font); }
+
+/* ——— Cartes ——— */
+.g-pioche .pi-card {
+  --c: var(--pi-night-2);
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--cw);
+  height: var(--ch);
+  margin: 0;
+  padding: 0;
+  border: calc(var(--cw) * 0.055) solid var(--pi-cream);
+  border-radius: calc(var(--cw) * 0.17);
+  background: var(--c);
+  color: var(--pi-night);
+  box-shadow: 0 3px 0 rgb(0 0 0 / 0.38), 0 8px 16px rgb(0 0 0 / 0.28);
+  container-type: inline-size;
+  overflow: hidden;
+  font-family: var(--pi-font);
+  font-weight: 900;
+  line-height: 1;
+  text-align: left;
+  user-select: none;
+}
+.g-pioche .c-R { --c: var(--pi-R); }
+.g-pioche .c-J { --c: var(--pi-J); }
+.g-pioche .c-V { --c: var(--pi-V); }
+.g-pioche .c-B { --c: var(--pi-B); }
+.g-pioche .c-W { --c: var(--pi-night); color: #fff; }
+.g-pioche .s-R { color: var(--pi-R); }
+.g-pioche .s-J { color: var(--pi-J); }
+.g-pioche .s-V { color: var(--pi-V); }
+.g-pioche .s-B { color: var(--pi-B); }
+
+.g-pioche .pi-idx { position: absolute; top: 5cqw; left: 7cqw; display: flex; flex-direction: column; align-items: center; gap: 2cqw; width: 28cqw; z-index: 2; }
+.g-pioche .pi-idx-v { font-size: 30cqw; letter-spacing: -0.04em; display: block; }
+.g-pioche .v-plus2 .pi-idx-v { font-size: 23cqw; letter-spacing: -0.06em; }
+.g-pioche .pi-idx-v.pi-glyph { width: 25cqw; height: 25cqw; }
+.g-pioche .pi-idx-v.pi-joker { width: 26cqw; height: 26cqw; }
+.g-pioche .pi-idx-s { width: 20cqw; height: 20cqw; display: block; }
+.g-pioche .c-W .pi-idx-v { font-size: 25cqw; }
+
+/* Le rond crème qui porte le gros chiffre. */
+.g-pioche .pi-spot { position: absolute; left: 50%; top: 57%; width: 76cqw; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: var(--pi-cream); box-shadow: 0 0 0 2.5cqw rgb(27 19 64 / 0.16); }
+.g-pioche .c-W .pi-spot { background: var(--pi-night-2); box-shadow: 0 0 0 2.5cqw rgb(255 255 255 / 0.9); }
+.g-pioche .pi-big { position: absolute; left: 50%; top: 57%; translate: -50% -50%; font-size: 52cqw; letter-spacing: -0.05em; color: var(--pi-night); }
+.g-pioche .v-plus2 .pi-big { font-size: 40cqw; letter-spacing: -0.08em; }
+.g-pioche .pi-big.pi-glyph { width: 46cqw; height: 46cqw; }
+.g-pioche .pi-big.pi-joker { width: 50cqw; height: 50cqw; }
+.g-pioche .c-W .pi-big { color: #fff; }
+.g-pioche .pi-big-f { font-size: 40cqw; letter-spacing: -0.08em; }
+.g-pioche .pi-big.pi-joker.small { width: 56cqw; height: 56cqw; opacity: 0.35; }
+.g-pioche .pi-mark { position: absolute; right: 8cqw; bottom: 7cqw; width: 18cqw; height: 18cqw; rotate: 180deg; color: var(--pi-night); opacity: 0.85; }
+
+/* Dos de carte. */
+.g-pioche .pi-back {
+  --c: var(--pi-night-2);
+  background:
+    linear-gradient(135deg, var(--pi-R) 0 25%, var(--pi-J) 0 50%, var(--pi-V) 0 75%, var(--pi-B) 0);
+  display: grid;
+  place-items: center;
+}
+.g-pioche .pi-back-label {
+  display: block;
+  padding: 7cqw 8cqw;
+  border-radius: 8cqw;
+  background: var(--pi-cream);
+  color: var(--pi-night);
+  font-size: 17cqw;
+  letter-spacing: -0.03em;
+  rotate: -14deg;
+  box-shadow: 0 1.5cqw 0 rgb(0 0 0 / 0.3);
+}
+.g-pioche .pi-back-label b { color: var(--pi-R); }
+.g-pioche .pi-count { position: absolute; bottom: 6cqw; left: 50%; translate: -50% 0; padding: 2cqw 8cqw; border-radius: 99px; background: var(--pi-night); color: #fff; font-size: 15cqw; }
+
+/* ——— En-tête, chrono ——— */
+.g-pioche .pi-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; min-height: 28px; }
+.g-pioche .pi-round { padding: 4px 12px; border-radius: 99px; background: rgb(255 255 255 / 0.12); font-size: 0.85rem; font-weight: 700; }
+.g-pioche .pi-clock { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.g-pioche .pi-clock-track { display: block; width: clamp(80px, 30vw, 160px); height: 10px; border-radius: 99px; background: rgb(255 255 255 / 0.18); overflow: hidden; }
+.g-pioche .pi-clock-bar { display: block; height: 100%; background: var(--pi-J); transform-origin: left; transition: transform 0.25s linear; }
+.g-pioche .pi-clock.is-low .pi-clock-bar { background: var(--pi-R); }
+.g-pioche .pi-clock.is-low { color: var(--pi-R); }
+
+/* ——— Adversaires ——— */
+.g-pioche .pi-opps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 8px; margin: 0; padding: 0 10px; list-style: none; }
+.g-pioche .pi-opp { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px; border-radius: 99px; background: rgb(255 255 255 / 0.1); font-size: 0.85rem; font-weight: 700; box-shadow: inset 0 0 0 2px transparent; min-height: 36px; }
+.g-pioche .pi-opp.is-turn { background: var(--pi-J); color: var(--pi-night); box-shadow: 0 0 0 3px var(--pi-cream), 0 0 22px rgb(255 210 63 / 0.55); }
+.g-pioche .pi-opp.is-out { opacity: 0.45; }
+.g-pioche .pi-opp.is-danger { box-shadow: 0 0 0 3px var(--pi-bad); animation: pi-pulse 0.7s ease-in-out infinite alternate; }
+.g-pioche .pi-opp-name { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-pioche .pi-opp-n { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 99px; background: var(--pi-night); color: #fff; font-weight: 900; font-variant-numeric: tabular-nums; }
+.g-pioche .pi-mini { width: 9px; height: 13px; border-radius: 2px; background: linear-gradient(135deg, var(--pi-R) 0 50%, var(--pi-B) 0); border: 1.5px solid var(--pi-cream); }
+.g-pioche .pi-tag { padding: 1px 8px; border-radius: 99px; background: rgb(255 255 255 / 0.18); font-size: 0.72rem; font-weight: 800; }
+.g-pioche .pi-tag.ok { background: var(--pi-V); color: var(--pi-night); }
+.g-pioche .pi-tag.bad { background: var(--pi-bad); color: var(--pi-night); }
+.g-pioche .pi-tag.soft { background: transparent; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.4); }
+.g-pioche .pi-opp.is-turn .pi-tag.soft { box-shadow: inset 0 0 0 1.5px var(--pi-night); }
+
+/* ——— Table ——— */
+.g-pioche .pi-table { margin: auto 0; display: flex; align-items: flex-start; justify-content: center; gap: clamp(18px, 8vw, 48px); padding: 4px 12px 18px; }
+.g-pioche .pi-table .pi-card { --cw: var(--tw); --ch: var(--th); }
+.g-pioche .pi-pile { position: relative; display: grid; justify-items: center; gap: 0; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; border-radius: 20px; }
+.g-pioche .pi-pile:disabled { cursor: default; opacity: 0.8; }
+.g-pioche .pi-pile:not(:disabled) .pi-back { animation: pi-glow 1.2s ease-in-out infinite alternate; }
+.g-pioche .pi-pile-hint { position: absolute; bottom: -10px; padding: 4px 14px; border-radius: 99px; background: var(--pi-J); color: var(--pi-night); font-weight: 900; font-size: 0.85rem; box-shadow: 0 3px 0 rgb(0 0 0 / 0.35); }
+.g-pioche .pi-discard { position: relative; }
+.g-pioche .pi-top { rotate: var(--tilt, 0deg); }
+.g-pioche .pi-top.is-new { animation: pi-land 0.32s var(--ease-out, ease-out); }
+.g-pioche .pi-dir { position: absolute; right: -14px; top: -14px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--pi-cream); color: var(--pi-night); box-shadow: 0 3px 0 rgb(0 0 0 / 0.35); }
+.g-pioche .pi-dir-i { width: 24px; height: 24px; transition: transform 0.35s var(--ease-out, ease-out); }
+.g-pioche .pi-dir.is-rev .pi-dir-i { transform: scaleX(-1); }
+.g-pioche .pi-want { position: absolute; left: 50%; bottom: -14px; translate: -50% 0; display: flex; align-items: center; gap: 6px; padding: 6px 14px 6px 10px; border-radius: 99px; background: var(--c); color: var(--pi-night); font-weight: 900; font-size: 0.95rem; white-space: nowrap; border: 3px solid var(--pi-cream); box-shadow: 0 3px 0 rgb(0 0 0 / 0.35); }
+.g-pioche .pi-want-s { width: 20px; height: 20px; color: var(--pi-night); }
+.g-pioche .pi-want.c-R { --c: var(--pi-R); }
+.g-pioche .pi-want.c-J { --c: var(--pi-J); }
+.g-pioche .pi-want.c-V { --c: var(--pi-V); }
+.g-pioche .pi-want.c-B { --c: var(--pi-B); }
+
+/* ——— Messages ——— */
+.g-pioche .pi-news { padding: 0 16px; text-align: center; }
+.g-pioche .pi-say { margin: 0; font-weight: 800; font-size: 1rem; text-wrap: balance; }
+.g-pioche .pi-old { margin: 4px 0 0; padding: 0; list-style: none; font-size: 0.78rem; font-weight: 500; color: rgb(255 255 255 / 0.72); }
+.g-pioche .pi-old li:nth-child(n + 3) { display: none; }
+.g-pioche .pi-old li.is-latest { color: #fff; font-weight: 700; }
+
+/* ——— Boutons ——— */
+.g-pioche .pi-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; padding: 0 12px; }
+.g-pioche .pi-btn { min-height: 48px; padding: 0 22px; border: 0; border-radius: 99px; background: var(--pi-cream); color: var(--pi-night); font-weight: 900; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 0 rgb(0 0 0 / 0.38); transition: transform 0.1s; }
+.g-pioche .pi-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgb(0 0 0 / 0.38); }
+.g-pioche .pi-btn.go { background: var(--pi-J); }
+.g-pioche .pi-btn.call { background: var(--pi-R); }
+.g-pioche .pi-btn.call.is-urgent { min-height: 56px; padding: 0 30px; font-size: 1.15rem; animation: pi-pulse 0.5s ease-in-out infinite alternate; }
+.g-pioche .pi-btn.bad { background: var(--pi-bad); min-height: 56px; animation: pi-pulse 0.5s ease-in-out infinite alternate; }
+.g-pioche .pi-btn.ghost { background: transparent; color: #fff; box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.6); }
+.g-pioche button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* ——— Choix de la couleur ——— */
+.g-pioche .pi-picker { display: grid; justify-items: center; gap: 10px; width: min(100%, 420px); padding: 14px; border-radius: 24px; background: var(--pi-cream); color: var(--pi-night); box-shadow: 0 6px 0 rgb(0 0 0 / 0.35); }
+.g-pioche .pi-picker p { margin: 0; font-weight: 900; }
+.g-pioche .pi-picker .pi-btn.ghost { color: var(--pi-night); box-shadow: inset 0 0 0 2px rgb(27 19 64 / 0.4); min-height: 44px; }
+.g-pioche .pi-picker-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; }
+.g-pioche .pi-color { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 72px; padding: 6px 2px; border: 3px solid var(--pi-night); border-radius: 18px; background: var(--c); color: var(--pi-night); font-weight: 900; font-size: 0.9rem; cursor: pointer; }
+.g-pioche .pi-color.c-R { --c: var(--pi-R); }
+.g-pioche .pi-color.c-J { --c: var(--pi-J); }
+.g-pioche .pi-color.c-V { --c: var(--pi-V); }
+.g-pioche .pi-color.c-B { --c: var(--pi-B); }
+.g-pioche .pi-color-s { width: 26px; height: 26px; color: var(--pi-night); }
+
+/* ——— Main : éventail sur plusieurs rangées, tout se lit sans défiler ——— */
+.g-pioche .pi-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  padding: 18px calc(var(--cw) - var(--step) + 6px) 14px 6px;
+}
+.g-pioche .pi-h {
+  margin: 0 calc(var(--step) - var(--cw)) calc(var(--ch) * -0.46) 0;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease-out, ease-out), filter 0.14s;
+  touch-action: manipulation;
+}
+.g-pioche .pi-hand .pi-h:last-child { margin-bottom: 0; }
+.g-pioche .pi-h.is-ok { transform: translateY(-8px); }
+.g-pioche .pi-h.is-no { filter: saturate(0.4) brightness(0.65); cursor: not-allowed; }
+.g-pioche .pi-h.is-drawn { box-shadow: 0 0 0 3px var(--pi-J), 0 0 20px rgb(255 210 63 / 0.7); }
+.g-pioche .pi-h.is-selected { transform: translateY(-22px); box-shadow: 0 0 0 3px var(--pi-cream), 0 12px 22px rgb(0 0 0 / 0.45); }
+.g-pioche .pi-h:hover.is-ok { transform: translateY(-14px); }
+
+/* ——— Résultats ——— */
+.g-pioche .pi-overlay { position: absolute; inset: 0; z-index: 100; display: grid; place-items: center; padding: 14px; background: rgb(27 19 64 / 0.9); overflow-y: auto; }
+.g-pioche .pi-panel { width: min(100%, 440px); padding: 20px 18px 18px; border-radius: 28px; background: var(--pi-cream); color: var(--pi-night); box-shadow: 0 7px 0 rgb(0 0 0 / 0.4); text-align: center; }
+.g-pioche .pi-panel h2 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.03em; }
+.g-pioche .pi-panel-line { margin: 0 0 12px; font-weight: 700; }
+.g-pioche .pi-scores { display: grid; gap: 6px; margin: 0 0 14px; padding: 0; list-style: none; text-align: left; }
+.g-pioche .pi-score { display: grid; grid-template-columns: 24px auto 1fr auto auto; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 99px; background: rgb(27 19 64 / 0.08); font-weight: 700; }
+.g-pioche .pi-score.is-win { background: var(--pi-J); }
+.g-pioche .pi-score-rank { font-weight: 900; text-align: center; }
+.g-pioche .pi-score-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-pioche .pi-score-gain { padding: 1px 8px; border-radius: 99px; background: var(--pi-V); font-weight: 900; font-size: 0.85rem; }
+.g-pioche .pi-score-pts { min-width: 3ch; text-align: right; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.g-pioche .pi-next { display: grid; justify-items: center; gap: 8px; }
+.g-pioche .pi-next p { margin: 0; font-size: 0.85rem; font-weight: 600; }
+.g-pioche .pi-final { margin: 0; font-size: 1.3rem; font-weight: 900; }
+
+/* ——— Animations sobres ——— */
+@keyframes pi-land { from { transform: translateY(-26px) scale(1.18); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@keyframes pi-pulse { to { transform: scale(1.05); } }
+@keyframes pi-glow { to { box-shadow: 0 3px 0 rgb(0 0 0 / 0.38), 0 0 26px rgb(255 210 63 / 0.85); } }
+@media (prefers-reduced-motion: reduce) {
+  .g-pioche *, .g-pioche *::before, .g-pioche *::after { animation: none !important; transition: none !important; }
+}

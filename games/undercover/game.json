@@ -1,0 +1,27 @@
+{
+  "name": "Undercover",
+  "tagline": "Qui est l'intrus ?",
+  "description": "Les civils ont tous le même mot, l'Undercover un mot proche, Mr. White aucun. Donne un indice, débats, vote : démasque les intrus sans te faire éliminer.",
+  "how": [
+    "Chacun reçoit une carte : la plupart ont le même mot (les civils), un ou deux ont un mot proche (les Undercover). Mr. White n'a pas de mot. Personne ne sait s'il est civil ou Undercover.",
+    "Chacun son tour, donne un indice en un mot ou une courte expression qui montre que tu as le mot, sans le dire.",
+    "Débattez dans le chat de la table, puis votez : la personne qui a le plus de voix est éliminée et sa carte est révélée.",
+    "Si Mr. White est éliminé, il peut gagner seul en devinant le mot des civils.",
+    "Les civils gagnent quand tous les intrus sont éliminés. Les intrus gagnent s'ils sont encore là quand il ne reste que deux joueurs."
+  ],
+  "minPlayers": 3,
+  "maxPlayers": 12,
+  "duration": "15 min",
+  "emoji": "🕵️",
+  "color": "#2E4BFF",
+  "ink": "#FFFFFF",
+  "order": 10,
+  "options": [
+    { "key": "undercovers", "label": "Undercover", "help": "Réduit si la table est trop petite", "type": "number", "min": 1, "max": 3, "default": 1 },
+    { "key": "mrWhite", "label": "Mr. White", "help": "À partir de 4 joueurs", "type": "bool", "default": true },
+    { "key": "clueTime", "label": "Temps pour un indice", "type": "choice", "default": 45,
+      "choices": [{ "value": 30, "label": "30 s" }, { "value": 45, "label": "45 s" }, { "value": 60, "label": "1 min" }] },
+    { "key": "debateTime", "label": "Débat", "type": "choice", "default": 90,
+      "choices": [{ "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }, { "value": 120, "label": "2 min" }] }
+  ]
+}

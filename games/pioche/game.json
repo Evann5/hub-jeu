@@ -1,0 +1,65 @@
+{
+  "name": "Pioche !",
+  "tagline": "Le premier sans carte gagne.",
+  "description": "Pose une carte de la même couleur ou de la même valeur que la défausse. Jokers, +2, passe, sens inverse : le jeu de défausse des soirées, avec un « Dernière ! » à ne pas oublier.",
+  "how": [
+    "Chacun reçoit 7 cartes. À ton tour, pose une carte de la même couleur ou de la même valeur que celle de la défausse. Un joker se pose sur tout et tu choisis la couleur suivante.",
+    "Pas de carte qui va ? Pioche-en une : si elle va, tu peux la jouer tout de suite, sinon tu passes. Tu peux aussi piocher exprès.",
+    "Cartes spéciales : le +2 fait piocher 2 cartes au suivant (qui passe son tour), le « passe » saute le suivant, le « sens inverse » change le sens du jeu (à deux, tu rejoues). Le joker +4 change la couleur et fait piocher 4 cartes au suivant, qui passe son tour.",
+    "Cumul (activé par défaut) : si on te pose un +2, tu peux renchérir avec un +2 ou un +4 et le suivant prend le total ; sur un +4, seul un +4 renchérit. Sinon, tu pioches tout le cumul et tu passes ton tour.",
+    "Quand il te reste une carte, clique « Dernière ! » (tu peux le faire dès qu'il t'en reste deux, juste avant de jouer). Si tu oublies, les autres ont 5 secondes pour cliquer « Dénoncer » : tu pioches 2 cartes.",
+    "Le premier sans carte gagne la manche et marque les points des cartes des autres : chiffre = sa valeur, +2, passe et inverse = 20, joker = 50. Avec plusieurs manches, le meilleur total gagne (à égalité, celui qui a gagné la dernière manche).",
+    "Avec le minuteur, si tu ne joues pas à temps, tu pioches une carte et ton tour passe.",
+    "Si quelqu'un abandonne, ses cartes retournent sous la pioche et la partie continue."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 8,
+  "duration": "10 min",
+  "emoji": "🃏",
+  "color": "#FF5C9A",
+  "ink": "#0B0B0D",
+  "order": 20,
+  "options": [
+    {
+      "key": "rounds",
+      "label": "Manches",
+      "help": "Le meilleur total de points gagne",
+      "type": "number",
+      "min": 1,
+      "max": 9,
+      "default": 1
+    },
+    {
+      "key": "timer",
+      "label": "Minuteur par tour",
+      "help": "Temps écoulé : tu pioches et tu passes",
+      "type": "choice",
+      "default": 30,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Sans"
+        },
+        {
+          "value": 20,
+          "label": "20 s"
+        },
+        {
+          "value": 30,
+          "label": "30 s"
+        },
+        {
+          "value": 60,
+          "label": "60 s"
+        }
+      ]
+    },
+    {
+      "key": "stack",
+      "label": "Cumul des +2 et +4",
+      "help": "Renchérir au lieu de piocher",
+      "type": "bool",
+      "default": true
+    }
+  ]
+}

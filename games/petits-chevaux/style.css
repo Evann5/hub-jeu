@@ -1,0 +1,175 @@
+/* Petits chevaux : une fête foraine fluo. Nuit violette, guirlandes d'ampoules qui clignotent, manège au centre,
+   pions bonbon et gros boutons de stand. Toutes les règles commencent par .g-petits-chevaux. */
+
+@font-face { font-family: 'PC Display'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'PC Sans'; src: url('assets/fonts/rubik.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-petits-chevaux {
+  --night: #1A0B3B;
+  --night-2: #2E1070;
+  --ink: #1A0B3B;
+  --pink: #FF2E93;
+  --pink-dk: #A80F5E;
+  --lemon: #FFE14D;
+  --turq: #00D8C6;
+  --orange: #FF7A00;
+  --lilac: #D9CCFF;
+  --display: 'PC Display', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --sans: 'PC Sans', system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 10% 18%, rgb(255 46 147 / 0.35), transparent 40%),
+    radial-gradient(circle at 92% 80%, rgb(0 216 198 / 0.28), transparent 42%),
+    radial-gradient(circle at 70% 4%, rgb(123 60 255 / 0.55), transparent 46%),
+    linear-gradient(var(--night-2), var(--night));
+  color: #fff;
+  font: 500 1rem/1.4 var(--sans);
+  position: relative;
+}
+.g-petits-chevaux :focus-visible { outline: 4px solid var(--lemon); outline-offset: 3px; }
+
+.g-petits-chevaux .pc { position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto; container-type: size; }
+.g-petits-chevaux .pc-stage {
+  --bs: min(calc(100cqw - 10px), max(300px, calc(100cqh - 310px)), 640px);
+  display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 0 5px 24px;
+}
+
+/* Guirlande d'ampoules : un fil et des ampoules de quatre couleurs qui clignotent en alternance */
+.g-petits-chevaux .pc-garland {
+  align-self: stretch; flex: none; height: 30px; order: 0; margin: 0 -5px;
+  background:
+    radial-gradient(circle at 9px 16px, #FF2E93 0 6px, transparent 7px) 0 0 / 72px 30px repeat-x,
+    radial-gradient(circle at 27px 16px, #FFE14D 0 6px, transparent 7px) 0 0 / 72px 30px repeat-x,
+    radial-gradient(circle at 45px 16px, #00D8C6 0 6px, transparent 7px) 0 0 / 72px 30px repeat-x,
+    radial-gradient(circle at 63px 16px, #FF7A00 0 6px, transparent 7px) 0 0 / 72px 30px repeat-x,
+    linear-gradient(transparent 0 8px, rgb(255 255 255 / 0.4) 8px 10px, transparent 10px);
+  filter: drop-shadow(0 0 5px rgb(255 225 77 / 0.7));
+  animation: pc-glow 1.6s ease-in-out infinite;
+}
+@keyframes pc-glow { 50% { filter: drop-shadow(0 0 2px rgb(255 225 77 / 0.2)) brightness(0.82); } }
+
+/* Plateau */
+.g-petits-chevaux .pc-boardcol { order: 3; }
+.g-petits-chevaux .pc-boardwrap { width: var(--bs); height: var(--bs); }
+.g-petits-chevaux .pc-svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 10px 0 rgb(10 3 36 / 0.55)); }
+.g-petits-chevaux .pc-bulb { animation: pc-twinkle 1.3s ease-in-out infinite; }
+.g-petits-chevaux .pc-bulb.b0 { fill: #FF2E93; }
+.g-petits-chevaux .pc-bulb.b1 { fill: #FFE14D; animation-delay: 0.33s; }
+.g-petits-chevaux .pc-bulb.b2 { fill: #00D8C6; animation-delay: 0.66s; }
+.g-petits-chevaux .pc-bulb.b3 { fill: #FF7A00; animation-delay: 0.99s; }
+@keyframes pc-twinkle { 50% { opacity: 0.35; } }
+.g-petits-chevaux .pc-rung { font: 800 13px var(--display); pointer-events: none; }
+.g-petits-chevaux .pc-num { font: 800 17px var(--display); pointer-events: none; }
+
+.g-petits-chevaux .pc-tok { transition: transform 0.5s cubic-bezier(0.34, 1.3, 0.5, 1); }
+.g-petits-chevaux .pc-tok.is-done .pc-tok-body { opacity: 0.95; }
+.g-petits-chevaux .pc-tok-body { transform-box: fill-box; transform-origin: 50% 80%; }
+.g-petits-chevaux .pc-tok-body.is-moved { animation: pc-pop 0.55s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.g-petits-chevaux .pc-tok-body.is-hit { animation: pc-wobble 0.6s ease-out; }
+@keyframes pc-pop { 0% { transform: scale(1.4, 0.65); } 45% { transform: scale(0.85, 1.25); } 100% { transform: scale(1); } }
+@keyframes pc-wobble { 25% { transform: rotate(-25deg); } 60% { transform: rotate(18deg); } }
+.g-petits-chevaux .pc-pulse { display: none; stroke: #fff; stroke-width: 3.5; stroke-dasharray: 7 6; }
+.g-petits-chevaux .pc-tok.is-choice { cursor: pointer; }
+.g-petits-chevaux .pc-tok.is-choice .pc-pulse { display: block; animation: pc-spin 4s linear infinite; transform-box: fill-box; transform-origin: center; }
+.g-petits-chevaux .pc-tok.is-choice .pc-tok-body { animation: pc-bob 0.9s ease-in-out infinite; }
+.g-petits-chevaux .pc-tok.is-preview .pc-pulse { stroke: var(--lemon); stroke-width: 5; }
+.g-petits-chevaux .pc-tok:focus-visible { outline: none; }
+.g-petits-chevaux .pc-tok:focus-visible .pc-pulse { display: block; stroke: var(--lemon); stroke-width: 6; }
+@keyframes pc-spin { to { transform: rotate(360deg); } }
+@keyframes pc-bob { 50% { transform: translateY(-5px); } }
+.g-petits-chevaux .pc-target { fill: rgb(255 255 255 / 0.12); stroke: #fff; stroke-width: 3; stroke-dasharray: 5 5; pointer-events: none; }
+.g-petits-chevaux .pc-target.is-hit { stroke: var(--pink); }
+.g-petits-chevaux .pc-target.is-on { fill: rgb(255 225 77 / 0.35); stroke: var(--lemon); stroke-width: 5; }
+
+/* ——— Colonne de droite (ou sous le plateau sur téléphone) ——— */
+.g-petits-chevaux .pc-side { display: contents; }
+.g-petits-chevaux .pc-players { order: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(100%, 640px); margin: 0; padding: 0; list-style: none; }
+.g-petits-chevaux .pc-controls { order: 2; width: min(100%, 640px); }
+
+.g-petits-chevaux .pc-player {
+  display: flex; align-items: center; gap: 6px; flex: 1 1 0; min-width: 0; padding: 5px 8px;
+  border: 3px solid var(--ink); border-radius: 18px; background: #fff; color: var(--ink); box-shadow: 0 4px 0 var(--ink);
+  transition: transform 0.2s, background-color 0.2s;
+}
+.g-petits-chevaux .pc-player .token { display: none; }
+.g-petits-chevaux .pc-player.is-turn { background: var(--lemon); transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+.g-petits-chevaux .pc-player.is-left { opacity: 0.5; }
+.g-petits-chevaux .pc-chip { display: grid; place-items: center; flex: none; }
+.g-petits-chevaux .pc-pname { display: grid; min-width: 0; flex: 1; line-height: 1.15; }
+.g-petits-chevaux .pc-pname b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 0.9rem var(--display); }
+.g-petits-chevaux .pc-pname small { display: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.74rem; font-weight: 600; opacity: 0.8; }
+.g-petits-chevaux .pc-turn { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); flex: none; padding: 2px 8px; border-radius: 999px; background: var(--ink); color: #fff; font: 800 0.7rem var(--display); }
+
+.g-petits-chevaux .pc-controls { display: grid; gap: 8px; padding: 10px 12px; border: 3px solid var(--ink); border-radius: 24px; background: rgb(26 11 59 / 0.78); box-shadow: 0 5px 0 rgb(10 3 36 / 0.7), inset 0 0 0 2px rgb(255 255 255 / 0.12); }
+.g-petits-chevaux .pc-status { margin: 0; font: 800 1rem/1.3 var(--display); text-wrap: balance; }
+.g-petits-chevaux .pc-status.is-mine { color: var(--lemon); }
+.g-petits-chevaux .pc-status.is-over { padding: 10px 12px; border-radius: 16px; background: var(--pink); color: #fff; animation: pc-pop 0.55s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.g-petits-chevaux .pc-log { margin: 0; min-height: 1.4em; color: var(--lilac); font-weight: 600; font-size: 0.95rem; }
+.g-petits-chevaux .pc-timer { height: 12px; border-radius: 999px; background: rgb(255 255 255 / 0.2); overflow: hidden; }
+.g-petits-chevaux .pc-timer[hidden] { display: none; }
+.g-petits-chevaux .pc-timer i { display: block; height: 100%; border-radius: 999px; background: var(--turq); transform-origin: left; transition: transform 0.2s linear; }
+.g-petits-chevaux .pc-timer.is-low i { background: var(--pink); }
+
+.g-petits-chevaux .pc-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; }
+.g-petits-chevaux .pc-diebox { display: grid; justify-items: center; gap: 4px; width: 92px; }
+.g-petits-chevaux .pc-diebox small { max-width: 92px; text-align: center; line-height: 1.15; overflow-wrap: anywhere; font-size: 0.7rem; color: var(--lilac); }
+.g-petits-chevaux .pc-die {
+  display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); place-items: center; width: 72px; height: 72px; padding: 10px;
+  border: 3px solid var(--ink); border-radius: 20px; background: #fff; box-shadow: 0 5px 0 var(--ink);
+}
+.g-petits-chevaux .pc-die span { width: 12px; height: 12px; border-radius: 50%; background: var(--pink); opacity: 0; }
+.g-petits-chevaux .pc-die[data-face='1'] span:nth-child(5),
+.g-petits-chevaux .pc-die[data-face='2'] span:is(:nth-child(1), :nth-child(9)),
+.g-petits-chevaux .pc-die[data-face='3'] span:is(:nth-child(1), :nth-child(5), :nth-child(9)),
+.g-petits-chevaux .pc-die[data-face='4'] span:is(:nth-child(1), :nth-child(3), :nth-child(7), :nth-child(9)),
+.g-petits-chevaux .pc-die[data-face='5'] span:is(:nth-child(1), :nth-child(3), :nth-child(5), :nth-child(7), :nth-child(9)),
+.g-petits-chevaux .pc-die[data-face='6'] span:is(:nth-child(1), :nth-child(3), :nth-child(4), :nth-child(6), :nth-child(7), :nth-child(9)) { opacity: 1; }
+.g-petits-chevaux .pc-die.is-rolling { animation: pc-roll 0.7s cubic-bezier(0.3, 1.4, 0.5, 1); }
+@keyframes pc-roll { 0% { transform: rotate(-200deg) scale(0.5); } 60% { transform: rotate(20deg) scale(1.15); } 100% { transform: none; } }
+
+.g-petits-chevaux .pc-action { display: grid; gap: 8px; min-width: 0; }
+.g-petits-chevaux .pc-roll {
+  display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 64px; padding: 0 18px;
+  border: 3px solid var(--ink); border-radius: 999px; background: var(--pink); color: #fff;
+  font: 800 1.05rem var(--display); box-shadow: 0 6px 0 var(--pink-dk); animation: pc-beat 1.1s ease-in-out infinite;
+}
+.g-petits-chevaux .pc-roll .pc-horse { width: 30px; height: 30px; }
+.g-petits-chevaux .pc-roll:hover { background: #FF4FA5; }
+.g-petits-chevaux .pc-roll:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--pink-dk); }
+@keyframes pc-beat { 50% { transform: scale(1.04); } }
+.g-petits-chevaux .pc-choice {
+  display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 14px 6px 8px; text-align: left;
+  border: 3px solid var(--ink); border-radius: 18px; background: #fff; color: var(--ink); box-shadow: 0 4px 0 var(--ink);
+  font: 700 0.95rem var(--sans);
+}
+.g-petits-chevaux .pc-choice span { display: grid; min-width: 0; line-height: 1.2; }
+.g-petits-chevaux .pc-choice small { font-weight: 600; opacity: 0.8; font-size: 0.8rem; }
+.g-petits-chevaux .pc-choice svg { flex: none; }
+.g-petits-chevaux .pc-choice:hover, .g-petits-chevaux .pc-choice:focus-visible { background: var(--lemon); }
+.g-petits-chevaux .pc-choice:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+
+/* Ordinateur : le plateau à gauche, tout le reste à droite */
+@container (min-width: 780px) {
+  .g-petits-chevaux .pc-stage {
+    --bs: max(320px, min(calc(100cqh - 62px), calc(100cqw - 404px), 760px));
+    display: grid; grid-template-columns: var(--bs) 340px; grid-template-rows: 30px auto; gap: 14px 28px; justify-content: center; align-content: start; padding: 0 16px 24px;
+  }
+  .g-petits-chevaux .pc-garland { grid-column: 1 / -1; margin: 0 -16px; }
+  .g-petits-chevaux .pc-boardcol { grid-column: 1; grid-row: 2; }
+  .g-petits-chevaux .pc-side { display: grid; grid-column: 2; grid-row: 2; align-content: start; gap: 14px; }
+  .g-petits-chevaux .pc-players { display: grid; width: auto; }
+  .g-petits-chevaux .pc-controls { width: auto; }
+  .g-petits-chevaux .pc-pname small { display: block; }
+  .g-petits-chevaux .pc-turn { position: static; width: auto; height: auto; clip-path: none; }
+  .g-petits-chevaux .pc-player .token { display: grid; }
+}
+
+/* Confettis de victoire */
+.g-petits-chevaux .pc-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 20; }
+.g-petits-chevaux .pc-confetti i { position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 3px; animation: pc-fall 2.6s ease-in forwards; }
+@keyframes pc-fall { to { transform: translateY(110vh) rotate(540deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-petits-chevaux * { animation: none !important; transition: none !important; }
+  .g-petits-chevaux .pc-confetti { display: none; }
+  .g-petits-chevaux .pc-tok.is-choice .pc-pulse { display: block; }
+}

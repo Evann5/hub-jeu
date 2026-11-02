@@ -2,9 +2,10 @@
 import { h, icon, token, toast, setColors, count } from './dom.js';
 import { api, connect } from './net.js';
 import { renderAuth, renderForcedPassword } from './auth.js';
-import { state, actions, go, unreadTotal, isAdmin } from './store.js';
+import { state, actions, go, unreadTotal, isAdmin, gameOf, myTurnTables } from './store.js';
 import * as home from './views/home.js';
 import * as games from './views/games.js';
+import * as table from './views/table.js';
 import * as messages from './views/messages.js';
 import * as members from './views/members.js';
 import * as profile from './views/profile.js';
@@ -70,6 +71,8 @@ function startRealtime() {
     state.dms = s.dms;
     state.unread = s.unread;
     state.online = new Set(s.online);
+    state.games = s.games;
+    state.tables = s.tables;
     // Après une coupure, on recharge les conversations : des messages ont pu arriver entre-temps.
     state.convs.clear();
     if (s.mustChangePassword) {
@@ -120,16 +123,36 @@ function startRealtime() {
   socket.on('muted', (until) => {
     state.mutedUntil = until;
     messages.renderComposer();
+    table.onMuted();
     toast(until ? 'Un admin t’a mis en sourdine.' : 'Tu peux de nouveau écrire.');
   });
   socket.on('message', (m) => {
+    if (m.scope.startsWith('t:')) {
+      table.onMessage(m);
+      return;
+    }
     messages.onMessage(m);
     renderNav();
     if (state.route.view === 'home') home.render(ui.content);
   });
   socket.on('message:update', messages.onMessageUpdate);
-  socket.on('message:deleted', messages.onMessageDeleted);
+  socket.on('message:deleted', (m) => (m.scope.startsWith('t:') ? table.onMessageDeleted(m) : messages.onMessageDeleted(m)));
   socket.on('typing', messages.onTyping);
+
+  // ——— Tables de jeu ———
+  socket.on('tables', (list) => {
+    state.tables = list;
+    renderNav();
+    games.refresh();
+    if (state.route.view === 'home') home.render(ui.content);
+  });
+  socket.on('table', table.onTable);
+  socket.on('table:closed', table.onClosed);
+  socket.on('invite', ({ tableId, game, from }) => {
+    const g = gameOf(game);
+    const who = state.users.get(from)?.pseudo || 'Quelqu’un';
+    toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}` }, 'Rejoindre')], { ms: 12000, action: true });
+  });
 }
 
 // Présence ou profils changés : on redessine les écrans qui montrent des membres.
@@ -138,6 +161,7 @@ function refreshPeople() {
   const { view } = state.route;
   if (view === 'home') home.render(ui.content);
   else if (view === 'members') members.renderGrid();
+  else if (view === 'table') table.refresh();
   else if (['messages', 'channel', 'dm'].includes(view)) {
     messages.renderList();
     messages.renderOnline();
@@ -145,7 +169,7 @@ function refreshPeople() {
 }
 
 // ——— Navigation ———
-// #/ accueil, #/jouer, #/messages, #/c/3, #/dm/7, #/membres, #/profil, #/admin
+// #/ accueil, #/jouer, #/t/5 (une table), #/messages, #/c/3, #/dm/7, #/membres, #/profil, #/admin
 
 window.addEventListener('hashchange', () => ui && applyRoute());
 
@@ -156,6 +180,8 @@ function parseRoute(hash = location.hash) {
     case 'jouer':
     case 'jeux':
       return { view: 'games' };
+    case 't':
+      return id ? { view: 'table', id } : { view: 'games' };
     case 'messages':
       return { view: 'messages' };
     case 'c':
@@ -185,12 +211,12 @@ function applyRoute() {
   }
   if (route.view === 'channel' || route.view === 'dm') lastConv = location.hash;
 
-  for (const v of [messages, members, admin]) v.leave();
+  for (const v of [messages, members, admin, games, table]) v.leave();
   state.route = route;
   ui.content.className = `view view-${route.view === 'channel' || route.view === 'dm' ? 'messages' : route.view}`;
   ui.content.scrollTop = 0;
   const view = {
-    home, games, members, profile, admin,
+    home, games, table, members, profile, admin,
     messages, channel: messages, dm: messages,
   }[route.view];
   view.render(ui.content);
@@ -222,7 +248,9 @@ function renderNav() {
   const { view } = state.route;
   const total = unreadTotal();
   document.title = total ? `(${total > 99 ? '99+' : total}) Hubuno` : 'Hubuno';
-  const section = ['messages', 'channel', 'dm'].includes(view) ? 'messages' : view;
+  const section = ['messages', 'channel', 'dm'].includes(view) ? 'messages' : view === 'table' ? 'games' : view;
+  const turns = myTurnTables().length;
+  const turnBadge = turns ? h('span.badge.nav-badge.badge-turn', { 'aria-hidden': 'true' }, String(turns)) : null;
 
   const item = (key, href, label, lead, extra, srExtra) => h(`li.nav-${key}`, h('a.nav-link', {
     href,
@@ -237,7 +265,7 @@ function renderNav() {
     h('a.nav-brand', { href: '#/', 'aria-label': 'Hubuno, accueil' }, h('span.brand-mark', 'H'), h('span.brand-name', 'Hubuno')),
     h('ul.nav-items',
       item('home', '#/', 'Accueil', icon('home')),
-      item('games', '#/jouer', 'Jouer', icon('dice')),
+      item('games', '#/jouer', 'Jouer', icon('dice'), turnBadge, turns ? `, à toi de jouer sur ${count(turns, 'table', 'tables')}` : null),
       item('messages', '#/messages', 'Messages', icon('chat'), badge, unreadText),
       item('members', '#/membres', 'Membres', icon('users')),
       isAdmin() ? item('admin', '#/admin', 'Admin', icon('shield')) : null,

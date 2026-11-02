@@ -1,0 +1,4 @@
+Police du jeu Quiz, libre d'usage.
+
+SIL Open Font License 1.1 (texte : OFL.txt)
+- Rubik : Copyright 2015 The Rubik Project Authors (https://github.com/googlefonts/rubik)

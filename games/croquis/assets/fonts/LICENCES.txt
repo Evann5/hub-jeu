@@ -1,0 +1,5 @@
+Polices du jeu Croquis, toutes libres d'usage.
+
+SIL Open Font License 1.1 (texte : OFL.txt)
+- Unbounded : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
+- Inter Tight : Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter)

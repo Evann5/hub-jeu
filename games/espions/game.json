@@ -1,0 +1,25 @@
+{
+  "name": "Espions",
+  "tagline": "Deux agences, un dossier, un seul mot d'indice.",
+  "description": "Deux équipes d'agents retrouvent leurs contacts parmi 25 mots. Seuls les chefs connaissent la clé : ils guident leur équipe avec un mot et un nombre.",
+  "how": [
+    "Deux équipes, Rouge et Bleue. Chacune a un chef d'agence qui connaît la clé et des agents qui ne la connaissent pas.",
+    "Sur la grille de 25 mots, une équipe doit retrouver 9 contacts, l'autre 8. Il y a aussi 7 passants neutres et 1 assassin.",
+    "À son tour, le chef donne un indice : un seul mot et un nombre, celui des mots de la grille que cet indice évoque. Il ne peut pas utiliser un mot de la grille.",
+    "Les agents désignent des cartes : elle est retournée quand la majorité de l'équipe a choisi la même. Un contact de ton équipe : tu continues (nombre + 1 essais au plus). Un passant ou un contact adverse : le tour s'arrête. L'assassin : ton équipe perd tout de suite.",
+    "La première équipe qui a retrouvé tous ses contacts gagne."
+  ],
+  "minPlayers": 4,
+  "maxPlayers": 12,
+  "duration": "15 à 25 min",
+  "emoji": "🕵️",
+  "color": "#F25C4B",
+  "ink": "#0B0B0D",
+  "order": 60,
+  "options": [
+    { "key": "clue", "label": "Temps pour donner l'indice", "type": "choice", "default": 0,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 60, "label": "1 min" }, { "value": 120, "label": "2 min" }, { "value": 180, "label": "3 min" }] },
+    { "key": "guess", "label": "Temps pour chercher", "type": "choice", "default": 0,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 90, "label": "1 min 30" }, { "value": 180, "label": "3 min" }, { "value": 300, "label": "5 min" }] }
+  ]
+}

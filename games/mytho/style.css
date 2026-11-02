@@ -1,0 +1,123 @@
+/* Mytho — bulles de BD pop et stickers : fond jaune citron à trame de points, bulles blanches à gros contour noir,
+   ombres franches, tampon fuchsia « VRAI », typo Unbounded en très gras. */
+
+@font-face { font-family: 'MY Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'MY Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-mytho {
+  --yellow: #FFE14D;
+  --ink: #15121F;
+  --pink: #FF3D8B;
+  --blue: #2F6BFF;
+  --mint: #2EE6A8;
+  --line: 3px solid var(--ink);
+  --pop: 5px 5px 0 var(--ink);
+  background:
+    radial-gradient(circle, rgb(21 18 31 / 0.13) 1.6px, transparent 2px) 0 0 / 18px 18px,
+    var(--yellow);
+  color: var(--ink);
+  font: 600 1.02rem/1.45 'MY Figtree', system-ui, sans-serif;
+  overflow-y: auto;
+}
+.g-mytho .my { flex: 1; display: flex; justify-content: center; }
+.g-mytho .my-page { display: flex; flex-direction: column; width: min(720px, 100%); padding: 20px 18px 32px; }
+
+.g-mytho .my-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font: 800 0.78rem/1 'MY Figtree', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }
+.g-mytho .my-head span:nth-child(2) { padding: 6px 12px; border: var(--line); border-radius: 999px; background: var(--pink); color: #fff; box-shadow: 3px 3px 0 var(--ink); transform: rotate(-3deg); }
+.g-mytho .my-time { min-width: 3.6em; padding: 6px 10px; border: var(--line); border-radius: 12px; background: #fff; font: 800 1.15rem/1 'MY Unbounded', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: 0; text-align: center; box-shadow: 3px 3px 0 var(--ink); }
+.g-mytho .my-time:empty { visibility: hidden; }
+.g-mytho .my-time.is-low { background: var(--pink); color: #fff; animation: my-shake 0.5s ease-in-out infinite; }
+@keyframes my-shake { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
+
+/* Le mot : un gros sticker */
+.g-mytho .my-entry { display: grid; justify-items: start; gap: 8px; margin: 22px 0 6px; }
+.g-mytho .my-word {
+  margin: 0; padding: 10px 22px 14px; border: 4px solid var(--ink); border-radius: 22px;
+  background: #fff; box-shadow: 7px 7px 0 var(--ink);
+  font: 900 clamp(2rem, 1.2rem + 4.6vw, 3.8rem)/1 'MY Unbounded', sans-serif; letter-spacing: -0.04em;
+  overflow-wrap: anywhere; transform: rotate(-1.5deg);
+  animation: my-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.g-mytho .my-word::first-letter { color: var(--pink); }
+@keyframes my-pop { from { transform: rotate(-6deg) scale(0.6); opacity: 0; } }
+.g-mytho .my-gram { padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--yellow); font-size: 0.8rem; font-weight: 800; }
+
+/* Saisie : une bulle */
+.g-mytho .my-form { display: grid; gap: 12px; margin-top: 18px; }
+.g-mytho .my-form textarea {
+  width: 100%; padding: 16px 18px; border: var(--line); border-radius: 24px;
+  background: #fff; color: var(--ink); resize: vertical;
+  font: 700 1.15rem/1.4 'MY Figtree', sans-serif; box-shadow: var(--pop);
+}
+.g-mytho .my-form textarea::placeholder { color: #8A8496; font-weight: 600; }
+.g-mytho .my-form textarea:focus { outline: none; box-shadow: var(--pop), 0 0 0 4px var(--blue); }
+.g-mytho .my-btn {
+  min-height: 56px; padding: 0 22px; border: var(--line); border-radius: 999px;
+  background: var(--pink); color: #fff; box-shadow: var(--pop);
+  font: 900 1.02rem 'MY Unbounded', sans-serif; letter-spacing: -0.01em;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.g-mytho .my-btn:hover { transform: translate(-1px, -1px); box-shadow: 6px 6px 0 var(--ink); }
+.g-mytho .my-btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+.g-mytho .my-btn.is-line { margin-top: 18px; background: var(--mint); color: var(--ink); }
+.g-mytho .my-btn:focus-visible, .g-mytho .my-sense:focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
+.g-mytho .my-tip { margin: 2px 0 0; font-size: 0.9rem; font-weight: 700; opacity: 0.75; }
+.g-mytho .my-mine { position: relative; margin: 20px 0 0; padding: 16px 20px; border: var(--line); border-radius: 24px; background: #fff; box-shadow: var(--pop); font-size: 1.15rem; font-weight: 700; }
+.g-mytho .my-mine::after { content: ''; position: absolute; left: 34px; bottom: -14px; width: 22px; height: 22px; border-right: var(--line); border-bottom: var(--line); background: #fff; transform: rotate(45deg) skew(10deg, 10deg); }
+.g-mytho .my-mine span { display: block; margin-bottom: 4px; color: var(--pink); font: 900 0.72rem 'MY Unbounded', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.g-mytho .my-waiting { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; padding: 0; list-style: none; font-size: 0.85rem; font-weight: 800; }
+.g-mytho .my-waiting li { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border: 2px dashed rgb(21 18 31 / 0.4); border-radius: 999px; opacity: 0.7; }
+.g-mytho .my-waiting li.is-done { border: var(--line); background: var(--mint); opacity: 1; box-shadow: 3px 3px 0 var(--ink); animation: my-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.g-mytho .my-av { display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid var(--ink); border-radius: 50%; background: #fff; font-size: 0.9rem; }
+
+/* Vote : des bulles numérotées */
+.g-mytho .my-ask { margin: 18px 0 8px; font-weight: 800; }
+.g-mytho .my-senses { display: grid; gap: 12px; margin: 6px 0 0; padding: 0; list-style: none; }
+.g-mytho .my-sense {
+  position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  width: 100%; min-height: 60px; padding: 12px 16px 12px 12px; border: var(--line); border-radius: 22px;
+  background: #fff; color: inherit; text-align: left; box-shadow: var(--pop);
+  font: 700 1.08rem/1.35 'MY Figtree', sans-serif;
+  transition: transform 0.12s, box-shadow 0.12s, background-color 0.12s;
+}
+.g-mytho button.my-sense:not(:disabled) { cursor: pointer; }
+.g-mytho button.my-sense:not(:disabled):hover { transform: translate(-2px, -2px) rotate(-0.5deg); box-shadow: 7px 7px 0 var(--ink); }
+.g-mytho button.my-sense:disabled { cursor: default; }
+.g-mytho .my-sense b { display: grid; place-items: center; width: 40px; height: 40px; border: var(--line); border-radius: 50%; background: var(--blue); color: #fff; font: 900 1.05rem 'MY Unbounded', sans-serif; }
+.g-mytho .my-sense small { padding: 3px 9px; border-radius: 999px; background: var(--ink); color: var(--yellow); font: 900 0.68rem 'MY Unbounded', sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
+.g-mytho .my-sense.is-mine { opacity: 0.55; box-shadow: 3px 3px 0 var(--ink); }
+.g-mytho .my-sense.is-voted { background: var(--blue); color: #fff; }
+.g-mytho .my-sense.is-voted b { background: #fff; color: var(--blue); }
+
+/* Révélation */
+.g-mytho .my-gain { align-self: start; margin: 14px 0 6px; padding: 8px 16px; border: var(--line); border-radius: 999px; background: #fff; box-shadow: 4px 4px 0 var(--ink); font: 900 1.1rem 'MY Unbounded', sans-serif; }
+.g-mytho .my-gain.is-good { background: var(--mint); animation: my-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.g-mytho .is-reveal li { display: grid; gap: 6px; }
+.g-mytho .is-reveal .is-fake .my-sense { background: #F1EEF7; box-shadow: 3px 3px 0 var(--ink); }
+.g-mytho .is-reveal .is-fake .my-sense span { text-decoration: line-through; text-decoration-color: var(--pink); text-decoration-thickness: 3px; }
+.g-mytho .is-reveal .is-truth .my-sense { background: var(--mint); box-shadow: 7px 7px 0 var(--ink); transform: rotate(-0.8deg) scale(1.02); }
+.g-mytho .is-reveal .is-truth .my-sense b { background: var(--ink); }
+.g-mytho .my-by { margin: 0 0 4px 16px; font-size: 0.85rem; font-weight: 700; }
+.g-mytho .my-by i { font-style: normal; color: var(--pink); font-weight: 900; }
+.g-mytho .my-stamp {
+  justify-self: end; padding: 6px 12px; border: var(--line); border-radius: 12px;
+  background: var(--pink); color: #fff; box-shadow: 3px 3px 0 var(--ink);
+  font: 900 0.95rem 'MY Unbounded', sans-serif; letter-spacing: 0.04em; text-transform: uppercase;
+  transform: rotate(-8deg);
+  animation: my-stamp 0.5s cubic-bezier(0.3, 1.7, 0.4, 1);
+}
+@keyframes my-stamp { from { transform: rotate(-20deg) scale(2.4); opacity: 0; } }
+
+.g-mytho .my-scores { display: grid; gap: 8px; margin: 24px 0 0; padding: 0; list-style: none; counter-reset: rang; }
+.g-mytho .my-scores li { counter-increment: rang; display: grid; grid-template-columns: 34px 30px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px 6px 8px; border: var(--line); border-radius: 18px; background: #fff; box-shadow: 4px 4px 0 var(--ink); }
+.g-mytho .my-scores li::before { content: counter(rang); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--yellow); font: 900 0.95rem 'MY Unbounded', sans-serif; }
+.g-mytho .my-scores li:first-child { background: var(--pink); color: #fff; }
+.g-mytho .my-scores li.is-me { outline: 4px solid var(--blue); outline-offset: 2px; }
+.g-mytho .my-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
+.g-mytho .my-scores em { padding: 2px 8px; border-radius: 999px; background: var(--mint); color: var(--ink); font-size: 0.8rem; font-style: normal; font-weight: 900; }
+.g-mytho .my-scores b { font: 900 1.3rem 'MY Unbounded', sans-serif; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-mytho * { animation: none !important; transition: none !important; }
+}

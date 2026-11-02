@@ -1,0 +1,3 @@
+Polices du jeu Yams, toutes sous licence SIL Open Font License 1.1 (texte : OFL.txt).
+- Rubik : Copyright 2015 The Rubik Project Authors (https://github.com/googlefonts/rubik)
+- Unbounded : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)

@@ -44,7 +44,7 @@ db.exec(`
     created_at INTEGER NOT NULL
   );
 
-  -- scope : « c:<canal> », « dm:<petit id>:<grand id> » ou, plus tard, « t:<table> ».
+  -- scope : « c:<canal> », « dm:<petit id>:<grand id> » ou « t:<table de jeu> ».
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY,
     scope TEXT NOT NULL,
@@ -68,7 +68,26 @@ db.exec(`
     last_id INTEGER NOT NULL,
     PRIMARY KEY (user_id, scope)
   );
+
+  -- Tables de jeu : places (ids des joueurs, dans l'ordre), réglages et état du jeu en JSON.
+  CREATE TABLE IF NOT EXISTS game_tables (
+    id INTEGER PRIMARY KEY,
+    game TEXT NOT NULL,
+    host_id INTEGER,
+    status TEXT NOT NULL CHECK (status IN ('lobby', 'playing', 'over')),
+    seats TEXT NOT NULL,
+    options TEXT NOT NULL,
+    state TEXT,
+    left_ids TEXT NOT NULL DEFAULT '[]',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
 `);
+
+// Colonne ajoutée après coup : joueurs qui ont abandonné la partie en cours.
+if (!db.prepare('PRAGMA table_info(game_tables)').all().some((c) => c.name === 'left_ids')) {
+  db.exec("ALTER TABLE game_tables ADD COLUMN left_ids TEXT NOT NULL DEFAULT '[]'");
+}
 
 if (!db.prepare('SELECT 1 FROM channels LIMIT 1').get()) {
   const add = db.prepare('INSERT INTO channels (name, topic, position, created_at) VALUES (?, ?, ?, ?)');

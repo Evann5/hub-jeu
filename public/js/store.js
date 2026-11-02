@@ -13,6 +13,8 @@ export const state = {
   route: { view: 'home', id: null },
   convs: new Map(), // scope -> { messages, complete, loaded, pendingRead }
   typing: new Map(), // scope -> Map(userId -> timer)
+  games: [], // catalogue : [{ id, name, minPlayers, maxPlayers, color, options… }]
+  tables: [], // résumés des tables : [{ id, game, hostId, status, seats, turn… }]
 };
 
 // Actions fournies par app.js au démarrage (évite les imports circulaires).
@@ -46,3 +48,8 @@ export function sortedUsers() {
   return [...state.users.values()].sort((a, b) =>
     Number(state.online.has(b.id)) - Number(state.online.has(a.id)) || a.pseudo.localeCompare(b.pseudo, 'fr'));
 }
+
+export const gameOf = (id) => state.games.find((g) => g.id === id);
+
+// Tables où c'est mon tour de jouer.
+export const myTurnTables = () => state.tables.filter((t) => t.status === 'playing' && t.turn.includes(state.me.id));

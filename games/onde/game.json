@@ -1,0 +1,29 @@
+{
+  "name": "Même longueur d'onde",
+  "tagline": "Trouve la fréquence cachée.",
+  "description": "Un cadran entre deux extrêmes cache une zone secrète. Le meneur la voit et donne un indice libre ; son équipe tourne l'aiguille au plus près. En équipes ou tous ensemble.",
+  "how": [
+    "Un cadran affiche deux extrêmes (froid / chaud, nul / génial…). Une zone cible est cachée entre les deux : seul le meneur la voit.",
+    "Le meneur donne un indice libre (sans chiffre) pour que son équipe place l'aiguille sur la zone.",
+    "L'aiguille est commune : tout le monde la déplace, la dernière position compte. Quand elle est bien placée, chacun appuie sur « Verrouiller » (déplacer l'aiguille efface les verrous).",
+    "Au centre de la zone : 4 points ; tout près : 3 ; pas loin : 2. En équipes, l'autre équipe parie « plus à gauche » ou « plus à droite » : 1 point si elle a raison.",
+    "Premier à 10 points (l'autre équipe a droit à un tour de rattrapage). En coopératif, vous atteignez ensemble le score visé avant la dernière manche."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 12,
+  "duration": "20 min",
+  "emoji": "📡",
+  "color": "#38F2D8",
+  "ink": "#12052E",
+  "order": 130,
+  "options": [
+    { "key": "mode", "label": "Mode", "help": "Les équipes demandent 4 joueurs au moins", "type": "choice", "default": "teams",
+      "choices": [{ "value": "teams", "label": "Équipes" }, { "value": "coop", "label": "Coopératif" }] },
+    { "key": "target", "label": "Points à atteindre", "type": "choice", "default": 10,
+      "choices": [{ "value": 7, "label": "7" }, { "value": 10, "label": "10" }, { "value": 15, "label": "15" }] },
+    { "key": "maxRounds", "label": "Manches max (coopératif)", "type": "choice", "default": 8,
+      "choices": [{ "value": 5, "label": "5" }, { "value": 8, "label": "8" }, { "value": 10, "label": "10" }] },
+    { "key": "timer", "label": "Minuteur", "help": "Par étape : indice, aiguille, pari", "type": "choice", "default": 0,
+      "choices": [{ "value": 0, "label": "Aucun" }, { "value": 45, "label": "45 s" }, { "value": 90, "label": "1 min 30" }] }
+  ]
+}

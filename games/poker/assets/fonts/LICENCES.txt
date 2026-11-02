@@ -1,0 +1,4 @@
+Polices du jeu Poker, toutes sous SIL Open Font License 1.1 (texte complet : OFL.txt).
+
+- Rubik (rubik.woff2) : Copyright 2015 The Rubik Project Authors (https://github.com/googlefonts/rubik)
+- Figtree (figtree.woff2) : Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)

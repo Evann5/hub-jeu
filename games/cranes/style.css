@@ -1,0 +1,142 @@
+/* Crânes et roses : fête des morts fluo. Fond nuit, guirlande de papel picado, calaveras et roses en stickers
+   aux couleurs vives, gros contours et ombres franches. Tout en Rubik, très gras. Tout est sous .g-cranes. */
+
+@font-face { font-family: 'CR Rubik'; src: url('assets/fonts/rubik.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-cranes {
+  --bg: #14052E;
+  --bg-2: #2B0F66;
+  --ink: #0B0220;
+  --white: #FFFFFF;
+  --soft: #D6C8F5;
+  --lemon: #F6FF3D;
+  --pink: #FF2E93;
+  --teal: #00E5C8;
+  --orange: #FF8A1F;
+  --disc: 52px;
+  --cr-display: 'CR Rubik', system-ui, sans-serif;
+  --cr-text: 'CR Rubik', system-ui, sans-serif;
+  background:
+    radial-gradient(900px 420px at 50% -8%, #5A1FC4 0%, transparent 70%),
+    radial-gradient(circle at 10% 90%, rgb(255 46 147 / 0.22) 0 150px, transparent 151px),
+    radial-gradient(circle at 94% 66%, rgb(0 229 200 / 0.18) 0 130px, transparent 131px),
+    var(--bg);
+  color: var(--white);
+  font: 500 1rem/1.4 var(--cr-text);
+  overflow-y: auto;
+}
+.g-cranes * { box-sizing: border-box; }
+.g-cranes svg { display: block; }
+
+.g-cranes .cr { flex: 1; display: flex; flex-direction: column; min-height: 100%; }
+.g-cranes .cr-in { width: min(760px, 100%); margin: 0 auto; padding: 14px 14px 28px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; }
+
+/* Guirlande de papel picado */
+.g-cranes .cr-flags { display: flex; flex: none; height: 38px; border-top: 3px solid var(--lemon); margin-bottom: -2px; pointer-events: none; }
+.g-cranes .cr-flags i {
+  flex: 1; transform-origin: 50% 0;
+  background:
+    radial-gradient(circle at 50% 32%, var(--bg) 0 3px, transparent 3.5px),
+    radial-gradient(circle at 24% 58%, var(--bg) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 76% 58%, var(--bg) 0 2px, transparent 2.5px),
+    var(--c);
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 87.5% 100%, 75% 80%, 62.5% 100%, 50% 80%, 37.5% 100%, 25% 80%, 12.5% 100%, 0 80%);
+  margin: 0 1px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .g-cranes .cr-flags i { animation: cr-sway 4.5s ease-in-out var(--d, 0s) infinite alternate; }
+  @keyframes cr-sway { from { transform: rotate(-2.2deg); } to { transform: rotate(2.2deg); } }
+}
+
+/* En-tête : manche, disques posés, temps */
+.g-cranes .cr-top { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 600; color: var(--soft); }
+.g-cranes .cr-round { font: 900 1.1rem var(--cr-display); color: var(--lemon); }
+.g-cranes .cr-time { margin-left: auto; display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.g-cranes .cr-clock { font: 700 1.1rem var(--cr-text); font-variant-numeric: tabular-nums; color: var(--white); }
+.g-cranes .cr-bar { flex: 1; height: 8px; border-radius: 99px; background: rgb(255 255 255 / 0.14); overflow: hidden; }
+.g-cranes .cr-bar i { display: block; height: 100%; background: var(--teal); border-radius: 99px; transition: width 0.25s linear; }
+.g-cranes .cr-time.is-low .cr-bar i { background: var(--pink); }
+.g-cranes .cr-time.is-low .cr-clock { color: var(--pink); }
+.g-cranes .cr-time[hidden] { display: none; }
+
+/* Bandeau d'état */
+.g-cranes .cr-banner { padding: 14px 16px; border-radius: 24px; border: 3px solid var(--ink); background: linear-gradient(135deg, #7B2CFF, #FF2E93); box-shadow: 0 6px 0 var(--ink); }
+.g-cranes .cr-banner h2 { margin: 0; font: 900 clamp(1.4rem, 1.1rem + 1.6vw, 1.9rem)/1.1 var(--cr-display); color: var(--lemon); text-shadow: 0 3px 0 var(--ink); overflow-wrap: anywhere; }
+.g-cranes .cr-banner p { margin: 6px 0 0; color: var(--white); font-size: 0.95rem; font-weight: 600; }
+
+/* Tapis des joueurs */
+.g-cranes .cr-mats { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 10px; }
+.g-cranes .cr-mat { display: grid; gap: 8px; padding: 12px 14px; border-radius: 24px; background: rgb(255 255 255 / 0.08); border: 3px solid rgb(255 255 255 / 0.12); transition: border-color 0.2s, box-shadow 0.2s; }
+.g-cranes .cr-mat.is-me { background: rgb(255 46 147 / 0.18); }
+.g-cranes .cr-mat.is-turn { border-color: var(--lemon); box-shadow: 0 0 0 4px rgb(246 255 61 / 0.25), 0 5px 0 var(--ink); }
+.g-cranes .cr-mat.is-out { opacity: 0.55; }
+.g-cranes .cr-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.g-cranes .cr-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-cranes .cr-pips { margin-left: auto; display: flex; gap: 4px; flex: none; }
+.g-cranes .cr-pips i { width: 22px; height: 22px; color: rgb(255 255 255 / 0.2); }
+.g-cranes .cr-pips i.on { color: var(--lemon); }
+.g-cranes .cr-pips svg { width: 100%; height: 100%; }
+.g-cranes .cr-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: calc(var(--disc) + 6px); }
+.g-cranes .cr-count { font-size: 0.85rem; font-weight: 600; color: var(--soft); white-space: nowrap; }
+.g-cranes .cr-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.g-cranes .cr-tag { padding: 3px 10px; border-radius: 99px; background: rgb(255 255 255 / 0.12); font-size: 0.8rem; font-weight: 700; }
+.g-cranes .cr-tag.is-hot { background: var(--pink); color: var(--white); border: 2px solid var(--ink); }
+.g-cranes .cr-tag.is-win { background: var(--lemon); color: var(--ink); border: 2px solid var(--ink); }
+.g-cranes .cr-tag.is-out { background: rgb(0 0 0 / 0.35); }
+
+/* Disques */
+.g-cranes .cr-pile { display: flex; align-items: center; min-height: var(--disc); }
+.g-cranes .cr-empty { color: var(--soft); font-size: 0.85rem; font-style: italic; }
+.g-cranes .cr-disc { position: relative; display: block; flex: none; width: var(--disc); height: var(--disc); padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; filter: drop-shadow(0 3px 0 rgb(0 0 0 / 0.35)); }
+.g-cranes .cr-pile .cr-disc + .cr-disc { margin-left: calc(var(--disc) * -0.3); }
+.g-cranes .cr-disc svg { width: 100%; height: 100%; }
+.g-cranes .cr-disc.is-mine::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 2px dashed rgb(255 255 255 / 0.85); }
+.g-cranes .cr-disc.is-up { filter: drop-shadow(0 0 10px rgb(246 255 61 / 0.8)); }
+.g-cranes button.cr-disc { cursor: pointer; transition: transform 0.12s; }
+.g-cranes button.cr-disc:disabled { cursor: default; opacity: 0.4; filter: grayscale(0.6); }
+.g-cranes button.cr-disc:not(:disabled):hover { transform: translateY(-3px) scale(1.05); }
+.g-cranes button.cr-disc:not(:disabled):active { transform: scale(0.95); }
+.g-cranes button.cr-disc.is-take { outline: 3px solid var(--teal); outline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) {
+  .g-cranes button.cr-disc.is-take { animation: cr-pulse 1.4s ease-in-out infinite; }
+  @keyframes cr-pulse { 50% { outline-offset: 6px; outline-color: var(--lemon); } }
+}
+.g-cranes button:focus-visible { outline: 3px solid var(--lemon); outline-offset: 3px; }
+
+/* Zone d'action */
+.g-cranes .cr-actions { display: grid; gap: 14px; padding: 14px; border-radius: 20px; background: rgb(0 0 0 / 0.28); border: 3px dashed rgb(255 255 255 / 0.4); }
+.g-cranes .cr-label { margin: 0; font: 800 1.05rem var(--cr-display); color: var(--white); }
+.g-cranes .cr-hand-row { display: grid; gap: 8px; }
+.g-cranes .cr-hand { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; min-height: 64px; }
+.g-cranes .cr-hand .cr-disc { --disc: 64px; }
+.g-cranes .cr-bid { display: grid; gap: 10px; }
+.g-cranes .cr-stepper { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.g-cranes .cr-stepper button { width: 52px; height: 52px; border: 0; border-radius: 50%; background: var(--teal); color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); font: 900 1.6rem/1 var(--cr-text); cursor: pointer; }
+.g-cranes .cr-stepper button:disabled { opacity: 0.35; cursor: default; }
+.g-cranes .cr-stepper output { min-width: 3ch; text-align: center; font: 900 2.6rem/1 var(--cr-display); color: var(--lemon); text-shadow: 0 3px 0 var(--ink); }
+.g-cranes .cr-btn { min-height: 54px; padding: 0 24px; border: 3px solid var(--ink); border-radius: 99px; background: var(--white); color: var(--ink); box-shadow: 0 5px 0 var(--ink); font: 800 1.05rem var(--cr-text); cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+.g-cranes .cr-btn.is-main { background: var(--lemon); color: var(--ink); }
+.g-cranes .cr-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.g-cranes .cr-btn:disabled { opacity: 0.4; cursor: default; }
+.g-cranes .cr-note { margin: 0; text-align: center; color: var(--soft); font-size: 0.9rem; }
+.g-cranes .cr-next { display: grid; gap: 8px; padding: 14px; border-radius: 20px; background: rgb(0 0 0 / 0.28); }
+
+/* Historique */
+.g-cranes .cr-log { border-radius: 16px; background: rgb(255 255 255 / 0.05); padding: 4px 14px; }
+.g-cranes .cr-log summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; color: var(--soft); }
+.g-cranes .cr-log ol { margin: 0 0 10px; padding: 0; list-style: none; display: grid; gap: 4px; max-height: 220px; overflow-y: auto; font-size: 0.88rem; color: var(--soft); }
+
+@media (min-width: 900px) {
+  .g-cranes { --disc: 60px; }
+  .g-cranes .cr-hand .cr-disc { --disc: 72px; }
+}
+
+/* Rebond d'un disque qui vient d'apparaître, confettis de victoire : coupés si le mouvement est réduit */
+.g-cranes .cr-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 20; }
+.g-cranes .cr-confetti i { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .g-cranes .cr-disc.pop { animation: cr-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  @keyframes cr-pop { 0% { transform: scale(0.2) rotate(-25deg); } 60% { transform: scale(1.18) rotate(6deg); } 100% { transform: none; } }
+  .g-cranes .cr-confetti i { display: block; position: absolute; top: -16px; left: var(--x); width: 12px; height: 18px; border-radius: 3px; background: var(--c); border: 2px solid var(--ink); transform: rotate(var(--r)); animation: cr-fall 2.6s ease-in var(--d) forwards; }
+  @keyframes cr-fall { to { transform: translateY(110vh) rotate(calc(var(--r) + 540deg)); } }
+}

@@ -1,6 +1,6 @@
 // Écran Accueil : un tableau de bord en cartes — bonjour, qui est en ligne, messages non lus, jouer, mon profil.
 import { h, icon, token, count } from '../dom.js';
-import { state, unreadTotal, sortedUsers } from '../store.js';
+import { state, unreadTotal, sortedUsers, myTurnTables } from '../store.js';
 import { openProfile } from '../dialogs.js';
 
 const dateFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -33,6 +33,11 @@ export function render(container) {
   const total = unreadTotal();
   const rows = unreadRows();
   const first = state.channels[0];
+  const turns = myTurnTables().length;
+  const lobbies = state.tables.filter((t) => t.status === 'lobby').length;
+  const playText = turns ? `C’est à toi de jouer sur ${count(turns, 'table', 'tables')}.`
+    : lobbies ? `${count(lobbies, 'salon ouvert attend', 'salons ouverts attendent')} des joueurs.`
+      : `${count(state.games.length, 'jeu', 'jeux')} : ouvre une table et invite la classe.`;
 
   const summary = [
     online.length ? `${count(online.length, 'personne est', 'personnes sont')} en ligne` : 'Personne d’autre n’est en ligne',
@@ -52,7 +57,7 @@ export function render(container) {
     h('a.card.card-play', { href: '#/jouer' },
       h('span.card-corner', icon('open')),
       icon('dice'),
-      h('div', h('h2', 'Jouer'), h('p.card-text', 'Les tables ouvrent bientôt. Le premier jeu est en préparation.'))),
+      h('div', h('h2', turns ? 'À toi de jouer' : 'Jouer'), h('p.card-text', playText))),
 
     h('section.card.card-online',
       h('div.card-top', h('h2', 'En ligne'), h('span.big-num', String(online.length))),

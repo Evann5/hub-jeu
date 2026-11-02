@@ -1,0 +1,160 @@
+/* Complot : dark fantasy de jeu vidéo. Violet profond, or lumineux, lueurs, cartes de personnages illustrées à plat.
+   Titres en Syne (graisses fortes), texte en Inter Tight. Tout est sous .g-complot. */
+
+@font-face { font-family: 'CP Syne'; src: url('assets/fonts/syne.woff2') format('woff2-variations'); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: 'CP Inter'; src: url('assets/fonts/inter-tight.woff2') format('woff2-variations'); font-weight: 100 900; font-display: swap; }
+
+.g-complot {
+  --bg: #0E0722;
+  --panel: #1E1045;
+  --panel-2: #2C1666;
+  --line: rgb(255 200 61 / 0.35);
+  --gold: #FFC83D;
+  --gold-hi: #FFE48A;
+  --glow: 0 0 22px rgb(255 200 61 / 0.45);
+  --violet: #8A4DFF;
+  --rose: #FF4D7A;
+  --text: #F4F0FF;
+  --soft: #C5B8F0;
+  --cp-display: 'CP Syne', 'Arial Black', system-ui, sans-serif;
+  --cp-text: 'CP Inter', system-ui, sans-serif;
+  background:
+    radial-gradient(800px 400px at 50% -6%, rgb(138 77 255 / 0.55), transparent 70%),
+    radial-gradient(500px 300px at 100% 80%, rgb(255 200 61 / 0.1), transparent 70%),
+    var(--bg);
+  color: var(--text);
+  font: 500 1rem/1.4 var(--cp-text);
+  overflow-y: auto;
+}
+.g-complot * { box-sizing: border-box; }
+.g-complot svg { display: block; }
+.g-complot .cp { flex: 1; display: flex; flex-direction: column; min-height: 100%; }
+.g-complot .cp-in { width: min(900px, 100%); margin: 0 auto; padding: 14px 14px 30px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; }
+.g-complot button { font-family: var(--cp-text); }
+.g-complot button:focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 3px; }
+
+/* En-tête */
+.g-complot .cp-top { display: flex; align-items: center; gap: 14px; font-size: 0.85rem; font-weight: 600; color: var(--soft); }
+.g-complot .cp-turn { font: 800 1.05rem var(--cp-display); color: var(--gold); }
+.g-complot .cp-time { margin-left: auto; display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.g-complot .cp-time[hidden] { display: none; }
+.g-complot .cp-clock { font: 700 1.1rem var(--cp-text); font-variant-numeric: tabular-nums; color: var(--text); }
+.g-complot .cp-bar { flex: 1; height: 8px; border-radius: 99px; background: rgb(255 255 255 / 0.14); overflow: hidden; }
+.g-complot .cp-bar i { display: block; height: 100%; background: var(--gold); box-shadow: var(--glow); border-radius: 99px; transition: width 0.25s linear; }
+.g-complot .cp-time.is-low .cp-bar i { background: var(--rose); }
+.g-complot .cp-time.is-low .cp-clock { color: var(--rose); }
+
+/* Bandeau */
+.g-complot .cp-banner { padding: 14px 18px; border-radius: 20px; background: linear-gradient(135deg, var(--panel-2), var(--panel)); border: 2px solid var(--gold); box-shadow: var(--glow), inset 0 0 30px rgb(138 77 255 / 0.25); }
+.g-complot .cp-banner h2 { margin: 0; font: 800 clamp(1.3rem, 1.05rem + 1.4vw, 1.8rem)/1.15 var(--cp-display); color: var(--gold-hi); text-shadow: 0 0 18px rgb(255 200 61 / 0.5); overflow-wrap: anywhere; }
+.g-complot .cp-banner p { margin: 6px 0 0; color: var(--soft); font-size: 0.95rem; font-weight: 500; }
+
+/* Scène en cours */
+.g-complot .cp-scene { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgb(255 77 122 / 0.14); border: 2px solid rgb(255 77 122 / 0.6); font-weight: 700; }
+.g-complot .cp-scene-act { font: 800 1.05rem var(--cp-display); color: var(--gold-hi); }
+.g-complot .cp-scene-claim, .g-complot .cp-scene-block { padding: 2px 10px; border-radius: 99px; background: rgb(255 255 255 / 0.12); font-size: 0.85rem; }
+.g-complot .cp-scene-block { background: var(--violet); }
+
+/* Adversaires */
+.g-complot .cp-seats { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px; }
+.g-complot .cp-seat { display: grid; gap: 8px; padding: 12px; border-radius: 18px; background: var(--panel); border: 2px solid rgb(255 255 255 / 0.1); transition: border-color 0.2s, box-shadow 0.2s; }
+.g-complot .cp-seat.is-turn { border-color: var(--gold); box-shadow: var(--glow); }
+.g-complot .cp-seat.is-wait { border-color: var(--violet); box-shadow: 0 0 18px rgb(138 77 255 / 0.55); }
+.g-complot .cp-seat.is-target { border-color: var(--rose); }
+.g-complot .cp-seat.is-out { opacity: 0.5; }
+.g-complot .cp-seat-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.g-complot .cp-name { flex: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-complot .cp-seat-cards { display: flex; gap: 8px; min-height: 80px; align-items: center; }
+.g-complot .cp-gone { color: var(--soft); font-size: 0.85rem; font-style: italic; }
+.g-complot .cp-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.g-complot .cp-tag { padding: 2px 10px; border-radius: 99px; background: rgb(255 255 255 / 0.14); font-size: 0.78rem; font-weight: 700; }
+.g-complot .cp-tag.is-hot { background: var(--gold); color: #1A0F33; }
+.g-complot .cp-tag.is-wait { background: var(--violet); color: #fff; }
+.g-complot .cp-tag.is-target { background: var(--rose); color: #1A0F33; }
+.g-complot .cp-tag.is-block { background: var(--violet); color: #fff; }
+.g-complot .cp-tag.is-win { background: var(--gold-hi); color: #1A0F33; box-shadow: var(--glow); }
+.g-complot .cp-tag.is-out { background: rgb(0 0 0 / 0.4); }
+
+/* Pièces */
+.g-complot .cp-coins { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px 2px 4px; border-radius: 99px; background: rgb(0 0 0 / 0.35); flex: none; }
+.g-complot .cp-coins svg { width: 22px; height: 22px; }
+.g-complot .cp-coins b { font: 800 1.1rem var(--cp-display); color: var(--gold-hi); }
+
+/* Cartes de personnages */
+.g-complot .cp-card {
+  position: relative; display: block; flex: none; padding: 0; overflow: hidden; color: #fff; text-align: center;
+  background: linear-gradient(170deg, var(--c1), var(--c2));
+  border: 3px solid var(--gold); border-radius: 14px;
+  box-shadow: 0 0 14px rgb(255 200 61 / 0.35);
+  font-family: var(--cp-text);
+}
+.g-complot .cp-card svg { width: 100%; height: 100%; }
+.g-complot .cp-card.is-lg { width: min(44vw, 190px); aspect-ratio: 3 / 4.3; border-radius: 18px; }
+.g-complot .cp-card.is-lg svg { position: absolute; inset: 0; height: 74%; }
+.g-complot .cp-card.is-sm { width: 52px; aspect-ratio: 3 / 4.2; border-radius: 10px; border-width: 2px; box-shadow: none; }
+.g-complot .cp-card.is-back { border-color: rgb(255 200 61 / 0.6); }
+.g-complot .cp-card-name { position: absolute; left: 0; right: 0; bottom: 30px; padding: 4px 6px; font: 800 0.95rem/1.1 var(--cp-display); background: rgb(14 7 34 / 0.72); }
+.g-complot .cp-card-power { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; display: grid; place-items: center; padding: 0 6px; font-size: 0.72rem; font-weight: 600; background: rgb(14 7 34 / 0.9); color: var(--gold-hi); }
+.g-complot .cp-card-mini { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 2px; font-size: 0.55rem; font-weight: 800; background: rgb(14 7 34 / 0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-complot .cp-card.is-dead { filter: grayscale(0.85) brightness(0.65); border-color: rgb(255 255 255 / 0.3); box-shadow: none; }
+.g-complot .cp-card-lost { position: absolute; top: 8px; left: -28px; right: -28px; transform: rotate(-14deg); background: var(--rose); color: #1A0F33; font: 800 0.8rem var(--cp-display); text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 0; }
+.g-complot .cp-card.is-sm .cp-card-lost { display: none; }
+.g-complot button.cp-card { cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; }
+.g-complot button.cp-card:hover { transform: translateY(-4px); box-shadow: var(--glow); }
+.g-complot button.cp-card.is-selected { transform: translateY(-8px); box-shadow: 0 0 0 4px var(--gold), 0 0 28px rgb(255 200 61 / 0.7); }
+@media (prefers-reduced-motion: no-preference) {
+  .g-complot .cp-seat.is-turn, .g-complot .cp-seat.is-wait { animation: cp-glow 1.6s ease-in-out infinite alternate; }
+  @keyframes cp-glow { from { filter: brightness(1); } to { filter: brightness(1.25); } }
+  .g-complot .cp-banner h2 { animation: cp-in 0.35s ease-out; }
+  @keyframes cp-in { from { transform: translateY(6px); opacity: 0; } }
+}
+
+/* Mes cartes */
+.g-complot .cp-mine { padding: 12px; border-radius: 20px; background: linear-gradient(180deg, var(--panel), rgb(30 16 69 / 0.4)); border: 2px solid var(--line); }
+.g-complot .cp-mine-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.g-complot .cp-mine h3 { margin: 0; font: 800 1.05rem var(--cp-display); color: var(--gold); }
+.g-complot .cp-mine-cards { display: flex; justify-content: center; gap: 14px; }
+
+/* Panneaux d'action */
+.g-complot .cp-panel { display: grid; gap: 10px; padding: 14px; border-radius: 20px; background: var(--panel); border: 2px solid var(--gold); box-shadow: var(--glow); }
+.g-complot .cp-label { margin: 0; font: 800 1.05rem var(--cp-display); color: var(--gold-hi); }
+.g-complot .cp-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.g-complot .cp-act { display: grid; gap: 2px; align-content: start; min-height: 76px; padding: 10px 12px; border: 2px solid rgb(255 255 255 / 0.2); border-radius: 14px; background: var(--panel-2); color: var(--text); text-align: left; cursor: pointer; transition: transform 0.1s, border-color 0.15s; }
+.g-complot .cp-act.is-claim { border-left: 8px solid var(--c1); }
+.g-complot .cp-act:not(:disabled):hover { border-color: var(--gold); transform: translateY(-2px); }
+.g-complot .cp-act:disabled { opacity: 0.4; cursor: default; }
+.g-complot .cp-act-name { font: 800 1rem var(--cp-display); }
+.g-complot .cp-act-sub { font-size: 0.8rem; color: var(--soft); }
+.g-complot .cp-act-claim { font-size: 0.75rem; font-weight: 700; color: var(--gold-hi); }
+.g-complot .cp-act-claim.is-free { color: var(--soft); font-weight: 500; }
+.g-complot .cp-targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.g-complot .cp-target { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 6px 12px; border: 2px solid var(--rose); border-radius: 14px; background: rgb(255 77 122 / 0.15); color: var(--text); font-weight: 700; cursor: pointer; }
+.g-complot .cp-target span { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-complot .cp-target:hover { background: rgb(255 77 122 / 0.35); }
+.g-complot .cp-react { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.g-complot .cp-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.g-complot .cp-options .cp-card.is-lg { width: min(38vw, 150px); }
+.g-complot .cp-btn { min-height: 52px; padding: 0 22px; border: 2px solid var(--gold); border-radius: 99px; background: transparent; color: var(--gold-hi); font-weight: 800; font-size: 1rem; cursor: pointer; transition: transform 0.1s; }
+.g-complot .cp-btn.is-main { background: var(--gold); color: #1A0F33; box-shadow: var(--glow); }
+.g-complot .cp-btn.is-danger { background: var(--rose); border-color: var(--rose); color: #1A0F33; box-shadow: 0 0 22px rgb(255 77 122 / 0.5); }
+.g-complot .cp-btn.is-ghost { border-color: rgb(255 255 255 / 0.4); color: var(--text); }
+.g-complot .cp-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+.g-complot .cp-btn:active { transform: scale(0.97); }
+.g-complot .cp-note { margin: 0; text-align: center; color: var(--soft); font-size: 0.92rem; }
+
+/* Journal */
+.g-complot .cp-log { padding: 4px 14px; border-radius: 16px; background: rgb(255 255 255 / 0.05); }
+.g-complot .cp-log summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 800; color: var(--soft); }
+.g-complot .cp-log ol { margin: 0 0 10px; padding: 0; list-style: none; display: grid; gap: 5px; max-height: 240px; overflow-y: auto; font-size: 0.88rem; color: var(--soft); }
+.g-complot .cp-log li { padding-left: 10px; border-left: 3px solid var(--violet); }
+
+/* Confettis de victoire */
+.g-complot .cp-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 20; }
+.g-complot .cp-confetti i { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .g-complot .cp-confetti i { display: block; position: absolute; top: -16px; left: var(--x); width: 12px; height: 18px; border-radius: 3px; background: var(--c); transform: rotate(var(--r)); animation: cp-fall 2.6s ease-in var(--d) forwards; }
+  @keyframes cp-fall { to { transform: translateY(110vh) rotate(calc(var(--r) + 540deg)); } }
+}
+@media (min-width: 900px) {
+  .g-complot .cp-card.is-sm { width: 58px; }
+}

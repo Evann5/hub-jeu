@@ -1,0 +1,7 @@
+Polices du jeu Belote, libres d'usage.
+
+SIL Open Font License 1.1 (texte : OFL.txt)
+- Unbounded : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
+- Figtree : Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
+
+Les cartes et les motifs sont dessinés en CSS et SVG dans le jeu : aucune image externe.

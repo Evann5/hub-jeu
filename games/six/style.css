@@ -1,0 +1,189 @@
+/* Six cornes : une ferme kawaii. Ciel pastel vif, prairies bonbon, cartes gélatine cernées d'un gros contour violet,
+   petites vaches rondes. Tout rebondit. Toutes les règles commencent par .g-six. */
+
+@font-face { font-family: 'SX Syne'; src: url('assets/fonts/syne.woff2') format('woff2-variations'); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: 'SX Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-six {
+  --sx-ink: #2d1b69;
+  --sx-white: #ffffff;
+  --sx-pink: #ff5fb5;
+  --sx-lemon: #ffe95c;
+  --sx-sky: #7fd6ff;
+  --sx-mint: #7ee8a8;
+  --sx-mint-2: #62dd93;
+  --sx-violet: #8f5bff;
+  --sx-orange: #ffaa4d;
+  --sx-display: 'SX Syne', 'Arial Black', system-ui, sans-serif;
+  --sx-text: 'SX Figtree', system-ui, sans-serif;
+  --sx-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--sx-ink);
+  font-family: var(--sx-text);
+  background:
+    radial-gradient(ellipse 120px 44px at 12% 70px, #fff 60%, transparent 62%),
+    radial-gradient(ellipse 90px 34px at 20% 84px, #fff 60%, transparent 62%),
+    radial-gradient(ellipse 140px 48px at 82% 40px, #fff 60%, transparent 62%),
+    linear-gradient(180deg, #8fdcff 0, #c9f3ff 180px, #d8ffd2 420px, #fff7a8 100%);
+}
+
+.g-six .sx {
+  container-type: inline-size;
+  flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px;
+  padding: 14px clamp(10px, 3cqw, 22px) 0; overflow-y: auto;
+  --cw-lane: min(46px, calc((100cqw - 104px) / 5));
+  --cw-hand: min(56px, calc((100cqw - 24px - 32px) / 5));
+  --cw-strip: 40px;
+}
+@container (min-width: 600px) { .g-six .sx { --cw-hand: min(74px, calc((100cqw - 24px - 72px) / 10)); --cw-lane: min(66px, calc((100cqw - 104px) / 5)); } }
+@container (min-width: 720px) { .g-six .sx { --cw-lane: min(66px, calc((100cqw - 340px - 104px) / 5)); --cw-strip: 46px; } }
+
+/* ——— Haut ——— */
+.g-six .sx-top { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.g-six .sx-status { flex: 1 1 260px; margin: 0; font: 800 clamp(0.85rem, 0.72rem + 1.1cqw, 1.2rem)/1.25 var(--sx-display); letter-spacing: -0.02em; }
+.g-six .sx-top-chips { display: flex; align-items: center; gap: 8px; }
+.g-six .sx-chip, .g-six .sx-timer { padding: 5px 14px; border: 3px solid var(--sx-ink); border-radius: 999px; background: var(--sx-white); box-shadow: 0 3px 0 var(--sx-ink); font: 800 0.8125rem var(--sx-text); white-space: nowrap; }
+.g-six .sx-timer { background: var(--sx-lemon); font: 900 0.9375rem var(--sx-text); font-variant-numeric: tabular-nums; }
+.g-six .sx-timer[hidden] { display: none; }
+.g-six .sx-timer.is-low { background: var(--sx-pink); color: #fff; animation: sx-tick 0.5s ease-in-out infinite; }
+@keyframes sx-tick { 50% { transform: scale(1.1); } }
+
+/* ——— Cartes gélatine ——— */
+.g-six .sx-card {
+  --cw: var(--cw-lane);
+  position: relative; display: grid; grid-template-rows: 1fr auto; justify-items: center; flex: none; overflow: hidden;
+  width: var(--cw); aspect-ratio: 5 / 7; padding: calc(var(--cw) * 0.06) calc(var(--cw) * 0.04) calc(var(--cw) * 0.08);
+  border: 3px solid var(--sx-ink); border-radius: calc(var(--cw) * 0.2);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--bg) 60%, #fff), var(--bg) 55%, color-mix(in srgb, var(--bg) 88%, #000));
+  box-shadow: 0 3px 0 var(--sx-ink), inset 0 2px 0 rgb(255 255 255 / 0.75), inset 0 -3px 0 rgb(0 0 0 / 0.1);
+  color: var(--sx-ink); user-select: none;
+}
+.g-six .sx-card::before { content: ''; position: absolute; left: 10%; top: 5%; width: 38%; height: 16%; border-radius: 50%; background: rgb(255 255 255 / 0.55); transform: rotate(-24deg); pointer-events: none; }
+.g-six .sx-card.b1 { --bg: #ffffff; }
+.g-six .sx-card.b2 { --bg: #ffe95c; }
+.g-six .sx-card.b3 { --bg: #ffaa4d; }
+.g-six .sx-card.b5 { --bg: #ff5fb5; }
+.g-six .sx-card.b7 { --bg: #8f5bff; color: #fff; }
+.g-six .sx-corner { position: absolute; left: calc(var(--cw) * 0.12); top: calc(var(--cw) * 0.06); font: 900 calc(var(--cw) * 0.2)/1 var(--sx-text); opacity: 0.75; }
+.g-six .sx-num { align-self: center; padding-top: calc(var(--cw) * 0.12); font: 900 calc(var(--cw) * 0.5)/1 var(--sx-text); letter-spacing: -0.05em; text-shadow: 0 calc(var(--cw) * 0.03) 0 rgb(255 255 255 / 0.5); }
+.g-six .sx-card.b7 .sx-num { text-shadow: 0 calc(var(--cw) * 0.03) 0 rgb(0 0 0 / 0.25); }
+.g-six .sx-horns { display: flex; align-items: center; justify-content: center; gap: 0; min-height: calc(var(--cw) * 0.24); }
+.g-six .sx-horn { width: calc(var(--cw) * 0.25); height: calc(var(--cw) * 0.25); overflow: visible; }
+.g-six .sx-x { font: 900 calc(var(--cw) * 0.22)/1 var(--sx-text); margin-left: 2px; }
+.g-six .sx-h-face { fill: #fff; stroke: var(--sx-ink); stroke-width: 1.8; }
+.g-six .sx-h-horn { fill: var(--sx-lemon); stroke: var(--sx-ink); stroke-width: 1.6; stroke-linejoin: round; }
+.g-six .sx-h-ear { fill: #ff9fd0; stroke: var(--sx-ink); stroke-width: 1.4; }
+.g-six .sx-h-snout { fill: #ffb3d9; stroke: var(--sx-ink); stroke-width: 1.4; }
+.g-six .sx-h-dot { fill: var(--sx-ink); }
+.g-six .sx-card.is-back { --bg: var(--sx-violet); background: radial-gradient(circle at 30% 25%, #b99bff, var(--sx-violet) 60%, #6a3be0); }
+.g-six .sx-card.is-back::after { content: ''; position: absolute; inset: 12%; border-radius: calc(var(--cw) * 0.12); border: 2px dashed rgb(255 255 255 / 0.7); }
+.g-six .sx-back-mark { grid-row: 1 / -1; align-self: center; width: 46%; aspect-ratio: 1; border-radius: 50%; background: var(--sx-lemon); border: 3px solid var(--sx-ink); z-index: 1; }
+.g-six .sx-card.is-empty { background: rgb(255 255 255 / 0.4); border-style: dashed; box-shadow: none; opacity: 0.8; }
+.g-six .sx-card.is-empty::before { display: none; }
+
+/* ——— Joueurs ——— */
+.g-six .sx-score { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px 8px; }
+.g-six .sx-pl {
+  position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 8px; padding: 6px 12px 10px 6px;
+  border: 3px solid var(--sx-ink); border-radius: 18px; background: var(--pc, #fff); box-shadow: 0 4px 0 var(--sx-ink); min-width: 0;
+}
+.g-six .sx-pl.is-me { outline: 4px solid var(--sx-white); outline-offset: 0; }
+.g-six .sx-pl.is-left { opacity: 0.5; filter: grayscale(0.6); }
+.g-six .sx-pl.is-win { background: var(--sx-lemon); animation: sx-pop 0.8s var(--sx-pop) infinite alternate; }
+.g-six .sx-pl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 900; font-size: 0.9375rem; }
+.g-six .sx-pl-heads { display: inline-flex; align-items: center; gap: 3px; font: 900 1.25rem var(--sx-text); }
+.g-six .sx-pl-heads .sx-horn { width: 22px; height: 22px; }
+.g-six .sx-pl-state { position: absolute; right: 10px; top: -11px; min-width: 22px; padding: 0 7px; border: 3px solid var(--sx-ink); border-radius: 999px; background: var(--sx-mint); font: 900 0.75rem/16px var(--sx-text); text-align: center; animation: sx-pop-in 0.35s var(--sx-pop); }
+.g-six .sx-pl-state:empty { display: none; }
+.g-six .sx-pl.is-left .sx-pl-state { background: #ddd; }
+.g-six .sx-pl-bar { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.65); box-shadow: inset 0 0 0 2px var(--sx-ink); overflow: hidden; }
+.g-six .sx-pl-bar::after { content: ''; display: block; width: var(--p); height: 100%; background: linear-gradient(90deg, var(--sx-pink), var(--sx-violet)); transition: width 0.5s var(--sx-pop); }
+.g-six .sx-pl.is-bump { animation: sx-bump 0.6s var(--sx-pop); }
+@keyframes sx-bump { 40% { transform: scale(1.1) rotate(-2deg); } }
+@keyframes sx-pop { to { transform: scale(1.04) rotate(1deg); } }
+@keyframes sx-pop-in { from { transform: scale(0); } }
+
+/* ——— Prairie : les quatre rangées ——— */
+.g-six .sx-field { display: grid; gap: 14px; align-items: start; }
+@container (min-width: 720px) { .g-six .sx-field { grid-template-columns: 1fr 320px; } }
+.g-six .sx-lanes { display: grid; gap: 16px; }
+.g-six .sx-lane {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 14px 10px 10px 10px; margin: 0;
+  border: 3px solid var(--sx-ink); border-radius: 26px; color: inherit; text-align: left; font: inherit;
+  background: repeating-linear-gradient(90deg, var(--sx-mint) 0 34px, var(--sx-mint-2) 34px 68px); box-shadow: 0 5px 0 var(--sx-ink), inset 0 3px 0 rgb(255 255 255 / 0.5);
+}
+/* Clôture : piquets roses en haut du pré. */
+.g-six .sx-lane::before {
+  content: ''; position: absolute; left: 18px; right: 18px; top: -8px; height: 8px; border-radius: 4px 4px 0 0;
+  background: repeating-linear-gradient(90deg, var(--sx-pink) 0 8px, transparent 8px 20px); pointer-events: none;
+}
+.g-six .sx-lane-n { position: absolute; left: -6px; top: -14px; display: grid; place-items: center; width: 28px; height: 28px; border: 3px solid var(--sx-ink); border-radius: 50%; background: var(--sx-lemon); font: 900 0.875rem var(--sx-text); box-shadow: 0 2px 0 var(--sx-ink); }
+.g-six .sx-slots { display: flex; gap: 4px; }
+.g-six .sx-slot { --cw: var(--cw-lane); display: grid; place-items: center; width: var(--cw); aspect-ratio: 5 / 7; border: 3px dashed rgb(45 27 105 / 0.3); border-radius: calc(var(--cw) * 0.2); background: rgb(255 255 255 / 0.25); }
+.g-six .sx-slot.is-full { border: 0; background: none; }
+.g-six .sx-slot .sx-card { --cw: var(--cw-lane); }
+.g-six .sx-warn { padding: 2px 8px; border-radius: 999px; border: 2px solid var(--sx-ink); background: var(--sx-pink); color: #fff; font: 900 0.75rem var(--sx-text); transform: rotate(-8deg); }
+.g-six .sx-lane-sum { flex: none; display: grid; justify-items: center; gap: 2px; min-width: 38px; padding: 5px 5px; border-radius: 14px; background: var(--sx-white); border: 3px solid var(--sx-ink); font: 900 1.05rem/1 var(--sx-text); }
+.g-six .sx-lane-sum .sx-horn { width: 20px; height: 20px; }
+.g-six .sx-lane:disabled { cursor: default; }
+.g-six .sx-lane.is-choice { cursor: pointer; animation: sx-choice 0.9s ease-in-out infinite; }
+.g-six .sx-lane.is-choice:hover { transform: translateY(-3px) scale(1.01); }
+.g-six .sx-lane:focus-visible { outline: 4px solid var(--sx-pink); outline-offset: 4px; }
+@keyframes sx-choice { 50% { box-shadow: 0 5px 0 var(--sx-ink), 0 0 0 7px var(--sx-lemon); } }
+.g-six .sx-lane.is-taking { animation: sx-take 0.5s ease-in-out; box-shadow: 0 5px 0 var(--sx-ink), 0 0 0 7px var(--sx-pink); }
+@keyframes sx-take { 25% { transform: translateX(-6px) rotate(-1deg); } 50% { transform: translateX(6px) rotate(1deg); } 75% { transform: translateX(-3px); } }
+
+/* ——— Table : les cartes du tour ——— */
+.g-six .sx-table { display: grid; gap: 8px; padding: 12px; border: 3px solid var(--sx-ink); border-radius: 26px; background: rgb(255 255 255 / 0.7); box-shadow: 0 5px 0 var(--sx-ink); min-height: 150px; align-content: start; }
+.g-six .sx-strip { display: flex; flex-wrap: wrap; gap: 10px 8px; align-items: flex-start; }
+.g-six .sx-play { display: grid; justify-items: center; gap: 4px; max-width: calc(var(--cw-strip) + 18px); }
+.g-six .sx-play .sx-card { --cw: var(--cw-strip); }
+.g-six .sx-play-who { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6875rem; font-weight: 800; }
+.g-six .sx-play.is-down .sx-card { animation: sx-pop-in 0.4s var(--sx-pop); }
+.g-six .sx-play.is-pending .sx-card { outline: 4px solid var(--sx-pink); outline-offset: 2px; animation: sx-choice 0.9s ease-in-out infinite; }
+.g-six .sx-play.is-flip { animation: sx-flip 0.5s var(--sx-pop) backwards; }
+@keyframes sx-flip { from { transform: rotateY(90deg) scale(0.6); opacity: 0; } }
+.g-six .sx-strip-note { margin: 0; font-weight: 800; font-size: 0.9375rem; }
+.g-six .sx-strip-note:empty { display: none; }
+.g-six .sx-log { margin: 0; min-height: 1.2em; color: rgb(45 27 105 / 0.8); font-size: 0.8125rem; font-weight: 700; }
+
+/* ——— Ma main ——— */
+.g-six .sx-handbox {
+  position: sticky; bottom: 0; z-index: 5; display: grid; gap: 8px; margin: auto calc(-1 * clamp(10px, 3cqw, 22px)) 0; padding: 12px clamp(10px, 3cqw, 22px) 12px;
+  border-top: 3px solid var(--sx-ink); border-radius: 26px 26px 0 0; background: linear-gradient(180deg, #ffffff, #efe4ff); box-shadow: 0 -6px 0 rgb(45 27 105 / 0.12);
+}
+.g-six .sx-handbox:not(:has(.sx-hand:not([hidden]))):not(:has(.sx-go)):not(:has(.sx-wait:not(:empty))) { display: none; }
+.g-six .sx-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 8px; padding-top: 12px; }
+.g-six .sx-hand[hidden] { display: none; }
+.g-six .sx-pick { padding: 0; border: 0; background: none; color: inherit; transition: transform 0.18s var(--sx-pop); touch-action: manipulation; }
+.g-six .sx-pick .sx-card { --cw: var(--cw-hand); }
+.g-six .sx-pick:disabled { cursor: default; }
+.g-six .sx-pick:not(:disabled) { cursor: pointer; }
+.g-six .sx-pick:not(:disabled):hover { transform: translateY(-7px) rotate(-2deg); }
+.g-six .sx-pick:not(:disabled):active { transform: scale(0.94, 1.06); }
+.g-six .sx-pick.is-selected { transform: translateY(-15px) scale(1.06); }
+.g-six .sx-pick.is-selected .sx-card { outline: 4px solid var(--sx-pink); outline-offset: 2px; }
+.g-six .sx-pick:focus-visible .sx-card { outline: 4px solid var(--sx-violet); outline-offset: 2px; }
+.g-six .sx-pick:disabled .sx-card { filter: saturate(0.9); }
+.g-six .sx-bar { display: flex; justify-content: center; }
+.g-six .sx-go {
+  min-height: 54px; min-width: min(100%, 280px); padding: 0 30px; border: 3px solid var(--sx-ink); border-radius: 999px; color: #fff; font: 800 1.1rem var(--sx-display); touch-action: manipulation;
+  background: linear-gradient(180deg, #ff8fd0, var(--sx-pink) 50%, #e0309a); box-shadow: 0 5px 0 var(--sx-ink), inset 0 3px 0 rgb(255 255 255 / 0.5);
+  text-shadow: 0 2px 0 rgb(45 27 105 / 0.45); transition: transform 0.15s var(--sx-pop);
+}
+.g-six .sx-go:not(:disabled):hover { transform: scale(1.03); }
+.g-six .sx-go:active:not(:disabled) { transform: translateY(4px) scale(1.02, 0.96); box-shadow: 0 1px 0 var(--sx-ink), inset 0 3px 0 rgb(255 255 255 / 0.5); }
+.g-six .sx-go:disabled { background: #fff; color: var(--sx-ink); text-shadow: none; opacity: 0.75; box-shadow: 0 3px 0 var(--sx-ink); cursor: default; }
+.g-six .sx-go:focus-visible { outline: 4px solid var(--sx-violet); outline-offset: 3px; }
+.g-six .sx-wait { margin: 0; font-weight: 800; }
+
+/* ——— Confettis ——— */
+.g-six .sx-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 30; }
+.g-six .sx-confetti i { position: absolute; top: -16px; width: 10px; height: 16px; border-radius: 3px; animation: sx-fall 3s linear forwards; }
+@keyframes sx-fall { to { transform: translateY(110vh) rotate(var(--r)); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-six .sx-lane.is-choice, .g-six .sx-play.is-pending .sx-card, .g-six .sx-lane.is-taking, .g-six .sx-pl.is-bump, .g-six .sx-play.is-flip,
+  .g-six .sx-pl.is-win, .g-six .sx-timer.is-low, .g-six .sx-play.is-down .sx-card, .g-six .sx-pl-state { animation: none; }
+  .g-six .sx-pick, .g-six .sx-pl-bar::after, .g-six .sx-go { transition: none; }
+  .g-six .sx-confetti { display: none; }
+}

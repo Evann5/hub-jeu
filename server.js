@@ -7,6 +7,10 @@ import { api } from './src/api.js';
 import { attachRealtime } from './src/realtime.js';
 import { purgeOldMessages } from './src/chat.js';
 import { purgeExpiredSessions, classCode } from './src/auth.js';
+import { loadGames, gamesDir } from './src/games.js';
+import { purgeTables } from './src/play.js';
+
+await loadGames();
 
 const app = express();
 app.set('trust proxy', 1); // derrière le proxy d'O2Switch : vraie IP et HTTPS
@@ -25,6 +29,10 @@ app.use((req, res, next) => {
 const router = express.Router();
 router.use('/api', api);
 router.use(express.static(join(config.root, 'public'), { maxAge: '1h' }));
+// Fichiers des jeux pour le navigateur : client.js, style.css, client/ et assets/ seulement (jamais rules.js).
+router.use('/games', (req, res, next) => (
+  /^\/[a-z0-9-]+\/(client\.js|style\.css|(client|assets)\/[\w./-]+)$/.test(req.path) && !req.path.includes('..') ? next() : res.sendStatus(404)
+), express.static(gamesDir, { maxAge: '1h', index: false, fallthrough: false }));
 // Les écrans de l'appli passent par l'ancre (#/c/1) : toute autre adresse renvoie à l'accueil.
 router.get('/{*rest}', (req, res) => res.redirect(`${config.basePath}/`));
 if (config.basePath) {
@@ -41,6 +49,8 @@ function housekeeping() {
   const removed = purgeOldMessages();
   if (removed) console.log(`Ménage : ${removed} message(s) de plus d'un an effacé(s).`);
   purgeExpiredSessions();
+  const tablesRemoved = purgeTables();
+  if (tablesRemoved) console.log(`Ménage : ${tablesRemoved} table(s) inactive(s) fermée(s).`);
 }
 housekeeping();
 setInterval(housekeeping, 3600_000).unref();

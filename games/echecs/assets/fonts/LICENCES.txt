@@ -1,0 +1,4 @@
+Police du jeu Échecs, libre d'usage.
+
+SIL Open Font License 1.1 (texte : OFL.txt)
+- Inter Tight : Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter)

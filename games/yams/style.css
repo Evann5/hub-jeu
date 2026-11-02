@@ -1,0 +1,174 @@
+/* Yams : des dés géants acidulés sur un dégradé pêche-fuchsia, une feuille de score en cartes arrondies, des contours violet foncé façon sticker.
+   Toutes les règles commencent par .g-yams. Polices locales : assets/fonts/ (voir LICENCES.txt). */
+@font-face { font-family: 'Yams Sans'; src: url('assets/fonts/rubik.woff2') format('woff2'); font-weight: 300 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Yams Display'; src: url('assets/fonts/unbounded.woff2') format('woff2'); font-weight: 200 900; font-style: normal; font-display: swap; }
+
+.g-yams {
+  --grape: #3b1a7a;
+  --grape-2: #5b2db8;
+  --pink: #ff3d8b;
+  --lemon: #ffe34d;
+  --mint: #3df2b8;
+  --sky: #38c8ff;
+  --sans: 'Yams Sans', 'Rubik', ui-rounded, system-ui, sans-serif;
+  --display: 'Yams Display', 'Unbounded', ui-rounded, system-ui, sans-serif;
+  position: relative; overflow: hidden; isolation: isolate;
+  color: var(--grape); font-family: var(--sans); font-weight: 600;
+  background:
+    radial-gradient(40% 28% at 8% 30%, rgb(255 227 77 / 0.5), transparent 70%),
+    radial-gradient(45% 30% at 95% 60%, rgb(56 200 255 / 0.4), transparent 70%),
+    radial-gradient(40% 25% at 20% 95%, rgb(255 61 139 / 0.35), transparent 70%),
+    linear-gradient(170deg, #ffd9ec 0%, #f0dcff 55%, #d6e6ff 100%);
+}
+.g-yams .ym { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; container-type: inline-size; scroll-padding-top: 240px; }
+.g-yams :focus-visible { outline: 4px solid var(--grape); outline-offset: 2px; box-shadow: 0 0 0 7px #fff; }
+.g-yams .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ——— Plateau : le dégradé pêche-fuchsia, les dés géants (collé en haut quand on fait défiler la feuille) ——— */
+.g-yams .ym-tray {
+  position: sticky; top: 0; z-index: 10; display: grid; gap: 10px; justify-items: center;
+  padding: 12px 12px 16px; color: var(--grape);
+  background: radial-gradient(60% 80% at 15% 0%, #ffd27a, transparent 70%), linear-gradient(135deg, #ff9a56 0%, #ff4f9a 55%, #cf3cd8 100%);
+  border-bottom: 4px solid var(--grape); border-radius: 0 0 38px 38px; box-shadow: 0 7px 0 var(--grape);
+}
+.g-yams .ym-tray.is-mine { background: radial-gradient(60% 80% at 15% 0%, #ffe27a, transparent 70%), linear-gradient(135deg, #ffa24a 0%, #ff3d8b 55%, #b93cf0 100%); }
+.g-yams .ym-trayhead { width: 100%; max-width: 640px; display: flex; align-items: center; gap: 10px; }
+.g-yams .ym-status { margin: 0; flex: 1; padding: 6px 14px; border-radius: 18px; background: #fff; border: 3px solid var(--grape); box-shadow: 0 3px 0 var(--grape); font-size: 0.9rem; font-weight: 700; line-height: 1.25; }
+.g-yams .ym-timer {
+  flex: none; min-width: 3.8ch; text-align: center; padding: 4px 12px; border-radius: 999px;
+  background: var(--lemon); border: 3px solid var(--grape); box-shadow: 0 3px 0 var(--grape);
+  font: 900 0.95rem/1.3 var(--display); font-variant-numeric: tabular-nums;
+}
+.g-yams .ym-timer:empty { display: none; }
+.g-yams .ym-timer.is-low { background: var(--pink); color: #fff; animation: ym-wiggle 0.5s ease-in-out infinite; }
+@keyframes ym-wiggle { 25% { transform: rotate(-5deg) scale(1.08); } 75% { transform: rotate(5deg) scale(1.08); } }
+
+.g-yams .ym-dice { display: flex; justify-content: center; gap: 9px; padding-top: 16px; }
+.g-yams .ym-slot { display: grid; justify-items: center; gap: 6px; }
+.g-yams .ym-keep:not(:empty) { padding: 0 9px; border-radius: 999px; background: #fff; border: 2px solid var(--grape); font: 900 0.62rem/1.6 var(--display); text-transform: uppercase; }
+.g-yams .ym-keep:empty { min-height: 1.1rem; }
+.g-yams .ym-hold { padding: 0; border: 0; background: none; border-radius: 28px; cursor: pointer; }
+.g-yams .ym-die {
+  --s: 62px; --c: #ffe34d; --pip: var(--grape);
+  position: relative; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); box-sizing: border-box; flex: none;
+  width: var(--s); height: var(--s); padding: calc(var(--s) * 0.17); vertical-align: middle;
+  border-radius: calc(var(--s) * 0.3);
+  background: radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--c) 45%, white) 0, var(--c) 48%, color-mix(in srgb, var(--c) 82%, black) 100%);
+  box-shadow: 0 0 0 calc(var(--s) * 0.06) var(--grape), 0 calc(var(--s) * 0.15) 0 calc(var(--s) * 0.02) var(--grape), inset 0 calc(var(--s) * -0.08) 0 rgb(0 0 0 / 0.13);
+  transition: transform 0.25s cubic-bezier(0.3, 1.7, 0.5, 1);
+}
+.g-yams .ym-die::after { content: ''; position: absolute; top: 8%; left: 11%; width: 34%; height: 15%; border-radius: 50%; background: rgb(255 255 255 / 0.85); transform: rotate(-28deg); }
+.g-yams .ym-die.d0 { --c: #ffe34d; }
+.g-yams .ym-die.d1 { --c: #3df2b8; }
+.g-yams .ym-die.d2 { --c: #38c8ff; }
+.g-yams .ym-die.d3 { --c: #ff8a1f; }
+.g-yams .ym-die.d4 { --c: #9a5cff; --pip: #fff; }
+.g-yams .ym-die i { position: relative; z-index: 1; place-self: center; width: calc(var(--s) * 0.2); height: calc(var(--s) * 0.2); border-radius: 50%; background: var(--pip); box-shadow: inset 0 calc(var(--s) * -0.03) 0 rgb(0 0 0 / 0.25); }
+.g-yams .ym-die.v1 i { width: calc(var(--s) * 0.34); height: calc(var(--s) * 0.34); }
+.g-yams .ym-die .c1 { grid-area: 1 / 1; } .g-yams .ym-die .c2 { grid-area: 1 / 2; } .g-yams .ym-die .c3 { grid-area: 1 / 3; }
+.g-yams .ym-die .c4 { grid-area: 2 / 1; } .g-yams .ym-die .c5 { grid-area: 2 / 2; } .g-yams .ym-die .c6 { grid-area: 2 / 3; }
+.g-yams .ym-die .c7 { grid-area: 3 / 1; } .g-yams .ym-die .c8 { grid-area: 3 / 2; } .g-yams .ym-die .c9 { grid-area: 3 / 3; }
+.g-yams .ym-die.is-empty { background: rgb(255 255 255 / 0.3); box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.75); }
+.g-yams .ym-die.is-empty::after { display: none; }
+.g-yams .ym-slot.is-held .ym-die { transform: translateY(-14px) scale(1.06); outline: 4px solid #fff; outline-offset: 4px; }
+.g-yams .ym-hold:not([aria-pressed='true']):hover .ym-die { transform: translateY(-5px); }
+.g-yams .ym-die.is-rolling { animation: ym-roll 0.7s cubic-bezier(0.3, 1.3, 0.5, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+@keyframes ym-roll {
+  0% { transform: translateY(-60px) rotate(-280deg) scale(0.5); opacity: 0; }
+  55% { transform: translateY(8px) rotate(20deg) scale(1.15, 0.88); opacity: 1; }
+  78% { transform: translateY(-8px) scale(0.96, 1.06); }
+  100% { transform: none; }
+}
+
+.g-yams .ym-actions { width: 100%; max-width: 640px; display: flex; gap: 10px; flex-wrap: wrap; }
+.g-yams .ym-btn {
+  flex: 1 1 130px; min-height: 54px; padding: 8px 18px; border: 3px solid var(--grape); border-radius: 22px; cursor: pointer;
+  font: 900 0.95rem/1.15 var(--display); color: var(--grape);
+  transition: transform 0.15s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.15s;
+}
+.g-yams .ym-btn:disabled { opacity: 0.55; cursor: default; }
+.g-yams .ym-btn:not(:disabled):active { transform: translateY(4px) scale(0.98); }
+.g-yams .ym-btn-roll { background: linear-gradient(180deg, #fff27a, var(--lemon)); box-shadow: 0 5px 0 var(--grape); }
+.g-yams .ym-btn-roll:not(:disabled):active { box-shadow: 0 1px 0 var(--grape); }
+.g-yams .ym-btn-roll.is-second { flex: 1 1 110px; background: #fff; }
+.g-yams .ym-btn-ok { flex-grow: 2; background: linear-gradient(180deg, #8bffe0, var(--mint)); box-shadow: 0 5px 0 var(--grape); animation: ym-pop 0.4s cubic-bezier(0.3, 1.7, 0.5, 1) both; }
+.g-yams .ym-btn-ok:not(:disabled):active { box-shadow: 0 1px 0 var(--grape); }
+.g-yams .ym-hint { margin: 0; padding: 4px 12px; border-radius: 999px; background: #fff; font-size: 0.9rem; font-weight: 700; }
+.g-yams .ym-win { margin: 0; flex: 1; text-align: center; padding: 10px 14px; border-radius: 24px; background: var(--lemon); border: 3px solid var(--grape); box-shadow: 0 5px 0 var(--grape); font: 900 1.25rem/1.25 var(--display); animation: ym-pop 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) both; }
+.g-yams .ym-last { margin: 0; max-width: 640px; padding: 2px 12px; border-radius: 999px; background: rgb(59 26 122 / 0.85); color: #fff; font-size: 0.8rem; font-weight: 600; text-align: center; }
+@keyframes ym-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+/* ——— Feuille de score : une carte par case ——— */
+.g-yams .ym-sheetbox { padding: 16px 8px 30px; max-width: 760px; margin-inline: auto; }
+.g-yams .ym-title { margin: 0 0 6px 8px; width: fit-content; font: 900 1.15rem/1.3 var(--display); background: linear-gradient(transparent 58%, #ff9bd0 58% 90%, transparent 90%); }
+.g-yams .ym-sheet { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 4px; }
+.g-yams .ym-sheet.cols-5, .g-yams .ym-sheet.cols-6 { border-spacing: 2px; }
+.g-yams .ym-sheet th, .g-yams .ym-sheet td { height: 48px; padding: 0; background: #fff; border-radius: 14px; box-shadow: 0 0 0 2px var(--grape), 0 3px 0 2px var(--grape); }
+.g-yams .ym-sheet th.ym-rowhead { width: 33%; padding: 3px 9px; text-align: left; font-weight: 800; background: #dff4ff; }
+.g-yams .ym-sheet.cols-5 th.ym-rowhead, .g-yams .ym-sheet.cols-6 th.ym-rowhead { width: 25%; padding-inline: 6px; }
+.g-yams .ym-corner { width: 33%; background: none !important; box-shadow: none !important; }
+.g-yams .ym-label { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; line-height: 1.15; }
+.g-yams .ym-rowhead small { display: block; font-size: 0.68rem; font-weight: 600; opacity: 0.8; line-height: 1.2; }
+.g-yams .ym-sheet tbody tr:not(.ym-sub, .ym-total):nth-child(n + 9) th.ym-rowhead { background: #efe3ff; }
+.g-yams .ym-colhead { padding: 5px 2px 6px; text-align: center; font-weight: 800; }
+.g-yams .ym-colhead > .token { margin-inline: auto; }
+.g-yams .ym-colname { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem; padding-inline: 2px; }
+.g-yams .ym-colhead small { display: block; font-size: 0.62rem; font-weight: 900; text-transform: uppercase; color: var(--pink); }
+.g-yams .ym-colhead.is-turn { background: var(--lemon); animation: ym-bob 1.1s ease-in-out infinite; }
+@keyframes ym-bob { 50% { transform: translateY(-4px); } }
+.g-yams .ym-colhead.is-left { opacity: 0.55; }
+.g-yams .ym-colhead.is-winner { background: linear-gradient(135deg, #ff9a56, #ff3d8b); color: #fff; }
+.g-yams .ym-colhead.is-winner small { color: #fff; }
+.g-yams .ym-sheet td.ym-val.is-me { background: #fff9c9; }
+.g-yams .ym-sheet .ym-sub th.ym-rowhead, .g-yams .ym-sheet .ym-sub td { background: #d3fbea; }
+.g-yams .ym-sub .ym-label { font-size: 0.78rem; }
+.g-yams .ym-sheet .ym-total th.ym-rowhead, .g-yams .ym-sheet .ym-total td { background: linear-gradient(135deg, #ff9a56, #ff3d8b 70%); color: #fff; }
+.g-yams .ym-total .ym-label { font: 900 0.95rem/1 var(--display); }
+
+.g-yams .ym-val { text-align: center; }
+.g-yams .ym-val span { display: inline-block; font: 800 1.3rem/1.2 var(--sans); }
+.g-yams .ym-val.ym-faint span { opacity: 0.65; font-weight: 700; font-size: 0.88rem; }
+.g-yams .ym-total .ym-val span { font: 900 1.25rem/1.2 var(--display); }
+.g-yams .ym-val.is-winner span { padding: 0 10px; border-radius: 999px; background: var(--lemon); color: var(--grape); border: 3px solid var(--grape); }
+.g-yams .ym-blank { background: #f6f1ff !important; box-shadow: 0 0 0 2px rgb(59 26 122 / 0.25) !important; }
+.g-yams .ym-pick { padding: 0; }
+.g-yams .ym-sheet td.ym-pick { background: #ffeaf5; }
+.g-yams .ym-cell { display: grid; place-items: center; width: 100%; height: 48px; min-width: 44px; padding: 0; border: 0; background: none; border-radius: 14px; cursor: pointer; }
+.g-yams .ym-cell span { display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 5px; border-radius: 999px; background: #fff; border: 3px solid var(--pink); color: #c01a68; font: 900 1.05rem/1 var(--sans); transition: transform 0.2s cubic-bezier(0.3, 1.7, 0.5, 1); }
+.g-yams .ym-cell:hover span { transform: scale(1.12); }
+.g-yams .ym-cell.is-chosen span { background: var(--pink); color: #fff; border-color: var(--grape); box-shadow: 0 3px 0 var(--grape); transform: scale(1.15); }
+.g-yams .ym-cell:disabled { cursor: default; }
+
+/* ——— Grands écrans (la zone de jeu, pas la fenêtre) ——— */
+@container (min-width: 700px) {
+  .g-yams .ym-die { --s: 92px; }
+  .g-yams .ym-dice { gap: 16px; }
+  .g-yams .ym-sheet th, .g-yams .ym-sheet td { height: 44px; }
+  .g-yams .ym-cell { height: 44px; }
+  .g-yams .ym-sheet th.ym-rowhead { width: 29%; }
+  .g-yams .ym-label { font-size: 0.95rem; }
+  .g-yams .ym-rowhead small { font-size: 0.74rem; }
+  .g-yams .ym-status { font-size: 1rem; }
+}
+@container (max-width: 420px) {
+  .g-yams .ym-btn { font-size: 0.82rem; padding-inline: 8px; }
+  .g-yams .ym-actions { gap: 8px; }
+  .g-yams .ym-dice { gap: 6px; }
+  .g-yams .ym-die { --s: 58px; }
+  .g-yams .ym-status { font-size: 0.82rem; padding: 5px 11px; }
+  .g-yams .ym-sheet.cols-5 .ym-rowhead small, .g-yams .ym-sheet.cols-6 .ym-rowhead small { display: none; }
+}
+.g-yams .ym-die.mini { --s: 22px; --c: #fff; --pip: var(--grape); padding: 4px; box-shadow: 0 0 0 2px var(--grape); border-radius: 7px; background: #fff; }
+.g-yams .ym-die.mini::after { display: none; }
+.g-yams .ym-die.mini i { width: 4px; height: 4px; box-shadow: none; }
+.g-yams .ym-die.mini.v1 i { width: 6px; height: 6px; }
+
+/* Confettis de victoire */
+.g-yams .ym-confetti { position: absolute; inset: 0; z-index: 20; overflow: hidden; pointer-events: none; }
+.g-yams .ym-confetti i { position: absolute; top: -8%; left: var(--x); width: 12px; height: 18px; border-radius: 4px; background: var(--c); animation: ym-fall 3s cubic-bezier(0.3, 0.2, 0.5, 1) var(--d) both; }
+@keyframes ym-fall { to { transform: translateY(115vh) rotate(var(--r)); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-yams * { animation: none !important; transition: none !important; }
+  .g-yams .ym-confetti { display: none; }
+}

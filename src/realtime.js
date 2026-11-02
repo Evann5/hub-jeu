@@ -1,4 +1,4 @@
-// Temps réel avec Socket.IO : présence, messages, réactions, frappe et actions des admins.
+// Temps réel avec Socket.IO : présence, messages, réactions, frappe, tables de jeu (play.js) et actions des admins.
 // L'état « qui est en ligne » vit en mémoire : l'appli doit tourner en une seule instance.
 import { Server } from 'socket.io';
 import { db, getSetting, setSetting } from './db.js';
@@ -8,6 +8,7 @@ import {
   COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions,
 } from './auth.js';
 import * as chat from './chat.js';
+import { initPlay, registerPlay, gamesCatalog, tableList, dropUserFromTables } from './play.js';
 
 let io;
 const online = new Map(); // userId -> nombre de connexions ouvertes
@@ -22,6 +23,8 @@ function emitToScope(scope, event, payload) {
   if (scope.startsWith('dm:')) {
     const [a, b] = scope.split(':').slice(1);
     io.to(`u:${a}`).to(`u:${b}`).emit(event, payload);
+  } else if (scope.startsWith('t:')) {
+    io.to(scope).emit(event, payload); // chat d'une table : les personnes qui la regardent
   } else {
     io.to('membres').emit(event, payload);
   }
@@ -48,6 +51,7 @@ export function disconnectUser(userId, reason) {
 
 export function removeUser(userId) {
   io?.to('membres').emit('user:removed', userId);
+  if (io) dropUserFromTables(userId);
 }
 
 function rateLimited(userId) {
@@ -95,6 +99,8 @@ export function attachRealtime(httpServer) {
     },
   });
 
+  initPlay(io);
+
   io.use((socket, next) => {
     const user = userFromToken(readCookie(socket.request.headers.cookie, COOKIE));
     if (!user) return next(new Error('non-connecte'));
@@ -117,6 +123,8 @@ export function attachRealtime(httpServer) {
       dms: chat.dmList(userId),
       unread: chat.unreadCounts(userId),
       online: [...online.keys()],
+      games: gamesCatalog(),
+      tables: tableList(),
     });
     broadcastPresence();
 
@@ -167,6 +175,8 @@ export function attachRealtime(httpServer) {
       if (scope.startsWith('dm:')) {
         const [a, b] = scope.split(':').slice(1).map(Number);
         socket.to(`u:${a === me.id ? b : a}`).emit('typing', payload);
+      } else if (scope.startsWith('t:')) {
+        socket.to(scope).emit('typing', payload);
       } else {
         socket.to('membres').emit('typing', payload);
       }
@@ -182,6 +192,8 @@ export function attachRealtime(httpServer) {
       broadcastUser(getUser(me.id));
       return {};
     }));
+
+    registerPlay(socket, handler);
 
     // ——— Admins ———
 

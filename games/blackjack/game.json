@@ -1,0 +1,27 @@
+{
+  "name": "Blackjack",
+  "tagline": "Bats la banque à 21.",
+  "description": "Tu joues contre la banque avec des jetons virtuels : rapproche-toi de 21 sans le dépasser. Tout le monde mise en même temps, puis chacun joue sa main.",
+  "how": [
+    "Tout le monde mise en même temps (au moins 10 jetons), puis chaque joueur reçoit deux cartes. La banque en montre une.",
+    "Les cartes valent leur chiffre, les figures valent 10, l'as vaut 1 ou 11. Dépasse 21 et tu perds ta mise.",
+    "À ton tour : Carte (tirer), Rester, Doubler (une seule carte de plus, mise doublée) ou Séparer (deux cartes de même valeur, une seule fois, en deux mains).",
+    "La banque tire jusqu'à 17 et reste sur tous les 17, même un 17 souple. Blackjack (as + figure d'entrée) payé 3 pour 2. Pas d'assurance.",
+    "Après le nombre de manches choisi, le plus riche gagne. Sous 10 jetons, tu es éliminé. En solo, tu gagnes si tu finis avec plus de jetons qu'au départ."
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 7,
+  "duration": "15 min",
+  "emoji": "♠️",
+  "color": "#FF2FB9",
+  "ink": "#0C0227",
+  "order": 61,
+  "options": [
+    { "key": "start", "label": "Jetons de départ", "type": "choice", "default": 1000,
+      "choices": [{ "value": 500, "label": "500" }, { "value": 1000, "label": "1 000" }, { "value": 2000, "label": "2 000" }] },
+    { "key": "rounds", "label": "Manches", "type": "choice", "default": 10,
+      "choices": [{ "value": 5, "label": "5" }, { "value": 10, "label": "10" }, { "value": 15, "label": "15" }, { "value": 20, "label": "20" }] },
+    { "key": "timer", "label": "Temps pour jouer", "help": "À la fin du temps : mise minimale, ou tu restes", "type": "choice", "default": 20,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 15, "label": "15 s" }, { "value": 20, "label": "20 s" }, { "value": 30, "label": "30 s" }] }
+  ]
+}

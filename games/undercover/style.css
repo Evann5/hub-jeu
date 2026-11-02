@@ -1,0 +1,203 @@
+/* Undercover — DA « Code » (choisie par Minh le 23/10/2026) : jeu de cartes moderne, une couleur plein écran par phase,
+   la carte à jouer comme signature (dos bleu à motif d'yeux). Titres en Syne, texte en Inter Tight. */
+
+@font-face { font-family: 'UC Syne'; src: url('assets/fonts/syne.woff2') format('woff2-variations'); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: 'UC Inter Tight'; src: url('assets/fonts/inter-tight.woff2') format('woff2-variations'); font-weight: 100 900; font-display: swap; }
+
+.g-undercover {
+  --lobby: #F4F2EC;
+  --word: #2E4BFF;
+  --clues: #007A66;
+  --debate: #F5A000;
+  --vote: #D62D1F;
+  --verdict: #111111;
+  --civil: #2E4BFF;
+  --under: #D62D1F;
+  --ink: #111111;
+  --uc-display: 'UC Syne', 'Arial Black', sans-serif;
+  --uc-text: 'UC Inter Tight', system-ui, sans-serif;
+  --eyes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cpath d='M7 17c3-5 17-5 20 0-3 5-17 5-20 0z' fill='none' stroke='white' stroke-opacity='.28' stroke-width='1.6'/%3E%3Ccircle cx='17' cy='17' r='2.4' fill='white' fill-opacity='.28'/%3E%3C/svg%3E");
+  --fg: #fff;
+  background: var(--word);
+  color: var(--fg);
+  font: 400 1rem/1.45 var(--uc-text);
+  overflow-y: auto;
+  transition: background-color 0.45s ease;
+}
+.g-undercover.ph-word { background: var(--word); }
+.g-undercover.ph-clues { background: var(--clues); }
+.g-undercover.ph-debate { background: var(--debate); --fg: var(--ink); }
+.g-undercover.ph-vote { background: var(--vote); }
+.g-undercover.ph-verdict, .g-undercover.ph-white { background: var(--verdict); }
+.g-undercover.ph-over-civil { background: var(--civil); }
+.g-undercover.ph-over-under { background: var(--under); }
+.g-undercover.ph-over-white { background: var(--verdict); }
+
+.g-undercover svg { width: 1em; height: 1em; flex: none; }
+.g-undercover .uc { flex: 1; display: flex; justify-content: center; min-height: 100%; }
+.g-undercover .uc-screen { display: flex; flex-direction: column; width: min(560px, 100%); padding: 18px 20px 22px; }
+.g-undercover .uc-grow { flex: 1; min-height: 18px; }
+
+/* Barre de phase et chrono */
+.g-undercover .uc-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.85rem; font-weight: 700; }
+.g-undercover .uc-time { font: 800 1.4rem/1 var(--uc-display); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.g-undercover .uc-time.is-low { animation: uc-blink 1s steps(2) infinite; }
+@keyframes uc-blink { 50% { opacity: 0.45; } }
+
+.g-undercover .uc-title { margin: 16px 0 0; font: 800 clamp(2rem, 1.5rem + 2.2vw, 2.8rem)/0.95 var(--uc-display); text-transform: uppercase; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.g-undercover .uc-sub { margin: 10px 0 0; font-size: 0.98rem; opacity: 0.9; }
+.g-undercover .uc-note { margin: 10px 0 0; font-size: 0.85rem; text-align: center; opacity: 0.85; }
+.g-undercover .uc-out { margin: 0 0 6px; padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / 0.22); font-size: 0.85rem; font-weight: 650; text-align: center; }
+
+/* Boutons */
+.g-undercover .uc-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-height: 56px; margin-top: 10px; padding: 0 20px;
+  border: 0; border-radius: 999px; background: #fff; color: var(--ink);
+  font: 750 1.02rem var(--uc-text);
+  transition: transform 0.1s, opacity 0.15s;
+}
+.g-undercover .uc-btn:active { transform: scale(0.98); }
+.g-undercover .uc-btn:disabled { opacity: 0.55; cursor: default; }
+.g-undercover .uc-btn.is-dark { background: var(--ink); color: #fff; }
+.g-undercover .uc-btn.is-line { background: transparent; color: inherit; box-shadow: inset 0 0 0 2px currentColor; }
+.g-undercover .uc-btn:focus-visible, .g-undercover .uc-card:focus-visible, .g-undercover .uc-r:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.g-undercover.ph-debate :focus-visible { outline-color: var(--ink) !important; }
+.g-undercover .uc-wait { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; margin-top: 10px; font-weight: 700; }
+
+/* La carte à jouer : signature */
+.g-undercover .uc-card {
+  position: relative; flex: none; display: grid; place-items: center;
+  width: 220px; height: 308px; margin: 22px auto 0; padding: 0;
+  border: 0; border-radius: 24px;
+  background: #fff; color: var(--ink);
+  box-shadow: 0 30px 50px rgb(0 0 30 / 0.35);
+  transform: rotate(-3deg);
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none;
+  font-family: var(--uc-text);
+  animation: uc-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes uc-in { from { opacity: 0; transform: rotate(-8deg) translateY(16px) scale(0.96); } }
+button.uc-card { cursor: grab; }
+button.uc-card:active { cursor: grabbing; }
+.g-undercover .uc-back {
+  background: var(--eyes) center / 34px 34px, #1F37D6; color: #fff;
+  box-shadow: 0 30px 50px rgb(0 0 30 / 0.35), inset 0 0 0 10px #2E4BFF, inset 0 0 0 12px rgb(255 255 255 / 0.5);
+  transform: rotate(3deg);
+}
+.g-undercover .uc-logo { display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: #fff; color: var(--word); box-shadow: 0 0 0 6px #1F37D6, 0 0 0 8px rgb(255 255 255 / 0.5); }
+.g-undercover .uc-logo svg { width: 46px; height: 46px; }
+.g-undercover .uc-face { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; text-align: center; }
+.g-undercover .uc-word { font: 800 2.35rem/1 var(--uc-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.g-undercover .uc-q { font-size: 5rem; }
+.g-undercover .uc-white-note { margin-top: 14px; font-weight: 700; }
+.g-undercover .uc-corner { position: absolute; display: grid; place-items: center; font: 800 1rem/1 var(--uc-display); color: var(--word); }
+.g-undercover .uc-corner svg { width: 18px; height: 18px; }
+.g-undercover .uc-corner.tl { top: 16px; left: 16px; }
+.g-undercover .uc-corner.br { bottom: 16px; right: 16px; transform: rotate(180deg); }
+.g-undercover .uc-card.role-white .uc-corner { color: var(--ink); }
+.g-undercover .uc-card.role-civil { background: var(--civil); color: #fff; }
+.g-undercover .uc-card.role-under { background: var(--under); color: #fff; }
+.g-undercover .uc-card.role-civil .uc-corner, .g-undercover .uc-card.role-under .uc-corner { color: #fff; }
+.g-undercover .uc-card.is-reveal { width: 190px; height: 260px; transform: rotate(-4deg); animation: uc-flip 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes uc-flip { from { transform: rotateY(90deg) rotate(-4deg); } }
+.g-undercover .uc-role { font: 800 1.55rem/0.95 var(--uc-display); text-transform: uppercase; }
+.g-undercover .uc-role-sub { margin-top: 8px; font-size: 0.85rem; opacity: 0.9; }
+.g-undercover .uc-avatar-big { display: grid; place-items: center; width: 74px; height: 74px; margin: 0 auto 14px; border-radius: 50%; background: #fff; font-size: 2.2rem; }
+.g-undercover .uc-card.is-small { width: 120px; height: 168px; margin: 0; border-radius: 16px; }
+.g-undercover .uc-card.is-small .uc-word { font-size: 1.25rem; }
+.g-undercover .uc-card.is-small .uc-q { font-size: 3.4rem; }
+.g-undercover .uc-card.is-small .uc-logo { width: 54px; height: 54px; }
+.g-undercover .uc-card.is-small .uc-logo svg { width: 28px; height: 28px; }
+.g-undercover .uc-card.is-small .uc-white-note { font-size: 0.75rem; }
+.g-undercover .uc-card.is-small .uc-corner { font-size: 0.8rem; }
+.g-undercover .uc-card.is-small .uc-corner.tl { top: 10px; left: 10px; }
+.g-undercover .uc-card.is-small .uc-corner.br { bottom: 10px; right: 10px; }
+.g-undercover .uc-card.is-tilt { margin: 26px auto 0; transform: rotate(5deg); }
+.g-undercover .uc-card.is-deco { pointer-events: none; }
+
+/* Le mot à revoir pendant les indices : petite carte à maintenir */
+.g-undercover .uc-peek { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-size: 0.85rem; font-weight: 650; }
+.g-undercover .uc-peek .uc-card { width: 72px; height: 100px; border-radius: 12px; transform: rotate(4deg); box-shadow: 0 12px 24px rgb(0 0 30 / 0.3); }
+.g-undercover .uc-peek .uc-card.uc-back { box-shadow: 0 12px 24px rgb(0 0 30 / 0.3), inset 0 0 0 6px #2E4BFF, inset 0 0 0 7px rgb(255 255 255 / 0.5); }
+.g-undercover .uc-peek .uc-logo { width: 40px; height: 40px; box-shadow: 0 0 0 3px #1F37D6; }
+.g-undercover .uc-peek .uc-logo svg { width: 20px; height: 20px; }
+.g-undercover .uc-peek .uc-word { font-size: 0.95rem; }
+.g-undercover .uc-peek .uc-q { font-size: 2.2rem; }
+.g-undercover .uc-peek .uc-white-note, .g-undercover .uc-peek .uc-corner { display: none; }
+
+/* Joueurs */
+.g-undercover .uc-av { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 50%; background: #fff; font-size: 1.2rem; }
+.g-undercover .uc-rows { display: grid; gap: 8px; margin-top: 18px; }
+.g-undercover .uc-r {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  width: 100%; min-height: 58px; padding: 0 14px 0 9px;
+  border: 0; border-radius: 999px; background: rgb(255 255 255 / 0.16); color: inherit;
+  font: 700 1.02rem var(--uc-text); text-align: left;
+}
+.g-undercover .uc-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-undercover .uc-name small { font-weight: 500; opacity: 0.8; }
+.g-undercover .uc-chip { max-width: 45vw; overflow: hidden; padding: 5px 12px; border-radius: 999px; background: #fff; color: var(--ink); font-size: 0.85rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.g-undercover .uc-tag { padding: 4px 10px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 0.75rem; font-weight: 750; }
+.g-undercover .uc-r.is-cur { background: #fff; color: var(--ink); }
+.g-undercover .uc-r.is-cur .uc-tag { background: var(--clues); }
+.g-undercover .uc-r.is-wait { opacity: 0.55; }
+.g-undercover .uc-r.is-out { opacity: 0.45; text-decoration: line-through; }
+.g-undercover .uc-r.is-pick { cursor: pointer; transition: background-color 0.15s; }
+.g-undercover .uc-r.is-pick:not(:disabled):hover { background: rgb(255 255 255 / 0.26); }
+.g-undercover .uc-r.is-pick:disabled { cursor: default; }
+.g-undercover .uc-r.is-self { opacity: 0.6; }
+.g-undercover .uc-r.is-sel { background: var(--ink); color: #fff; opacity: 1; }
+.g-undercover .uc-r em { padding: 4px 10px; border-radius: 999px; background: #fff; color: var(--ink); font-size: 0.78rem; font-style: normal; font-weight: 800; }
+
+/* Saisie */
+.g-undercover .uc-input { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 6px 6px 6px 20px; border-radius: 999px; background: #fff; color: var(--ink); }
+.g-undercover .uc-input input { flex: 1; min-width: 0; border: 0; background: none; font: 600 1rem var(--uc-text); color: inherit; outline: none; }
+.g-undercover .uc-input input::placeholder { color: #8A867D; font-weight: 500; }
+.g-undercover .uc-input:focus-within { box-shadow: 0 0 0 3px rgb(255 255 255 / 0.55); }
+.g-undercover .uc-send { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: var(--ink); color: #fff; }
+.g-undercover .uc-send svg { width: 20px; height: 20px; }
+
+/* Indices de tous (débat, dernière chance) */
+.g-undercover .uc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.g-undercover .uc-chips span { padding: 6px 12px; border-radius: 999px; box-shadow: inset 0 0 0 2px currentColor; font-size: 0.88rem; font-weight: 650; }
+.g-undercover .uc-chips span.is-out { opacity: 0.5; text-decoration: line-through; }
+.g-undercover .uc-chips em { margin-right: 6px; font-style: normal; font-weight: 500; opacity: 0.7; }
+.g-undercover .uc-chips.on-dark span { box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.5); }
+.g-undercover .uc-ready { display: flex; align-items: center; gap: 12px; }
+.g-undercover .uc-ready > .uc-btn, .g-undercover .uc-ready > .uc-wait { flex: 1; }
+.g-undercover .uc-count { display: flex; flex-wrap: wrap; gap: 4px; max-width: 120px; }
+.g-undercover .uc-count i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 2px currentColor; }
+.g-undercover .uc-count i.on { background: currentColor; }
+
+/* Verdict */
+.g-undercover .uc-tally { display: grid; gap: 10px; margin-top: 22px; font-size: 0.9rem; font-weight: 650; }
+.g-undercover .uc-tally div { display: grid; grid-template-columns: minmax(0, 90px) 1fr 24px; gap: 10px; align-items: center; }
+.g-undercover .uc-tally span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-undercover .uc-tally i { height: 10px; border-radius: 6px; background: rgb(255 255 255 / 0.18); overflow: hidden; }
+.g-undercover .uc-tally b { display: block; height: 100%; border-radius: 6px; background: #fff; }
+.g-undercover .uc-tally div:first-child b { background: var(--under); }
+
+/* Fin */
+.g-undercover .uc-words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.g-undercover .uc-words span { padding: 7px 14px; border-radius: 999px; font-weight: 700; font-size: 0.88rem; }
+.g-undercover .w-civil { background: #fff; color: var(--civil); }
+.g-undercover .w-under { background: var(--under); color: #fff; box-shadow: 0 0 0 2px #fff; }
+.g-undercover .uc-roster .uc-r { min-height: 48px; background: rgb(255 255 255 / 0.14); }
+.g-undercover .uc-rc { padding: 4px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; }
+.g-undercover .uc-rc.civil { background: #fff; color: var(--civil); }
+.g-undercover .uc-rc.under { background: var(--under); color: #fff; box-shadow: 0 0 0 2px #fff; }
+.g-undercover .uc-rc.white { box-shadow: inset 0 0 0 2px #fff; }
+
+/* Le bouton « Ouvrir le chat » ne sert que sur téléphone (sur ordinateur, le chat est à côté). */
+@media (min-width: 761px) {
+  .g-undercover .uc-chat-btn { display: none; }
+}
+
+@media (min-width: 1000px) {
+  .g-undercover .uc-screen { padding-top: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-undercover, .g-undercover * { animation: none !important; transition: none !important; }
+}

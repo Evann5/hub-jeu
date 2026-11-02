@@ -1,0 +1,236 @@
+/* Menteur : pirates cartoon de jeu mobile. Mer turquoise, gobelets colorés, dés bonbons, gros contours bleu nuit et ombres franches.
+   Toutes les règles commencent par .g-menteur. Polices locales : assets/fonts/ (voir LICENCES.txt). */
+@font-face { font-family: 'Menteur Display'; src: url('assets/fonts/unbounded.woff2') format('woff2'); font-weight: 200 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Menteur Text'; src: url('assets/fonts/figtree.woff2') format('woff2'); font-weight: 300 900; font-style: normal; font-display: swap; }
+
+.g-menteur {
+  --navy: #0f2370;
+  --navy-2: #1b3aa8;
+  --lemon: #ffe34d;
+  --pink: #ff3d8b;
+  --mint: #37efba;
+  --orange: #ff9a1f;
+  --display: 'Menteur Display', 'Unbounded', ui-rounded, system-ui, sans-serif;
+  --text: 'Menteur Text', 'Figtree', ui-rounded, system-ui, sans-serif;
+  position: relative; overflow: hidden; isolation: isolate;
+  color: #fff; font-family: var(--text); font-weight: 600;
+  background:
+    radial-gradient(60% 40% at 82% 0%, rgb(255 244 160 / 0.75), transparent 70%),
+    linear-gradient(180deg, #62e9ff 0%, #17b4ea 34%, #1470de 68%, #3a3ad4 100%);
+}
+/* Vagues : deux couches d'écume qui glissent doucement (déplacement GPU, coupé si on préfère moins de mouvement). */
+.g-menteur::before, .g-menteur::after {
+  content: ''; position: absolute; left: 0; width: 200%; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(circle at 50% 100%, transparent 0 15px, rgb(255 255 255 / 0.28) 15px 19px, transparent 19px);
+  background-size: 64px 32px;
+  animation: mt-drift 24s linear infinite;
+}
+.g-menteur::before { top: 18%; height: 70%; opacity: 0.8; }
+.g-menteur::after { top: 52%; height: 50%; opacity: 0.55; background-size: 96px 48px; animation-duration: 38s; animation-direction: reverse; }
+@keyframes mt-drift { to { transform: translateX(-50%); } }
+
+.g-menteur .mt { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; z-index: 1; }
+.g-menteur .mt-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 0 10px; }
+.g-menteur :focus-visible { outline: 4px solid var(--lemon); outline-offset: 2px; }
+.g-menteur .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ——— Barre du haut : des pastilles autocollants ——— */
+.g-menteur .mt-bar { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 10px 12px 2px; }
+.g-menteur .mt-round, .g-menteur .mt-total, .g-menteur .mt-paco, .g-menteur .mt-timer {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px;
+  background: #fff; color: var(--navy); border: 3px solid var(--navy); box-shadow: 0 3px 0 var(--navy);
+  font: 800 0.78rem/1.2 var(--text); white-space: nowrap;
+}
+.g-menteur .mt-round { background: var(--lemon); font: 900 0.8rem/1.2 var(--display); }
+.g-menteur .mt-timer { margin-left: auto; min-width: 3.6ch; justify-content: center; background: var(--mint); font: 900 0.9rem/1.2 var(--display); font-variant-numeric: tabular-nums; }
+.g-menteur .mt-timer:empty { display: none; }
+.g-menteur .mt-timer.is-low { background: var(--pink); color: #fff; animation: mt-wiggle 0.5s ease-in-out infinite; }
+@keyframes mt-wiggle { 25% { transform: rotate(-4deg) scale(1.06); } 75% { transform: rotate(4deg) scale(1.06); } }
+
+/* ——— Dés bonbons ——— */
+.g-menteur .mt-die {
+  --s: 44px;
+  position: relative; display: inline-grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); flex: none; box-sizing: border-box;
+  width: var(--s); height: var(--s); padding: calc(var(--s) * 0.15); vertical-align: middle;
+  border-radius: calc(var(--s) * 0.3);
+  background: linear-gradient(160deg, #ffffff 0%, #eaf6ff 55%, #b9dcff 100%);
+  box-shadow: 0 0 0 calc(var(--s) * 0.07) var(--navy), 0 calc(var(--s) * 0.15) 0 calc(var(--s) * 0.03) var(--navy), inset 0 calc(var(--s) * -0.08) 0 rgb(80 140 255 / 0.35);
+}
+.g-menteur .mt-die::after { content: ''; position: absolute; top: 9%; left: 12%; width: 36%; height: 16%; border-radius: 50%; background: rgb(255 255 255 / 0.95); transform: rotate(-25deg); }
+.g-menteur .mt-die i { position: relative; z-index: 1;
+  place-self: center; width: calc(var(--s) * 0.2); height: calc(var(--s) * 0.2); border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--navy-2), var(--navy) 80%);
+}
+.g-menteur .mt-die.v1 i { width: calc(var(--s) * 0.38); height: calc(var(--s) * 0.38); background: radial-gradient(circle at 35% 30%, #ff8fc0, var(--pink) 70%); box-shadow: 0 0 0 calc(var(--s) * 0.03) var(--navy); }
+.g-menteur .mt-die .c1 { grid-area: 1 / 1; } .g-menteur .mt-die .c2 { grid-area: 1 / 2; } .g-menteur .mt-die .c3 { grid-area: 1 / 3; }
+.g-menteur .mt-die .c4 { grid-area: 2 / 1; } .g-menteur .mt-die .c5 { grid-area: 2 / 2; } .g-menteur .mt-die .c6 { grid-area: 2 / 3; }
+.g-menteur .mt-die .c7 { grid-area: 3 / 1; } .g-menteur .mt-die .c8 { grid-area: 3 / 2; } .g-menteur .mt-die .c9 { grid-area: 3 / 3; }
+.g-menteur .mt-die.mini { --s: 24px; margin-inline: 2px; }
+.g-menteur .mt-die.is-miss { opacity: 0.45; filter: saturate(0.6); transform: scale(0.92); }
+.g-menteur .mt-die.is-hit { background: linear-gradient(160deg, #fffbd0, var(--lemon)); box-shadow: 0 0 0 calc(var(--s) * 0.07) var(--navy), 0 0 0 calc(var(--s) * 0.16) var(--lemon), 0 calc(var(--s) * 0.2) 0 calc(var(--s) * 0.03) var(--navy); animation: mt-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.g-menteur .mt-die.is-rolling { animation: mt-tumble 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+@keyframes mt-tumble {
+  0% { transform: translateY(-60px) rotate(-240deg) scale(0.5); opacity: 0; }
+  55% { transform: translateY(6px) rotate(14deg) scale(1.12, 0.9); opacity: 1; }
+  78% { transform: translateY(-6px) scale(0.95, 1.06); }
+  100% { transform: none; }
+}
+@keyframes mt-glow { 50% { outline-color: #fff; outline-offset: 6px; } }
+@keyframes mt-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+.g-menteur .mt-bidlabel { display: inline-flex; align-items: center; gap: 5px; font-weight: 900; }
+.g-menteur .mt-bidlabel b { font: 900 1.2em/1 var(--display); }
+
+/* ——— Annonce et résumé de manche : grands autocollants blancs ——— */
+.g-menteur .mt-board { padding: 6px 12px 12px; display: grid; gap: 14px; }
+.g-menteur .mt-plaque, .g-menteur .mt-verdict {
+  position: relative; color: var(--navy); text-align: center; padding: 14px 18px 16px;
+  background: #fff; border: 4px solid var(--navy); border-radius: 30px; box-shadow: 0 7px 0 var(--navy);
+  animation: mt-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.g-menteur .mt-plaque { background: linear-gradient(180deg, #fff 60%, #e6f5ff); }
+.g-menteur .mt-plaque-big { margin: 0; display: flex; align-items: center; justify-content: center; gap: 14px; font: 900 3.6rem/1 var(--display); }
+.g-menteur .mt-plaque-big b { font-weight: 900; color: var(--pink); -webkit-text-stroke: 0; text-shadow: 3px 3px 0 var(--navy); }
+.g-menteur .mt-plaque-big span:not(.mt-die) { font-size: 2rem; color: var(--navy-2); }
+.g-menteur .mt-plaque-big .mt-die { --s: 58px; }
+.g-menteur .mt-plaque-none { margin: 0; font: 900 1.5rem/1.15 var(--display); }
+.g-menteur .mt-plaque-by { margin: 8px 0 0; font-weight: 800; font-size: 0.95rem; color: var(--navy-2); }
+.g-menteur .mt-history { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.g-menteur .mt-history li { display: inline-flex; align-items: center; gap: 8px; padding: 3px 10px; border-radius: 999px; background: rgb(15 35 112 / 0.55); border: 2px solid rgb(255 255 255 / 0.85); font-size: 0.85rem; font-weight: 800; }
+.g-menteur .mt-history li > span:first-child { max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.g-menteur .mt-verdict { text-align: left; display: grid; gap: 6px; padding: 16px 20px 18px; }
+.g-menteur .mt-verdict p { margin: 0; line-height: 1.4; font-weight: 700; }
+.g-menteur .mt-v1 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.g-menteur .mt-shout { font: 900 1.5rem/1.1 var(--display); color: var(--pink); text-shadow: 2px 2px 0 var(--navy); transform: rotate(-2deg); display: inline-block; }
+.g-menteur .mt-v3 b { font-weight: 900; }
+.g-menteur .mt-v3.ok { color: #08805a; }
+.g-menteur .mt-v3.ko { color: #c0153f; }
+.g-menteur .mt-winner { font: 900 1.7rem/1.15 var(--display); color: var(--navy); padding-top: 8px; border-top: 4px dotted var(--pink); }
+
+/* ——— Places autour de la table : chacun sa couleur de gobelet ——— */
+.g-menteur .mt-seats { list-style: none; margin: 0 12px 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 215px)); justify-content: center; gap: 14px; }
+.g-menteur .mt-seat:nth-child(8n + 1) { --pc: #ff3d8b; } .g-menteur .mt-seat:nth-child(8n + 2) { --pc: #ff9a1f; }
+.g-menteur .mt-seat:nth-child(8n + 3) { --pc: #ffd400; } .g-menteur .mt-seat:nth-child(8n + 4) { --pc: #1fd6a0; }
+.g-menteur .mt-seat:nth-child(8n + 5) { --pc: #8b5cff; } .g-menteur .mt-seat:nth-child(8n + 6) { --pc: #3b82ff; }
+.g-menteur .mt-seat:nth-child(8n + 7) { --pc: #ff4a4a; } .g-menteur .mt-seat:nth-child(8n + 8) { --pc: #9be11e; }
+.g-menteur .mt-seat {
+  --pc: #ff3d8b;
+  position: relative; display: grid; gap: 4px; padding: 8px 10px 10px; border-radius: 26px;
+  background: linear-gradient(180deg, rgb(27 58 168 / 0.78), rgb(15 35 112 / 0.7));
+  border: 4px solid #fff; box-shadow: 0 6px 0 rgb(15 35 112 / 0.6);
+  transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.g-menteur .mt-seat.is-turn { background: linear-gradient(180deg, #fff6a8, var(--lemon)); border-color: var(--navy); box-shadow: 0 6px 0 var(--navy); transform: translateY(-4px); animation: mt-bob 1.2s ease-in-out infinite; }
+@keyframes mt-bob { 50% { transform: translateY(-9px); } }
+.g-menteur .mt-seat.is-out { opacity: 0.55; filter: grayscale(0.8); }
+.g-menteur .mt-seat.is-hit { border-color: var(--pink); }
+.g-menteur .mt-nameplate { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 3px 10px 3px 4px; border-radius: 999px; background: #fff; color: var(--navy); border: 3px solid var(--navy); position: relative; z-index: 3; }
+.g-menteur .mt-name { font: 800 0.95rem/1.2 var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-menteur .mt-tag { position: absolute; top: 2px; left: 2px; z-index: 3; padding: 0 8px; border-radius: 999px; background: var(--pink); color: #fff; border: 2px solid var(--navy); font: 900 0.65rem/1.5 var(--display); text-transform: uppercase; }
+.g-menteur .mt-stage { position: relative; height: 78px; }
+.g-menteur .mt-stage::after { content: ''; position: absolute; left: 6%; right: 6%; bottom: -2px; height: 12px; border-radius: 50%; background: radial-gradient(closest-side, rgb(15 35 112 / 0.4), transparent); }
+.g-menteur .mt-under { position: absolute; inset: 0 0 8px; display: flex; align-items: flex-end; justify-content: center; gap: 5px; z-index: 1; }
+.g-menteur .mt-under .mt-die { --s: 26px; }
+@media (min-width: 1000px) { .g-menteur .mt-under .mt-die { --s: 30px; } }
+
+/* Gobelet en plastique : le contour vient de drop-shadow, la forme de ::before. */
+.g-menteur .mt-cup {
+  position: absolute; left: 50%; bottom: 8px; z-index: 2; width: 100px; height: 62px; margin-left: -50px; transform-origin: 30% 100%;
+  filter: drop-shadow(3px 0 0 var(--navy)) drop-shadow(-3px 0 0 var(--navy)) drop-shadow(0 3px 0 var(--navy)) drop-shadow(0 -3px 0 var(--navy));
+  transition: transform 0.6s cubic-bezier(0.3, 1.6, 0.5, 1), opacity 0.35s;
+}
+.g-menteur .mt-cup::before {
+  content: ''; position: absolute; inset: 0; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+  background:
+    linear-gradient(180deg, transparent 0 74%, rgb(255 255 255 / 0.9) 74% 100%),
+    linear-gradient(100deg, transparent 0 18%, rgb(255 255 255 / 0.55) 18% 27%, transparent 27%),
+    radial-gradient(circle, rgb(255 255 255 / 0.3) 2.5px, transparent 3px) 0 0 / 14px 14px,
+    linear-gradient(180deg, color-mix(in srgb, var(--pc) 72%, white), var(--pc) 50%, color-mix(in srgb, var(--pc) 80%, black));
+}
+.g-menteur .mt-cup.is-up { transform: translate(18px, -50px) rotate(-22deg); opacity: 0; }
+.g-menteur .mt-cup.no-anim { transition: none; }
+.g-menteur .mt-seatfoot { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 26px; font-size: 0.85rem; font-weight: 800; color: var(--navy); }
+.g-menteur .mt-seat:not(.is-turn) .mt-seatfoot { color: #fff; text-shadow: 0 2px 0 rgb(15 35 112 / 0.6); }
+.g-menteur .mt-count { font-weight: 900; }
+.g-menteur .mt-gone { font-weight: 800; }
+.g-menteur .mt-delta { padding: 0 8px; border-radius: 999px; color: #fff; border: 2px solid var(--navy); text-shadow: none; animation: mt-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.g-menteur .mt-delta.neg { background: var(--pink); }
+.g-menteur .mt-delta.pos { background: #0fb383; }
+.g-menteur .mt-turn { margin-left: auto; padding: 0 9px; border-radius: 999px; background: var(--navy); color: #fff; font: 800 0.72rem/1.6 var(--text); text-shadow: none; }
+.g-menteur .mt-ready { margin-left: auto; font-size: 0.78rem; }
+.g-menteur .mt-lastbid { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: #fff; color: var(--navy); text-shadow: none; border: 2px solid var(--navy); }
+
+/* ——— Poste de jeu en bas : mes dés et mes choix ——— */
+.g-menteur .mt-dock {
+  flex: none; display: grid; gap: 10px; padding: 12px 12px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, var(--navy-2), var(--navy)); border-top: 5px solid #fff;
+  border-radius: 28px 28px 0 0; box-shadow: 0 -6px 0 var(--navy);
+}
+.g-menteur .mt-dock.is-empty { display: none; }
+.g-menteur .mt-hand { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.g-menteur .mt-handlabel { margin: 0; font: 900 0.9rem/1.1 var(--display); color: var(--lemon); }
+.g-menteur .mt-hand-dice { display: flex; gap: 10px; padding-bottom: 6px; }
+.g-menteur .mt-hand-dice .mt-die { --s: 44px; }
+.g-menteur .mt-wait { margin: 0; text-align: center; font: 800 1rem/1.3 var(--text); }
+.g-menteur .mt-builder { display: grid; gap: 10px; width: 100%; max-width: 560px; margin-inline: auto; }
+.g-menteur .mt-qty { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.g-menteur .mt-qty-val { min-width: 2ch; text-align: center; font: 900 2rem/1 var(--display); color: #fff; }
+.g-menteur .mt-step {
+  width: 46px; height: 46px; border: 3px solid var(--navy); border-radius: 50%; cursor: pointer;
+  font: 900 1.5rem/1 var(--display); color: var(--navy); background: var(--lemon); box-shadow: 0 4px 0 #0a1750, 0 0 0 3px #fff;
+  transition: transform 0.15s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.g-menteur .mt-step:disabled { opacity: 0.4; cursor: default; }
+.g-menteur .mt-step:not(:disabled):active { transform: translateY(3px) scale(0.94); }
+.g-menteur .mt-faces { display: flex; gap: 6px; }
+.g-menteur .mt-face {
+  flex: 1; min-width: 0; height: 52px; padding: 0; border: 3px solid transparent; border-radius: 18px; cursor: pointer;
+  display: grid; place-items: center; background: rgb(255 255 255 / 0.14);
+  transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1), background-color 0.15s;
+}
+.g-menteur .mt-face .mt-die { --s: 34px; }
+.g-menteur .mt-face[aria-pressed='true'] { background: var(--lemon); border-color: #fff; transform: translateY(-4px) scale(1.06); box-shadow: 0 5px 0 #0a1750; }
+.g-menteur .mt-face:disabled { opacity: 0.3; cursor: default; }
+.g-menteur .mt-bidrow { display: flex; align-items: center; gap: 10px; }
+.g-menteur .mt-bidrow .mt-btn-bid { flex: 1; min-width: 0; }
+.g-menteur .mt-hint { margin: 0; min-height: 1.2em; font-size: 0.85rem; font-weight: 700; color: #d6e6ff; text-align: center; }
+.g-menteur .mt-calls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g-menteur .mt-calls > :only-child { grid-column: 1 / -1; }
+
+.g-menteur .mt-btn {
+  min-height: 52px; padding: 8px 16px; border: 3px solid var(--navy); border-radius: 20px; cursor: pointer;
+  font: 900 1rem/1.1 var(--display); display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.15s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.15s;
+}
+.g-menteur .mt-btn:disabled { opacity: 0.5; cursor: default; }
+.g-menteur .mt-btn:not(:disabled):active { transform: translateY(4px) scale(0.98); }
+.g-menteur .mt-btn-bid, .g-menteur .mt-btn-next { color: var(--navy); background: linear-gradient(180deg, #fff27a, var(--lemon)); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; }
+.g-menteur .mt-btn-bid:not(:disabled):active, .g-menteur .mt-btn-next:not(:disabled):active { box-shadow: 0 1px 0 #0a1750, 0 0 0 3px #fff; }
+.g-menteur .mt-btn-liar { color: #fff; font-size: 1.15rem; background: linear-gradient(180deg, #ff7ab0, var(--pink)); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; text-shadow: 2px 2px 0 var(--navy); }
+.g-menteur .mt-btn-exact { color: var(--navy); background: linear-gradient(180deg, #8bffe0, var(--mint)); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; }
+.g-menteur .mt-btn.is-armed { animation: mt-glow 0.8s ease-in-out infinite; font-size: 0.85rem; outline: 4px solid var(--lemon); outline-offset: 3px; }
+
+/* Confettis de victoire */
+.g-menteur .mt-confetti { position: absolute; inset: 0; z-index: 20; overflow: hidden; pointer-events: none; }
+.g-menteur .mt-confetti i { position: absolute; top: -8%; left: var(--x); width: 12px; height: 18px; border-radius: 4px; background: var(--c); animation: mt-fall 3s cubic-bezier(0.3, 0.2, 0.5, 1) var(--d) both; }
+@keyframes mt-fall { to { transform: translateY(115vh) rotate(var(--r)); } }
+
+/* ——— Petit écran ——— */
+@media (max-width: 480px) {
+  .g-menteur .mt-bar { gap: 6px; padding: 8px 10px 0; }
+  .g-menteur .mt-round, .g-menteur .mt-total, .g-menteur .mt-paco, .g-menteur .mt-timer { padding: 3px 9px; font-size: 0.72rem; }
+  .g-menteur .mt-long { display: none; }
+  .g-menteur .mt-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-inline: 10px; gap: 10px; }
+  .g-menteur .mt-seat { padding: 7px 8px 9px; }
+  .g-menteur .mt-plaque-big { font-size: 3rem; }
+  .g-menteur .mt-winner { font-size: 1.4rem; }
+  .g-menteur .mt-hand { justify-content: flex-start; gap: 10px; }
+  .g-menteur .mt-hand-dice { gap: 7px; }
+  .g-menteur .mt-hand-dice .mt-die { --s: 40px; }
+  .g-menteur .mt-btn-bid { font-size: 0.85rem; padding-inline: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-menteur *, .g-menteur::before, .g-menteur::after { animation: none !important; transition: none !important; }
+  .g-menteur .mt-confetti { display: none; }
+}

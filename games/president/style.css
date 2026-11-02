@@ -1,0 +1,219 @@
+/* Président : direction « Soirée étudiante fluo ». Nuit violette, néons roses, confettis, couronne sticker,
+   cartes blanches à gros contour dessinées en CSS et SVG (enseignes ♠ ♥ ♦ ♣), chiffres en Unbounded.
+   Toutes les règles commencent par .g-president. */
+
+@font-face {
+  font-family: 'Pr Display';
+  src: url('assets/fonts/unbounded.woff2') format('woff2-variations'), url('assets/fonts/unbounded.woff2') format('woff2');
+  font-weight: 200 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pr Sans';
+  src: url('assets/fonts/inter-tight.woff2') format('woff2-variations'), url('assets/fonts/inter-tight.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.g-president {
+  --pr-felt: #2A0B5E;
+  --pr-felt-d: #12052E;
+  --pr-gold: #FFE94A; /* citron */
+  --pr-gold-d: #C9A800;
+  --pr-pink: #FF3EA5;
+  --pr-cyan: #2EE6D6;
+  --pr-ivory: #FFFFFF;
+  --pr-red: #D9136B;
+  --pr-ink: #14062F;
+  --pr-serif: 'Pr Display', 'Unbounded', ui-rounded, system-ui, sans-serif;
+  --pr-sans: 'Pr Sans', 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --cw: 72px; /* carte en main */
+  --ch: 101px;
+  --step: 40px; /* largeur visible de chaque carte dans l'éventail */
+  --tw: 80px; /* cartes du pli */
+  --th: 112px;
+  background-color: var(--pr-felt);
+  background-image:
+    radial-gradient(70% 45% at 100% 0%, rgb(255 62 165 / 0.55), transparent 70%),
+    radial-gradient(70% 45% at 0% 100%, rgb(46 230 214 / 0.38), transparent 70%),
+    radial-gradient(circle at 2px 2px, rgb(255 255 255 / 0.08) 2px, transparent 2.5px),
+    linear-gradient(170deg, var(--pr-felt) 0%, var(--pr-felt-d) 100%);
+  background-size: auto, auto, 26px 26px, auto;
+  color: var(--pr-ivory);
+  font-family: var(--pr-sans);
+}
+@media (min-width: 900px) {
+  .g-president { --cw: 92px; --ch: 129px; --step: 54px; --tw: 108px; --th: 151px; }
+}
+/* Néon rose tout autour de l'écran. */
+.g-president::before { content: ''; position: absolute; inset: 7px; z-index: 0; border: 3px solid var(--pr-pink); border-radius: 26px; box-shadow: 0 0 14px rgb(255 62 165 / 0.7), inset 0 0 14px rgb(255 62 165 / 0.35); pointer-events: none; }
+
+.g-president .pr { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 16px 0 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 14px; }
+.g-president .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.g-president button { font-family: var(--pr-sans); }
+
+/* ——— Cartes ——— */
+.g-president .pr-card {
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--cw);
+  height: var(--ch);
+  margin: 0;
+  padding: 0;
+  border: calc(var(--cw) * 0.04) solid #12052E;
+  border-radius: calc(var(--cw) * 0.14);
+  background: #FFFFFF;
+  color: var(--pr-ink);
+  box-shadow: 0 3px 0 rgb(0 0 0 / 0.5), 0 0 0 1.5px rgb(255 255 255 / 0.9), 0 8px 16px rgb(0 0 0 / 0.35);
+  container-type: inline-size;
+  overflow: hidden;
+  font-family: var(--pr-serif);
+  line-height: 1;
+  text-align: left;
+  user-select: none;
+}
+.g-president .pr-card.red { color: var(--pr-red); }
+.g-president .pr-corner { position: absolute; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 24cqw; gap: 1cqw; }
+.g-president .pr-corner.tl { top: 5cqw; left: 4cqw; }
+.g-president .pr-corner.br { bottom: 5cqw; right: 4cqw; rotate: 180deg; }
+.g-president .pr-corner b { font-weight: 800; font-size: 22cqw; letter-spacing: -0.08em; }
+.g-president .pr-suit { width: 18cqw; height: 18cqw; display: block; }
+.g-president .pr-pips { position: absolute; top: 8%; bottom: 8%; left: 22cqw; right: 22cqw; }
+.g-president .pr-pip { position: absolute; width: 20cqw; height: 20cqw; translate: -50% -50%; }
+.g-president .pr-pip.is-flip { rotate: 180deg; }
+.g-president .pr-ace { position: absolute; left: 50%; top: 50%; width: 46cqw; height: 46cqw; translate: -50% -50%; }
+.g-president .pr-pips.is-court { top: 7%; bottom: 7%; }
+.g-president .pr-court { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 1cqw; border: 1.2cqw solid currentColor; border-radius: 4cqw; background: linear-gradient(135deg, #FFE94A 0%, #FF8AD8 100%); }
+.g-president .pr-card.black .pr-court { background: linear-gradient(135deg, #2EE6D6 0%, #A78BFF 100%); }
+.g-president .pr-court-i { width: 24cqw; height: 24cqw; }
+.g-president .pr-court-l { font-weight: 900; font-size: 30cqw; line-height: 1; letter-spacing: -0.04em; }
+.g-president .pr-court-s { position: absolute; left: 50%; width: 14cqw; height: 14cqw; translate: -50% 0; }
+.g-president .pr-court-s.top { top: 3cqw; }
+.g-president .pr-court-s.bot { bottom: 3cqw; rotate: 180deg; }
+
+/* ——— En-tête, chrono ——— */
+.g-president .pr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 22px; min-height: 28px; }
+.g-president .pr-round { padding: 5px 14px; border-radius: 99px; background: var(--pr-pink); color: var(--pr-ink); box-shadow: 0 3px 0 rgb(0 0 0 / 0.4); font-family: var(--pr-serif); font-weight: 800; font-size: 0.8rem; }
+.g-president .pr-clock { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.g-president .pr-clock-track { display: block; width: clamp(80px, 30vw, 160px); height: 8px; border-radius: 99px; background: rgb(0 0 0 / 0.35); overflow: hidden; }
+.g-president .pr-clock-bar { display: block; height: 100%; background: var(--pr-gold); transform-origin: left; transition: transform 0.25s linear; }
+.g-president .pr-clock.is-low { color: #FFB4D8; }
+.g-president .pr-clock.is-low .pr-clock-bar { background: #FF8D7B; }
+
+/* ——— Joueurs ——— */
+.g-president .pr-seats { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 8px; margin: 0; padding: 0 14px; list-style: none; }
+.g-president .pr-seat { display: flex; align-items: center; gap: 7px; min-height: 40px; padding: 4px 10px 4px 5px; border-radius: 99px; background: rgb(0 0 0 / 0.3); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); font-size: 0.85rem; }
+.g-president .pr-seat.is-turn { background: var(--pr-gold); color: var(--pr-ink); box-shadow: 0 0 0 2px var(--pr-ivory), 0 0 22px rgb(255 62 165 / 0.55); }
+.g-president .pr-seat.is-done { opacity: 0.6; }
+.g-president .pr-seat-main { display: grid; line-height: 1.1; min-width: 0; }
+.g-president .pr-seat-name { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.g-president .pr-role { display: inline-flex; align-items: center; gap: 3px; font-family: var(--pr-serif); font-weight: 800; font-size: 0.62rem; color: var(--pr-gold); letter-spacing: 0; }
+.g-president .pr-seat.is-turn .pr-role { color: #7A1750; }
+.g-president .pr-seat-n { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 99px; background: var(--pr-ivory); color: var(--pr-ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.g-president .pr-mini { width: 8px; height: 11px; border-radius: 2px; background: var(--pr-ink); }
+.g-president .pr-tag { padding: 2px 9px; border-radius: 99px; background: rgb(255 255 255 / 0.16); font-size: 0.72rem; font-weight: 700; }
+.g-president .pr-tag.gold { background: var(--pr-gold); color: var(--pr-ink); }
+.g-president .pr-seat.is-turn .pr-tag { background: rgb(0 0 0 / 0.14); }
+
+/* ——— Le tapis : le pli en cours ——— */
+.g-president .pr-felt { margin: auto 0; display: grid; place-items: center; min-height: calc(var(--th) + 48px); padding: 4px 16px; text-align: center; }
+.g-president .pr-pli { position: relative; display: grid; place-items: center; justify-items: center; gap: 12px; }
+.g-president .pr-play { grid-area: 1 / 1; display: flex; justify-content: center; }
+.g-president .pr-felt .pr-card { --cw: var(--tw); --ch: var(--th); }
+.g-president .pr-play .pr-card + .pr-card { margin-left: calc(var(--tw) * -0.52); }
+.g-president .pr-play.is-old { opacity: 0.55; filter: brightness(0.8); transform: translate(calc(var(--o) * -26px), calc(var(--o) * -9px)) rotate(calc(var(--o) * -5deg)) scale(0.94); }
+.g-president .pr-play.is-top { rotate: -2deg; }
+.g-president .pr-play.is-new { animation: pr-drop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.g-president .pr-play.is-top .pr-card:nth-child(even) { translate: 0 -4px; }
+.g-president .pr-pli-cap { grid-row: 2; margin: 0; padding: 4px 14px; border-radius: 99px; background: rgb(0 0 0 / 0.32); font-size: 0.85rem; font-weight: 600; }
+.g-president .pr-pli { grid-template-rows: auto auto; }
+.g-president .pr-pli > .pr-play { grid-row: 1; }
+.g-president .pr-empty { display: grid; gap: 6px; max-width: 320px; padding: 20px 22px; border: 1.5px dashed rgb(255 62 165 / 0.55); border-radius: 22px; color: rgb(255 255 255 / 0.85); }
+.g-president .pr-empty p { margin: 0; font-size: 0.9rem; }
+.g-president .pr-empty-t { font-family: var(--pr-serif); font-weight: 900; font-size: 1.2rem !important; color: var(--pr-gold); }
+.g-president .pr-exchange { display: grid; justify-items: center; gap: 8px; padding: 12px 14px; border-radius: 22px; background: rgb(0 0 0 / 0.28); box-shadow: inset 0 0 0 1px rgb(255 62 165 / 0.5); }
+.g-president .pr-exchange p { margin: 0; font-size: 0.9rem; }
+.g-president .pr-ex-title { font-family: var(--pr-serif); font-weight: 900; font-size: 1.1rem !important; color: var(--pr-gold); }
+.g-president .pr-ex-cards { display: flex; gap: 8px; }
+.g-president .pr-ex-vice { font-size: 0.8rem !important; opacity: 0.85; }
+
+/* ——— Messages ——— */
+.g-president .pr-news { padding: 0 18px; text-align: center; }
+.g-president .pr-say { margin: 0; font-size: 1rem; font-weight: 700; text-wrap: balance; }
+.g-president .pr-old { margin: 4px 0 0; padding: 0; list-style: none; font-size: 0.78rem; color: rgb(255 255 255 / 0.72); }
+.g-president .pr-old li:nth-child(n + 3) { display: none; }
+.g-president .pr-old li.is-latest { color: var(--pr-ivory); font-weight: 600; }
+
+/* ——— Boutons ——— */
+.g-president .pr-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; padding: 0 14px; }
+.g-president .pr-btn { min-height: 48px; padding: 0 24px; border: 0; border-radius: 99px; background: transparent; color: var(--pr-ivory); font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.7); transition: transform 0.1s; }
+.g-president .pr-btn:active:not(:disabled) { transform: translateY(2px); }
+.g-president .pr-btn.go { background: var(--pr-gold); color: var(--pr-ink); box-shadow: 0 4px 0 var(--pr-gold-d), 0 0 18px rgb(255 233 74 / 0.45); }
+.g-president .pr-btn:disabled { cursor: not-allowed; box-shadow: none; background: rgb(0 0 0 / 0.3); color: rgb(255 255 255 / 0.78); }
+.g-president button:focus-visible { outline: 3px solid var(--pr-ivory); outline-offset: 3px; }
+
+/* ——— Main : éventail sur plusieurs rangées ——— */
+.g-president .pr-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  padding: 20px calc(var(--cw) - var(--step) + 8px) 18px 8px;
+}
+.g-president .pr-h {
+  margin: 0 calc(var(--step) - var(--cw)) calc(var(--ch) * -0.5) 0;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease-out, ease-out), filter 0.14s;
+  touch-action: manipulation;
+}
+.g-president .pr-hand .pr-h:last-child { margin-bottom: 0; }
+.g-president .pr-h.is-ok { transform: translateY(-6px); }
+.g-president .pr-h.is-no { filter: brightness(0.6) saturate(0.6); cursor: not-allowed; }
+.g-president .pr-h.is-received { box-shadow: 0 0 0 3px var(--pr-gold), 0 0 16px rgb(255 62 165 / 0.7); }
+.g-president .pr-h.is-selected { transform: translateY(-22px); box-shadow: 0 0 0 3px var(--pr-gold), 0 12px 20px rgb(0 0 0 / 0.45); }
+.g-president .pr-h:hover.is-ok:not(.is-selected) { transform: translateY(-12px); }
+
+/* ——— Résultats ——— */
+.g-president .pr-overlay { position: absolute; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgb(20 6 47 / 0.92); overflow-y: auto; }
+.g-president .pr-panel { width: min(100%, 460px); padding: 20px 18px 18px; border-radius: 32px; background: var(--pr-ivory); color: var(--pr-ink); border: 4px solid var(--pr-ink); box-shadow: 0 0 0 4px var(--pr-pink), 0 10px 0 4px rgb(0 0 0 / 0.4); text-align: center; position: relative; overflow: hidden; }
+.g-president .pr-panel h2 { margin: 0 0 4px; font-family: var(--pr-serif); font-size: 1.4rem; font-weight: 900; letter-spacing: -0.03em; }
+.g-president .pr-panel-line { margin: 0 0 12px; font-weight: 600; }
+.g-president .pr-ranks { display: grid; gap: 6px; margin: 0 0 6px; padding: 0; list-style: none; text-align: left; }
+.g-president .pr-rank { display: grid; grid-template-columns: 24px auto 1fr auto auto; align-items: center; gap: 8px; padding: 5px 12px 5px 8px; border-radius: 99px; background: rgb(23 23 28 / 0.07); font-weight: 600; }
+.g-president .pr-rank.is-first { background: var(--pr-gold); }
+.g-president .pr-rank-pos { font-family: var(--pr-serif); font-weight: 900; font-size: 1rem; text-align: center; }
+.g-president .pr-rank-name { display: grid; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-president .pr-rank-name small { display: inline-flex; align-items: center; gap: 4px; font-family: var(--pr-serif); font-weight: 700; font-size: 0.68rem; opacity: 0.85; }
+.g-president .pr-rank-gain { font-size: 0.85rem; font-weight: 700; color: #0A7A5E; }
+.g-president .pr-rank.is-first .pr-rank-gain { color: var(--pr-ink); }
+.g-president .pr-rank-pts { min-width: 3ch; text-align: right; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.g-president .pr-hint { margin: 0 0 12px; font-size: 0.75rem; opacity: 0.7; text-align: right; }
+.g-president .pr-next { display: grid; justify-items: center; gap: 8px; }
+.g-president .pr-next p { margin: 0; font-size: 0.85rem; }
+.g-president .pr-final { margin: 0; font-family: var(--pr-serif); font-weight: 900; font-size: 1.2rem; }
+
+/* ——— Animations sobres ——— */
+@keyframes pr-drop { from { transform: translateY(-22px) scale(1.12); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .g-president *, .g-president *::before, .g-president *::after { animation: none !important; transition: none !important; }
+}
+
+/* ——— Couronne sticker, confettis ——— */
+.g-president .pr-crown { width: 1.5em; height: 1.2em; flex: none; filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.35)); }
+.g-president .pr-crown.big { width: 64px; height: 52px; margin: -4px auto 4px; display: block; animation: pr-bounce 0.9s var(--ease-out, ease-out) both; }
+.g-president .pr-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.g-president .pr-confetti i { position: absolute; top: -12px; left: var(--x); width: 9px; height: 14px; border-radius: 2px; background: var(--c); animation: pr-fall var(--d) linear var(--w) infinite; }
+.g-president .pr-pli .pr-play.is-top .pr-card { box-shadow: 0 3px 0 rgb(0 0 0 / 0.5), 0 0 0 1.5px #fff, 0 0 22px rgb(255 62 165 / 0.75); }
+@keyframes pr-fall { to { transform: translateY(520px) rotate(540deg); } }
+@keyframes pr-bounce { 0% { transform: scale(0.3) rotate(-14deg); } 60% { transform: scale(1.15) rotate(6deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .g-president .pr-confetti { display: none; } }
+.g-president .pr-panel > *:not(.pr-confetti) { position: relative; z-index: 1; }
+.g-president .pr-panel > .pr-confetti { z-index: 0; }
+
+/* Révolution : l'ordre est inversé, l'écran le montre (bandeau qui clignote doucement, teinte inversée). */
+.g-president.is-revolution { box-shadow: inset 0 0 0 6px #FFE14D, inset 0 0 60px rgb(255 225 77 / 0.45); }
+@media (prefers-reduced-motion: no-preference) {
+  .g-president.is-revolution { animation: pr-revo 1.6s ease-in-out infinite; }
+  @keyframes pr-revo { 50% { box-shadow: inset 0 0 0 6px #FF2E93, inset 0 0 70px rgb(255 46 147 / 0.5); } }
+}

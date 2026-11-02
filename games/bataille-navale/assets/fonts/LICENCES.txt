@@ -1,0 +1,4 @@
+Polices du jeu Bataille navale, toutes sous SIL Open Font License 1.1 (texte complet : OFL.txt).
+
+- Unbounded (unbounded.woff2) : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
+- Figtree (figtree.woff2) : Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)

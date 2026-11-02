@@ -1,0 +1,25 @@
+{
+  "name": "Complot",
+  "tagline": "À la cour, tout le monde ment.",
+  "description": "Deux influences cachées, cinq personnages possibles. Annonce celui qu'il te faut pour agir, même si tu ne l'as pas, et mets en doute ceux qui en font trop. Le dernier courtisan encore influent gagne.",
+  "how": [
+    "Chacun a deux cartes de personnage face cachée (ses influences) et 2 pièces. À ton tour, tu fais une action.",
+    "Revenu : +1 pièce. Aide étrangère : +2 (le Doge peut la contrer). Coup d'État : paie 7 pièces, la cible perd une influence (obligatoire à 10 pièces).",
+    "Les cinq personnages ont chacun une action : le Doge prélève 3 pièces, la Lame assassine pour 3 pièces, le Condottiere vole 2 pièces, l'Émissaire échange tes cartes avec la pioche, la Courtisane protège des assassinats.",
+    "Tu peux annoncer n'importe quel personnage, même sans l'avoir. Mais n'importe qui peut te mettre en doute : si tu l'as, il perd une influence (et tu remélanges ta carte) ; sinon, c'est toi qui perds une influence.",
+    "Quand une influence est perdue, la carte est retournée pour de bon. Sans influence, on est éliminé. Le dernier en jeu gagne."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 6,
+  "duration": "15 min",
+  "emoji": "🎭",
+  "color": "#6A1B4D",
+  "ink": "#F2D27A",
+  "order": 56,
+  "options": [
+    { "key": "turnTime", "label": "Temps pour jouer", "help": "À la fin, le jeu joue pour toi", "type": "choice", "default": 60,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }] },
+    { "key": "reactTime", "label": "Temps pour réagir", "help": "Douter, contrer ou laisser passer", "type": "choice", "default": 15,
+      "choices": [{ "value": 10, "label": "10 s" }, { "value": 15, "label": "15 s" }, { "value": 25, "label": "25 s" }, { "value": 40, "label": "40 s" }] }
+  ]
+}

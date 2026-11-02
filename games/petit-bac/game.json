@@ -1,0 +1,26 @@
+{
+  "name": "Petit Bac",
+  "tagline": "Une lettre, des catégories, un chrono.",
+  "description": "Tout le monde écrit en même temps un mot par catégorie qui commence par la lettre tirée. Les doublons rapportent moins, et on peut contester les réponses douteuses.",
+  "how": [
+    "Une lettre est tirée au hasard et chaque manche propose des catégories (animal, métier, excuse bidon…).",
+    "Écris en même temps que les autres un mot par catégorie qui commence par la lettre. Tes réponses restent cachées jusqu'à la fin de la manche.",
+    "La manche s'arrête quand le chrono tombe, ou quand quelqu'un a tout rempli et crie « Stop ! » : les autres ont alors 10 secondes.",
+    "Ensuite, on lit toutes les réponses ensemble et on conteste celles qui ne passent pas : si la majorité conteste, la réponse est refusée.",
+    "10 points pour une réponse que personne d'autre n'a écrite, 5 points si un autre joueur a écrit la même, 0 si la case est vide, mauvaise lettre ou refusée."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 12,
+  "duration": "15 min",
+  "emoji": "✏️",
+  "color": "#8DB4FF",
+  "ink": "#0B0B0D",
+  "order": 30,
+  "options": [
+    { "key": "seconds", "label": "Durée d'une manche", "type": "choice", "default": 90,
+      "choices": [{ "value": 60, "label": "60 s" }, { "value": 90, "label": "90 s" }, { "value": 120, "label": "120 s" }] },
+    { "key": "rounds", "label": "Manches", "type": "number", "min": 1, "max": 10, "default": 4 },
+    { "key": "categories", "label": "Catégories par manche", "type": "number", "min": 6, "max": 8, "default": 6 },
+    { "key": "rareLetters", "label": "Lettres rares", "help": "Autorise K, W, X, Y et Z (très difficile).", "type": "bool", "default": false }
+  ]
+}

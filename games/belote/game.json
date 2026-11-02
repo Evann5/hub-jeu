@@ -1,0 +1,27 @@
+{
+  "name": "Belote",
+  "tagline": "Deux équipes, un atout, 162 points à se partager.",
+  "description": "La belote en équipes : quatre joueurs, deux équipes (en face de toi, c'est ton partenaire), 32 cartes. On prend l'atout, puis on essaie de faire plus de points que l'autre équipe.",
+  "how": [
+    "Vous êtes quatre en deux équipes : ton partenaire est assis en face de toi (places 1 et 3 contre places 2 et 4).",
+    "Chacun reçoit 5 cartes, puis une carte est retournée. Au premier tour, tu peux prendre à cette couleur ; sinon, au second tour, tu peux choisir une autre couleur. Si personne ne prend, on redistribue.",
+    "Celui qui prend fixe l'atout (la couleur qui coupe). À l'atout, le valet vaut 20 points et le 9 vaut 14 ; hors atout, l'as vaut 11 et le 10 vaut 10.",
+    "Tu dois fournir (jouer la couleur demandée). Sans cette couleur, tu dois couper à l'atout (sauf si ton partenaire est maître), et monter à l'atout quand tu peux.",
+    "Roi et dame d'atout dans la même main : belote et rebelote, 20 points annoncés tout seuls. Le dernier pli rapporte 10 points (dix de der).",
+    "Le preneur doit faire plus de points que l'autre équipe, sinon il est « dedans » : 162 points pour l'autre équipe. Tous les plis à soi, c'est un capot : 252 points.",
+    "La première équipe à 501 points (ou 1001) gagne la partie."
+  ],
+  "minPlayers": 4,
+  "maxPlayers": 4,
+  "duration": "30 min",
+  "emoji": "♥️",
+  "color": "#FF6FB5",
+  "ink": "#2B0B3A",
+  "order": 60,
+  "options": [
+    { "key": "target", "label": "Score à atteindre", "help": "Une partie courte ou longue", "type": "choice", "default": 501,
+      "choices": [{ "value": 501, "label": "501 points" }, { "value": 1001, "label": "1001 points" }] },
+    { "key": "timer", "label": "Temps pour jouer", "help": "Passe ou joue la plus petite carte permise quand le temps est écoulé", "type": "choice", "default": 60,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 20, "label": "20 s" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }] }
+  ]
+}

@@ -1,0 +1,152 @@
+/* Dames : damier bubble-gum. Fond lilas clair, cadre dégradé rose-violet-bleu brillant, damier rose et lilas, pions macarons
+   brillants (vanille et bleu roi), couronne sticker, ombres douces. Toutes les règles commencent par .g-dames. */
+
+@font-face { font-family: 'Dames Syne'; src: url('assets/fonts/syne.woff2') format('woff2-variations'); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: 'Dames Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-dames {
+  --navy: #1B1F6B;
+  --pink: #FF5CB0;
+  --lilac: #E7D6FF;
+  --lemon: #FFE23D;
+  --blue: #2F5BFF;
+  --syne: 'Dames Syne', 'Arial Black', ui-sans-serif, sans-serif;
+  --text: 'Dames Figtree', ui-sans-serif, system-ui, sans-serif;
+  background-color: #F3E8FF;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgb(255 92 176 / 0.28) 0 120px, transparent 121px),
+    radial-gradient(circle at 92% 38%, rgb(47 91 255 / 0.2) 0 140px, transparent 141px),
+    radial-gradient(circle at 20% 96%, rgb(31 224 207 / 0.28) 0 110px, transparent 111px),
+    linear-gradient(180deg, #F6EBFF, #FFE4F3);
+  color: var(--navy);
+  font-family: var(--text);
+}
+.g-dames :focus-visible { outline: 4px solid var(--navy); outline-offset: 3px; }
+
+.g-dames .d { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0 24px; }
+
+/* Titre sticker */
+.g-dames .d-head { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.g-dames .d-title {
+  margin: 0; font: 800 clamp(2.4rem, 13vw, 4rem)/1.05 var(--syne); letter-spacing: 0.04em; text-transform: uppercase;
+  background: linear-gradient(90deg, #FF3D9A, #8A3DFF 55%, #2F5BFF); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.g-dames .d-sub {
+  margin: 0; padding: 4px 14px; border-radius: 999px; background: var(--navy); color: #fff;
+  font: 800 0.72rem/1.2 var(--text); letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+/* Joueurs */
+.g-dames .d-players { display: flex; gap: 10px; width: 100%; max-width: 600px; padding: 0 10px; }
+.g-dames .d-player {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px;
+  border-radius: 18px; background: #fff; box-shadow: 0 6px 16px rgb(120 60 200 / 0.18); transition: background-color 0.2s, box-shadow 0.2s;
+}
+.g-dames .d-player.is-turn { animation: d-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); box-shadow: 0 0 0 3px var(--pink), 0 6px 16px rgb(120 60 200 / 0.18); }
+.g-dames .d-player.is-turn.s1 { box-shadow: 0 0 0 3px var(--blue), 0 6px 16px rgb(120 60 200 / 0.18); }
+.g-dames .d-player.is-won { background: #FFF3A8; }
+@keyframes d-pop { 0% { transform: scale(0.92); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+.g-dames .d-token { flex: none; width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 3px 6px rgb(60 30 140 / 0.3); }
+.g-dames .d-player.s0 .d-token { background: radial-gradient(circle at 35% 30%, #fff, #FFD6EC 70%); }
+.g-dames .d-player.s1 .d-token { background: radial-gradient(circle at 35% 30%, #7B99FF, var(--blue) 65%); }
+.g-dames .d-who { display: grid; min-width: 0; flex: 1; }
+.g-dames .d-name { overflow: hidden; font: 800 0.95rem/1.2 var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.g-dames .d-side { font: 700 0.72rem/1.2 var(--text); text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; }
+.g-dames .d-count { flex: none; min-width: 2ch; text-align: right; font: 800 1.5rem/1 var(--syne); font-variant-numeric: tabular-nums; }
+
+.g-dames .d-statusrow { display: grid; gap: 8px; justify-items: center; width: 100%; max-width: 600px; padding: 0 10px; }
+.g-dames .d-status {
+  margin: 0; padding: 9px 18px; border-radius: 18px; background: var(--navy); color: #fff;
+  text-align: center; font: 700 1rem/1.3 var(--text); text-wrap: balance;
+}
+.g-dames .d-note { margin: 0; padding: 3px 12px; border-radius: 999px; background: var(--lemon); border: 2px solid var(--navy); text-align: center; font: 800 0.82rem/1.3 var(--text); }
+.g-dames .d-cancel {
+  min-height: 44px; padding: 0 20px; border: 3px solid var(--navy); border-radius: 999px; background: var(--lemon); color: var(--navy);
+  box-shadow: 0 4px 0 var(--navy); font: 800 0.95rem var(--text); cursor: pointer;
+}
+.g-dames .d-cancel:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--navy); }
+.g-dames .d-timer { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 360px; font: 800 1rem/1 var(--syne); }
+.g-dames .d-timer-bar { flex: 1; height: 12px; border-radius: 99px; background: rgb(27 31 107 / 0.15); overflow: hidden; }
+.g-dames .d-timer-fill { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--lemon), #FF8A3D); transition: width 0.25s linear; }
+.g-dames .d-timer.is-low .d-timer-text { color: #D1155F; }
+.g-dames .d-timer-text { min-width: 3.4ch; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Damier : cadre blanc à gros contour, cases lilas et rose bubble-gum */
+.g-dames .d-boardwrap { width: min(100%, 700px, max(340px, calc(100dvh - 350px))); padding: 0 10px; }
+.g-dames .d-frame { position: relative; padding: 8px; border-radius: 28px; background: linear-gradient(140deg, #FF86C6, #A56BFF 60%, #5B7BFF); box-shadow: 0 18px 36px rgb(120 60 200 / 0.35), inset 0 3px 0 rgb(255 255 255 / 0.5); }
+.g-dames .d-grid { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); overflow: hidden; border-radius: 18px; }
+.g-dames .d-sq { position: relative; display: block; width: 100%; aspect-ratio: 1; padding: 0; border: 0; border-radius: 0; }
+.g-dames .d-sq.is-light { background: var(--lilac); }
+.g-dames .d-sq.is-dark { background: linear-gradient(150deg, #FF86C6, var(--pink)); cursor: default; -webkit-tap-highlight-color: transparent; }
+.g-dames .d-sq.is-dark.is-movable, .g-dames .d-sq.is-dark.is-target, .g-dames .d-sq.is-dark.is-selected { cursor: pointer; }
+.g-dames .d-sq.is-last { box-shadow: inset 0 0 0 4px rgb(255 226 61 / 0.9); }
+.g-dames .d-sq:focus-visible { z-index: 3; outline: 4px solid var(--navy); outline-offset: -4px; }
+
+/* Pions macarons : coque brillante, cordon de « pieds » en pointillés, ombre franche dessous */
+.g-dames .d-piece { position: absolute; inset: 8%; border-radius: 50%; transition: transform 0.15s; }
+.g-dames .d-piece::before { content: ''; position: absolute; inset: 16%; border-radius: 50%; border: 2px dotted rgb(255 255 255 / 0.8); }
+.g-dames .d-piece.w {
+  background: radial-gradient(ellipse 24% 14% at 30% 22%, rgb(255 255 255 / 0.95) 0 60%, transparent 100%), radial-gradient(circle at 40% 35%, #fff 0, #FFE9F5 55%, #FFC4E2 100%);
+  box-shadow: 0 5px 7px rgb(80 20 120 / 0.45), inset 0 -4px 6px rgb(0 0 0 / 0.12);
+}
+.g-dames .d-piece.w::before { border-color: rgb(255 120 190 / 0.7); }
+.g-dames .d-piece.b {
+  background: radial-gradient(ellipse 24% 14% at 30% 22%, rgb(255 255 255 / 0.85) 0 60%, transparent 100%), radial-gradient(circle at 40% 35%, #7B99FF 0, var(--blue) 55%, #1634C4 100%);
+  box-shadow: 0 5px 7px rgb(80 20 120 / 0.45), inset 0 -4px 6px rgb(0 0 0 / 0.12);
+}
+/* Dame : un sticker couronne jaune cerné de blanc */
+.g-dames .d-piece.king::after {
+  content: ''; position: absolute; inset: 14%; transform: rotate(-8deg); filter: drop-shadow(0 2px 0 var(--navy));
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 7.5l4.5 4.5L12 4l4.5 8L21 7.5 19 18H5z' fill='%23FFD21F' stroke='white' stroke-width='4.5' stroke-linejoin='round'/%3E%3Cpath d='M3 7.5l4.5 4.5L12 4l4.5 8L21 7.5 19 18H5z' fill='%23FFD21F' stroke='%231B1F6B' stroke-width='1.4' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='13' r='1.6' fill='%23FF5CB0'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.g-dames .d-piece.is-ghost { opacity: 0.6; outline: 3px dashed var(--lemon); outline-offset: 2px; }
+.g-dames .d-piece.is-taken { opacity: 0.4; filter: grayscale(1); transform: scale(0.8); }
+.g-dames .d-piece.is-landed { animation: d-land 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes d-land { 0% { transform: scale(0.6, 1.2); } 55% { transform: scale(1.18, 0.85); } 100% { transform: scale(1); } }
+
+/* Aides : pièces jouables cerclées de jaune qui sautillent, pièce choisie soulevée, arrivées en pastilles jaunes, étapes numérotées */
+.g-dames .is-movable > .d-piece { box-shadow: 0 0 0 4px var(--lemon), 0 0 14px 4px rgb(255 226 61 / 0.8), 0 5px 7px rgb(80 20 120 / 0.45); animation: d-bob 0.9s ease-in-out infinite alternate; }
+@keyframes d-bob { to { transform: translateY(-5%); } }
+.g-dames .is-selected > .d-piece { transform: translateY(-8%) scale(1.12); box-shadow: 0 0 0 4px #fff, 0 10px 12px rgb(80 20 120 / 0.5); }
+.g-dames .is-selected > .d-piece.is-taken { transform: scale(0.8); }
+.g-dames .is-target::after {
+  content: ''; position: absolute; inset: 0; margin: auto; width: 38%; height: 38%; border-radius: 50%; pointer-events: none;
+  background: var(--lemon); border: 3px solid var(--navy); box-shadow: 0 3px 0 var(--navy); animation: d-breathe 1.1s ease-in-out infinite alternate;
+}
+@keyframes d-breathe { to { transform: scale(1.2); } }
+.g-dames .is-target:hover::after, .g-dames .is-target:focus-visible::after { width: 50%; height: 50%; animation: none; }
+.g-dames .d-mark {
+  position: absolute; right: 2%; bottom: 2%; z-index: 2; display: grid; place-items: center; min-width: 1.4em; height: 1.4em; padding: 0 0.25em;
+  border: 2px solid var(--navy); border-radius: 99px; background: #fff; color: var(--navy); font: 800 0.72rem/1 var(--syne); pointer-events: none;
+}
+.g-dames .d-mark:empty { display: none; }
+
+/* Coordonnées sur le cadre (tablette et ordinateur) */
+.g-dames .d-files, .g-dames .d-ranks { display: none; }
+@media (min-width: 600px) {
+  .g-dames .d-frame { padding: 24px 8px 8px 24px; }
+  .g-dames .d-files { position: absolute; top: 3px; left: 24px; right: 8px; display: grid; grid-template-columns: repeat(10, 1fr); }
+  .g-dames .d-ranks { position: absolute; top: 24px; bottom: 8px; left: 2px; width: 20px; display: grid; grid-template-rows: repeat(10, 1fr); }
+  .g-dames .d-files span, .g-dames .d-ranks span { display: grid; place-items: center; color: #fff; font: 800 0.75rem/1 var(--syne); }
+}
+
+/* Confettis */
+.g-dames .fx-confetti { position: absolute; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
+.g-dames .fx-confetti span { position: absolute; top: -20px; border-radius: 2px; animation: d-fall 2.4s ease-in both; }
+@keyframes d-fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); } }
+
+@media (max-width: 400px) { .g-dames .d-player { padding: 6px 8px; gap: 6px; } .g-dames .d-player .token { display: none; } }
+
+/* Téléphone : le plateau prend toute la largeur. */
+@media (max-width: 599px) {
+  .g-dames .d { padding-top: 12px; gap: 10px; }
+  .g-dames .d-boardwrap { width: 100%; padding: 0 4px; }
+  .g-dames .d-frame { padding: 5px; border-radius: 22px; }
+  .g-dames .d-grid { border-radius: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-dames .is-movable > .d-piece, .g-dames .d-piece.is-landed, .g-dames .is-target::after, .g-dames .d-player.is-turn { animation: none; }
+  .g-dames .fx-confetti { display: none; }
+  .g-dames .d-piece, .g-dames .d-player, .g-dames .d-timer-fill { transition: none; }
+}

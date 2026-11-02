@@ -1,0 +1,227 @@
+/* Belote — street-art : un mur de graffitis aux couleurs bombe, des cartes « stickers » à gros contour,
+   des bonbons de score. Unbounded pour les gros chiffres, Figtree pour le reste. */
+
+@font-face { font-family: 'BL Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'BL Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-belote {
+  --ink: #1A0B3B;
+  --wall: #3A1C9E;
+  --pink: #FF2E93;
+  --lemon: #FFE93B;
+  --cyan: #19D3F3;
+  --mint: #2BE3A4;
+  --orange: #FF7A1A;
+  --violet: #9B5CFF;
+  --white: #FFFFFF;
+  --cw: clamp(54px, 15.5vw, 92px); /* carte de la main */
+  --tw: clamp(46px, 12.5vw, 74px); /* carte sur la table */
+  --pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --display: 'BL Unbounded', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --shadow: 4px 4px 0 var(--ink);
+  background:
+    radial-gradient(circle at 12% 14%, rgb(255 46 147 / 0.75) 0 90px, transparent 91px),
+    radial-gradient(circle at 88% 24%, rgb(25 211 243 / 0.7) 0 110px, transparent 111px),
+    radial-gradient(circle at 78% 92%, rgb(255 233 59 / 0.7) 0 100px, transparent 101px),
+    radial-gradient(circle at 8% 84%, rgb(43 227 164 / 0.7) 0 80px, transparent 81px),
+    radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 2px) 0 0 / 18px 18px,
+    linear-gradient(160deg, #4B2BD0, #2A1180);
+  color: var(--white);
+  font: 600 1rem/1.4 'BL Figtree', system-ui, sans-serif;
+  overflow-y: auto;
+}
+
+.g-belote .bl { flex: 1; display: flex; flex-direction: column; gap: 8px; width: min(1000px, 100%); min-height: 100%; margin: 0 auto; padding: 10px; }
+.g-belote .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* En-tête : deux bonbons de score et l'atout */
+.g-belote .bl-slate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.g-belote .bl-scores { flex: 1 1 280px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-width: 0; }
+.g-belote .bl-sc {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 8px; min-width: 0; padding: 6px 14px 6px 14px;
+  border: 3px solid var(--ink); border-radius: 20px; background: var(--lemon); color: var(--ink); box-shadow: var(--shadow);
+  background-image: linear-gradient(rgb(255 255 255 / 0.55), transparent 45%);
+}
+.g-belote .bl-sc.is-ours { background-color: var(--pink); background-image: linear-gradient(rgb(255 255 255 / 0.4), transparent 45%); }
+.g-belote .bl-sc-name { grid-column: 1 / -1; font-weight: 900; font-size: 0.8125rem; letter-spacing: 0.02em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-belote .bl-sc-n { font: 900 clamp(1.4rem, 1.1rem + 1.6vw, 2.2rem)/1 var(--display); font-variant-numeric: tabular-nums; }
+.g-belote .bl-sc-tricks { font-weight: 800; font-size: 0.875rem; text-align: right; }
+.g-belote .bl-trump {
+  display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 6px; border: 3px solid var(--ink); border-radius: 999px;
+  background: var(--cyan); color: var(--ink); box-shadow: var(--shadow); background-image: linear-gradient(rgb(255 255 255 / 0.5), transparent 50%);
+}
+.g-belote .bl-trump span { display: grid; line-height: 1.05; }
+.g-belote .bl-trump small { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+.g-belote .bl-trump b { font: 800 0.95rem/1.1 var(--display); }
+.g-belote .bl-trump .bl-suit { padding: 5px; border-radius: 50%; background: var(--white); box-sizing: content-box; box-shadow: inset 0 0 0 2px var(--ink); animation: bl-pop 0.4s var(--pop); }
+.g-belote .bl-trump.is-none { padding-left: 14px; background: var(--white); }
+.g-belote .bl-meta { flex: 1 1 100%; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.8125rem; }
+.g-belote .bl-meta span:not(.bl-clock) { padding: 1px 10px; border: 2px solid var(--ink); border-radius: 999px; background: rgb(255 255 255 / 0.92); color: var(--ink); }
+.g-belote .bl-clock { margin-left: auto; min-width: 4ch; padding: 1px 10px; border: 2px solid var(--ink); border-radius: 999px; background: var(--mint); color: var(--ink); text-align: center; font: 900 0.875rem/1.5 var(--display); font-variant-numeric: tabular-nums; }
+.g-belote .bl-clock:empty { display: none; }
+.g-belote .bl-clock.is-low { background: var(--orange); animation: bl-shake 0.5s infinite; }
+
+/* La table : un grand sticker */
+.g-belote .bl-felt {
+  position: relative; flex: 1 1 0; min-height: 232px; padding: 10px; border: 4px solid var(--ink); border-radius: 30px; overflow: hidden;
+  background:
+    radial-gradient(rgb(255 255 255 / 0.28) 2px, transparent 2.5px) 0 0 / 20px 20px,
+    linear-gradient(145deg, #1FE0C0, #19B8F3 55%, #5B7CFF);
+  box-shadow: 6px 6px 0 var(--ink); color: var(--ink);
+}
+.g-belote .bl-grid {
+  display: grid; height: 100%; min-height: 212px; gap: 6px;
+  grid-template-columns: minmax(64px, 1fr) auto minmax(64px, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: '. top .' 'left center right';
+}
+.g-belote .bl-seat.rel-2 { grid-area: top; justify-self: center; }
+.g-belote .bl-seat.rel-1 { grid-area: left; align-self: center; justify-self: start; }
+.g-belote .bl-seat.rel-3 { grid-area: right; align-self: center; justify-self: end; }
+.g-belote .bl-center { grid-area: center; display: grid; place-items: center; min-width: calc(var(--tw) * 2.5); }
+
+.g-belote .bl-seat { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 100%; }
+.g-belote .bl-who {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; max-width: 100%; padding: 4px 12px 4px 5px;
+  border: 3px solid var(--ink); border-radius: 999px; background: var(--lemon); color: var(--ink); font-weight: 800; font-size: 0.875rem;
+  box-shadow: 3px 3px 0 var(--ink); background-image: linear-gradient(rgb(255 255 255 / 0.5), transparent 55%);
+}
+.g-belote .bl-seat.is-ours .bl-who { background-color: var(--pink); background-image: linear-gradient(rgb(255 255 255 / 0.4), transparent 55%); }
+.g-belote .bl-seat.rel-1 .bl-who, .g-belote .bl-seat.rel-3 .bl-who { flex-direction: column; border-radius: 22px; padding: 6px 4px; width: 100%; }
+.g-belote .bl-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-belote .bl-seat.rel-1 .bl-name, .g-belote .bl-seat.rel-3 .bl-name { max-width: 100%; font-size: 0.8125rem; }
+.g-belote .bl-seat.rel-1, .g-belote .bl-seat.rel-3 { min-width: 0; max-width: 100%; }
+.g-belote .bl-seat.rel-1 .bl-who, .g-belote .bl-seat.rel-3 .bl-who { min-width: 0; overflow: hidden; }
+.g-belote .bl-seat.is-turn .bl-who { outline: 4px solid var(--white); outline-offset: 2px; animation: bl-bounce 1s var(--pop) infinite; }
+.g-belote .bl-chip { padding: 0 8px; border-radius: 999px; background: var(--ink); color: var(--white); font-size: 0.6875rem; font-weight: 800; line-height: 1.6; }
+.g-belote .bl-chip.is-taker { background: var(--orange); color: var(--ink); }
+.g-belote .bl-chip.is-dealer { min-width: 1.6em; background: var(--mint); color: var(--ink); text-align: center; }
+.g-belote .bl-bid {
+  padding: 1px 10px; border: 2px solid var(--ink); border-radius: 12px; background: var(--white); color: var(--ink); font-weight: 800; font-size: 0.8125rem; text-align: center;
+  animation: bl-pop 0.3s var(--pop);
+}
+.g-belote .bl-say {
+  position: absolute; z-index: 3; top: -10px; left: 50%; translate: -50% 0; rotate: -4deg; white-space: nowrap;
+  padding: 4px 14px; border: 3px solid var(--ink); border-radius: 14px; background: var(--lemon); color: var(--ink);
+  font: 900 1.05rem/1.2 var(--display); box-shadow: var(--shadow); animation: bl-pop 0.35s var(--pop);
+}
+.g-belote .bl-seat.rel-1 .bl-say, .g-belote .bl-seat.rel-3 .bl-say { top: auto; bottom: 100%; }
+
+/* Dos des cartes des autres */
+.g-belote .bl-backs { display: flex; padding-left: 12px; }
+.g-belote .bl-backs.is-v { flex-direction: column; padding: 0; align-items: center; }
+.g-belote .bl-back {
+  display: block; width: 24px; height: 34px; margin-left: -12px; border: 2.5px solid var(--ink); border-radius: 6px;
+  background: radial-gradient(circle at 50% 50%, var(--lemon) 0 3px, transparent 3.5px), repeating-linear-gradient(45deg, var(--pink) 0 5px, var(--violet) 5px 10px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.g-belote .bl-backs.is-v .bl-back { margin: -26px 0 0; }
+.g-belote .bl-backs.is-v .bl-back:first-child { margin-top: 0; }
+
+/* Cartes */
+.g-belote .bl-card { position: relative; display: block; width: var(--cw); flex: none; margin: 0; padding: 0; border: 0; background: none; color: inherit; filter: drop-shadow(3px 3px 0 var(--ink)); transition: translate 0.18s var(--pop), filter 0.15s; }
+.g-belote .bl-card.is-table, .g-belote .bl-card.is-up { width: var(--tw); }
+.g-belote .bl-face { display: block; width: 100%; height: auto; }
+.g-belote .bl-card.is-idle { cursor: default; }
+.g-belote .bl-card.is-legal { translate: 0 -12px; cursor: pointer; filter: drop-shadow(3px 3px 0 var(--ink)) drop-shadow(0 0 6px var(--lemon)); }
+.g-belote .bl-card.is-dim { filter: drop-shadow(3px 3px 0 var(--ink)) brightness(0.62) saturate(0.55); cursor: not-allowed; }
+.g-belote .bl-card:focus-visible { outline: 4px solid var(--lemon); outline-offset: 3px; border-radius: 12px; z-index: 5; }
+@media (hover: hover) {
+  .g-belote .bl-card.is-legal:hover { translate: 0 -20px; z-index: 4; }
+}
+
+.g-belote .bl-trick { position: relative; width: calc(var(--tw) * 2.4); height: calc(var(--tw) * 2.25); }
+.g-belote .bl-trick .bl-card { position: absolute; }
+.g-belote .bl-trick .pos-0 { bottom: 0; left: 50%; margin-left: calc(var(--tw) / -2); rotate: 3deg; }
+.g-belote .bl-trick .pos-1 { left: 0; top: 50%; margin-top: calc(var(--tw) * -0.7); rotate: -8deg; }
+.g-belote .bl-trick .pos-2 { top: 0; left: 50%; margin-left: calc(var(--tw) / -2); rotate: -3deg; }
+.g-belote .bl-trick .pos-3 { right: 0; top: 50%; margin-top: calc(var(--tw) * -0.7); rotate: 7deg; }
+.g-belote .bl-card.is-new { animation: bl-in 0.35s var(--pop); }
+.g-belote .bl-card.is-winner { filter: drop-shadow(3px 3px 0 var(--ink)) drop-shadow(0 0 8px var(--lemon)) drop-shadow(0 0 3px var(--lemon)); z-index: 3; animation: bl-pop 0.4s var(--pop); }
+.g-belote .bl-up { display: grid; justify-items: center; gap: 6px; }
+.g-belote .bl-up small { padding: 0 12px; border: 2px solid var(--ink); border-radius: 999px; background: var(--lemon); color: var(--ink); font-weight: 900; text-transform: uppercase; font-size: 0.75rem; }
+.g-belote .bl-up .bl-card { width: calc(var(--tw) * 1.25); rotate: -4deg; }
+
+/* Bas d'écran */
+.g-belote .bl-status { align-self: center; max-width: 100%; margin: 0; padding: 4px 16px; border-radius: 999px; background: var(--ink); color: var(--white); text-align: center; font: 800 0.9375rem/1.25 'BL Figtree', system-ui, sans-serif; text-wrap: balance; }
+.g-belote .bl-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; }
+.g-belote .bl-me .bl-seat { flex-direction: row; }
+.g-belote .bl-hand { display: flex; justify-content: center; min-height: calc(var(--cw) * 1.4 + 20px); padding: 14px 4px 6px; }
+.g-belote .bl-hand .bl-card + .bl-card { margin-left: calc(var(--overlap, 0px) * -1); }
+
+.g-belote .bl-bidbox {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; padding: 6px 12px;
+  border: 3px solid var(--ink); border-radius: 24px; background: var(--white); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); animation: bl-pop 0.35s var(--pop);
+}
+.g-belote .bl-bidtitle { margin: 0; padding: 2px 10px; border-radius: 999px; background: var(--cyan); text-align: center; font: 900 0.75rem/1.4 var(--display); text-transform: uppercase; }
+.g-belote .bl-wait { margin: 0; font-weight: 800; }
+.g-belote .bl-suits { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.g-belote .bl-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 18px;
+  border: 3px solid var(--ink); border-radius: 999px; background: var(--lemon); color: var(--ink); font: 900 1rem/1 'BL Figtree', system-ui, sans-serif;
+  box-shadow: 0 5px 0 var(--ink); background-image: linear-gradient(rgb(255 255 255 / 0.55), transparent 55%); transition: transform 0.12s var(--pop), box-shadow 0.12s;
+}
+@media (hover: hover) { .g-belote .bl-btn:not(:disabled):hover { transform: translateY(-2px) scale(1.03); } }
+.g-belote .bl-btn:not(:disabled):active { transform: translateY(4px) scale(0.97, 0.94); box-shadow: 0 1px 0 var(--ink); }
+.g-belote .bl-btn.is-main { background-color: var(--pink); }
+.g-belote .bl-btn.is-suit { flex-direction: column; gap: 2px; min-width: 74px; min-height: 60px; padding: 4px 10px; border-radius: 20px; background-color: var(--white); font-size: 0.875rem; }
+.g-belote .bl-btn:disabled { opacity: 0.6; cursor: default; }
+.g-belote .bl-btn:focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
+
+/* Bilan de la donne : il prend la place de la table */
+.g-belote .bl-felt:has(.bl-recap) { flex: 1 0 auto; }
+.g-belote .bl-felt:has(.bl-recap) .bl-grid { display: none; }
+.g-belote .bl-recap {
+  position: relative; z-index: 6; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px; border-radius: 22px; min-height: 100%;
+  background: radial-gradient(rgb(255 255 255 / 0.14) 2px, transparent 2.5px) 0 0 / 20px 20px, linear-gradient(160deg, #6A3BFF, #2A1180);
+  color: var(--white); text-align: center; animation: bl-pop 0.4s var(--pop);
+}
+.g-belote .bl-recap h2 { margin: 0; font: 900 clamp(1.2rem, 1rem + 1.5vw, 1.8rem)/1.1 var(--display); text-transform: uppercase; text-shadow: 3px 3px 0 var(--ink); }
+.g-belote .bl-verdict { margin: 0; font-size: 1.125rem; font-weight: 800; line-height: 1.2; text-wrap: balance; }
+.g-belote .bl-final { margin: 0; padding: 6px 18px; border: 3px solid var(--ink); border-radius: 18px; background: var(--lemon); color: var(--ink); box-shadow: var(--shadow); font: 900 1.1rem/1.2 var(--display); rotate: -2deg; text-wrap: balance; animation: bl-bounce 1.2s var(--pop) infinite; }
+.g-belote .bl-small { margin: 0; font-size: 0.8125rem; font-weight: 700; opacity: 0.9; }
+.g-belote .bl-tab { width: min(430px, 100%); border-collapse: separate; border-spacing: 0; overflow: hidden; border: 3px solid var(--ink); border-radius: 18px; background: var(--white); color: var(--ink); box-shadow: var(--shadow); font-size: 1rem; }
+.g-belote .bl-tab th, .g-belote .bl-tab td { padding: 5px 10px; font-weight: 700; }
+.g-belote .bl-tab thead th { background: var(--lemon); font-weight: 900; }
+.g-belote .bl-tab thead th:nth-child(2) { background: var(--pink); color: var(--white); }
+.g-belote .bl-tab thead th.is-taker::after { content: ' (preneur)'; font-size: 0.75rem; font-weight: 700; }
+.g-belote .bl-tab tbody th { text-align: left; }
+.g-belote .bl-tab td { text-align: right; font-variant-numeric: tabular-nums; }
+.g-belote .bl-tab tr.is-strong th, .g-belote .bl-tab tr.is-strong td { font-weight: 900; border-top: 2px dashed var(--ink); font-family: var(--display); font-size: 0.9375rem; }
+
+/* Confettis */
+.g-belote .bl-confetti { position: absolute; inset: 0; z-index: 7; overflow: hidden; pointer-events: none; }
+.g-belote .bl-confetti i { position: absolute; top: -16px; left: var(--x); width: 10px; height: 16px; border: 2px solid var(--ink); border-radius: 3px; background: var(--c); rotate: var(--r); animation: bl-fall 2.8s var(--d) linear infinite; }
+
+@keyframes bl-in { from { opacity: 0; translate: 0 24px; scale: 0.8; } }
+@keyframes bl-pop { from { opacity: 0; scale: 0.6; } }
+@keyframes bl-bounce { 50% { translate: 0 -4px; } }
+@keyframes bl-shake { 25% { rotate: -3deg; } 75% { rotate: 3deg; } }
+@keyframes bl-fall { to { translate: 0 560px; rotate: 560deg; } }
+
+@media (max-width: 520px) {
+  .g-belote .bl-row:has(.bl-bidbox) .bl-me { display: none; }
+  .g-belote .bl { gap: 8px; padding: 8px; }
+  .g-belote .bl-sc { padding: 5px 10px; }
+  .g-belote .bl-felt { padding: 6px; border-radius: 24px; }
+  .g-belote .bl-sc-name { font-size: 0.6875rem; }
+  .g-belote .bl-trump { padding: 4px 10px 4px 5px; }
+  .g-belote .bl-trump .bl-suit { width: 20px; height: 20px; }
+  .g-belote .bl-who { font-size: 0.8125rem; }
+  .g-belote .bl-trump b { font-size: 0.8125rem; }
+}
+
+@media (min-width: 900px) {
+  .g-belote .bl-grid { grid-template-columns: minmax(140px, 1fr) auto minmax(140px, 1fr); }
+  .g-belote .bl-felt { min-height: 300px; }
+  .g-belote .bl { --cw: clamp(70px, 8vw, 84px); --tw: 70px; }
+  .g-belote .bl-who { font-size: 1rem; }
+  .g-belote .bl-back { width: 30px; height: 42px; margin-left: -15px; }
+  .g-belote .bl-backs.is-v .bl-back { margin: -32px 0 0; }
+  .g-belote .bl-status { font-size: 1.15rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-belote *, .g-belote *::before, .g-belote *::after { animation: none !important; transition: none !important; }
+  .g-belote .bl-confetti { display: none; }
+}

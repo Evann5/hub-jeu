@@ -1,0 +1,36 @@
+{
+  "name": "Yams",
+  "tagline": "Cinq dés, trois lancers, une feuille à remplir.",
+  "description": "Le grand classique des dés : à ton tour, lance cinq dés jusqu'à trois fois en gardant ceux que tu veux, puis inscris ton score dans une case de ta feuille. Treize tours, le plus gros total gagne.",
+  "how": [
+    "À ton tour, lance les 5 dés. Tu peux les relancer deux fois, en gardant ceux que tu veux (touche un dé pour le garder).",
+    "Ensuite, tu dois inscrire ton résultat dans une case libre de ta feuille. Si rien ne convient, tu peux barrer une case : elle vaudra 0.",
+    "Cases du haut : on additionne les dés de la valeur choisie (4 dés de 5 = 20 points). Si le haut atteint 63 points ou plus, bonus de 35.",
+    "Brelan (3 dés identiques) et carré (4 identiques) : total de tous les dés. Full (3 + 2) : 25. Petite suite (4 à la suite) : 30. Grande suite (5 à la suite) : 40. Yams (5 identiques) : 50. Chance : total des dés, sans condition.",
+    "Yams supplémentaires (si l'hôte l'a activé) : un 2e Yams rapporte 100 points de bonus si ton Yams vaut déjà 50, et sert de joker : full et suites comptent leurs points entiers. Tu remplis d'abord la case du haut correspondante si elle est libre.",
+    "Après 13 tours, toutes les cases sont remplies. Le plus gros total gagne."
+  ],
+  "minPlayers": 1,
+  "maxPlayers": 6,
+  "duration": "20 min",
+  "emoji": "🎯",
+  "color": "#FF6B57",
+  "ink": "#1C1A2E",
+  "order": 21,
+  "options": [
+    {
+      "key": "turnTime", "label": "Temps par tour", "help": "Si le temps est écoulé, le meilleur score possible est inscrit pour toi.",
+      "type": "choice", "default": 90,
+      "choices": [
+        { "value": 0, "label": "Sans" },
+        { "value": 60, "label": "1 min" },
+        { "value": 90, "label": "1 min 30" },
+        { "value": 150, "label": "2 min 30" }
+      ]
+    },
+    {
+      "key": "extraYams", "label": "Yams supplémentaires", "help": "Un 2e Yams = 100 points de bonus et un joker.",
+      "type": "bool", "default": false
+    }
+  ]
+}

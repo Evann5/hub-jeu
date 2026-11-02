@@ -1,0 +1,25 @@
+{
+  "name": "Un seul mot",
+  "tagline": "Un indice, un seul mot, et on fait deviner.",
+  "description": "Jeu coopératif. Un joueur doit deviner un mot mystère qu'il ne voit pas ; les autres écrivent chacun un indice d'un seul mot. Attention : les indices identiques s'annulent.",
+  "how": [
+    "À chaque manche, un joueur devine. Il choisit un numéro de 1 à 5 sans voir le mot : les autres découvrent le mot choisi.",
+    "Les autres écrivent en secret un indice d'un seul mot. Les indices identiques ou de la même famille que le mot (ou entre eux) sont annulés automatiquement.",
+    "Ensemble, vous pouvez annuler d'autres indices par vote (plus de la moitié des autres joueurs) : un indice trop proche, trop évident…",
+    "Le joueur qui devine voit les indices restants et propose un mot, ou passe. Une bonne réponse vaut 1 point.",
+    "Après toutes les manches, le score total (sur 13 par défaut) est celui de toute l'équipe."
+  ],
+  "minPlayers": 3,
+  "maxPlayers": 12,
+  "duration": "20 min",
+  "emoji": "📌",
+  "color": "#E4FF4D",
+  "ink": "#1B1240",
+  "order": 120,
+  "options": [
+    { "key": "rounds", "label": "Manches", "type": "choice", "default": 13,
+      "choices": [{ "value": 5, "label": "5" }, { "value": 8, "label": "8" }, { "value": 13, "label": "13" }] },
+    { "key": "timer", "label": "Minuteur", "help": "Par étape : numéro, indice, vote, devinette", "type": "choice", "default": 0,
+      "choices": [{ "value": 0, "label": "Aucun" }, { "value": 45, "label": "45 s" }, { "value": 90, "label": "1 min 30" }] }
+  ]
+}

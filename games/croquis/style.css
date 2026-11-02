@@ -1,0 +1,254 @@
+/* Croquis : une appli de dessin pop. Fond bleu ciel avec nuages, feuille blanche aux gros contours, palette bonbon
+   en billes gélatine, boutons façon jouet. Typo grasse et ronde : Unbounded (titres, chiffres) et Inter Tight (texte).
+   Toutes les règles commencent par .g-croquis (sauf @font-face et @keyframes, qui portent un nom propre au jeu). */
+
+@font-face { font-family: 'CR Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'CR Inter'; src: url('assets/fonts/inter-tight.woff2') format('woff2-variations'); font-weight: 100 900; font-display: swap; }
+
+.g-croquis {
+  --ink: #14206B; /* contours et texte : bleu nuit */
+  --night: #0F1752;
+  --lemon: #FFD60A;
+  --mint: #22D98B;
+  --fuchsia: #D6177B;
+  --pink: #FF7DBB;
+  --display: 'CR Unbounded', 'Arial Rounded MT Bold', ui-sans-serif, system-ui, sans-serif;
+  --sans: 'CR Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: #2F9BFF;
+  background-image:
+    radial-gradient(ellipse 190px 64px at 14% 26%, rgb(255 255 255 / 0.45), transparent 72%),
+    radial-gradient(ellipse 240px 80px at 82% 62%, rgb(255 255 255 / 0.35), transparent 72%),
+    radial-gradient(ellipse 160px 56px at 38% 90%, rgb(255 255 255 / 0.3), transparent 72%),
+    radial-gradient(rgb(255 255 255 / 0.22) 2px, transparent 2.6px),
+    linear-gradient(180deg, #4CC4FF 0%, #2F8BFF 55%, #4A55FF 100%);
+  background-size: auto, auto, auto, 26px 26px, auto;
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+.g-croquis .cr {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  container-type: inline-size;
+  position: relative;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.g-croquis .cr-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.g-croquis button { font-family: var(--sans); cursor: pointer; }
+.g-croquis button:focus-visible,
+.g-croquis input:focus-visible { outline: 4px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 7px var(--ink); }
+.g-croquis button:disabled { cursor: default; }
+.g-croquis .token { flex: none; }
+
+/* ——— Bandeau du haut : tour, mot à deviner, minuteur ——— */
+.g-croquis .cr-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px 16px;
+  flex: none;
+  padding: 12px 18px 14px;
+  border-radius: 0 0 28px 28px;
+  background: var(--night);
+  color: #fff;
+  box-shadow: 0 6px 0 rgb(15 23 82 / 0.4);
+}
+.g-croquis .cr-left { display: flex; min-width: 0; }
+.g-croquis .cr-round { margin: 0; padding: 7px 14px; border-radius: 999px; background: var(--lemon); color: var(--ink); font: 800 12px/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.03em; }
+.g-croquis .cr-word { display: grid; justify-items: center; gap: 6px; min-width: 0; text-align: center; }
+.g-croquis .cr-word-label { font: 700 12px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: #BFD0FF; }
+.g-croquis .cr-word-plain { padding: 6px 20px; border-radius: 18px; background: #fff; color: var(--ink); font: 800 clamp(1.2rem, 4cqw, 1.7rem)/1.15 var(--display); overflow-wrap: anywhere; box-shadow: 0 4px 0 var(--fuchsia); }
+.g-croquis .cr-mask { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; }
+.g-croquis .cr-w { display: inline-flex; gap: 6px; }
+.g-croquis .cr-cell { display: grid; place-items: center; width: 38px; height: 48px; border-radius: 13px; background: #fff; box-shadow: 0 4px 0 var(--fuchsia); color: var(--fuchsia); font: 800 24px/1 var(--display); }
+.g-croquis .cr-timer { justify-self: end; }
+.g-croquis .cr-ring { display: grid; place-items: center; width: 66px; height: 66px; border-radius: 50%; background: conic-gradient(var(--lemon) calc(var(--left, 1) * 360deg), rgb(255 255 255 / 0.28) 0); }
+.g-croquis .cr-ring-in { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--ink); }
+.g-croquis .cr-secs { font: 800 16px/1 var(--display); font-variant-numeric: tabular-nums; }
+.g-croquis .cr-timer.is-low .cr-ring { background: conic-gradient(#FF3B30 calc(var(--left, 1) * 360deg), rgb(255 255 255 / 0.28) 0); }
+.g-croquis .cr-timer.is-low .cr-secs { color: #FF8A80; }
+
+/* ——— Corps : feuille et outils à gauche, joueurs et propositions à droite ——— */
+.g-croquis .cr-main { flex: 1; display: grid; gap: 16px; padding: 18px 14px 22px; align-content: start; grid-template-columns: minmax(0, 1fr); }
+.g-croquis .cr-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-content: start; min-width: 0; }
+
+.g-croquis .cr-sheet {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 0 0 6px var(--ink), 0 14px 0 6px var(--ink), 0 24px 30px 6px rgb(15 23 82 / 0.3);
+}
+.g-croquis .cr-canvas { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: default; }
+.g-croquis .cr-canvas:not(.is-drawable) { cursor: default !important; }
+
+.g-croquis .cr-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: rgb(255 255 255 / 0.97);
+  text-align: center;
+}
+.g-croquis .cr-overlay-title { margin: 0; font: 800 clamp(1.3rem, 5cqw, 2rem)/1.1 var(--display); color: var(--ink); }
+.g-croquis .cr-overlay-sub { margin: 0 0 10px; font: 600 clamp(0.95rem, 2.6cqw, 1.1rem)/1.2 var(--sans); color: #3A4A9A; }
+.g-croquis .cr-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; width: 100%; }
+.g-croquis .cr-choice {
+  flex: 1 1 150px;
+  max-width: 220px;
+  min-height: 68px;
+  padding: 10px 14px;
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  color: var(--ink);
+  font: 800 clamp(1rem, 3.2cqw, 1.3rem)/1.15 var(--display);
+  box-shadow: 0 7px 0 var(--ink), inset 0 5px 0 rgb(255 255 255 / 0.55);
+  overflow-wrap: anywhere;
+}
+.g-croquis .cr-choice.c0 { background: var(--lemon); }
+.g-croquis .cr-choice.c1 { background: var(--mint); }
+.g-croquis .cr-choice.c2 { background: var(--pink); }
+.g-croquis .cr-choice:hover { transform: translateY(-3px); box-shadow: 0 10px 0 var(--ink), inset 0 5px 0 rgb(255 255 255 / 0.55); }
+.g-croquis .cr-choice:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--ink), inset 0 5px 0 rgb(255 255 255 / 0.55); }
+
+.g-croquis .cr-reveal {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 12px 16px 14px;
+  background: linear-gradient(90deg, #E0147F, #7B2CFF);
+  color: #fff;
+}
+.g-croquis .cr-reveal-none { margin: 0; font: 700 16px var(--sans); }
+.g-croquis .cr-gains { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 0; padding: 0; list-style: none; }
+.g-croquis .cr-gains li { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; }
+.g-croquis .cr-gains b { padding: 3px 10px; border-radius: 999px; background: var(--lemon); color: var(--ink); font: 800 14px/1.2 var(--display); }
+
+/* ——— Boîte à pinceaux ——— */
+.g-croquis .cr-tools { display: grid; gap: 10px; padding: 12px; border-radius: 28px; background: #fff; box-shadow: 0 0 0 4px var(--ink), 0 10px 0 4px var(--ink); margin-bottom: 10px; }
+.g-croquis .cr-palette { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); justify-items: center; gap: 2px; }
+.g-croquis .cr-color { display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; background: transparent; }
+.g-croquis .cr-dot { position: relative; width: 36px; height: 36px; border-radius: 50%; box-shadow: inset 0 -5px 0 rgb(0 0 0 / 0.22), 0 3px 0 rgb(15 23 82 / 0.35); }
+.g-croquis .cr-dot::after { content: ''; position: absolute; top: 5px; left: 7px; width: 11px; height: 7px; border-radius: 50%; background: rgb(255 255 255 / 0.7); transform: rotate(-35deg); }
+.g-croquis .cr-color.is-on { box-shadow: 0 0 0 4px var(--ink); background: #EAF1FF; }
+.g-croquis .cr-color.is-on .cr-dot { transform: translateY(-2px) scale(1.12); }
+.g-croquis .cr-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.g-croquis .cr-widths { display: flex; gap: 6px; margin-right: auto; }
+.g-croquis .cr-width { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 3px solid transparent; border-radius: 16px; background: #EAF1FF; }
+.g-croquis .cr-nib { width: var(--s); height: var(--s); border-radius: 50%; background: var(--ink); }
+.g-croquis .cr-width.is-on { border-color: var(--ink); background: var(--lemon); }
+.g-croquis .cr-btn { min-height: 46px; padding: 0 18px; border: 3px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); font-size: 15px; font-weight: 800; box-shadow: 0 4px 0 var(--ink); }
+.g-croquis .cr-btn:hover:not(:disabled) { background: #EAF1FF; }
+.g-croquis .cr-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.g-croquis .cr-btn.is-on { background: var(--ink); color: #fff; }
+
+/* ——— Propositions ——— */
+.g-croquis .cr-guess-box { display: grid; gap: 10px; }
+.g-croquis .cr-guess-msg { margin: 0; justify-self: start; padding: 8px 16px; border-radius: 16px; background: #fff; box-shadow: 0 4px 0 var(--ink); color: var(--ink); font: 700 15px/1.3 var(--sans); }
+.g-croquis .cr-guess-msg:empty { display: none; }
+.g-croquis .cr-guess-msg.is-close { background: var(--lemon); }
+.g-croquis .cr-guess-msg.is-found { background: var(--mint); }
+.g-croquis .cr-guess { display: flex; gap: 10px; }
+.g-croquis .cr-guess-input { flex: 1; width: 100%; min-width: 0; min-height: 56px; padding: 0 18px; border: 4px solid var(--ink); border-radius: 22px; background: #fff; box-shadow: 0 5px 0 var(--ink); color: var(--ink); font: 700 19px var(--sans); }
+.g-croquis .cr-guess-input::placeholder { color: #5A68B0; font-weight: 500; }
+.g-croquis .cr-guess-input:disabled { border-color: rgb(20 32 107 / 0.5); background: rgb(255 255 255 / 0.6); box-shadow: none; }
+.g-croquis .cr-guess-btn { min-width: 118px; min-height: 56px; border: 4px solid #fff; border-radius: 22px; background: linear-gradient(180deg, #FF7DBB, #E0147F); box-shadow: 0 6px 0 #7A0A47, inset 0 4px 0 rgb(255 255 255 / 0.45); color: #fff; font: 800 15px/1 var(--display); }
+.g-croquis .cr-guess-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 #7A0A47, inset 0 4px 0 rgb(255 255 255 / 0.45); }
+.g-croquis .cr-guess-btn:disabled { border-color: rgb(255 255 255 / 0.5); background: rgb(255 255 255 / 0.3); box-shadow: none; color: var(--ink); }
+
+/* ——— Colonne de droite ——— */
+.g-croquis .cr-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; min-width: 0; }
+.g-croquis .cr-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.g-croquis .cr-player { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px 12px 4px 6px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 3px var(--ink), 0 6px 0 3px var(--ink); }
+.g-croquis .cr-player.is-drawer { background: #FFE0F0; }
+.g-croquis .cr-player.is-found { background: #C9FBE3; }
+.g-croquis .cr-player.is-gone { opacity: 0.6; }
+.g-croquis .cr-player-name { flex: 1; min-width: 0; display: grid; gap: 2px; font-weight: 700; font-size: 15px; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-croquis .cr-player-name small { justify-self: start; padding: 2px 8px; border-radius: 999px; background: var(--ink); color: #fff; font: 800 10px/1.4 var(--sans); text-transform: uppercase; letter-spacing: 0.05em; }
+.g-croquis .cr-player.is-drawer small { background: var(--fuchsia); }
+.g-croquis .cr-player.is-found small { background: #0A7A4B; }
+.g-croquis .cr-score { font: 800 17px/1 var(--display); font-variant-numeric: tabular-nums; }
+.g-croquis .cr-feed-box { padding: 12px 12px 12px; border-radius: 24px; background: #fff; box-shadow: 0 0 0 3px var(--ink), 0 6px 0 3px var(--ink); margin-bottom: 8px; }
+.g-croquis .cr-feed-title { margin: 0 0 8px 4px; font: 800 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink); }
+.g-croquis .cr-feed { display: grid; gap: 6px; align-content: start; height: 150px; margin: 0; padding: 0; overflow-y: auto; list-style: none; font-size: 15px; overflow-wrap: anywhere; }
+.g-croquis .cr-feed li { justify-self: start; max-width: 100%; padding: 6px 12px; border-radius: 16px 16px 16px 4px; background: #E6EEFF; }
+.g-croquis .cr-feed-found { background: var(--mint) !important; font-weight: 800; }
+.g-croquis .cr-feed-close { background: var(--lemon) !important; }
+.g-croquis .cr-feed-close em { font-weight: 800; }
+
+/* ——— Classement ——— */
+.g-croquis .cr-final { position: relative; max-width: 560px; width: 100%; margin: 4px auto 14px; padding: 20px 16px 22px; border-radius: 30px; background: #fff; box-shadow: 0 0 0 5px var(--ink), 0 14px 0 5px var(--ink); }
+.g-croquis .cr-final-title { margin: 0 0 14px 4px; font: 800 clamp(1.4rem, 6cqw, 2rem)/1.1 var(--display); }
+.g-croquis .cr-podium { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.g-croquis .cr-podium li { position: relative; display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 6px 14px 6px 8px; border-radius: 22px; background: #EAF1FF; }
+.g-croquis .cr-podium li.is-winner { background: linear-gradient(100deg, #FFE45C, #FF9F1C); box-shadow: 0 0 0 4px var(--ink); }
+.g-croquis .cr-podium-rank { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--ink); color: #fff; font: 800 17px/1 var(--display); }
+.g-croquis .cr-podium-name { flex: 1; min-width: 0; font-weight: 700; font-size: 18px; overflow-wrap: anywhere; }
+.g-croquis .cr-medal { position: absolute; top: -13px; right: 12px; padding: 4px 12px; border-radius: 999px; background: var(--fuchsia); box-shadow: 0 3px 0 var(--ink); color: #fff; font: 800 11px/1.2 var(--display); text-transform: uppercase; transform: rotate(-4deg); }
+.g-croquis .cr-podium-score { font: 800 17px/1 var(--display); font-variant-numeric: tabular-nums; }
+
+.g-croquis .cr-confetti { position: absolute; inset: -20px -20px auto -20px; height: 140%; overflow: hidden; pointer-events: none; }
+.g-croquis .cr-confetti span { position: absolute; top: 0; left: var(--x); width: 11px; height: 17px; border-radius: 3px; background: var(--c); opacity: 0; transform: rotate(var(--r)); animation: cr-fall 2.8s cubic-bezier(0.3, 0.2, 0.6, 1) var(--d) both; }
+
+/* ——— Mouvement (coupé si l'utilisateur préfère moins de mouvement) ——— */
+@media (prefers-reduced-motion: no-preference) {
+  .g-croquis .cr-choice { animation: cr-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+  .g-croquis .cr-choice.c1 { animation-delay: 0.08s; }
+  .g-croquis .cr-choice.c2 { animation-delay: 0.16s; }
+  .g-croquis .cr-overlay-title { animation: cr-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+  .g-croquis .cr-dot { transition: transform 0.2s cubic-bezier(0.3, 1.8, 0.5, 1); }
+  .g-croquis .cr-btn, .g-croquis .cr-choice { transition: transform 0.12s, box-shadow 0.12s, background-color 0.15s; }
+  .g-croquis .cr-timer.is-low .cr-ring { animation: cr-pulse 0.6s ease-in-out infinite; }
+  .g-croquis .cr-reveal { animation: cr-rise 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-croquis .cr-confetti { display: none; }
+  .g-croquis .cr-choice:hover, .g-croquis .cr-choice:active, .g-croquis .cr-btn:active, .g-croquis .cr-guess-btn:active { transform: none; }
+}
+@keyframes cr-pop { 0% { opacity: 0; transform: scale(0.5); } 70% { opacity: 1; transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes cr-pulse { 50% { transform: scale(1.1); } }
+@keyframes cr-rise { from { transform: translateY(100%); } }
+@keyframes cr-fall { 0% { opacity: 1; transform: translateY(0) rotate(var(--r)); } 100% { opacity: 1; transform: translateY(100vh) rotate(calc(var(--r) + 540deg)); } }
+
+/* ——— Grand écran (la zone du jeu, pas la fenêtre) : feuille à gauche, joueurs à droite ——— */
+@container (min-width: 720px) {
+  .g-croquis .cr-main { grid-template-columns: minmax(0, 1fr) 250px; gap: 20px; padding: 22px 22px 24px; }
+  .g-croquis .cr-main > .cr-stage,
+  .g-croquis .cr-main > .cr-final { grid-column: 1; grid-row: 1; }
+  .g-croquis .cr-side { grid-column: 2; grid-row: 1; }
+  .g-croquis .cr-players { grid-template-columns: minmax(0, 1fr); }
+  .g-croquis .cr-sheet { max-width: calc((100dvh - 400px) * 4 / 3); min-width: min(100%, 380px); }
+  .g-croquis .cr-feed { height: 180px; }
+}
+
+/* ——— Téléphone ——— */
+@container (max-width: 600px) {
+  .g-croquis .cr-bar { grid-template-columns: 1fr auto; padding: 10px 12px 12px; }
+  .g-croquis .cr-word { grid-column: 1 / -1; grid-row: 2; }
+  .g-croquis .cr-ring { width: 56px; height: 56px; }
+  .g-croquis .cr-ring-in { width: 44px; height: 44px; }
+  .g-croquis .cr-secs { font-size: 14px; }
+  .g-croquis .cr-cell { width: 28px; height: 38px; font-size: 18px; border-radius: 10px; }
+  .g-croquis .cr-w { gap: 4px; }
+  .g-croquis .cr-mask { gap: 6px 14px; }
+  .g-croquis .cr-main { padding: 20px 14px 18px; }
+  .g-croquis .cr-palette { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .g-croquis .cr-widths { margin-right: 0; }
+  .g-croquis .cr-btn { flex: 1 1 auto; padding: 0 12px; }
+  .g-croquis .cr-guess-btn { min-width: 100px; }
+}

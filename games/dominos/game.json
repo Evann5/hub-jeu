@@ -1,0 +1,26 @@
+{
+  "name": "Dominos",
+  "tagline": "Pose au bout de la chaîne, vide ta main en premier.",
+  "description": "Les dominos acidulés : de 2 à 4 joueurs, double-six. On pose un domino à l'un des bouts de la chaîne, on pioche quand on ne peut pas, et le premier qui n'a plus rien marque les points des autres.",
+  "how": [
+    "Le jeu compte 28 dominos (double-six). Chacun en reçoit 7 à deux joueurs, 6 à trois ou quatre ; les autres forment la pioche (à deux et trois joueurs).",
+    "Le plus gros double ouvre la manche. Ensuite, chacun son tour, pose un domino dont un côté correspond à l'un des deux bouts de la chaîne.",
+    "Tu ne peux pas poser ? Pioche jusqu'à pouvoir jouer. Si la pioche est vide (ou à quatre joueurs, où il n'y a pas de pioche), tu passes.",
+    "La manche s'arrête quand quelqu'un a posé tous ses dominos, ou quand plus personne ne peut jouer : le moins de points restants gagne.",
+    "Le gagnant de la manche marque la somme des points des dominos restants chez les autres.",
+    "La première personne à atteindre 100 points (50 ou 150 en option) gagne la partie."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 4,
+  "duration": "15 min",
+  "emoji": "🌴",
+  "color": "#2FE0C8",
+  "ink": "#032B2A",
+  "order": 62,
+  "options": [
+    { "key": "target", "label": "Score à atteindre", "help": "Une partie courte ou longue", "type": "choice", "default": 100,
+      "choices": [{ "value": 50, "label": "50 points" }, { "value": 100, "label": "100 points" }, { "value": 150, "label": "150 points" }] },
+    { "key": "timer", "label": "Temps pour jouer", "help": "Joue le plus gros domino possible, pioche ou passe quand le temps est écoulé", "type": "choice", "default": 60,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 15, "label": "15 s" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }] }
+  ]
+}

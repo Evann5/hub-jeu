@@ -1,0 +1,184 @@
+/* Code secret : un coffre-fort cartoon de jeu mobile. Fond violet électrique, porte de coffre à molette,
+   tiroirs bleu nuit, pions gélatine brillants, voyants bonbon. Toutes les règles commencent par .g-code-secret. */
+
+@font-face { font-family: 'CS Rubik'; src: url('assets/fonts/rubik.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+@font-face { font-family: 'CS Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-code-secret {
+  --cs-ink: #1b0b4a;
+  --cs-panel-1: #4a2bd0;
+  --cs-panel-2: #2b1596;
+  --cs-lemon: #ffe74a;
+  --cs-orange: #ff9a3c;
+  --cs-pink: #ff4fa8;
+  --cs-mint: #62f0a0;
+  --cs-sky: #43d8ff;
+  --cs-white: #ffffff;
+  --cs-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --cs-sans: 'CS Rubik', system-ui, sans-serif;
+  --cs-text: 'CS Figtree', system-ui, sans-serif;
+  color: #fff;
+  font-family: var(--cs-text);
+  background:
+    radial-gradient(circle at 15% 12%, rgb(255 255 255 / 0.22) 0 3px, transparent 4px) 0 0 / 70px 70px,
+    radial-gradient(circle at 60% 60%, rgb(255 255 255 / 0.16) 0 2px, transparent 3px) 0 0 / 46px 46px,
+    linear-gradient(165deg, #7a3cff 0%, #b13cf0 55%, #ff5fb0 100%);
+}
+
+.g-code-secret .cs {
+  container-type: inline-size;
+  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 0 clamp(10px, 3cqw, 24px); overflow-y: auto;
+  --peg: min(42px, calc((100cqw - 130px) / var(--holes, 4) - 6px));
+}
+
+/* ——— Porte du coffre : molette + titre autocollant ——— */
+.g-code-secret .cs-lid {
+  position: relative; width: calc(100% + 2 * clamp(10px, 3cqw, 24px)); margin: 0 calc(-1 * clamp(10px, 3cqw, 24px));
+  padding: 10px clamp(14px, 3cqw, 28px); background: linear-gradient(180deg, #ffd23a, var(--cs-orange)); border-bottom: 4px solid var(--cs-ink);
+  box-shadow: 0 5px 0 rgb(27 11 74 / 0.35), inset 0 3px 0 rgb(255 255 255 / 0.55);
+}
+.g-code-secret .cs-lid-row { display: flex; align-items: center; gap: 12px; }
+.g-code-secret .cs-logo { flex: 1; margin: 0; color: #fff; font: 900 clamp(1.4rem, 1rem + 2cqw, 2rem)/1 var(--cs-sans); letter-spacing: -0.02em; text-transform: uppercase;
+  -webkit-text-stroke: 0; text-shadow: 2px 2px 0 var(--cs-ink), -2px 2px 0 var(--cs-ink), 2px -2px 0 var(--cs-ink), -2px -2px 0 var(--cs-ink), 0 4px 0 var(--cs-ink); }
+.g-code-secret .cs-logo em { font-style: normal; color: var(--cs-lemon); }
+.g-code-secret .cs-timer { padding: 5px 14px; border: 3px solid var(--cs-ink); border-radius: 999px; background: #fff; color: var(--cs-ink); box-shadow: 0 3px 0 var(--cs-ink); font: 900 1rem var(--cs-text); font-variant-numeric: tabular-nums; }
+.g-code-secret .cs-timer[hidden] { display: none; }
+.g-code-secret .cs-timer.is-low { background: var(--cs-pink); color: #fff; animation: cs-tick 0.5s ease-in-out infinite; }
+@keyframes cs-tick { 50% { transform: scale(1.1); } }
+
+/* Molette : un gros bouton rond de coffre, qui tourne d'un cran à chaque manche. */
+.g-code-secret .cs-dial { position: relative; flex: none; width: 50px; height: 50px; filter: drop-shadow(0 3px 0 var(--cs-ink)); }
+.g-code-secret .cs-dial::before { content: ''; position: absolute; left: 50%; top: -6px; margin-left: -6px; border: 6px solid transparent; border-top: 9px solid var(--cs-pink); z-index: 2; }
+.g-code-secret .cs-dial-svg { width: 100%; height: 100%; transition: transform 0.7s var(--cs-pop); }
+.g-code-secret .cs-dial-ring { fill: #fff; stroke: var(--cs-ink); stroke-width: 3; }
+.g-code-secret .cs-dial-face { fill: var(--cs-sky); stroke: var(--cs-ink); stroke-width: 2.5; }
+.g-code-secret .cs-dial-tick { stroke: var(--cs-ink); stroke-width: 1.4; stroke-linecap: round; }
+.g-code-secret .cs-dial-tick.is-long { stroke-width: 2.6; }
+
+.g-code-secret .cs-status { width: min(100%, 880px); margin: 6px 0 0; font: 800 clamp(1.05rem, 0.95rem + 1cqw, 1.3rem)/1.25 var(--cs-sans); text-shadow: 0 2px 0 rgb(27 11 74 / 0.5); }
+
+/* ——— Mon code, rangé dans sa pastille ——— */
+.g-code-secret .cs-secret { display: flex; align-items: center; gap: 10px 14px; width: min(100%, 880px); padding: 6px 16px; border: 3px solid var(--cs-ink); border-radius: 999px; background: rgb(27 11 74 / 0.55); box-shadow: 0 4px 0 var(--cs-ink); color: #fff; font: 800 0.8125rem var(--cs-sans); letter-spacing: 0.04em; text-transform: uppercase; }
+.g-code-secret .cs-secret[hidden] { display: none; }
+.g-code-secret .cs-secret-pegs { display: inline-flex; gap: 6px; --peg: 28px; }
+
+/* ——— Pions gélatine et trous ——— */
+.g-code-secret .cs-peg {
+  position: relative; display: inline-block; flex: none; width: var(--peg); height: var(--peg); border-radius: 50%; border: 3px solid var(--cs-ink);
+  background:
+    radial-gradient(ellipse 34% 22% at 32% 24%, rgb(255 255 255 / 0.95) 0 60%, rgb(255 255 255 / 0) 100%),
+    radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--c) 70%, #fff) 0, var(--c) 55%, color-mix(in srgb, var(--c) 70%, #000) 100%);
+  box-shadow: 0 3px 0 var(--cs-ink), inset 0 -4px 5px rgb(0 0 0 / 0.18);
+}
+.g-code-secret .cs-peg::after { content: ''; position: absolute; left: 29%; top: 33%; width: 42%; height: 42%; background: var(--sym); opacity: 0.8; }
+.g-code-secret .cs-peg[data-shape='0']::after { border-radius: 50%; }
+.g-code-secret .cs-peg[data-shape='1']::after { border-radius: 2px; }
+.g-code-secret .cs-peg[data-shape='2']::after { clip-path: polygon(50% 5%, 100% 95%, 0 95%); }
+.g-code-secret .cs-peg[data-shape='3']::after { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.g-code-secret .cs-peg[data-shape='4']::after { left: 26%; top: 28%; width: 48%; height: 48%; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.g-code-secret .cs-peg[data-shape='5']::after { clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
+.g-code-secret .cs-peg[data-shape='6']::after { clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+.g-code-secret .cs-peg[data-shape='7']::after { background: radial-gradient(circle, transparent 0 34%, var(--sym) 38%); border-radius: 50%; }
+.g-code-secret .cs-peg.is-locked { opacity: 0.85; }
+
+.g-code-secret .cs-hole, .g-code-secret .cs-slot {
+  position: relative; display: inline-grid; place-items: center; flex: none; width: var(--peg); height: var(--peg); padding: 0; border: 3px solid var(--cs-ink); border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #160a3c 0 55%, #2a1670 100%); box-shadow: inset 0 4px 6px rgb(0 0 0 / 0.6), 0 2px 0 rgb(255 255 255 / 0.25);
+}
+.g-code-secret .cs-hole.is-covered { background: radial-gradient(circle at 36% 30%, #fff, #c9b8ff 70%); box-shadow: 0 3px 0 var(--cs-ink); }
+.g-code-secret .cs-hole.is-covered::after { content: '?'; color: var(--cs-ink); font: 900 calc(var(--peg) * 0.55)/1 var(--cs-sans); }
+.g-code-secret .cs-slot { cursor: pointer; touch-action: manipulation; transition: transform 0.15s var(--cs-pop); }
+.g-code-secret .cs-slot:hover { transform: scale(1.06); }
+.g-code-secret .cs-slot.is-filled { background: none; border-color: transparent; box-shadow: none; }
+.g-code-secret .cs-slot.is-filled .cs-peg { width: calc(var(--peg) + 6px); height: calc(var(--peg) + 6px); margin: -3px; }
+.g-code-secret .cs-slot.is-active { box-shadow: inset 0 4px 6px rgb(0 0 0 / 0.6), 0 0 0 4px var(--cs-lemon), 0 0 16px 3px rgb(255 231 74 / 0.7); animation: cs-glow 1s ease-in-out infinite; }
+.g-code-secret .cs-slot.is-filled.is-active { box-shadow: 0 0 0 4px var(--cs-lemon), 0 0 16px 3px rgb(255 231 74 / 0.7); }
+.g-code-secret .cs-slot:focus-visible { outline: 4px solid #fff; outline-offset: 4px; }
+@keyframes cs-glow { 50% { transform: scale(1.07); } }
+
+/* ——— Tiroirs : le plateau de chaque joueur ——— */
+.g-code-secret .cs-stage { width: min(100%, 880px); display: grid; gap: 16px; padding-bottom: 8px; }
+.g-code-secret .cs-boards { display: grid; gap: 16px; align-items: start; }
+@container (min-width: 760px) { .g-code-secret .cs-boards { grid-template-columns: 1fr 1fr; } }
+.g-code-secret .cs-board, .g-code-secret .cs-panel {
+  border: 4px solid var(--cs-ink); border-radius: 28px; padding: 12px 12px 14px;
+  background: linear-gradient(170deg, var(--cs-panel-1), var(--cs-panel-2)); box-shadow: 0 7px 0 var(--cs-ink), inset 0 3px 0 rgb(255 255 255 / 0.3);
+}
+.g-code-secret .cs-board:not(.is-mine) { --peg: min(30px, calc((100cqw - 130px) / var(--holes, 4) - 6px)); }
+@container (min-width: 760px) { .g-code-secret .cs-board, .g-code-secret .cs-board:not(.is-mine) { --peg: min(36px, calc((100cqw / 2 - 150px) / var(--holes, 4))); } }
+.g-code-secret .cs-board-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; margin: 2px 6px 10px; }
+.g-code-secret .cs-board-head h3 { margin: 0; font: 900 1.15rem var(--cs-sans); color: var(--cs-lemon); text-shadow: 0 2px 0 var(--cs-ink); }
+.g-code-secret .cs-board-head p { margin: 0; font-size: 0.8125rem; font-weight: 600; color: #e1d6ff; }
+.g-code-secret .cs-rows { display: grid; gap: 5px; }
+.g-code-secret .cs-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 18px; background: rgb(27 11 74 / 0.4); }
+.g-code-secret .cs-row.is-current { background: rgb(255 231 74 / 0.2); box-shadow: inset 0 0 0 3px var(--cs-lemon); }
+.g-code-secret .cs-row.is-found { background: rgb(98 240 160 / 0.28); box-shadow: inset 0 0 0 3px var(--cs-mint), 0 0 18px rgb(98 240 160 / 0.6); }
+.g-code-secret .cs-num { color: var(--cs-lemon); font: 900 1rem var(--cs-sans); text-align: center; }
+.g-code-secret .cs-pegs { display: flex; align-items: center; gap: 8px; }
+
+/* Voyants bonbon : vert plein = bien placé ; citron en anneau = bonne couleur, mal placée (la forme double la couleur). */
+.g-code-secret .cs-fb { display: grid; grid-template-columns: repeat(var(--cols, 2), calc(var(--peg) * 0.36)); gap: calc(var(--peg) * 0.1); padding: 5px; border-radius: 12px; background: rgb(27 11 74 / 0.7); box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.5); }
+.g-code-secret .cs-fb-peg { display: block; width: calc(var(--peg) * 0.36); height: calc(var(--peg) * 0.36); min-width: 9px; min-height: 9px; border-radius: 50%; background: rgb(255 255 255 / 0.14); }
+.g-code-secret .cs-fb-peg.is-placed { background: radial-gradient(circle at 35% 30%, #fff, var(--cs-mint) 40%, #1fc46a); box-shadow: 0 0 0 2px var(--cs-ink), 0 0 8px 1px rgb(98 240 160 / 0.8); }
+.g-code-secret .cs-fb-peg.is-misplaced { background: radial-gradient(circle, #2b1596 0 32%, transparent 34%), var(--cs-lemon); box-shadow: 0 0 0 2px var(--cs-ink), 0 0 8px 1px rgb(255 231 74 / 0.8); }
+.g-code-secret .cs-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 10px 6px 0; color: #e1d6ff; font-size: 0.75rem; font-weight: 700; }
+.g-code-secret .cs-legend .cs-fb-peg { --peg: 28px; display: inline-block; vertical-align: middle; }
+.g-code-secret .cs-legend .cs-fb-peg:not(:first-child) { margin-left: 6px; }
+
+.g-code-secret .cs-row.is-new .cs-peg { animation: cs-pop 0.45s var(--cs-pop) backwards; }
+.g-code-secret .cs-row.is-new .cs-peg:nth-child(2) { animation-delay: 0.07s; }
+.g-code-secret .cs-row.is-new .cs-peg:nth-child(3) { animation-delay: 0.14s; }
+.g-code-secret .cs-row.is-new .cs-peg:nth-child(4) { animation-delay: 0.21s; }
+.g-code-secret .cs-row.is-new .cs-peg:nth-child(5) { animation-delay: 0.28s; }
+.g-code-secret .cs-row.is-new .cs-fb-peg.is-placed, .g-code-secret .cs-row.is-new .cs-fb-peg.is-misplaced { animation: cs-pop 0.4s var(--cs-pop) backwards; animation-delay: calc(0.35s + var(--i) * 0.1s); }
+@keyframes cs-pop { from { transform: scale(0.2); opacity: 0; } }
+
+/* ——— Fin de partie : les deux codes ——— */
+.g-code-secret .cs-reveal { display: grid; gap: 8px; padding: 14px 16px; border: 4px solid var(--cs-ink); border-radius: 28px; background: linear-gradient(180deg, #ffe74a, var(--cs-orange)); color: var(--cs-ink); box-shadow: 0 7px 0 var(--cs-ink), inset 0 3px 0 rgb(255 255 255 / 0.6); animation: cs-pop 0.5s var(--cs-pop); }
+.g-code-secret .cs-reveal h3 { margin: 0; font: 900 1.2rem var(--cs-sans); }
+.g-code-secret .cs-reveal-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; font-weight: 800; }
+.g-code-secret .cs-reveal .cs-secret-pegs { --peg: 34px; padding: 6px 10px; border-radius: 999px; background: var(--cs-panel-2); }
+
+/* ——— Composer son code ——— */
+.g-code-secret .cs-panel { display: grid; justify-items: center; gap: 16px; padding: 18px 14px 22px; text-align: center; }
+.g-code-secret .cs-lead { margin: 0; max-width: 40ch; font: 700 1.0625rem/1.35 var(--cs-text); text-wrap: balance; }
+.g-code-secret .cs-slots { display: flex; justify-content: center; gap: clamp(10px, 3cqw, 18px); padding: 16px 22px; border: 3px solid var(--cs-ink); border-radius: 999px; background: rgb(27 11 74 / 0.6); }
+.g-code-secret .cs-slot-big { --peg: min(58px, calc((100cqw - 130px) / var(--holes, 4))); }
+
+/* ——— Palette et boutons : collés en bas pendant la recherche ——— */
+.g-code-secret .cs-dock { position: sticky; bottom: 0; z-index: 5; width: calc(100% + 2 * clamp(10px, 3cqw, 24px)); margin: auto calc(-1 * clamp(10px, 3cqw, 24px)) 0;
+  padding: 12px clamp(10px, 3cqw, 24px) 12px; display: flex; justify-content: center; border-top: 4px solid var(--cs-ink); border-radius: 28px 28px 0 0;
+  background: linear-gradient(180deg, #ffffff, #e9dcff); color: var(--cs-ink); box-shadow: 0 -6px 0 rgb(27 11 74 / 0.2); }
+.g-code-secret .cs-dock[hidden] { display: none; }
+.g-code-secret .cs-rack { display: grid; justify-items: center; gap: 10px; width: min(100%, 560px); }
+.g-code-secret .cs-palette { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.g-code-secret .cs-pick { position: relative; display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: transparent; --peg: 38px; touch-action: manipulation; }
+.g-code-secret .cs-pick .cs-peg { transition: transform 0.18s var(--cs-pop); }
+.g-code-secret .cs-pick:hover:not([aria-disabled='true']) .cs-peg { transform: translateY(-4px) scale(1.1); }
+.g-code-secret .cs-pick:active:not([aria-disabled='true']) .cs-peg { transform: scale(0.9, 1.1); }
+.g-code-secret .cs-pick[aria-disabled='true'] { opacity: 0.3; cursor: not-allowed; }
+.g-code-secret .cs-pick:focus-visible { outline: 4px solid var(--cs-panel-1); outline-offset: 1px; }
+.g-code-secret .cs-pick-n { position: absolute; right: -2px; bottom: -2px; min-width: 17px; height: 17px; border: 2px solid var(--cs-ink); border-radius: 9px; background: #fff; color: var(--cs-ink); font: 900 0.6875rem/13px var(--cs-text); text-align: center; }
+.g-code-secret .cs-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.g-code-secret .cs-btn { min-height: 50px; padding: 0 24px; border: 3px solid var(--cs-ink); border-radius: 999px; font: 900 1rem var(--cs-sans); touch-action: manipulation; transition: transform 0.15s var(--cs-pop); }
+.g-code-secret .cs-btn-quiet { background: #fff; color: var(--cs-ink); box-shadow: 0 4px 0 var(--cs-ink); }
+.g-code-secret .cs-btn-go { background: linear-gradient(180deg, #fff27a, var(--cs-lemon) 45%, var(--cs-orange)); color: var(--cs-ink); box-shadow: 0 5px 0 var(--cs-ink), inset 0 3px 0 rgb(255 255 255 / 0.6); }
+.g-code-secret .cs-btn:hover:not(:disabled) { transform: scale(1.04); }
+.g-code-secret .cs-btn:active:not(:disabled) { transform: translateY(3px) scale(1.02, 0.96); box-shadow: 0 1px 0 var(--cs-ink); }
+.g-code-secret .cs-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: 0 2px 0 var(--cs-ink); }
+.g-code-secret .cs-btn:focus-visible { outline: 4px solid var(--cs-panel-1); outline-offset: 3px; }
+.g-code-secret .cs-panel .cs-btn:focus-visible, .g-code-secret .cs-panel .cs-pick:focus-visible { outline-color: #fff; }
+.g-code-secret .cs-panel .cs-rack { margin-top: 4px; color: #fff; }
+.g-code-secret .cs-notice { margin: 0; padding: 6px 14px; border: 3px solid var(--cs-ink); border-radius: 14px; background: #ffd0e8; color: var(--cs-ink); font-weight: 800; font-size: 0.875rem; text-align: center; }
+
+/* ——— Confettis ——— */
+.g-code-secret .cs-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 30; }
+.g-code-secret .cs-confetti i { position: absolute; top: -16px; width: 10px; height: 16px; border-radius: 3px; animation: cs-fall 3s linear forwards; }
+@keyframes cs-fall { to { transform: translateY(110vh) rotate(var(--r)); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-code-secret .cs-slot.is-active, .g-code-secret .cs-row.is-new .cs-peg, .g-code-secret .cs-row.is-new .cs-fb-peg, .g-code-secret .cs-reveal, .g-code-secret .cs-timer { animation: none; }
+  .g-code-secret .cs-pick .cs-peg, .g-code-secret .cs-dial-svg, .g-code-secret .cs-btn, .g-code-secret .cs-slot { transition: none; }
+  .g-code-secret .cs-confetti { display: none; }
+}

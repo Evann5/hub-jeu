@@ -1,0 +1,48 @@
+{
+  "name": "Dames",
+  "tagline": "Dames internationales sur 10 × 10, prise obligatoire.",
+  "description": "Le grand damier de 10 sur 10 : prise obligatoire et majoritaire, dame volante, rafles complètes. Joue une rafle en touchant chaque case d'arrivée.",
+  "how": [
+    "Les blancs (en bas) commencent. Les pions n'avancent que sur les cases roses, d'une case en diagonale vers l'avant.",
+    "La prise est obligatoire : si tu peux sauter une pièce adverse, tu dois le faire, et tu dois prendre le plus de pièces possible (une dame compte pour une pièce). Les pions prennent aussi en arrière.",
+    "Pour jouer : touche une pièce (celles qui peuvent jouer sont cerclées de jaune), puis ses cases d'arrivée marquées d'un point. Pour une rafle, touche les cases une à une, saut après saut.",
+    "Un pion qui finit son coup sur la dernière ligne devient une dame (s'il traverse cette ligne en cours de rafle sans s'y arrêter, il reste un pion). La dame glisse de loin sur la diagonale, prend de loin et peut se poser n'importe où derrière la pièce prise.",
+    "Tu gagnes si l'adversaire n'a plus de pièce ou ne peut plus jouer.",
+    "Nulle : si chaque joueur joue 25 coups de suite avec ses dames, sans aucune prise ni mouvement de pion, la partie est nulle.",
+    "Avec le minuteur, si tu ne joues pas à temps, un coup possible est joué au hasard. Au clavier : flèches pour te déplacer sur le plateau, Entrée pour choisir, Échap pour annuler."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "duration": "20 min",
+  "emoji": "👑",
+  "color": "#FF8FD0",
+  "ink": "#2A0F6E",
+  "order": 22,
+  "options": [
+    {
+      "key": "timer",
+      "label": "Minuteur par coup",
+      "help": "Si le temps est écoulé, un coup possible est joué au hasard.",
+      "type": "choice",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Sans"
+        },
+        {
+          "value": 30,
+          "label": "30 s"
+        },
+        {
+          "value": 60,
+          "label": "1 min"
+        },
+        {
+          "value": 120,
+          "label": "2 min"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Mytho",
+  "tagline": "Invente, bluffe, démasque.",
+  "description": "Un mot rare s'affiche. Chacun invente une fausse définition crédible, puis tout le monde cherche la vraie parmi les fausses.",
+  "how": [
+    "Un mot rare apparaît : écris une fausse définition assez crédible pour piéger les autres.",
+    "Toutes les définitions sont mélangées avec la vraie. Vote pour celle que tu crois vraie (pas la tienne).",
+    "Trouver la vraie rapporte 3 points. Chaque joueur qui vote pour ta fausse définition t'en rapporte 2.",
+    "Après le nombre de manches choisi, le plus gros score gagne."
+  ],
+  "minPlayers": 3,
+  "maxPlayers": 12,
+  "duration": "15 min",
+  "emoji": "📖",
+  "color": "#FFE14D",
+  "ink": "#15121F",
+  "order": 30,
+  "options": [
+    { "key": "rounds", "label": "Manches", "type": "choice", "default": 5,
+      "choices": [{ "value": 3, "label": "3" }, { "value": 5, "label": "5" }, { "value": 8, "label": "8" }] },
+    { "key": "writeTime", "label": "Temps pour écrire", "type": "choice", "default": 90,
+      "choices": [{ "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }, { "value": 120, "label": "2 min" }] }
+  ]
+}

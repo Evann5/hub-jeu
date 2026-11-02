@@ -1,0 +1,163 @@
+/* Quatre à la suite : arcade gélatine. Fond citron, grille violette brillante, jetons bonbon rose et turquoise qui rebondissent,
+   gros contours violet foncé et ombres franches façon sticker. Toutes les règles commencent par .g-quatre. */
+
+@font-face { font-family: 'Quatre Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'Quatre Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
+
+.g-quatre {
+  --lemon: #FFE23D;
+  --ink: #2A0F6E;
+  --violet: #7B3FF2;
+  --pink: #FF5DAE;
+  --turq: #1FE0CF;
+  --orange: #FF8A3D;
+  --hole: #2A0F6E;
+  --display: 'Quatre Unbounded', 'Arial Black', ui-sans-serif, sans-serif;
+  --text: 'Quatre Figtree', ui-sans-serif, system-ui, sans-serif;
+  /* Citron acidulé, gros ronds roses et turquoise en fond. */
+  background-color: var(--lemon);
+  background-image:
+    radial-gradient(circle at 8% 12%, rgb(255 93 174 / 0.55) 0 70px, transparent 71px),
+    radial-gradient(circle at 96% 30%, rgb(31 224 207 / 0.55) 0 90px, transparent 91px),
+    radial-gradient(circle at 12% 88%, rgb(31 224 207 / 0.5) 0 60px, transparent 61px),
+    radial-gradient(circle at 92% 92%, rgb(255 93 174 / 0.5) 0 80px, transparent 81px);
+  color: var(--ink);
+  font-family: var(--text);
+}
+.g-quatre :focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
+
+.g-quatre .q { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 12px 24px; }
+
+/* Titre sticker : lettres blanches cernées de violet, ombre franche */
+.g-quatre .q-titleblock { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.g-quatre .q-kicker {
+  margin: 0; padding: 4px 12px; border: 3px solid var(--ink); border-radius: 999px; background: #fff;
+  font: 800 0.72rem/1.2 var(--text); letter-spacing: 0.1em; text-transform: uppercase;
+  box-shadow: 0 3px 0 var(--ink); transform: rotate(-2deg);
+}
+.g-quatre .q-title { display: grid; justify-items: center; gap: 4px; margin: 0; font-family: var(--display); text-transform: uppercase; }
+.g-quatre .q-title-a {
+  font-size: clamp(2.5rem, 12.5vw, 4.4rem); font-weight: 900; line-height: 1; letter-spacing: -0.01em; color: #fff;
+  -webkit-text-stroke: 9px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink);
+}
+.g-quatre .q-title-b {
+  padding: 5px 16px; border: 3px solid var(--ink); border-radius: 999px; background: var(--pink); color: #fff;
+  font-size: clamp(0.8rem, 3.8vw, 1.1rem); font-weight: 900; letter-spacing: 0.08em; line-height: 1.2;
+  box-shadow: 0 4px 0 var(--ink); transform: rotate(-2deg); text-shadow: 0 2px 0 rgb(42 15 110 / 0.6);
+}
+
+/* Joueurs : pastilles sticker, celle qui joue se colore et rebondit. */
+.g-quatre .q-players { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; max-width: 480px; }
+.g-quatre .q-player {
+  flex: 1 1 150px; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px;
+  border: 3px solid var(--ink); border-radius: 999px; background: #fff; box-shadow: 0 4px 0 var(--ink);
+  transition: background-color 0.2s;
+}
+.g-quatre .q-player.is-turn { animation: q-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.g-quatre .q-player.is-turn.p0 { background: #FF9ACF; }
+.g-quatre .q-player.is-turn.p1 { background: #6CF2E5; }
+.g-quatre .q-chip { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--ink); }
+.g-quatre .p0 > .q-chip { background: radial-gradient(circle closest-side at 50% 50%, #FFB3D9 0 22%, var(--pink) 23%); }
+.g-quatre .p1 > .q-chip { background: radial-gradient(circle closest-side at 50% 50%, #fff 0 20%, var(--turq) 21%); }
+.g-quatre .q-who { display: grid; min-width: 0; }
+.g-quatre .q-name { overflow: hidden; font: 800 0.95rem/1.2 var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.g-quatre .q-tag { font: 700 0.72rem/1.2 var(--text); text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; }
+@keyframes q-pop { 0% { transform: scale(0.92); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+/* Ligne d'état et minuteur */
+.g-quatre .q-statusrow { display: grid; gap: 8px; justify-items: center; width: 100%; max-width: 480px; }
+.g-quatre .q-status {
+  margin: 0; padding: 8px 16px; border: 3px solid var(--ink); border-radius: 18px; background: #fff; box-shadow: 0 4px 0 var(--ink);
+  text-align: center; font: 800 1rem/1.3 var(--text); text-wrap: balance;
+}
+.g-quatre .q-timer { display: flex; align-items: center; gap: 8px; width: 100%; font: 900 1rem/1 var(--display); }
+.g-quatre .q-timer-bar { flex: 1; height: 16px; border: 3px solid var(--ink); border-radius: 99px; background: #fff; overflow: hidden; }
+.g-quatre .q-timer-fill { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--orange), var(--pink)); transition: width 0.25s linear; }
+.g-quatre .q-timer.is-low .q-timer-text { color: #D1155F; }
+.g-quatre .q-timer-text { min-width: 3.4ch; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* La grille : violet gélatine, gros contour, ombre franche ; 42 trous. */
+.g-quatre .q-boardwrap { position: relative; width: min(100%, 460px, max(300px, calc((100dvh - 440px) * 7 / 6))); }
+.g-quatre .q-board {
+  position: relative; display: grid; grid-template-columns: repeat(7, 1fr); padding: 8px;
+  border: 5px solid var(--ink); border-radius: 26px;
+  background: linear-gradient(160deg, #9A63FF, var(--violet) 40%, #5B22D6);
+  box-shadow: 0 9px 0 var(--ink), inset 0 4px 0 rgb(255 255 255 / 0.35);
+}
+.g-quatre .q-col {
+  position: relative; display: block; overflow: hidden; width: 100%; aspect-ratio: 1 / 6; padding: 0;
+  border: 0; border-radius: 0; background: var(--hole); cursor: default; -webkit-tap-highlight-color: transparent;
+}
+.g-quatre .q-col:first-child { border-radius: 14px 0 0 14px; }
+.g-quatre .q-col:last-child { border-radius: 0 14px 14px 0; }
+.g-quatre .q-col.is-open { cursor: pointer; }
+.g-quatre .q-col.is-open:hover { background: #4A22A8; }
+.g-quatre .q-col:focus-visible { z-index: 2; outline: 4px solid #fff; outline-offset: -4px; box-shadow: inset 0 0 0 8px var(--ink); }
+.g-quatre .q-col::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%237B3FF2' fill-rule='evenodd' d='M0 0H100V100H0Z M50 9a41 41 0 1 0 0 82a41 41 0 1 0 0-82Z'/%3E%3Ccircle cx='50' cy='50' r='44' fill='none' stroke='%23B28CFF' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='41' fill='none' stroke='%232A0F6E' stroke-width='4'/%3E%3Cpath d='M9 19Q14 10 25 8' fill='none' stroke='white' stroke-opacity='.6' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: 100% calc(100% / 6);
+}
+.g-quatre .q-layer { position: absolute; inset: 0; }
+.g-quatre .q-disc { position: absolute; left: 0; right: 0; top: calc(var(--r, 0) * 100% / 6); aspect-ratio: 1; transform-origin: 50% 100%; }
+/* Jetons bonbon : reflet blanc en haut à gauche, un anneau (rose) ou un point (turquoise) pour ne pas dépendre de la couleur seule. */
+.g-quatre .q-disc.d0 {
+  background:
+    radial-gradient(ellipse 15% 10% at 31% 27%, rgb(255 255 255 / 0.95) 0 60%, transparent 100%),
+    radial-gradient(circle closest-side, transparent 0 40%, rgb(255 255 255 / 0.4) 41% 47%, transparent 48%),
+    radial-gradient(circle closest-side, #FF74BA 0 55%, #E0207F 80%, #A80E56 100%);
+}
+.g-quatre .q-disc.d1 {
+  background:
+    radial-gradient(ellipse 15% 10% at 31% 27%, rgb(255 255 255 / 0.95) 0 60%, transparent 100%),
+    radial-gradient(circle closest-side, rgb(255 255 255 / 0.55) 0 14%, transparent 15%),
+    radial-gradient(circle closest-side, #5CF3E6 0 55%, #11BFB0 80%, #08857B 100%);
+}
+.g-quatre .q-ghost { opacity: 0; transition: opacity 0.12s; pointer-events: none; }
+.g-quatre .q-col.is-open:hover .q-ghost, .g-quatre .q-col.is-open:focus-visible .q-ghost { opacity: 0.55; }
+.g-quatre .q-disc.is-new { animation: q-drop calc(0.3s + var(--r) * 0.07s) cubic-bezier(0.5, 0, 0.9, 0.55) both; }
+@keyframes q-drop {
+  0% { transform: translateY(calc((var(--r) + 1) * -100%)); }
+  60% { transform: none; }
+  70% { transform: scale(1.16, 0.78); }
+  82% { transform: translateY(-14%) scale(0.95, 1.07); }
+  92% { transform: scale(1.05, 0.95); }
+  100% { transform: none; }
+}
+.g-quatre .q-disc.is-win { animation: q-jelly 0.7s ease-in-out infinite alternate; }
+@keyframes q-jelly { from { transform: scale(1, 1); filter: brightness(1); } to { transform: scale(1.1, 0.92); filter: brightness(1.2) saturate(1.2); } }
+
+/* Trait de victoire */
+.g-quatre .q-winsvg { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); pointer-events: none; overflow: visible; }
+.g-quatre .q-winsvg line { stroke-linecap: round; stroke-dasharray: 8; stroke-dashoffset: 8; animation: q-draw 0.6s 0.35s ease-out forwards; }
+.g-quatre .q-wl-a { stroke: var(--ink); stroke-width: 0.3; }
+.g-quatre .q-wl-b { stroke: var(--lemon); stroke-width: 0.16; }
+@keyframes q-draw { to { stroke-dashoffset: 0; } }
+
+/* Sticker de fin de partie */
+.g-quatre .q-stamp {
+  position: absolute; right: -8px; bottom: -34px; z-index: 2; pointer-events: none;
+  padding: 6px 16px; border: 4px solid var(--ink); border-radius: 14px; background: var(--lemon); color: var(--ink);
+  box-shadow: 0 5px 0 var(--ink); font: 900 1.3rem/1.1 var(--display); text-transform: uppercase;
+  transform: rotate(-6deg); animation: q-stamp 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.g-quatre .q-stamp.p0 { background: #FF9ACF; }
+.g-quatre .q-stamp.p1 { background: #6CF2E5; }
+@keyframes q-stamp { from { transform: rotate(-6deg) scale(0); } to { transform: rotate(-6deg) scale(1); } }
+
+/* Confettis */
+.g-quatre .fx-confetti { position: absolute; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
+.g-quatre .fx-confetti span { position: absolute; top: -20px; border-radius: 2px; animation: q-fall 2.4s ease-in both; }
+@keyframes q-fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); } }
+
+@media (max-width: 480px) {
+  .g-quatre .q { padding: 12px 8px 22px; gap: 10px; }
+  .g-quatre .q-board { padding: 6px; border-width: 4px; border-radius: 22px; }
+  .g-quatre .q-winsvg { inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-quatre .q-disc.is-new, .g-quatre .q-disc.is-win, .g-quatre .q-stamp, .g-quatre .q-player.is-turn { animation: none; }
+  .g-quatre .q-winsvg line { animation: none; stroke-dashoffset: 0; }
+  .g-quatre .fx-confetti { display: none; }
+  .g-quatre .q-timer-fill, .g-quatre .q-player { transition: none; }
+}

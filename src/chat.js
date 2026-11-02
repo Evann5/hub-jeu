@@ -2,6 +2,7 @@
 import { db } from './db.js';
 import { LIMITS, REACTIONS } from './options.js';
 import { config } from './config.js';
+import { tableExists } from './tables.js';
 
 const PAGE = 50;
 
@@ -13,8 +14,13 @@ export function dmScope(a, b) {
 
 // Vérifie que l'utilisateur peut lire et écrire dans ce scope ; renvoie ce qu'on sait du scope.
 export function checkScope(scope, userId) {
-  const m = /^(c|dm):(\d+)(?::(\d+))?$/.exec(String(scope));
+  const m = /^(c|dm|t):(\d+)(?::(\d+))?$/.exec(String(scope));
   if (!m) throw new ChatError('Conversation introuvable.');
+  if (m[1] === 't') {
+    // Chat d'une table : ouvert aux joueurs et aux spectateurs (toute la classe peut regarder).
+    if (m[3] || !tableExists(m[2])) throw new ChatError("Cette table n'existe plus.");
+    return { kind: 'table', tableId: Number(m[2]) };
+  }
   if (m[1] === 'c') {
     const channel = db.prepare('SELECT id FROM channels WHERE id = ?').get(Number(m[2]));
     if (!channel) throw new ChatError("Ce canal n'existe plus.");

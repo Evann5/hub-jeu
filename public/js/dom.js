@@ -2,8 +2,10 @@
 
 // h('button.btn', { onclick }, 'Texte') ; le texte passe toujours par textContent (pas d'injection HTML).
 export function h(tag, props, ...children) {
-  const [name, ...classes] = tag.split('.');
+  const [head, ...classes] = tag.split('.');
+  const [name, id] = head.split('#');
   const el = document.createElement(name || 'div');
+  if (id) el.id = id;
   if (classes.length) el.className = classes.join(' ');
   if (props && (typeof props !== 'object' || props instanceof Node || Array.isArray(props))) {
     children.unshift(props);
@@ -85,8 +87,8 @@ export function token(user, { size = '', online = false } = {}) {
     h('span', user?.avatar || '?'));
 }
 
-export function toast(text, { error = false, ms = 3500 } = {}) {
-  const el = h(`div.toast${error ? '.error' : ''}`, text);
+export function toast(text, { error = false, ms = 3500, action = false } = {}) {
+  const el = h(`div.toast${error ? '.error' : ''}${action ? '.has-action' : ''}`, text);
   document.getElementById('toasts').append(el);
   setTimeout(() => el.remove(), ms);
 }

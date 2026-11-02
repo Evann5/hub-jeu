@@ -1,0 +1,46 @@
+{
+  "name": "Retourne",
+  "tagline": "Encadre les pions de l'autre pour les retourner.",
+  "description": "Un plateau de 8 sur 8, des pions noirs et blancs. Pose un pion pour encadrer ceux de l'adversaire : ils se retournent. À la fin, la couleur la plus nombreuse l'emporte.",
+  "how": [
+    "Au départ, 4 pions au centre. Les pions fuchsia commencent.",
+    "À ton tour, pose un pion sur une case vide qui encadre au moins un pion adverse, entre ton nouveau pion et un de tes pions, en ligne, en colonne ou en diagonale. Les points ronds t'indiquent les coups possibles.",
+    "Tous les pions encadrés se retournent à ta couleur, dans toutes les directions à la fois.",
+    "Si tu n'as aucun coup possible, ton tour passe tout seul. Si personne ne peut jouer, la partie s'arrête.",
+    "Celui qui a le plus de pions à la fin gagne. Avec le minuteur, si tu ne joues pas à temps, un coup possible est joué au hasard."
+  ],
+  "minPlayers": 2,
+  "maxPlayers": 2,
+  "duration": "10 min",
+  "emoji": "😊",
+  "color": "#6DF0C0",
+  "ink": "#0E1550",
+  "order": 21,
+  "options": [
+    {
+      "key": "timer",
+      "label": "Minuteur par coup",
+      "help": "Si le temps est écoulé, un coup possible est joué au hasard.",
+      "type": "choice",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Sans"
+        },
+        {
+          "value": 30,
+          "label": "30 s"
+        },
+        {
+          "value": 60,
+          "label": "1 min"
+        },
+        {
+          "value": 120,
+          "label": "2 min"
+        }
+      ]
+    }
+  ]
+}
