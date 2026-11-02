@@ -185,7 +185,7 @@ Le navigateur ne reçoit que `client.js`, `style.css`, `client/` et `assets/`. `
   "name": "Morpion", "tagline": "Trois à la suite, en duel.", "description": "Une ou deux phrases.",
   "how": ["Règle en une phrase.", "…"],
   "minPlayers": 2, "maxPlayers": 2, "duration": "2 min",
-  "emoji": "⭕", "color": "#C8F26B", "ink": "#0B0B0D", "order": 90,
+  "emoji": "⭕", "family": "plateau", "color": "#C8F26B", "ink": "#0B0B0D", "order": 90,
   "options": [
     { "key": "rounds", "label": "Manches", "type": "number", "min": 1, "max": 10, "default": 3 },
     { "key": "jokers", "label": "Jokers", "help": "Petite explication", "type": "bool", "default": true },
@@ -195,7 +195,7 @@ Le navigateur ne reçoit que `client.js`, `style.css`, `client/` et `assets/`. `
 }
 ```
 
-`color` et `ink` colorent la carte du jeu et son salon (texte `ink` sur fond `color`, contraste 4,5:1). `order` range les jeux sur la page Jouer. `how` s'affiche dans « Comment on joue ? ». Les `options` sont réglées par l'hôte dans le salon ; le hub les borne et les passe à `setup()`.
+`color` et `ink` colorent la carte du jeu et son salon (texte `ink` sur fond `color`, contraste 4,5:1). `family` range le jeu dans un filtre de la page Jouer : `plateau` (plateau et dés), `cartes`, `bluff` ou `ambiance`. Le logo du jeu est `assets/logo.svg` : un pictogramme d'une seule couleur, formes pleines et épaisses, sur une grille `viewBox="0 0 64 64"`, sans texte ni image ; le hub le peint à l'encre `ink` sur la couleur `color`. Sans logo, le hub affiche `emoji`. `order` range les jeux sur la page Jouer. `how` s'affiche dans « Comment on joue ? ». Les `options` sont réglées par l'hôte dans le salon ; le hub les borne et les passe à `setup()`.
 
 ### rules.js
 

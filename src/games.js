@@ -8,6 +8,8 @@ export const gamesDir = join(config.root, 'games');
 export const games = new Map(); // id -> { id, name, ..., rules }
 
 const ID_RE = /^[a-z0-9-]{2,30}$/;
+// Familles de la page Jouer (champ family de game.json).
+const FAMILIES = ['plateau', 'cartes', 'bluff', 'ambiance'];
 
 // Réglages proposés à l'hôte d'une table, déclarés dans game.json :
 // { key, label, type: 'number' | 'bool' | 'choice', default, min?, max?, choices?: [{ value, label }] }
@@ -39,6 +41,8 @@ export async function loadGames() {
         color: /^#[0-9a-f]{6}$/i.test(meta.color) ? meta.color : '#A98BFA',
         ink: /^#[0-9a-f]{6}$/i.test(meta.ink) ? meta.ink : '#0B0B0D',
         emoji: String(meta.emoji || '🎲'),
+        logo: existsSync(join(dir, 'assets', 'logo.svg')), // pictogramme d'une couleur, affiché à la place de l'emoji
+        family: FAMILIES.includes(meta.family) ? meta.family : 'ambiance',
         style: existsSync(join(dir, 'style.css')),
         order: Number(meta.order) || 100,
         options: cleanOptionDefs(meta.options),

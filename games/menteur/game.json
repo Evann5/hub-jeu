@@ -15,6 +15,7 @@
   "maxPlayers": 8,
   "duration": "15 min",
   "emoji": "🎲",
+  "family": "bluff",
   "color": "#D9A441",
   "ink": "#1A0F08",
   "order": 20,

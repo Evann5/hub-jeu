@@ -1,6 +1,6 @@
 // Écran d'une table (#/t/:id) : le salon (places, réglages, lancement), puis le jeu monté depuis games/<id>/client.js,
 // les joueurs et le chat de la table. Sur téléphone, deux onglets : « Partie » et « Chat ».
-import { h, icon, token, toast, colorOf, count } from '../dom.js';
+import { h, icon, token, toast, colorOf, count, gameLogo } from '../dom.js';
 import { call } from '../net.js';
 import { state, go, gameOf, isAdmin } from '../store.js';
 import { modal, confirmDialog, openProfile } from '../dialogs.js';
@@ -104,10 +104,10 @@ function renderHead() {
   }, text, extra);
   cur.ui.head.replaceChildren(...[
     h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux' }, icon('back', 'Retour aux jeux')),
-    h('span.table-emoji', { 'aria-hidden': 'true' }, g.emoji),
+    h('span.table-emoji', gameLogo(g)),
     h('div.table-title', h('h1', g.name), h('p', `Table de ${userOf(t.hostId).pseudo}`)),
     h(`span.table-pill${t.status === 'playing' && t.turn.includes(state.me.id) ? '.is-turn' : ''}`, label),
-    cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, '👁 ', String(cur.watchers)) : null,
+    cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, icon('eye'), String(cur.watchers)) : null,
     seated() ? null : h('span.table-pill.is-watch', 'Spectateur'),
     h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
       tab('game', 'Partie'),
@@ -206,7 +206,7 @@ function renderLobby() {
 
   cur.ui.main.replaceChildren(h('div.lobby',
     h('section.lobby-card',
-      h('div.lobby-top', h('span.lobby-emoji', { 'aria-hidden': 'true' }, g.emoji), h('span.game-meta', playersLabel(g), g.duration ? ` · ${g.duration}` : '')),
+      h('div.lobby-top', h('span.lobby-emoji', gameLogo(g)), h('span.game-meta', playersLabel(g), g.duration ? ` · ${g.duration}` : '')),
       h('h2', g.name),
       h('p.lobby-desc', g.description),
       g.how?.length ? h('button.link-btn.dark', { type: 'button', onclick: () => openHow(g) }, 'Comment on joue ?') : null,

@@ -1,5 +1,5 @@
 // Écran Accueil : un tableau de bord en cartes — bonjour, qui est en ligne, messages non lus, jouer, mon profil.
-import { h, icon, token, count } from '../dom.js';
+import { h, icon, token, count, gameLogo } from '../dom.js';
 import { state, unreadTotal, sortedUsers, myTurnTables } from '../store.js';
 import { openProfile } from '../dialogs.js';
 
@@ -56,7 +56,7 @@ export function render(container) {
 
     h('a.card.card-play', { href: '#/jouer' },
       h('span.card-corner', icon('open')),
-      icon('dice'),
+      h('div.play-mosaic', { 'aria-hidden': 'true' }, state.games.slice(0, 8).map((g) => h('span.play-tile', { style: `--g:${g.color};--g-ink:${g.ink}` }, gameLogo(g)))),
       h('div', h('h2', turns ? 'À toi de jouer' : 'Jouer'), h('p.card-text', playText))),
 
     h('section.card.card-online',

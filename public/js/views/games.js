@@ -1,10 +1,19 @@
 // Écran Jouer : les jeux de la classe (ouvrir une table) et les tables en cours (rejoindre, reprendre, regarder).
-import { h, icon, token, toast, count } from '../dom.js';
+import { h, icon, token, toast, count, gameLogo } from '../dom.js';
 import { call } from '../net.js';
 import { state, go, gameOf, myTurnTables } from '../store.js';
 
 let container = null;
+let family = 'tous'; // famille de jeux (champ family de game.json)
 let filter = 'tous'; // combien on est : tous, 2, petit (3 à 6), grand (7 et plus)
+
+const FAMILIES = [
+  { key: 'tous', label: 'Tous' },
+  { key: 'plateau', label: 'Plateau et dés' },
+  { key: 'cartes', label: 'Cartes' },
+  { key: 'bluff', label: 'Bluff' },
+  { key: 'ambiance', label: 'Ambiance' },
+];
 
 const FILTERS = [
   { key: 'tous', label: 'Tous', test: () => true },
@@ -31,11 +40,18 @@ async function openTable(game, btn) {
 }
 
 function gameCard(g) {
-  const btn = h('button.btn.btn-dark', { type: 'button', onclick: (e) => openTable(g, e.currentTarget) }, icon('plus'), 'Ouvrir une table');
-  return h('article.card.game-card', { style: `--g:${g.color};--g-ink:${g.ink}` },
-    h('div.game-card-top', h('span.game-emoji', { 'aria-hidden': 'true' }, g.emoji), h('span.game-meta', playersLabel(g), g.duration ? ` · ${g.duration}` : '')),
-    h('div', h('h2', g.name), h('p.card-text', g.tagline)),
-    h('div.card-actions', btn));
+  const btn = h('button.btn.btn-sm.btn-dark.game-open', {
+    type: 'button',
+    'aria-label': `Ouvrir une table de ${g.name}`,
+    onclick: (e) => openTable(g, e.currentTarget),
+  }, icon('plus'), h('span', 'Ouvrir une table'));
+  return h('article.game-card', { style: `--g:${g.color};--g-ink:${g.ink}` },
+    gameLogo(g),
+    h('div.game-card-body',
+      h('h2', g.name),
+      h('p.game-meta', playersLabel(g), g.duration ? `, ${g.duration}` : ''),
+      h('p.game-tagline', g.tagline)),
+    btn);
 }
 
 function statusLabel(t, g) {
@@ -54,7 +70,7 @@ function tableRow(t) {
     : seated && t.status === 'playing' ? 'Reprendre' : 'Regarder';
   const mine = t.status === 'playing' && t.turn.includes(state.me.id);
   return h('li', h(`a.table-row${mine ? '.is-turn' : ''}`, { href: `#/t/${t.id}`, style: `--g:${g.color};--g-ink:${g.ink}` },
-    h('span.table-chip', { 'aria-hidden': 'true' }, g.emoji),
+    h('span.table-chip', gameLogo(g)),
     h('span.table-info',
       h('b', g.name),
       h('span', host ? `Table de ${host.pseudo}` : 'Table', ' · ', statusLabel(t, g))),
@@ -78,16 +94,19 @@ export function render(el) {
     list.length ? h('ul.table-list', list.map(tableRow)) : h('p.section-empty', empty));
 
   const test = FILTERS.find((f) => f.key === filter).test;
-  const shown = state.games.filter(test);
-  const chips = h('div.filter-chips', { role: 'radiogroup', 'aria-label': 'Nombre de joueurs' }, FILTERS.map((f) => h('button.chip', {
+  const shown = state.games.filter((g) => test(g) && (family === 'tous' || g.family === family));
+  const chips = (label, list, value, set) => h('div.filter-chips', { role: 'radiogroup', 'aria-label': label }, list.map((f) => h('button.chip', {
     type: 'button',
     role: 'radio',
-    'aria-checked': String(f.key === filter),
+    'aria-checked': String(f.key === value),
     onclick: () => {
-      filter = f.key;
+      set(f.key);
       render(el);
     },
   }, f.label)));
+  const filters = h('div.games-filters',
+    chips('Type de jeu', FAMILIES, family, (k) => { family = k; }),
+    chips('Nombre de joueurs', FILTERS.map((f) => (f.key === 'tous' ? { ...f, label: 'Tous joueurs' } : f)), filter, (k) => { filter = k; }));
 
   el.replaceChildren(h('div.page',
     h('div.view-head.page-head',
@@ -96,8 +115,10 @@ export function render(el) {
     open.length || playing.length ? h('div.tables-cols',
       section('Salons ouverts', open, 'Aucun salon ouvert pour l’instant.'),
       section('Parties en cours', playing, 'Aucune partie en cours.')) : null,
-    h('div.games-head', h('h2.section-title', 'Les jeux', h('span.section-count', String(state.games.length))), chips),
-    h('div.game-grid', shown.map(gameCard)),
+    h('div.games-head', h('h2.section-title', 'Les jeux', h('span.section-count', String(shown.length))), filters),
+    shown.length
+      ? h('div.game-grid', shown.map(gameCard))
+      : h('p.section-empty', 'Aucun jeu ne correspond à ces deux filtres. Essaie un autre nombre de joueurs.'),
     over.length ? section('Tes dernières parties', over, '') : null));
 }
 

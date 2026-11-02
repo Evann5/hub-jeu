@@ -13,6 +13,7 @@
   "maxPlayers": 2,
   "duration": "10 min",
   "emoji": "⚓",
+  "family": "plateau",
   "color": "#5BC8F5",
   "ink": "#04121F",
   "order": 30,

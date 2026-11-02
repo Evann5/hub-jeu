@@ -13,6 +13,7 @@
   "maxPlayers": 9,
   "duration": "30 min",
   "emoji": "🃏",
+  "family": "cartes",
   "color": "#7A2BFF",
   "ink": "#FFFFFF",
   "order": 60,

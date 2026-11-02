@@ -13,6 +13,7 @@
   "maxPlayers": 12,
   "duration": "15 min",
   "emoji": "✏️",
+  "family": "ambiance",
   "color": "#8DB4FF",
   "ink": "#0B0B0D",
   "order": 30,
