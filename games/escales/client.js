@@ -65,9 +65,11 @@ export function mount(root, api) {
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
   // Le texte est donné exprès : les accents vietnamiens sont dans un fichier à part, qui ne se charge que si on les demande.
+  const continentsImage = new Image();
+  continentsImage.src = api.asset('continents.png');
   const tileText = TILES.map((t) => t.short ?? t.name).join('');
   const titleText = `${REGIONS.map((r) => r.name).join('')}Escales`;
-  Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('400 60px "ES Alfa"', titleText), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
+  Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('400 60px "ES Alfa"', titleText), loadSculpted(api.asset), continentsImage.decode().catch(() => {})]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
       world = createWorld(stage, {
@@ -83,7 +85,9 @@ export function mount(root, api) {
         },
         topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
         rightInset: () => side.offsetWidth + 12,
-        onFit: ([cx, cy], [, fy], [, oy]) => {
+        continents: continentsImage,
+        onFit: ([cx, cy], [, fy], [, oy], [, by]) => {
+          frame.style.setProperty('--by', `${Math.round(by)}px`);
           frame.style.setProperty('--oy', `${Math.round(oy)}px`);
           frame.style.setProperty('--cx', `${Math.round(cx)}px`);
           frame.style.setProperty('--cy', `${Math.round(cy)}px`);
