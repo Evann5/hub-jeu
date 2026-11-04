@@ -786,7 +786,7 @@ export function status(state) {
   // Le hub ne connaît que de vrais comptes : la victoire d'un robot est annoncée par le jeu lui-même.
   if (state.over) {
     const names = state.winners.map((id) => `${byId(state, id).pseudo}${id < 0 ? ' (robot)' : ''}`).join(' et ');
-    return { turn: null, over: true, winners: state.winners.filter((id) => id > 0), label: `${names} ${state.winners.length > 1 ? 'gagnent' : 'gagne'}`, deadline: null };
+    return { turn: null, over: true, winners: state.winners.filter((id) => id > 0), label: state.winners.length > 3 ? `${state.winners.length} joueurs à égalité` : `${names} ${state.winners.length > 1 ? 'gagnent' : 'gagne'}`, deadline: null };
   }
   return { turn: cur(state).id, may: active(state).filter((p) => !p.bot).map((p) => p.id), over: false, winners: [], deadline: state.deadline };
 }

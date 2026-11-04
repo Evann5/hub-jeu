@@ -97,6 +97,7 @@ export const TILES = buildTiles();
 // Les règles en bref, consultables pendant la partie.
 export const RULES = [
   'Lance les dés et avance. Un double fait rejouer ; au troisième de suite, c’est la Douane.',
+  'Au Départ : +200 €, et 100 € de plus si tu es loin derrière le premier.',
   'Ville libre : achète-la ou passe. Si tu passes, elle reste libre.',
   'Avec 3 villes d’un pays (2 à 2 ou 3 joueurs), le loyer double et tu peux construire. Avec les 4, il triple.',
   'Escales : le loyer monte avec leur nombre.',

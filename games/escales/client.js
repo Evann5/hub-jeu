@@ -71,6 +71,7 @@ export function mount(root, api) {
       world = createWorld(stage, {
         onStep: sound.step,
         onHover: showTip,
+        onStill: () => { if (uiTimer) applyUI(); },
         onTile: (pos) => openOverlay({ kind: 'city', pos }),
         topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
         rightInset: () => side.offsetWidth + 12,
@@ -151,13 +152,12 @@ export function mount(root, api) {
   function deltaOf(p) {
     const old = before.cash.get(p.id);
     const d = old === undefined ? 0 : p.cash - old;
-    if (!d) return null;
+    if (!d || v.over) return null;
     return h(`span.es-delta${d > 0 ? '.is-up' : '.is-down'}`, { 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d.toLocaleString('fr-FR')} €`);
   }
 
   // Chaque événement a son son.
   function playSounds() {
-    if (before.rollN !== null && v.rollN !== before.rollN) sound.dice();
     const myOld = before.cash.get(meId);
     const mine = me();
     if (mine && myOld !== undefined && mine.cash !== myOld) (mine.cash > myOld ? sound.gain : sound.pay)();
@@ -175,7 +175,6 @@ export function mount(root, api) {
     document.title = !v.over && document.hidden && myTurn() ? `À toi ! ${pageTitle}` : pageTitle;
     if (v.over && !before.over) sound.win();
     before.over = v.over;
-    before.rollN = v.rollN;
     before.cur = v.cur;
     before.owners = new Map(Object.entries(v.props).map(([pos, prop]) => [pos, prop.owner]));
     if (!before.owners.size) before.owners.set('-', 0);
@@ -256,11 +255,11 @@ export function mount(root, api) {
         const owned = TILES.filter((t) => v.props[t.pos]?.owner === p.id);
         return `${money(p.cash)} + ${owned.length} ville${owned.length > 1 ? 's' : ''}`;
       };
-      const STEP = [104, 76, 58];
-      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
+      const STEP = [104, 76, 58]; // la hauteur des marches, réduite sur téléphone par --k
+      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : v.winners.length > 3 ? `${v.winners.length} joueurs à égalité !` : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
         h('div.es-podium', ranked.slice(0, 3).map((p, i) => {
           const bar = h('div.es-step', h('b', String(i + 1)));
-          bar.style.height = `${STEP[i]}px`;
+          bar.style.height = `calc(var(--k, 1) * ${STEP[i]}px)`;
           bar.style.background = PAWN_COLORS[p.seat];
           return h('div.es-place', picture(world?.portrait(p.seat), '.es-podium-face'), h('b.es-place-name', p.id === meId ? 'Toi' : p.pseudo), h('span', money(p.worth)), h('small', breakdown(p)), bar);
         })),
@@ -284,9 +283,9 @@ export function mount(root, api) {
             btn('Passer', { type: 'decline' }, '.is-ghost'))];
       case 'debt':
         return [say(`Tu dois ${money(v.debt.amount)} ${v.debt.why}.`),
-          p.cash >= v.debt.amount ? null : h('p.es-note', v.raisable >= v.debt.amount ? `Tu as ${money(p.cash)}. En vendant, tu peux réunir ${money(v.raisable)}.` : `Même en vendant tout, tu n'aurais que ${money(v.raisable ?? p.cash)}. Négocie avec un joueur, ou c'est la faillite.`),
+          p.cash >= v.debt.amount ? null : h('p.es-note', v.raisable >= v.debt.amount ? `Tu as ${money(p.cash)}. Tes constructions seront vendues, puis tes villes mises en gage : plus de loyer tant que tu ne les récupères pas dans leur fiche.` : `Même en vendant tout, tu n'aurais que ${money(v.raisable ?? p.cash)}. Négocie avec un joueur, ou c'est la faillite.`),
           p.cash >= v.debt.amount ? btn(`Payer ${money(v.debt.amount)}`, { type: 'pay' })
-            : v.raisable >= v.debt.amount ? btn('Vendre ce qu’il faut et payer', { type: 'raise' }) : null,
+            : v.raisable >= v.debt.amount ? btn('Réunir l’argent et payer', { type: 'raise' }) : null,
           confirmBankrupt ? btn('Oui, je déclare faillite', { type: 'bankrupt' }, '.is-danger')
             : h('button.es-btn.is-danger', { type: 'button', onclick: () => { confirmBankrupt = true; promptKey = null; renderAction(); } }, 'Déclarer faillite')];
       case 'end':
@@ -297,16 +296,27 @@ export function mount(root, api) {
   }
 
   // Le journal parle des joueurs par leur pseudo : quand c'est de toi, il te dit « tu ».
-  const VERBS = { paie: 'paies', achète: 'achètes', laisse: 'laisses', construit: 'construis', vend: 'vends', passe: 'passes', quitte: 'quittes', fait: 'fais', doit: 'dois', rachète: 'rachètes', propose: 'proposes', récupère: 'récupères', met: 'mets', présente: 'présentes', accepte: 'acceptes', refuse: 'refuses', retire: 'retires' };
-  function spoken(text) {
+  const VERBS = { gagne: 'gagnes', paie: 'paies', achète: 'achètes', laisse: 'laisses', construit: 'construis', vend: 'vends', passe: 'passes', quitte: 'quittes', fait: 'fais', doit: 'dois', rachète: 'rachètes', propose: 'proposes', récupère: 'récupères', met: 'mets', présente: 'présentes', accepte: 'acceptes', refuse: 'refuses', retire: 'retires' };
+  // full : dans l'historique, la carte du Télex reste en entier, entre guillemets puisqu'elle s'adresse à celui qui la tire.
+  function spoken(text, full = false) {
     const name = me()?.pseudo;
+    const telex = text.match(/^Télex pour (.+?) : (.*)$/);
+    if (telex) {
+      if (telex[1] === name) return `Télex : ${telex[2]}`;
+      return full ? `Télex pour ${telex[1]} : « ${telex[2]} »` : `Télex pour ${telex[1]}.`;
+    }
     if (!name) return text;
+    if (text.endsWith(' concluent un échange.')) {
+      const pair = text.slice(0, -' concluent un échange.'.length);
+      if (pair.startsWith(`${name} et `)) return `Tu conclus un échange avec ${pair.slice(name.length + 4)}.`;
+      if (pair.endsWith(` et ${name}`)) return `Tu conclus un échange avec ${pair.slice(0, -(name.length + 4))}.`;
+    }
     if (text.endsWith(`l'échange de ${name}.`)) return text.replace(`l'échange de ${name}`, 'ton échange');
     if (text.startsWith(`${name} est retenu`)) return text.replace(`${name} est retenu`, 'Tu es retenu');
     if (text.startsWith(`${name} s'envole`)) return text.replace(`${name} s'envole`, 'Tu t’envoles');
     const [verb] = text.slice(name.length + 1).split(' ');
     if (text.startsWith(`${name} `) && VERBS[verb]) return `Tu ${VERBS[verb]}${text.slice(name.length + 1 + verb.length)}`;
-    return text.replaceAll(` à ${name} `, ' à toi ');
+    return text.replaceAll(` à ${name} `, ' à toi ').replaceAll(` à ${name}.`, ' à toi.');
   }
 
   // Ce qui vient de se passer : une ligne, quelques secondes, puis plus rien.
@@ -333,6 +343,7 @@ export function mount(root, api) {
     const plain = myTurn() && ((v.phase === 'roll' && !v.players[v.cur].blocked) || v.phase === 'end'); // un simple bouton, sans carte autour
     action.classList.toggle('is-plain', plain);
     action.classList.toggle('is-over', v.over);
+    frame.classList.toggle('is-over', v.over);
 
     const key = JSON.stringify([v.phase, v.cur, v.rollN, v.over, me()?.cash, me()?.blocked, v.again, v.raisable, v.actions, v.debt?.amount]);
     if (v.phase !== 'debt') confirmBankrupt = false;
@@ -340,7 +351,6 @@ export function mount(root, api) {
       const moved = promptKey !== null && JSON.parse(promptKey)[0] + JSON.parse(promptKey)[1] !== v.phase + v.cur;
       promptKey = key;
       prompt.replaceChildren(...promptFor().filter(Boolean));
-      action.hidden = !prompt.childElementCount;
       // Une nouvelle action arrive en glissant : on voit que quelque chose a changé.
       if (moved && !QUIET) {
         prompt.classList.remove('is-in');
@@ -348,6 +358,8 @@ export function mount(root, api) {
         prompt.classList.add('is-in');
       }
     }
+
+    action.hidden = !prompt.childElementCount;
 
     trades.replaceChildren(...v.trades.filter((t) => t.to === meId || t.from === meId).map(tradeCard));
     tools.hidden = v.over;
@@ -500,12 +512,12 @@ export function mount(root, api) {
         return h('li.es-buildline',
           flagOf(t.region),
           h('span', h('b', t.short ?? t.name), h('small', LEVEL_NAMES[v.props[pos].level + 1])),
-          btn(money(v.costs[pos]), { type: 'build', pos }, '.is-small'));
+          btn(`Construire ${money(v.costs[pos])}`, { type: 'build', pos }, '.is-small'));
       })) : h('p.es-note', 'Plus rien à construire pour l’instant.'));
   }
 
   function logSheet() {
-    return shell('Historique', h('h2', 'Historique'), h('ol.es-history', [...v.log].reverse().map((l) => h('li', l.text))));
+    return shell('Historique', h('h2', 'Historique'), h('ol.es-history', [...v.log].reverse().map((l) => h('li', spoken(l.text, true)))));
   }
 
   // L'échange a des jauges : on ne le redessine pas à chaque changement d'état.
@@ -619,7 +631,7 @@ export function mount(root, api) {
     if (e.key === 'Escape' && overlay) closeOverlay();
     // La barre d'espace lance l'action principale, sauf si on écrit quelque part ou qu'une fenêtre est ouverte.
     // Jamais pour un achat, une mise ou une vente : ce qui coûte de l'argent se décide à la main.
-    if (e.code === 'Space' && !overlay && !e.repeat && v && myTurn() && ['roll', 'end'].includes(v.phase) && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
+    if (e.code === 'Space' && !overlay && !action.hidden && !e.repeat && v && myTurn() && ['roll', 'end'].includes(v.phase) && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
       const main = prompt.querySelector('.es-btn:not(.is-ghost):not(.is-danger):not(:disabled)');
       if (main) {
         e.preventDefault();
@@ -642,24 +654,40 @@ export function mount(root, api) {
     const left = Math.max(0, info.deadline - api.now());
     timer.firstChild.style.width = `${Math.min(100, (left / total) * 100)}%`;
     timer.classList.toggle('is-low', left < 8000);
-    clock.textContent = left < 10500 ? `${Math.ceil(left / 1000)} s` : '';
+    clock.textContent = left < 10500 ? `${Math.ceil(left / 1000)} s, puis le jeu joue pour toi` : '';
   }, 250);
 
-  api.onState((view, st) => {
-    v = view;
-    info = st;
-    world?.update(v);
+  // L'interface annonce ce qui s'est passé quand le pion est arrivé, pas avant.
+  let uiTimer = 0;
+  function applyUI() {
+    clearTimeout(uiTimer);
+    uiTimer = 0;
     playSounds();
     renderPlayers();
     before.cash = new Map(v.players.map((p) => [p.id, p.cash]));
     renderAction();
     if (overlay && overlay.kind !== 'trade') renderOverlay();
+  }
+
+  api.onState((view, st) => {
+    if (before.rollN !== null && view.rollN !== before.rollN) sound.dice();
+    before.rollN = view.rollN;
+    v = view;
+    info = st;
+    world?.update(v);
+    if (world?.walking() && !v.over) {
+      action.hidden = true; // le bouton sur lequel on vient de cliquer s'en va tout de suite
+      if (!uiTimer) uiTimer = setTimeout(applyUI, 4000); // au cas où l'animation ne tourne pas (onglet caché, écran du chat)
+      return;
+    }
+    applyUI();
   });
 
   return () => {
     gone = true;
     clearInterval(tick);
     clearTimeout(flashTimer);
+    clearTimeout(uiTimer);
     document.removeEventListener('keydown', onKey);
     document.title = pageTitle;
     sound.destroy();

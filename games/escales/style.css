@@ -54,7 +54,7 @@
 .g-escales .es-face { width: 26px; height: 26px; border-radius: 50%; background: var(--p); }
 .g-escales .es-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; }
 .g-escales .es-place { display: grid; justify-items: center; gap: 1px; min-width: 0; text-align: center; font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.g-escales .es-place small { color: var(--soft); font-size: 0.6875rem; font-weight: 600; }
+.g-escales .es-place small { color: var(--soft); font-size: 0.8125rem; font-weight: 600; }
 .g-escales .es-place-name { max-width: 100%; overflow: hidden; font-size: 0.875rem; text-overflow: ellipsis; white-space: nowrap; }
 .g-escales .es-podium-face { width: 64px; height: 64px; }
 .g-escales .es-step { display: grid; place-items: center; width: 100%; margin-top: 4px; border-radius: 8px 8px 0 0; color: #fff; font: 400 1.25rem var(--es-display); }
@@ -135,7 +135,7 @@
 .g-escales .es-timer { flex: 1; height: 4px; overflow: hidden; border-radius: 99px; background: var(--quiet); }
 .g-escales .es-timer i { display: block; height: 100%; background: var(--vermilion); }
 .g-escales .es-timer.is-low i { background: var(--danger); }
-.g-escales .es-clock { color: var(--danger); font-size: 0.875rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.g-escales .es-clock { flex: none; color: var(--danger); font-size: 0.8125rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .g-escales .es-offer { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .g-escales .es-offer-pic { width: 84px; height: 84px; }
 .g-escales .es-offer-text { display: grid; gap: 1px; min-width: 0; }
@@ -234,9 +234,15 @@
   .g-escales .es-pseudo small { display: none; }
   .g-escales .es-link { min-height: 40px; }
   .g-escales .es-tcols { grid-template-columns: minmax(0, 1fr); }
+  .g-escales .es-big { font-size: 1.375rem; }
+  .g-escales .es-podium-face { width: 44px; height: 44px; }
+  .g-escales .es-rank { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 26px; font-size: 0.875rem; }
   .g-escales .es-sheet.is-trade { max-height: 88%; }
   .g-escales .es-action, .g-escales .es-action.is-plain, .g-escales .es-action.is-over { top: auto; bottom: 0; left: 0; width: 100%; max-height: 50%; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); border-radius: 14px 14px 0 0; box-shadow: 0 -3px 0 var(--gold), 0 -12px 30px rgb(0 0 0 / 0.4); transform: none; }
   .g-escales .es-action.is-plain { background: none; box-shadow: none; }
+  /* Fin de partie : le podium et le classement prennent toute la place, ils remplacent le panneau des joueurs. */
+  .g-escales .es.is-over .es-side { display: none; }
+  .g-escales .es-action.is-over { --k: 0.5; max-height: 100%; }
   .g-escales .es-flash { max-width: 92%; font-size: 0.875rem; }
   .g-escales .es-offer-pic { width: 72px; height: 72px; }
   .g-escales .es-chip { min-height: 28px; gap: 5px; padding: 0 6px 0 5px; font-size: 0.8125rem; }

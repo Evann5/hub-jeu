@@ -15,6 +15,7 @@ Hub privé de jeux de société en ligne pour la classe de Minh (études sup, 20
 - L'appli doit marcher à n'importe quelle adresse, sous-dossier compris : URL relatives côté client, `BASE_PATH` côté serveur.
 - Comptes : code de classe + pseudo + mot de passe, aucun e-mail ; un admin réinitialise les mots de passe.
 - Messagerie : salon général, canaux créés par les admins, messages privés, chat de table ; texte, emojis, réactions ; pas d'images ni de modification. Messages effacés après 1 an.
+- Le serveur charge `rules.js` et `game.json` au démarrage : après les avoir modifiés, le redémarrer, recharger la page ne suffit pas.
 - Les jeux sont des dossiers dans `games/` qui suivent le guide de branchement ; le hub fournit tables, tours, spectateurs et reconnexion.
 - Pas de nom ni de visuels de Monopoly. Captures pour le portfolio : pseudos inventés.
 - Look : style « Néon » validé le 23/10/2026 (disposition Discord, presque noir, cartes de couleur vive, Unbounded + Figtree), téléphone et ordinateur. Captures de référence dans `docs/captures/`, démo vidéo dans `docs/demo/`.

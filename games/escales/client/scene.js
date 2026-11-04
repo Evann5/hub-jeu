@@ -436,7 +436,7 @@ function makeDie() {
 const DIE_TOP = { 1: [0, 0, 0], 2: [-Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
 const DIE_Y = 0.75;
 
-export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70, rightInset = () => 0, onFit }) {
+export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70, rightInset = () => 0, onFit, onStill }) {
   const startDpr = Math.min(window.devicePixelRatio || 1, 2);
   const renderer = new THREE.WebGLRenderer({ antialias: startDpr < 2, alpha: true });
   renderer.setClearColor(0x000000, 0);
@@ -828,7 +828,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     }
     const narrow = size.w < size.h;
     const top = narrow ? topInset() : 4;
-    const bottom = narrow ? 150 : 4;
+    const bottom = narrow ? 70 : 4; // la carte d'action peut mordre un instant sur le bas : le plateau reste grand, même à 10 joueurs
     const side = narrow ? 4 : 8;
     const right = narrow ? side : side + rightInset(); // sur ordinateur, la colonne des joueurs garde sa place à droite
     const scale = Math.min((size.w - side - right) / (x1 - x0), Math.max(60, size.h - top - bottom) / (y1 - y0));
@@ -874,6 +874,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let view = null;
   let lifeTimer = 0;
   const lifeOn = () => !reduced && quality.step < 2;
+
+  const walking = () => [...pawns.values()].some((pawn) => pawn.to || pawn.queue.length);
+  let wasWalking = false;
 
   function tick(now) {
     raf = 0;
@@ -994,6 +997,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     renderer.render(scene, camera);
 
     // Si la machine n'arrive pas à suivre, on baisse la qualité plutôt que de saccader.
+    // Les pions viennent de s'arrêter : l'interface peut annoncer ce qui s'est passé.
+    const moving = walking();
+    if (wasWalking && !moving) onStill?.();
+    wasWalking = moving;
     if (busy && real < 500) {
       quality.frames += 1;
       quality.total += real;
@@ -1215,6 +1222,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
 
   return {
     update,
+    walking,
     // Le visage d'un voyageur, de près.
     portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT),
     // Le monument entier d'une ville.
