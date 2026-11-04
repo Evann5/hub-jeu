@@ -57,7 +57,7 @@
   gap: 8px;
   min-height: 0;
   padding: 0 14px 12px;
-  overflow-y: auto;
+  overflow: hidden auto; /* les encoches dépassent exprès : la carte ne doit jamais défiler de côté */
   border-radius: 14px;
   background: #FFFDF8;
   box-shadow: 0 2px 0 #D9D2C2, 0 16px 36px rgb(0 0 0 / 0.5);
@@ -102,6 +102,9 @@
 .g-escales .es-timer i { display: block; height: 100%; background: var(--ink); }
 .g-escales .es-timer.is-low i { background: var(--danger); }
 .g-escales .es-prompt { display: grid; gap: 8px; }
+.g-escales .es-prompt.is-in { animation: es-in 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes es-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.g-escales .es-chip.is-turn { transition: background-color 0.2s; }
 .g-escales .es-say { margin: 0; font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
 .g-escales .es-big { margin: 0; font: 900 1.75rem/1.05 var(--es-display); letter-spacing: -0.05em; text-wrap: balance; }
 .g-escales .es-rank { display: grid; gap: 2px; margin: 0; padding: 0 0 0 20px; font-variant-numeric: tabular-nums; }
@@ -206,6 +209,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .g-escales .es-btn, .g-escales .es-dock { transition: none; }
+  .g-escales .es-btn, .g-escales .es-dock, .g-escales .es-chip.is-turn { transition: none; }
+  .g-escales .es-prompt.is-in { animation: none; }
   .g-escales .es-delta { display: none; }
 }

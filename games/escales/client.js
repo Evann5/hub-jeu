@@ -63,7 +63,7 @@ export function mount(root, api) {
   root.append(h('div.es', stage, loading, tip, tools, h('div.es-table', players, dock), layer));
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
-  Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"'), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
+  Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"'), document.fonts.load('900 60px "ES Unbounded"'), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
       world = createWorld(stage, {
@@ -114,6 +114,31 @@ export function mount(root, api) {
     tip.hidden = false;
   }
 
+  // L'argent défile jusqu'à sa nouvelle valeur plutôt que de sauter.
+  const QUIET = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function numberOf(p) {
+    const el = h('span.es-num');
+    const target = v.over ? p.worth : p.cash;
+    const old = before.cash.get(p.id);
+    if (p.out) {
+      el.textContent = 'Sorti';
+    } else if (v.over || QUIET || old === undefined || old === target) {
+      el.textContent = money(target);
+    } else {
+      const start = performance.now();
+      const step = (now) => {
+        const t = Math.min(1, (now - start) / 550);
+        const eased = 1 - (1 - t) ** 3;
+        el.textContent = money(Math.round(old + (target - old) * eased));
+        if (t < 1 && el.isConnected) requestAnimationFrame(step);
+        else el.textContent = money(target);
+      };
+      el.textContent = money(old);
+      requestAnimationFrame(step);
+    }
+    return el;
+  }
+
   // L'argent qui bouge se voit : un petit montant s'envole à côté du joueur.
   function deltaOf(p) {
     const old = before.cash.get(p.id);
@@ -161,7 +186,7 @@ export function mount(root, api) {
       const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir le détail`, onclick: () => openOverlay({ kind: 'player', id: p.id }) },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, p.bot ? h('small', ' robot') : null),
-        h('span.es-cash', p.out ? 'Sorti' : money(v.over ? p.worth : p.cash), deltaOf(p)));
+        h('span.es-cash', numberOf(p), deltaOf(p)));
       return h('div', { role: 'listitem' }, chip);
     }));
     root.style.setProperty('--rows', String(Math.ceil(v.players.length / 2)));
@@ -333,8 +358,15 @@ export function mount(root, api) {
       v.phase === 'auction' ? 0 : me()?.cash, me()?.blocked, me()?.passes, v.again, v.raisable, v.actions, v.debt?.amount]);
     if (v.phase !== 'debt') confirmBankrupt = false;
     if (key !== promptKey) {
+      const moved = promptKey !== null && JSON.parse(promptKey)[0] + JSON.parse(promptKey)[1] !== v.phase + v.cur;
       promptKey = key;
       prompt.replaceChildren(...promptFor().filter(Boolean));
+      // Une nouvelle action arrive en glissant : on voit que quelque chose a changé.
+      if (moved && !QUIET) {
+        prompt.classList.remove('is-in');
+        void prompt.offsetWidth;
+        prompt.classList.add('is-in');
+      }
     }
 
     trades.replaceChildren(...v.trades.filter((t) => t.to === meId || t.from === meId).map(tradeCard));

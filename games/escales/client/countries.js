@@ -170,12 +170,12 @@ export const PATTERNS = {
 
 // Les éléments posés sur le bandeau de chaque pays (voir PROPS dans monuments.js).
 export const PROPS_OF = {
-  maroc: ['palmier', 'tajine', 'palmier'],
-  vietnam: ['bambou', 'lanternePied', 'bambou'],
-  portugal: ['citronnier', 'sardine', 'citronnier'],
-  mexique: ['cactus', 'sombrero', 'cactus'],
-  italie: ['cypres', 'vespa', 'cypres'],
-  japon: ['cerisier', 'lanternePierre', 'cerisier'],
-  france: ['reverbere', 'kiosque', 'reverbere'],
-  usa: ['taxi', 'borne', 'taxi'],
+  maroc: ['palmier', 'tajine'],
+  vietnam: ['bambou', 'lanternePied'],
+  portugal: ['citronnier', 'sardine'],
+  mexique: ['cactus', 'sombrero'],
+  italie: ['cypres', 'vespa'],
+  japon: ['cerisier', 'lanternePierre'],
+  france: ['reverbere', 'kiosque'],
+  usa: ['taxi', 'borne'],
 };

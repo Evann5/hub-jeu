@@ -2,6 +2,7 @@
 // Pour une nouvelle ville : écrire ici une fonction avec le petit kit (box, cyl, cone, dome, bars) et la nommer dans board.js.
 // Les couleurs écrites ici ne servent qu'à donner des nuances : bake() les change en tons de blanc, et le tout est fondu en une seule forme.
 import * as THREE from './three/three.module.js';
+import { TILES } from './board.js';
 
 const mats = new Map();
 function mat(color) {
@@ -440,7 +441,7 @@ export const MONUMENTS = {
 
 // Les monuments sculptés dans Blender (assets/monuments/*.glb) remplacent ceux écrits en code. Chaque fichier ne contient qu'une forme
 // et des couleurs de sommets : ce petit lecteur suffit, sans dépendance. Si un fichier manque, le monument en code reste.
-const SCULPTED = { eiffel: 'eiffel', colisee: 'colisee', goldenGate: 'golden-gate' };
+const fileOf = (name) => (name === 'goldenGate' ? 'golden-gate' : name);
 const sculpted = new Map();
 
 function parseGlb(buffer) {
@@ -473,9 +474,10 @@ function parseGlb(buffer) {
 }
 
 export async function loadSculpted(urlOf) {
-  await Promise.all(Object.entries(SCULPTED).map(async ([name, file]) => {
+  const names = TILES.filter((t) => t.model).map((t) => t.model);
+  await Promise.all(names.map(async (name) => {
     try {
-      const res = await fetch(urlOf(`monuments/${file}.glb`));
+      const res = await fetch(urlOf(`monuments/${fileOf(name)}.glb`));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       sculpted.set(name, parseGlb(await res.arrayBuffer()));
     } catch (err) {

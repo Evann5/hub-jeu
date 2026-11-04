@@ -11,7 +11,7 @@ import { FLAGS, PATTERNS, PROPS_OF } from './countries.js';
 export const PAWN_COLORS = ['#E5213C', '#FF8A00', '#F5D000', '#16A34A', '#0891B2', '#2563EB', '#7C3AED', '#DB2777', '#92602F', '#475569'];
 
 const WARM = '#FFF6E8';
-const SLAB = '#2A2D38';
+const SLAB = '#2B2E3A';
 const INK = '#12151F';
 const TILE_W = 2; // largeur d'une case le long du côté
 const TILE_D = 3; // profondeur
@@ -19,13 +19,13 @@ const BASE_H = 0.1; // le socle blanc, ou le cadre du propriétaire
 const PLATE_H = 0.16;
 const HALF = (11 * TILE_W + 2 * TILE_D) / 2;
 const BANNER_D = 1.8;
-const PAWN_SCALE = 1.95;
+const PAWN_SCALE = 2.25;
 
-const SPECIAL_COLOR = { start: '#BFE8CF', customs: '#CBD8F2', festival: '#F6CFE0', control: '#F5CFC2', escale: '#F6F4EE', telex: '#F8EFC8', tax: '#F6E3BB', chantier: '#E3E4E6' };
+const SPECIAL_COLOR = { start: '#7FD9A4', customs: '#9DB6F0', festival: '#F59BC4', control: '#F4A58E', escale: '#E3EAF3', telex: '#F6DE7E', tax: '#F3C66E', chantier: '#C9CED9' };
 // Les monuments qui doivent impressionner sont un peu plus grands que les autres.
-const HEROES = { eiffel: 1.04, tourTokyo: 1.18, colisee: 1.18, pyramide: 1.12 };
+const HEROES = { eiffel: 1.04, colisee: 1.15, empire: 0.82, gratteCiel2: 0.88, tourTokyo: 0.95, gratteCiel: 0.95, mosquee: 0.92 };
 // La couleur d'un pays sur ses cases : la même teinte, adoucie, pour que les monuments et les joueurs ressortent.
-const softened = (hex, amount = 0.5) => new THREE.Color(hex).lerp(new THREE.Color(WARM), amount);
+const softened = (hex, amount = 0.28) => new THREE.Color(hex).lerp(new THREE.Color(WARM), amount);
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
@@ -70,7 +70,7 @@ function fitModel(model, w, front, hero = 1, flip = false) {
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const room = TILE_D / 2 + front + 0.35; // le monument peut déborder vers l'extérieur du plateau
-  const scale = hero * Math.min(1.2, room / Math.max(size.z, 0.01), (w - 0.2) / Math.max(size.x, 0.01));
+  const scale = hero * Math.min(1.1, room / Math.max(size.z, 0.01), (w - 0.2) / Math.max(size.x, 0.01));
   model.scale.setScalar(scale);
   model.position.set(-((box.min.x + box.max.x) / 2) * scale, PLATE_H - box.min.y * scale, flip ? -front - box.min.z * scale : front - box.max.z * scale);
 }
@@ -188,29 +188,36 @@ function buildBanners() {
     c.beginPath();
     c.roundRect(2, 2, W - 4, H - 4, 26);
     c.clip();
-    c.fillStyle = `#${softened(reg.color, 0.28).getHexString()}`;
+    const tone = `#${softened(reg.color, 0.08).getHexString()}`;
+    c.fillStyle = tone;
     c.fillRect(0, 0, W, H);
-    c.fillStyle = 'rgba(255,255,255,0.22)';
-    c.strokeStyle = 'rgba(255,255,255,0.26)';
+    c.fillStyle = 'rgba(255,255,255,0.3)';
+    c.strokeStyle = 'rgba(255,255,255,0.36)';
     c.lineWidth = 3;
     PATTERNS[reg.id](c, W, H);
-    c.font = '800 84px "ES Figtree", system-ui, sans-serif';
+    // Le nom s'écrit à même la couleur du pays : le motif s'efface doucement derrière lui.
+    c.font = '900 96px "ES Unbounded", "ES Figtree", system-ui, sans-serif';
     c.textBaseline = 'middle';
-    const fw = 132;
-    const fh = 88;
+    const fw = 120;
+    const fh = 80;
     const tw = c.measureText(reg.name).width;
-    const total = fw + 24 + tw;
+    const total = fw + 26 + tw;
     const x0 = (W - total) / 2;
-    c.fillStyle = 'rgba(255,255,255,0.92)';
-    c.beginPath();
-    c.roundRect(x0 - 26, H / 2 - 66, total + 52, 132, 22);
-    c.fill();
+    const fade = c.createLinearGradient(x0 - 90, 0, x0 + total + 90, 0);
+    const rgb = softened(reg.color, 0.08);
+    const col = (a) => `rgba(${Math.round(new THREE.Color(rgb).convertLinearToSRGB().r * 255)},${Math.round(new THREE.Color(rgb).convertLinearToSRGB().g * 255)},${Math.round(new THREE.Color(rgb).convertLinearToSRGB().b * 255)},${a})`;
+    fade.addColorStop(0, col(0));
+    fade.addColorStop(0.1, col(1));
+    fade.addColorStop(0.9, col(1));
+    fade.addColorStop(1, col(0));
+    c.fillStyle = fade;
+    c.fillRect(x0 - 90, 0, total + 180, H);
     FLAGS[reg.id](c, x0, H / 2 - fh / 2, fw, fh);
-    c.strokeStyle = 'rgba(18,21,31,0.5)';
-    c.lineWidth = 2;
+    c.strokeStyle = 'rgba(18,21,31,0.55)';
+    c.lineWidth = 3;
     c.strokeRect(x0, H / 2 - fh / 2, fw, fh);
     c.fillStyle = INK;
-    c.fillText(reg.name, x0 + fw + 24, H / 2 + 3);
+    c.fillText(reg.name, x0 + fw + 26, H / 2 + 5);
     c.restore();
     const { center, U, V } = bannerFrame(r);
     const n = REGIONS.length;
@@ -268,6 +275,59 @@ function buildFlags() {
   };
   mesh.userData.time = time;
   return mesh;
+}
+
+// Ce qui est gravé dans la dalle : le liseré doré, la piste ronde des dés et le nom du jeu.
+function buildEngraving() {
+  const SIZE = 2048;
+  const WORLD = HALF * 2 + 1.5;
+  const px = SIZE / WORLD;
+  const canvas = document.createElement('canvas');
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const c = canvas.getContext('2d');
+  const at = (u) => SIZE / 2 + u * px;
+  const gold = '#C9A45C';
+  // Le liseré autour du plateau, et un filet plus fin autour de la zone centrale.
+  c.strokeStyle = gold;
+  c.lineWidth = 5;
+  c.beginPath();
+  c.roundRect(at(-WORLD / 2 + 0.26), at(-WORLD / 2 + 0.26), (WORLD - 0.52) * px, (WORLD - 0.52) * px, 0.85 * px);
+  c.stroke();
+  const inner = HALF - TILE_D - BANNER_D - 0.32;
+  c.globalAlpha = 0.55;
+  c.lineWidth = 3;
+  c.beginPath();
+  c.roundRect(at(-inner), at(-inner), inner * 2 * px, inner * 2 * px, 0.7 * px);
+  c.stroke();
+  c.globalAlpha = 1;
+  // La piste des dés
+  const [dx, dz] = [at(0), at(-6.75)];
+  c.fillStyle = '#3B3F4E';
+  c.beginPath();
+  c.ellipse(dx, dz, 3.1 * px, 1.9 * px, 0, 0, Math.PI * 2);
+  c.fill();
+  c.strokeStyle = gold;
+  c.lineWidth = 3;
+  c.beginPath();
+  c.ellipse(dx, dz, 3.1 * px, 1.9 * px, 0, 0, Math.PI * 2);
+  c.stroke();
+  // Le nom du jeu, gravé ton sur ton en bas de la zone centrale
+  c.font = `900 ${Math.round(2 * px)}px "ES Unbounded", system-ui, sans-serif`;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillStyle = 'rgba(0,0,0,0.3)';
+  c.fillText('Escales', at(0) + 3, at(7.05) + 4);
+  c.fillStyle = '#4C5062';
+  c.fillText('Escales', at(0), at(7.05));
+  const t = new THREE.CanvasTexture(canvas);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(WORLD, WORLD), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.006;
+  m.renderOrder = 0;
+  return m;
 }
 
 // Un cube aux arêtes bien arrondies : chaque sommet est ramené sur une sphère aux coins.
@@ -358,8 +418,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
 
   // Une fin de journée : un soleil bas et chaud, des ombres longues et bleutées.
   scene.add(new THREE.HemisphereLight('#CFE6FF', '#7A8FA8', 1.75));
-  const sun = new THREE.DirectionalLight('#FFD9A6', 3.1);
-  sun.position.set(-24, 22, 13);
+  const sun = new THREE.DirectionalLight('#FFDDB0', 2.9);
+  sun.position.set(-14, 30, 12); // assez haut : la lumière reste chaude, et les ombres ne salissent plus les noms
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   const b = HALF + 7;
@@ -367,6 +427,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.03;
   sun.shadow.radius = 3;
+  sun.shadow.intensity = 0.72;
   scene.add(sun);
 
   // Le plateau : une grande dalle mate et épaisse, un objet posé là, sur un fond uni.
@@ -407,7 +468,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
 
   REGIONS.forEach((reg, r) => {
     const { center, U } = bannerFrame(r);
-    const spots = [-3.45, -2.5, 3.5];
+    const spots = [-3.4, 3.5];
     PROPS_OF[reg.id].forEach((name, i) => {
       const p = center.clone().addScaledVector(U, spots[i]);
       items.push({ object: buildProp(name), matrix: placed(p.x, p.z, Math.atan2(U.x, U.z) + 1.1, 1.05), ao: 0 });
@@ -428,7 +489,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   world.receiveShadow = true;
   world.frustumCulled = false;
   const flags = buildFlags();
-  scene.add(world, buildBanners(), flags, buildPrint());
+  scene.add(world, buildEngraving(), buildBanners(), flags, buildPrint());
 
   // ——— À qui sont les villes ———
   const tints = new Map();
@@ -605,11 +666,68 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const blobGeo = new THREE.CircleGeometry(0.4, 16);
   blobGeo.rotateX(-Math.PI / 2);
   const blobMat = new THREE.MeshBasicMaterial({ color: '#05060A', transparent: true, opacity: 0.42, depthWrite: false });
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.76, 32), new THREE.MeshBasicMaterial({ color: INK, depthWrite: false, transparent: true }));
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.03;
-  ring.renderOrder = 3;
-  scene.add(ring);
+  // Le joueur qui joue : une pastille lumineuse à ses pieds, et son nom en bulle au-dessus de sa tête.
+  const ring = (() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const c = canvas.getContext('2d');
+    const g = c.createRadialGradient(128, 128, 30, 128, 128, 128);
+    g.addColorStop(0, 'rgba(255,214,102,0.95)');
+    g.addColorStop(0.62, 'rgba(255,201,60,0.55)');
+    g.addColorStop(0.72, 'rgba(255,240,190,1)');
+    g.addColorStop(0.8, 'rgba(255,201,60,0.6)');
+    g.addColorStop(1, 'rgba(255,201,60,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(canvas);
+    t.colorSpace = THREE.SRGBColorSpace;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = 0.03;
+    m.renderOrder = 3;
+    scene.add(m);
+    return m;
+  })();
+  const bubbleCanvas = document.createElement('canvas');
+  bubbleCanvas.width = 512;
+  bubbleCanvas.height = 148;
+  const bubbleTexture = new THREE.CanvasTexture(bubbleCanvas);
+  bubbleTexture.colorSpace = THREE.SRGBColorSpace;
+  const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTexture, transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
+  bubble.renderOrder = 6;
+  scene.add(bubble);
+  let bubbleName = null;
+  const drawBubble = (name, color) => {
+    if (bubbleName === `${name}|${color}`) return;
+    bubbleName = `${name}|${color}`;
+    const c = bubbleCanvas.getContext('2d');
+    c.clearRect(0, 0, 512, 148);
+    let size = 62;
+    do {
+      c.font = `800 ${size}px "ES Figtree", system-ui, sans-serif`;
+      size -= 2;
+    } while (c.measureText(name).width > 430 && size > 28);
+    const w = Math.min(500, c.measureText(name).width + 56);
+    const x = 256 - w / 2;
+    c.fillStyle = '#FFFDF8';
+    c.beginPath();
+    c.roundRect(x, 8, w, 100, 30);
+    c.fill();
+    c.beginPath();
+    c.moveTo(232, 104);
+    c.lineTo(280, 104);
+    c.lineTo(256, 140);
+    c.closePath();
+    c.fill();
+    c.fillStyle = color;
+    c.fillRect(x + 24, 92, w - 48, 7);
+    c.fillStyle = INK;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(name, 256, 54);
+    bubbleTexture.needsUpdate = true;
+  };
   const pawns = new Map();
   const FACING = 0.3; // vue de trois quarts, face à la caméra
 
@@ -637,11 +755,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     scene.add(m);
     return m;
   });
-  // Au-dessus de la table centrale sur ordinateur ; au milieu du plateau sur téléphone, où la carte d'action est en bas.
+  // Sur leur piste, en haut de la zone centrale.
   const placeDice = () => {
-    const narrow = size.w < size.h;
-    dice[0].position.set(-1.2, DIE_Y, narrow ? -2.2 : -7);
-    dice[1].position.set(1.2, DIE_Y, narrow ? -1.9 : -6.7);
+    dice[0].position.set(-1.2, DIE_Y, -6.95);
+    dice[1].position.set(1.2, DIE_Y, -6.55);
     dice.forEach((d, i) => diceShadows[i].position.set(d.position.x + 0.28, 0.015, d.position.z - 0.12));
   };
   dice.forEach((d) => { d.visible = false; scene.add(d); });
@@ -765,6 +882,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       ring.position.x = curPawn.mesh.position.x;
       ring.position.z = curPawn.mesh.position.z;
       ring.visible = !view.over;
+      const narrow = size.w < size.h;
+      bubble.visible = !view.over;
+      bubble.scale.set(narrow ? 6.4 : 4.2, narrow ? 1.85 : 1.21, 1);
+      bubble.position.set(curPawn.mesh.position.x, curPawn.mesh.position.y + PAWN_SCALE * 1.2 + (narrow ? 1 : 0.65), curPawn.mesh.position.z);
     }
 
     if (diceAnim) {
@@ -812,6 +933,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     // Le monde vit doucement : les drapeaux flottent, les bateaux avancent, le repère rebondit.
     if (lifeOn()) {
       const time = now / 1000;
+      if (ring.visible) {
+        const pulse = 1 + Math.sin(time * 3.4) * 0.07;
+        ring.scale.set(pulse, pulse, 1);
+      }
       if (marker.visible) {
         marker.position.y = markerBase + Math.abs(Math.sin(time * 3)) * 0.42;
         marker.rotation.y = time * 1.2;
@@ -959,6 +1084,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pawn.queue.push({ pos: p.pos, jump: 5 }); // un vol ou un renvoi à la Douane : un grand saut
       }
     }
+
+    const playing = v.players[v.cur];
+    if (playing && !v.over) drawBubble(playing.pseudo, PAWN_COLORS[playing.seat]);
 
     if (v.dice && v.rollN !== lastRollN) {
       const initial = lastRollN === -1;
