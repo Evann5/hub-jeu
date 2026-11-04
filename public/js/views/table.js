@@ -56,7 +56,7 @@ export function onTable(payload) {
     else notifyGame();
     renderEndBar();
   }
-  if (before && before.status !== table.status && table.status === 'playing') toast(`La partie de ${cur.game.name} commence !`);
+  if (before && before.status !== table.status && table.status === 'playing' && !cur.game.wide) toast(`La partie de ${cur.game.name} commence !`);
 }
 
 export function onClosed({ id }) {

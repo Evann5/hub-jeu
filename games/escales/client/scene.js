@@ -407,7 +407,7 @@ function makeDie() {
 const DIE_TOP = { 1: [0, 0, 0], 2: [-Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
 const DIE_Y = 0.75;
 
-export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70 }) {
+export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70, rightInset = () => 0, onFit }) {
   const startDpr = Math.min(window.devicePixelRatio || 1, 2);
   const renderer = new THREE.WebGLRenderer({ antialias: startDpr < 2, alpha: true });
   renderer.setClearColor(0x000000, 0);
@@ -806,16 +806,24 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const top = narrow ? topInset() : 4;
     const bottom = narrow ? 150 : 4;
     const side = narrow ? 4 : 8;
-    const scale = Math.min((size.w - side * 2) / (x1 - x0), Math.max(60, size.h - top - bottom) / (y1 - y0));
+    const right = narrow ? side : side + rightInset(); // sur ordinateur, la colonne des joueurs garde sa place à droite
+    const scale = Math.min((size.w - side - right) / (x1 - x0), Math.max(60, size.h - top - bottom) / (y1 - y0));
     const midX = (x0 + x1) / 2;
     const midY = (y0 + y1) / 2;
     // Le milieu du plateau, en pixels depuis le haut. Sur téléphone, il se cale sous les joueurs : le vide éventuel reste en bas, derrière la carte d'action.
     const screenY = narrow ? top + ((y1 - y0) * scale) / 2 : (top + size.h - bottom) / 2;
-    camera.left = midX - size.w / 2 / scale;
-    camera.right = midX + size.w / 2 / scale;
+    const screenX = (side + size.w - right) / 2;
+    camera.left = midX - screenX / scale;
+    camera.right = midX + (size.w - screenX) / scale;
     camera.top = midY + screenY / scale;
     camera.bottom = midY - (size.h - screenY) / scale;
     camera.updateProjectionMatrix();
+    // L'interface se cale sur le plateau : le milieu de la zone centrale, et le bas de cette zone pour la ligne de ce qui vient de se passer.
+    const onScreen = (z) => {
+      v.set(0, 0, z).project(camera);
+      return [((v.x + 1) / 2) * size.w, ((1 - v.y) / 2) * size.h];
+    };
+    onFit?.(onScreen(0.4), onScreen(5.1));
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
@@ -1115,9 +1123,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       if (!initial && !reduced) diceAnim = { t: 0, values: v.dice.slice() };
     }
 
-    if (firstUpdate && size.w < size.h && size.w) computeFit(); // la place prise par les joueurs est connue maintenant
-    // Le repère montre la ville dont il est question : un achat ou une enchère.
-    const at = v.over ? null : v.phase === 'buy' ? v.players[v.cur]?.pos : v.phase === 'auction' ? v.auction.pos : null;
+    if (firstUpdate && size.w) computeFit(); // la place prise par les joueurs est connue maintenant
+    // Le repère montre la ville à acheter.
+    const at = !v.over && v.phase === 'buy' ? v.players[v.cur]?.pos : null;
     if (at === null || at === undefined) marker.visible = false;
     else {
       const f = tileFrame(at);

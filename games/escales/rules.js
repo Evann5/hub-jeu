@@ -1,13 +1,12 @@
 // Escales : on achète des villes, on y construit, on fait payer le passage. Les règles sont pures : ni réseau, ni base, ni affichage.
 // L'heure vient de ctx.now, le hasard de ctx.random. Tout le raisonnement est expliqué dans docs/escales.md.
 //
-// Un tour : « roll » (lancer) → la case décide de la suite (buy, auction, fly, festival, chantier, debt) → « end » → joueur suivant.
+// Un tour : « roll » (lancer) → la case décide de la suite (buy, fly, festival, chantier, debt) → « end » → joueur suivant.
 import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, FLY_COST, CUSTOMS_POS, SIZE } from './client/board.js';
 
 export const SALARY = 200;
 export const CATCH_UP = 100; // en plus au Départ pour qui a moins de la moitié du patrimoine du premier
 export const FINE = 50; // pour sortir de la Douane
-export const AUCTION_MS = 20_000;
 export const MAX_TRADES = 3; // propositions en attente par joueur
 export const BOT_MS = 900; // le temps qu'un robot prend pour jouer, pour qu'on voie ce qu'il fait
 const BOT_NAMES = ['Marco', 'Aïko', 'Leïla', 'Nuno', 'Frida', 'Anh', 'Giulia', 'Sam', 'Noor', 'Paco'];
@@ -40,7 +39,7 @@ function shuffle(list, ctx) {
 const ownedInRegion = (s, id, region) => TILES.filter((t) => t.region === region && s.props[t.pos]?.owner === id).length;
 const escalesOf = (s, id) => TILES.filter((t) => t.type === 'escale' && s.props[t.pos]?.owner === id).length;
 
-// Le loyer dû en tombant sur cette case, tout compris (majorité, niveau, festival, événement du tour).
+// Le loyer dû en tombant sur cette case, tout compris (majorité, niveau, festival).
 export function rentOf(s, pos) {
   const t = TILES[pos];
   const prop = s.props[pos];
@@ -51,16 +50,11 @@ export function rentOf(s, pos) {
   if (prop.level === 0) rent *= count === 4 ? 3 : count >= s.majority ? 2 : 1;
   else if (count === 4) rent *= 1.25;
   if (s.festival?.pos === pos) rent *= 2;
-  if (s.event?.region === t.region) {
-    if (s.event.kind === 'boom') rent *= 1.5;
-    if (s.event.kind === 'crise') rent /= 2;
-  }
   return Math.round(rent);
 }
 
 export function buildCost(s, pos) {
-  const t = TILES[pos];
-  return s.event?.kind === 'chantiers' && s.event.region === t.region ? Math.floor(t.build / 2) : t.build;
+  return TILES[pos].build;
 }
 
 export function worthOf(s, p) {
@@ -114,12 +108,9 @@ export function setup(players, options = {}, ctx) {
     again: false,
     after: null,
     debt: null,
-    auction: null,
-    lastAuction: null,
     trades: [],
     tradeSeq: 0,
     festival: null,
-    event: null,
     lastCard: null,
     deck: [],
     log: [],
@@ -140,11 +131,10 @@ function arm(s, ctx) {
     s.deadline = null;
     return s;
   }
-  const key = `${s.phase}:${s.cur}:${s.rollN}:${s.logN > 0 && s.phase === 'auction' ? s.auction.pos : ''}`;
+  const key = `${s.phase}:${s.cur}:${s.rollN}`;
   if (key === s.armedFor) return s;
   s.armedFor = key;
-  if (s.phase === 'auction') s.deadline = ctx.now + AUCTION_MS;
-  else if (cur(s).bot) s.deadline = ctx.now + BOT_MS; // un robot joue tout seul, une action à la fois
+  if (cur(s).bot) s.deadline = ctx.now + BOT_MS; // un robot joue tout seul, une action à la fois
   else s.deadline = s.timer ? ctx.now + s.timer * 1000 : null;
   return s;
 }
@@ -174,17 +164,6 @@ function resume(s, after, ctx) {
   return settle(s, ctx);
 }
 
-function makeEvent(s, ctx) {
-  const region = Math.floor(ctx.random() * REGIONS.length);
-  const name = REGIONS[region].name;
-  const kind = ['boom', 'crise', 'chantiers'][Math.floor(ctx.random() * 3)];
-  const text = kind === 'boom' ? `Haute saison : ${name}, loyers × 1,5 ce tour.`
-    : kind === 'crise' ? `Grève des transports : ${name}, loyers divisés par 2 ce tour.`
-      : `Subventions : ${name}, constructions à moitié prix ce tour.`;
-  s.event = { kind, region, text };
-  log(s, `À la une : ${text}`);
-}
-
 function nextTurn(s, ctx) {
   if (s.over) return;
   s.again = false;
@@ -199,7 +178,6 @@ function nextTurn(s, ctx) {
       finish(s, 'rounds');
       return;
     }
-    makeEvent(s, ctx);
   }
   s.cur = i;
   const p = cur(s);
@@ -215,7 +193,6 @@ function finish(s, reason) {
   s.over = true;
   s.phase = 'over';
   s.reason = reason;
-  s.auction = null;
   const left = active(s);
   const best = Math.max(...left.map((p) => worthOf(s, p)));
   s.winners = left.filter((p) => worthOf(s, p) === best).map((p) => p.id);
@@ -385,45 +362,6 @@ function drawCard(s, ctx) {
   return card.play(s, ctx);
 }
 
-// ——— Enchères secrètes ———
-
-function startAuction(s, pos, ctx, after) {
-  const eligible = active(s).filter((p) => p.cash > 0).map((p) => p.id);
-  if (!eligible.length) return resume(s, after, ctx);
-  s.auction = { pos, eligible, bids: {}, order: [] };
-  s.after = after;
-  s.phase = 'auction';
-  log(s, `Enchères secrètes pour ${TILES[pos].name}.`);
-  for (const id of eligible) {
-    const p = byId(s, id);
-    if (!p.bot) continue;
-    s.auction.bids[id] = botBid(s, p, pos, ctx);
-    s.auction.order.push(id);
-  }
-  if (auctionDone(s)) return resolveAuction(s, ctx);
-  return undefined;
-}
-
-function resolveAuction(s, ctx) {
-  const { pos, bids, order } = s.auction;
-  const ranked = order.map((id) => [id, bids[id]]).filter(([, amount]) => amount > 0).sort((a, b) => b[1] - a[1]);
-  const winner = ranked.find(([id, amount]) => !byId(s, id).out && byId(s, id).cash >= amount);
-  if (winner) {
-    const p = byId(s, winner[0]);
-    p.cash -= winner[1];
-    s.props[pos] = { owner: p.id, level: 0, mortgaged: false };
-    log(s, `${p.pseudo} remporte ${TILES[pos].name} pour ${money(winner[1])}.`);
-  } else {
-    log(s, `Personne n'achète ${TILES[pos].name}.`);
-  }
-  s.lastAuction = { pos, bids: ranked, winner: winner?.[0] ?? null, n: s.logN };
-  s.auction = null;
-  const after = s.after;
-  return resume(s, after, ctx);
-}
-
-const auctionDone = (s) => s.auction.eligible.every((id) => id in s.auction.bids);
-
 // ——— Le lancer ———
 
 function doRoll(s, ctx) {
@@ -501,12 +439,6 @@ function goBankrupt(s, ctx) {
 // Ils jouent simplement : ils achètent s'il leur reste de quoi, cherchent la majorité d'une région et construisent.
 
 const gainsMajority = (s, p, t) => t.type === 'city' && ownedInRegion(s, p.id, t.region) + 1 >= s.majority;
-
-function botBid(s, p, pos, ctx) {
-  const t = TILES[pos];
-  const value = t.price * (0.6 + ctx.random() * 0.5) * (gainsMajority(s, p, t) ? 1.4 : 1);
-  return Math.max(0, Math.floor(Math.min(p.cash - 100, value) / 5) * 5);
-}
 
 // Ce que vaut une proposition pour celui qui la reçoit : les villes qui lui donnent une majorité comptent plus.
 function offerValue(s, to, offer) {
@@ -593,7 +525,8 @@ function botStep(s, ctx) {
         log(s, `${p.pseudo} achète ${t.name} pour ${money(t.price)}.`);
         resume(s, t.type === 'escale' ? 'fly' : null, ctx);
       } else {
-        startAuction(s, p.pos, ctx, t.type === 'escale' ? 'fly' : null);
+        log(s, `${p.pseudo} laisse ${t.name}.`);
+        resume(s, t.type === 'escale' ? 'fly' : null, ctx);
       }
       return;
     case 'festival': {
@@ -722,19 +655,8 @@ export function move(state, playerId, given, ctx) {
     case 'decline': {
       needPhase(s, 'buy');
       const t = TILES[p.pos];
-      startAuction(s, p.pos, ctx, t.type === 'escale' ? 'fly' : null);
-      break;
-    }
-    case 'bid': {
-      needPhase(s, 'auction');
-      if (!s.auction.eligible.includes(p.id)) throw new Error('Tu ne participes pas à cette enchère.');
-      if (p.id in s.auction.bids) throw new Error('Ta mise est déjà posée.');
-      const amount = Math.floor(Number(action.amount) || 0);
-      if (amount < 0) throw new Error('Une mise ne peut pas être négative.');
-      if (amount > p.cash) throw new Error('Tu ne peux pas miser plus que ton argent.');
-      s.auction.bids[p.id] = amount;
-      s.auction.order.push(p.id);
-      if (auctionDone(s)) resolveAuction(s, ctx);
+      log(s, `${p.pseudo} laisse ${t.name}.`);
+      resume(s, t.type === 'escale' ? 'fly' : null, ctx);
       break;
     }
     case 'fly': {
@@ -884,15 +806,17 @@ export function timeout(state, ctx) {
   if (state.over) return { state };
   const s = clone(state);
   const p = cur(s);
-  if (s.phase !== 'auction' && p.bot) {
+  if (p.bot) {
     botStep(s, ctx);
     s.armedFor = null;
     return { state: arm(s, ctx) };
   }
   switch (s.phase) {
     case 'roll': doRoll(s, ctx); break;
-    case 'buy': startAuction(s, p.pos, ctx, TILES[p.pos].type === 'escale' ? 'fly' : null); break;
-    case 'auction': resolveAuction(s, ctx); break;
+    case 'buy':
+      log(s, `${p.pseudo} laisse ${TILES[p.pos].name}.`);
+      resume(s, TILES[p.pos].type === 'escale' ? 'fly' : null, ctx);
+      break;
     case 'fly':
     case 'festival':
     case 'chantier': settle(s, ctx); break;
@@ -919,10 +843,7 @@ export function leave(state, playerId, ctx) {
   if (s.debt?.to === p.id) s.debt.to = null; // on doit désormais cet argent à la banque
   eliminate(s, p, null);
   if (s.over) return { state: arm(s, ctx) };
-  if (s.phase === 'auction') {
-    s.auction.eligible = s.auction.eligible.filter((id) => id !== p.id);
-    if (auctionDone(s)) resolveAuction(s, ctx);
-  } else if (wasCurrent) {
+  if (wasCurrent) {
     s.debt = null;
     s.after = null;
     nextTurn(s, ctx);
@@ -930,7 +851,7 @@ export function leave(state, playerId, ctx) {
   return { state: arm(s, ctx) };
 }
 
-// Tout est public sauf les mises en cours et l'ordre du paquet.
+// Tout est public sauf l'ordre du paquet.
 export function view(state, playerId) {
   const { deck, armedFor, after, ...rest } = state;
   const me = playerId ? byId(state, playerId) : null;
@@ -942,12 +863,6 @@ export function view(state, playerId) {
   return {
     ...rest,
     players: state.players.map((p) => ({ ...p, worth: worthOf(state, p) })),
-    auction: state.auction && {
-      pos: state.auction.pos,
-      eligible: state.auction.eligible,
-      hasBid: Object.keys(state.auction.bids).map(Number),
-      mine: playerId && playerId in state.auction.bids ? state.auction.bids[playerId] : null,
-    },
     rents,
     actions: {
       build: manage ? mine.filter((pos) => canBuildAt(state, me.id, pos) && me.cash >= buildCost(state, pos)) : [],
@@ -973,8 +888,5 @@ export function status(state) {
     const names = state.winners.map((id) => `${byId(state, id).pseudo}${id < 0 ? ' (robot)' : ''}`).join(' et ');
     return { turn: null, over: true, winners: state.winners.filter((id) => id > 0), label: `${names} ${state.winners.length > 1 ? 'gagnent' : 'gagne'}`, deadline: null };
   }
-  const turn = state.phase === 'auction'
-    ? state.auction.eligible.filter((id) => !(id in state.auction.bids))
-    : cur(state).id;
-  return { turn, may: active(state).filter((p) => !p.bot).map((p) => p.id), over: false, winners: [], deadline: state.deadline };
+  return { turn: cur(state).id, may: active(state).filter((p) => !p.bot).map((p) => p.id), over: false, winners: [], deadline: state.deadline };
 }

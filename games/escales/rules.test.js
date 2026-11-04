@@ -1,7 +1,7 @@
 // Tests d'Escales : node --test games/escales/rules.test.js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setup, move, view, status, timeout, leave, rentOf, worthOf, SALARY, CATCH_UP, FINE, AUCTION_MS } from './rules.js';
+import { setup, move, view, status, timeout, leave, rentOf, worthOf, SALARY, CATCH_UP, FINE } from './rules.js';
 import { TILES, REGIONS, SIZE, CUSTOMS_POS, FLY_COST, MAX_LEVEL } from './client/board.js';
 
 const seeded = (seed) => () => {
@@ -73,45 +73,15 @@ test('l’état reçu n’est jamais modifié', () => {
   assert.deepEqual(s, copy);
 });
 
-test('refuser d’acheter lance des enchères secrètes : le plus offrant gagne', () => {
+test('refuser d’acheter : la ville reste libre et le tour passe au suivant', () => {
   let s = roll(start(), 1, 3);
-  const [a, b, c] = s.players.map((p) => p.id);
+  const [a, b] = s.players.map((p) => p.id);
   s = move(s, a, { type: 'decline' }, ctxOf()).state;
-  assert.equal(s.phase, 'auction');
-  assert.equal(s.deadline, 1000 + AUCTION_MS);
-  s = move(s, a, { type: 'bid', amount: 50 }, ctxOf()).state;
-  s = move(s, b, { type: 'bid', amount: 120 }, ctxOf()).state;
-  // Les mises restent secrètes tant que l'enchère n'est pas finie.
-  const seen = view(s, c);
-  assert.equal(seen.auction.mine, null);
-  assert.equal(JSON.stringify(seen.auction).includes('120'), false);
-  assert.equal(view(s, b).auction.mine, 120);
-  assert.deepEqual(status(s).turn, [c]);
-  s = move(s, c, { type: 'bid', amount: 0 }, ctxOf()).state;
-  assert.equal(s.props[4].owner, b);
-  assert.equal(s.players.find((p) => p.id === b).cash, 1500 - 120);
+  assert.equal(s.props[4], undefined);
+  assert.equal(s.players.find((p) => p.id === a).cash, 1500);
   assert.equal(s.phase, 'roll');
-  assert.equal(s.lastAuction.winner, b);
-});
-
-test('enchères : égalité pour le premier qui a misé, et mise au-delà de son argent refusée', () => {
-  let s = roll(start(2), 1, 3);
-  const [a, b] = s.players.map((p) => p.id);
-  s = move(s, a, { type: 'decline' }, ctxOf()).state;
-  assert.throws(() => move(s, b, { type: 'bid', amount: 99999 }, ctxOf()), /plus que ton argent/);
-  s = move(s, b, { type: 'bid', amount: 70 }, ctxOf()).state;
-  assert.throws(() => move(s, b, { type: 'bid', amount: 80 }, ctxOf()), /déjà posée/);
-  s = move(s, a, { type: 'bid', amount: 70 }, ctxOf()).state;
-  assert.equal(s.props[4].owner, b);
-});
-
-test('enchères à l’échéance : les mises posées comptent, les absents passent', () => {
-  let s = roll(start(), 1, 3);
-  const [a, b] = s.players.map((p) => p.id);
-  s = move(s, a, { type: 'decline' }, ctxOf()).state;
-  s = move(s, b, { type: 'bid', amount: 10 }, ctxOf()).state;
-  s = timeout(s, ctxOf()).state;
-  assert.equal(s.props[4].owner, b);
+  assert.equal(status(s).turn, b);
+  assert.equal(JSON.stringify(view(s, b)).includes('auction'), false);
 });
 
 test('loyer : ville seule, majorité × 2, région complète × 3', () => {
@@ -282,7 +252,6 @@ test('festival : le loyer double jusqu’au prochain tour de l’organisateur', 
     const id = s.players[s.cur].id;
     s = move(s, id, { type: 'roll' }, dice(1, 2)).state;
     if (s.players[s.cur].id === id) s = move(s, id, { type: s.phase === 'buy' ? 'decline' : 'skip' }, ctxOf()).state;
-    if (s.phase === 'auction') s = timeout(s, ctxOf()).state;
   }
   assert.equal(s.players[s.cur].id, a);
   assert.equal(s.festival, null);
@@ -354,33 +323,30 @@ test('coups mal formés : un refus propre, pas un plantage', () => {
   assert.throws(() => move(s, a, { type: 'build' }, ctxOf()), /niveau libre/);
   assert.doesNotThrow(() => move(s, a, { type: 'trade', to: b, give: null, get: { cash: 1 } }, ctxOf()));
   assert.throws(() => move(s, a, null, ctxOf()), /Action inconnue/);
-  for (const bad of [{ type: 'fly' }, { type: 'sell' }, { type: 'mortgage', pos: 'x' }, { type: 'bid', amount: 'x' }, { type: 'tradeAccept' }]) {
+  for (const bad of [{ type: 'fly' }, { type: 'sell' }, { type: 'mortgage', pos: 'x' }, { type: 'bid', amount: 5 }, { type: 'tradeAccept' }]) {
     assert.throws(() => move(s, a, bad, ctxOf()), (e) => !(e instanceof TypeError), JSON.stringify(bad));
   }
 });
 
 test('un joueur ne peut pas repousser le tour d’un robot en lui envoyant des échanges', () => {
   let s = setup(people(1), { bots: 3, rounds: 20, timer: 0 }, ctxOf(5));
-  while (s.players[s.cur].id === 1 || s.phase === 'auction') {
+  while (s.players[s.cur].id === 1) {
     s.cur = (s.cur + 1) % s.players.length;
     s.phase = 'roll';
   }
   s = timeout(s, { now: 1000, random: seeded(3) }).state;
-  while (!s.players[s.cur].bot || s.phase === 'auction') s = timeout(s, { now: 1000, random: seeded(4) }).state;
+  while (!s.players[s.cur].bot) s = timeout(s, { now: 1000, random: seeded(4) }).state;
   const due = s.deadline;
   const bot = s.players[s.cur];
   const next = move(s, 1, { type: 'trade', to: bot.id, give: { cash: 1 }, get: {} }, { now: due - 10, random: seeded(1) }).state;
   assert.equal(next.deadline, due, 'l’échéance du robot ne bouge pas');
 });
 
-test('messages clairs : mise négative, montant négatif, ton propre argent', () => {
-  let s = start();
+test('messages clairs : montant négatif, ton propre argent', () => {
+  const s = start();
   const [a, b] = s.players.map((p) => p.id);
   assert.throws(() => move(s, a, { type: 'trade', to: b, give: { cash: -50 }, get: {} }, ctxOf()), /négatif/);
   assert.throws(() => move(s, a, { type: 'trade', to: b, give: { cash: 999999 }, get: {} }, ctxOf()), /^Error: Tu n'as pas/);
-  s = roll(s, 1, 3);
-  s = move(s, a, { type: 'decline' }, ctxOf()).state;
-  assert.throws(() => move(s, b, { type: 'bid', amount: -5 }, ctxOf()), /négative/);
 });
 
 test('faillite : le créancier récupère tout, la partie continue', () => {
@@ -417,8 +383,7 @@ test('fin des tours : le plus gros patrimoine gagne', () => {
   s = roll(s, 1, 2); // Télex possible : on force la suite
   while (!s.over) {
     const id = s.players[s.cur].id;
-    if (s.phase === 'auction') s = timeout(s, ctxOf()).state;
-    else if (s.phase === 'buy') s = move(s, id, { type: 'decline' }, ctxOf()).state;
+    if (s.phase === 'buy') s = move(s, id, { type: 'decline' }, ctxOf()).state;
     else if (s.phase === 'debt') s = move(s, id, { type: 'bankrupt' }, ctxOf()).state;
     else if (['fly', 'festival', 'chantier'].includes(s.phase)) s = move(s, id, { type: 'skip' }, ctxOf()).state;
     else if (s.phase === 'end') s = move(s, id, { type: 'endTurn' }, ctxOf()).state;
@@ -462,7 +427,7 @@ test('échange : vide, avec constructions ou devenu impossible, c’est refusé'
   assert.equal(s.trades.find((t) => t.id === 2), undefined);
 });
 
-test('abandon : les villes retournent à la banque, le jeu continue, même pendant une enchère', () => {
+test('abandon : les villes retournent à la banque, le jeu continue', () => {
   let s = start();
   const [a, b, c] = s.players.map((p) => p.id);
   own(s, a, 'Fès');
@@ -471,7 +436,6 @@ test('abandon : les villes retournent à la banque, le jeu continue, même penda
   assert.equal(s.players[s.cur].id, b);
   s = roll(s, 1, 3);
   s = move(s, b, { type: 'decline' }, ctxOf()).state;
-  s = move(s, c, { type: 'bid', amount: 30 }, ctxOf()).state;
   s = leave(s, b, ctxOf()).state;
   assert.equal(s.over, true);
   assert.deepEqual(s.winners, [c]);
@@ -484,11 +448,9 @@ test('minuteur : l’absent joue au plus prudent, et le minuteur repart', () => 
   assert.equal(s.phase, 'buy');
   assert.equal(s.deadline, 5000 + 30000);
   s = timeout(s, { now: 6000, random: Math.random }).state;
-  assert.equal(s.phase, 'auction');
-  assert.equal(s.deadline, 6000 + AUCTION_MS);
-  s = timeout(s, { now: 7000, random: Math.random }).state;
   assert.equal(s.props[4], undefined);
-  assert.equal(s.deadline, 7000 + 30000);
+  assert.equal(s.phase, 'roll');
+  assert.equal(s.deadline, 6000 + 30000);
 });
 
 test('minuteur : en dette, tout est vendu, sinon faillite', () => {
@@ -517,7 +479,7 @@ test('la vue ne dévoile pas le paquet', () => {
 function untilMyTurn(state, id) {
   let s = state;
   let guard = 0;
-  while (!s.over && !(s.players[s.cur].id === id && s.phase !== 'auction') && !(s.phase === 'auction' && !(id in s.auction.bids))) {
+  while (!s.over && s.players[s.cur].id !== id) {
     guard += 1;
     assert.ok(guard < 5000, 'les robots tournent en rond');
     s = timeout(s, ctxOf(guard)).state;
@@ -549,7 +511,6 @@ test('quand c’est au tour d’un robot, il a une échéance courte et il joue 
   s = move(s, 1, { type: 'roll' }, dice(1, 2)).state;
   while (s.players[s.cur].id === 1 && !s.over) {
     if (s.phase === 'buy') s = move(s, 1, { type: 'decline' }, ctxOf()).state;
-    else if (s.phase === 'auction') s = move(s, 1, { type: 'bid', amount: 0 }, ctxOf()).state;
     else if (s.phase === 'end') s = move(s, 1, { type: 'endTurn' }, ctxOf()).state;
     else if (s.phase === 'debt') s = move(s, 1, { type: 'bankrupt' }, ctxOf()).state;
     else if (s.phase === 'roll') s = move(s, 1, { type: 'roll' }, dice(1, 2)).state;
@@ -559,21 +520,6 @@ test('quand c’est au tour d’un robot, il a une échéance courte et il joue 
     assert.ok(s.players[s.cur].bot);
     assert.ok(s.deadline > 0);
   }
-});
-
-test('enchères : les robots ont déjà misé, leurs mises restent secrètes', () => {
-  let s = setup(people(1), { bots: 3, rounds: 20, timer: 0 }, ctxOf(9));
-  s = untilMyTurn(s, 1);
-  s.phase = 'buy';
-  s.players[s.cur].pos = 4;
-  s = move(s, 1, { type: 'decline' }, ctxOf()).state;
-  assert.equal(s.phase, 'auction');
-  assert.deepEqual(status(s).turn, [1]);
-  const v = view(s, 1);
-  assert.equal(v.auction.hasBid.length, 3);
-  assert.equal(JSON.stringify(v.auction).includes('"bids"'), false);
-  s = move(s, 1, { type: 'bid', amount: 400 }, ctxOf()).state;
-  assert.equal(s.props[4].owner, 1);
 });
 
 test('échange avec un robot : réponse immédiate, il accepte une bonne affaire et refuse une mauvaise', () => {
@@ -653,12 +599,7 @@ export function playOut(n, seed, options = {}) {
   while (!s.over) {
     guard += 1;
     if (guard > 200000) throw new Error('partie sans fin');
-    if (s.phase === 'auction') {
-      const id = s.auction.eligible.find((x) => !(x in s.auction.bids));
-      const p = s.players.find((x) => x.id === id);
-      const price = TILES[s.auction.pos].price;
-      s = move(s, id, { type: 'bid', amount: Math.min(p.cash, Math.floor(price * rnd() * 1.1)) }, ctx()).state;
-    } else {
+    {
       const id = s.players[s.cur].id;
       // De temps en temps, un échange entre deux joueurs au hasard.
       if (rnd() < 0.02) {

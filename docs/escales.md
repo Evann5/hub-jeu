@@ -9,11 +9,10 @@ Ce qu'on reproche le plus au genre, et ce qu'Escales fait à la place :
 | Le problème | Ce qu'Escales fait |
 |---|---|
 | Les parties durent des heures | Un nombre de tours fixé (20 par défaut) : à la fin, le plus gros patrimoine gagne |
-| On passe son temps à regarder les autres | Enchères secrètes où tout le monde mise en même temps, échanges à tout moment, temps limité par action, tour passé tout seul quand il n'y a rien à faire |
+| On passe son temps à regarder les autres | Échanges à tout moment, temps limité par action, tour passé tout seul quand il n'y a rien à faire |
 | Les premiers éliminés s'ennuient | Le décompte final arrive avant que tout le monde soit ruiné |
 | Un joueur prend de l'avance et c'est plié | Prime de 100 € au Départ pour qui a moins de la moitié du patrimoine du premier ; l'actualité change les loyers à chaque tour |
 | Personne n'obtient une série complète, et la partie stagne | On construit dès la majorité d'une région (3 villes sur 4) |
-| Enchères longues à plusieurs | 20 secondes, mises secrètes, une seule mise par personne |
 
 Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: The Game That Board Gamers Love to Hate](https://brandonthegamedev.com/?p=161), [What's Wrong With Monopoly?](https://danq.me/2013/04/03).
 
@@ -26,12 +25,11 @@ Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: Th
 ## Les règles
 
 - **Tour** : on lance deux dés. Un double fait rejouer ; le troisième à la suite envoie à la Douane.
-- **Ville libre** : on l'achète, ou elle part aux enchères secrètes (20 s). Le plus offrant gagne ; à égalité, le premier qui a misé.
+- **Ville libre** : on l'achète ou on passe. Si on passe, elle reste libre pour le suivant.
 - **Loyer** : 10 % du prix. Majorité de la région : × 2. Région complète : × 3.
 - **Construire** : il faut la majorité d'une région (3 villes sur 4, ou 2 à 2 ou 3 joueurs). Quatre niveaux : Quartier × 4, Quartier animé × 10, Tours × 22, Skyline × 32 ; 25 % de plus si la région est complète. Revente à moitié prix.
 - **Escales** : loyer de 25, 50, 100 ou 200 € selon le nombre possédé. Après s'y être arrêté, on peut s'envoler vers une autre escale pour 50 €.
 - **Festival** : on choisit une de ses villes, son loyer double jusqu'à son prochain tour. **Chantier** : un niveau à moitié prix.
-- **À la une** : à chaque tour, une région au hasard connaît la haute saison (loyers × 1,5), une grève (loyers ÷ 2) ou des subventions (constructions à moitié prix).
 - **Télex** : une carte au hasard parmi 14, bonne ou mauvaise.
 - **Douane** : pour sortir, un double, 50 € ou un passe-douane. Au troisième échec, on paie et on avance.
 - **Échanges** : à tout moment, villes et argent ; une ville avec des constructions ne s'échange pas.
