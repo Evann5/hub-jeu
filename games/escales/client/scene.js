@@ -10,7 +10,7 @@ import { FLAGS, PATTERNS, PROPS_OF } from './countries.js';
 // Les 10 couleurs des joueurs.
 export const PAWN_COLORS = ['#E5213C', '#FF8A00', '#F5D000', '#16A34A', '#0891B2', '#2563EB', '#7C3AED', '#DB2777', '#92602F', '#475569'];
 
-const SEA = '#A9DFEA';
+const WARM = '#FFF6E8';
 const INK = '#12151F';
 const TILE_W = 2; // largeur d'une case le long du côté
 const TILE_D = 3; // profondeur
@@ -21,7 +21,11 @@ const FOV = 22; // un angle serré : presque une vue de carte, sans déformation
 const BANNER_D = 1.8;
 const PAWN_SCALE = 1.95;
 
-const SPECIAL_COLOR = { start: '#7BE0A5', customs: '#9DB7F5', festival: '#FF9FCB', control: '#FFA98F', escale: '#EAF1F8', telex: '#FFF0A8', tax: '#FFD88A', chantier: '#D6DBE6' };
+const SPECIAL_COLOR = { start: '#BFE8CF', customs: '#CBD8F2', festival: '#F6CFE0', control: '#F5CFC2', escale: '#F6F4EE', telex: '#F8EFC8', tax: '#F6E3BB', chantier: '#E3E4E6' };
+// Les monuments qui doivent impressionner sont un peu plus grands que les autres.
+const HEROES = { eiffel: 1.22, tourTokyo: 1.18, colisee: 1.18, goldenGate: 1.15, pyramide: 1.12 };
+// La couleur d'un pays sur ses cases : la même teinte, adoucie, pour que les monuments et les joueurs ressortent.
+const softened = (hex, amount = 0.5) => new THREE.Color(hex).lerp(new THREE.Color(WARM), amount);
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
@@ -60,12 +64,12 @@ function plateGeometry(w, d, h, r) {
 }
 
 // Le monument est mis à l'échelle de sa case, aligné sur une ligne avant ; devant, le texte imprimé reste libre.
-function fitModel(model, w, front) {
+function fitModel(model, w, front, hero = 1) {
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
-  const room = TILE_D / 2 + front - 0.2;
-  const scale = Math.min(1, room / Math.max(size.z, 0.01), (w - 0.42) / Math.max(size.x, 0.01));
+  const room = TILE_D / 2 + front + 0.35; // le monument peut déborder vers l'extérieur du plateau
+  const scale = hero * Math.min(1.2, room / Math.max(size.z, 0.01), (w - 0.2) / Math.max(size.x, 0.01));
   model.scale.setScalar(scale);
   model.position.set(-((box.min.x + box.max.x) / 2) * scale, PLATE_H - box.min.y * scale, front - box.max.z * scale);
 }
@@ -90,7 +94,7 @@ function flatMesh(pos, uv, canvas, opts = {}) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, ...opts }));
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false, ...opts }));
   mesh.frustumCulled = false;
   return mesh;
 }
@@ -183,10 +187,10 @@ function buildBanners() {
     c.beginPath();
     c.roundRect(2, 2, W - 4, H - 4, 26);
     c.clip();
-    c.fillStyle = reg.color;
+    c.fillStyle = `#${softened(reg.color, 0.28).getHexString()}`;
     c.fillRect(0, 0, W, H);
-    c.fillStyle = 'rgba(255,255,255,0.3)';
-    c.strokeStyle = 'rgba(255,255,255,0.32)';
+    c.fillStyle = 'rgba(255,255,255,0.22)';
+    c.strokeStyle = 'rgba(255,255,255,0.26)';
     c.lineWidth = 3;
     PATTERNS[reg.id](c, W, H);
     c.font = '800 84px "ES Figtree", system-ui, sans-serif';
@@ -226,7 +230,8 @@ function buildFlags() {
   const c = canvas.getContext('2d');
   const pos = [];
   const uv = [];
-  const SEG = 6;
+  const SEG = 8;
+  const along = []; // 0 au mât, 1 au bout : seul le bout du drapeau flotte
   const FW = 1.5;
   const FH = 1;
   REGIONS.forEach((reg, r) => {
@@ -239,16 +244,79 @@ function buildFlags() {
     for (let i = 0; i < SEG; i += 1) {
       const a = i / SEG;
       const b = (i + 1) / SEG;
-      const wave = (t) => Math.sin(t * 5) * 0.09 * t;
-      const P = (t, y) => [px + t * FW, 3.02 + y * FH, pz + wave(t)];
+      const P = (t, y) => [px + t * FW, 3.02 + y * FH, pz];
       const uvAt = (t, y) => [(col + t) / 4, 1 - (row + 1 - y) / 2];
       for (const [t, y] of [[a, 0], [b, 0], [b, 1], [a, 0], [b, 1], [a, 1]]) {
         pos.push(...P(t, y));
         uv.push(...uvAt(t, y));
+        along.push(t);
       }
     }
   });
-  return flatMesh(pos, uv, canvas, { side: THREE.DoubleSide, transparent: false, depthWrite: true });
+  const mesh = flatMesh(pos, uv, canvas, { side: THREE.DoubleSide, transparent: false, depthWrite: true });
+  mesh.geometry.setAttribute('along', new THREE.Float32BufferAttribute(along, 1));
+  const time = { value: 0 };
+  mesh.material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = time;
+    shader.vertexShader = `attribute float along;\nuniform float uTime;\n${shader.vertexShader}`.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      transformed.z += sin(along * 6.0 - uTime * 3.2 + position.x) * 0.13 * along;
+      transformed.y += sin(along * 4.0 - uTime * 2.4) * 0.05 * along;`,
+    );
+  };
+  mesh.userData.time = time;
+  return mesh;
+}
+
+// La rose des vents, gravée dans le lagon, au centre du plateau.
+function buildCompass() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 720;
+  canvas.height = 720;
+  const c = canvas.getContext('2d');
+  c.translate(360, 360);
+  c.strokeStyle = 'rgba(255,255,255,0.28)';
+  c.fillStyle = 'rgba(255,255,255,0.22)';
+  for (const [r, w] of [[340, 5], [316, 2], [150, 2]]) {
+    c.lineWidth = w;
+    c.beginPath();
+    c.arc(0, 0, r, 0, Math.PI * 2);
+    c.stroke();
+  }
+  for (let i = 0; i < 72; i += 1) {
+    c.save();
+    c.rotate((i / 72) * Math.PI * 2);
+    c.fillRect(-1.5, -340, 3, i % 9 ? 12 : 24);
+    c.restore();
+  }
+  for (let i = 0; i < 8; i += 1) {
+    c.save();
+    c.rotate((i / 8) * Math.PI * 2);
+    const big = i % 2 === 0;
+    const L = big ? 300 : 190;
+    c.beginPath();
+    c.moveTo(0, -L);
+    c.lineTo(big ? 40 : 24, 0);
+    c.lineTo(0, 0);
+    c.closePath();
+    c.fillStyle = 'rgba(255,255,255,0.32)';
+    c.fill();
+    c.beginPath();
+    c.moveTo(0, -L);
+    c.lineTo(big ? -40 : -24, 0);
+    c.lineTo(0, 0);
+    c.closePath();
+    c.fillStyle = 'rgba(255,255,255,0.14)';
+    c.fill();
+    c.restore();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(17, 17), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.008;
+  return m;
 }
 
 // Un dé : chaque face est une petite image avec ses points.
@@ -278,9 +346,12 @@ function makeDie() {
 const DIE_TOP = { 1: [0, 0, 0], 2: [Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [-Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
 const DIE_Y = 0.75;
 
-export function createWorld(host, { onTile }) {
+export function createWorld(host, { onTile, onStep, meId }) {
   const startDpr = Math.min(window.devicePixelRatio || 1, 2);
-  const renderer = new THREE.WebGLRenderer({ antialias: startDpr < 2 });
+  const renderer = new THREE.WebGLRenderer({ antialias: startDpr < 2, alpha: true });
+  renderer.setClearColor(0x000000, 0);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.02;
   let dpr = startDpr;
   renderer.setPixelRatio(dpr);
   renderer.shadowMap.enabled = true;
@@ -292,24 +363,26 @@ export function createWorld(host, { onTile }) {
   canvas.setAttribute('role', 'img');
   canvas.setAttribute('aria-label', 'Le plateau en 3D : 48 cases, 8 pays de 4 villes, chacun avec son drapeau et son monument. La liste des villes est aussi dans le bouton Villes.');
 
+  let firstUpdate = true;
+  const reduced = reducedMotion();
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(SEA);
   const camera = new THREE.PerspectiveCamera(FOV, 1, 5, 800);
 
-  scene.add(new THREE.HemisphereLight('#FFFFFF', '#C8D6E0', 2.15));
-  const sun = new THREE.DirectionalLight('#FFF6E6', 1.3);
-  sun.position.set(-16, 34, 20);
+  // Une fin de journée : un soleil bas et chaud, des ombres longues et bleutées.
+  scene.add(new THREE.HemisphereLight('#CFE6FF', '#7A8FA8', 1.75));
+  const sun = new THREE.DirectionalLight('#FFD9A6', 3.1);
+  sun.position.set(-24, 22, 13);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  const b = HALF + 4;
-  Object.assign(sun.shadow.camera, { left: -b, right: b, top: b, bottom: -b, near: 1, far: 90 });
+  const b = HALF + 7;
+  Object.assign(sun.shadow.camera, { left: -b, right: b, top: b, bottom: -b, near: 1, far: 100 });
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.03;
   sun.shadow.radius = 3;
   scene.add(sun);
 
   // La mer : la couleur du fond, qui ne reçoit que les ombres.
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.ShadowMaterial({ color: '#124559', opacity: 0.22 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.ShadowMaterial({ color: '#06324A', opacity: 0.42 }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
@@ -322,13 +395,13 @@ export function createWorld(host, { onTile }) {
     const f = tileFrame(t.pos);
     const w = f.corner ? TILE_D : TILE_W;
     const m = placed(f.x, f.z, f.rot);
-    const base = paint(f.corner ? baseGeo.corner : baseGeo.side, '#FFFFFF');
-    const color = t.type === 'city' ? REGIONS[t.region].color : SPECIAL_COLOR[t.type];
+    const base = paint(f.corner ? baseGeo.corner : baseGeo.side, WARM);
+    const color = t.type === 'city' ? `#${softened(REGIONS[t.region].color).getHexString()}` : SPECIAL_COLOR[t.type];
     const plate = paint(plateGeometry(w - 0.34, TILE_D - 0.34, PLATE_H, 0.1), color);
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
-    fitModel(model, w, front);
-    items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m });
+    fitModel(model, w, front, HEROES[t.model] ?? 1);
+    items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m, ao: PLATE_H });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
     hit.position.set(f.x, 1.2, f.z);
     hit.rotation.y = f.rot;
@@ -347,7 +420,7 @@ export function createWorld(host, { onTile }) {
     const spots = [-3.45, -2.5, 3.5];
     PROPS_OF[reg.id].forEach((name, i) => {
       const p = center.clone().addScaledVector(U, spots[i]);
-      items.push({ object: buildProp(name), matrix: placed(p.x, p.z, Math.atan2(U.x, U.z) + 1.1, 1.05) });
+      items.push({ object: buildProp(name), matrix: placed(p.x, p.z, Math.atan2(U.x, U.z) + 1.1, 1.05), ao: 0 });
     });
     const pole = new THREE.Group();
     const steel = new THREE.MeshBasicMaterial({ color: '#E7EBF0' });
@@ -364,7 +437,27 @@ export function createWorld(host, { onTile }) {
   world.castShadow = true;
   world.receiveShadow = true;
   world.frustumCulled = false;
-  scene.add(world, buildBanners(), buildFlags(), buildPrint());
+  const flags = buildFlags();
+  scene.add(world, buildCompass(), buildBanners(), flags, buildPrint());
+
+  // Deux petits voiliers traversent le lagon.
+  const boats = [0, 1].map((i) => {
+    const g = new THREE.Group();
+    const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.2, 0.2, 8), new THREE.MeshBasicMaterial({ color: i ? '#E5213C' : WARM }));
+    hull.scale.set(0.6, 1, 1.5);
+    hull.position.y = 0.1;
+    const sail = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.2, 3), new THREE.MeshBasicMaterial({ color: i ? WARM : '#FFC93C' }));
+    sail.scale.z = 0.12;
+    sail.rotation.y = Math.PI / 2;
+    sail.position.y = 0.8;
+    g.add(hull, sail);
+    const blob = new THREE.Mesh(new THREE.CircleGeometry(0.62, 12), new THREE.MeshBasicMaterial({ color: '#06324A', transparent: true, opacity: 0.25, depthWrite: false }));
+    blob.rotation.x = -Math.PI / 2;
+    blob.position.set(0.35, 0.012, -0.12);
+    g.add(blob);
+    scene.add(g);
+    return g;
+  });
 
   // ——— À qui sont les villes ———
   const tints = new Map();
@@ -385,6 +478,7 @@ export function createWorld(host, { onTile }) {
         part.rim.position.set(part.f.x, 0, part.f.z);
         part.rim.rotation.y = part.f.rot;
         scene.add(part.rim);
+        if (!firstUpdate) celebrate(part.f.x, part.f.z, color, part.rim);
       } else if (color) {
         part.rim.material = tint(color);
       } else if (part.rim) {
@@ -403,6 +497,29 @@ export function createWorld(host, { onTile }) {
       part.shade = null;
     }
   };
+  // Une petite fête : le cadre rebondit, des confettis partent de la case.
+  const pops = [];
+  const bursts = [];
+  function celebrate(x, z, color, mesh) {
+    if (mesh) pops.push({ mesh, t: 0 });
+    if (reduced) return;
+    const N = 46;
+    const pos = new Float32Array(N * 3);
+    const vel = [];
+    for (let i = 0; i < N; i += 1) {
+      pos.set([x, 0.6, z], i * 3);
+      const a = Math.random() * Math.PI * 2;
+      const s = 2 + Math.random() * 3.5;
+      vel.push([Math.cos(a) * s, 6 + Math.random() * 6, Math.sin(a) * s]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color, size: 0.32, toneMapped: false }));
+    pts.frustumCulled = false;
+    scene.add(pts);
+    bursts.push({ pts, vel, t: 0 });
+  }
+
   const LEVEL_SPOTS = [[-0.68, -1.15], [0.68, -1.15], [-0.68, -0.72], [0.68, -0.72]];
   const setLevels = (part, level, color) => {
     if (part.level === level) return false;
@@ -416,6 +533,7 @@ export function createWorld(host, { onTile }) {
       m.castShadow = true;
       part.levels.add(m);
     }
+    if (!firstUpdate && level > 0) pops.push({ mesh: part.rim, t: 0 });
     return true;
   };
 
@@ -429,7 +547,7 @@ export function createWorld(host, { onTile }) {
   const personMat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const blobGeo = new THREE.CircleGeometry(0.4, 16);
   blobGeo.rotateX(-Math.PI / 2);
-  const blobMat = new THREE.MeshBasicMaterial({ color: '#124559', transparent: true, opacity: 0.22, depthWrite: false });
+  const blobMat = new THREE.MeshBasicMaterial({ color: '#06324A', transparent: true, opacity: 0.34, depthWrite: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.76, 32), new THREE.MeshBasicMaterial({ color: INK, depthWrite: false, transparent: true }));
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.03;
@@ -455,28 +573,34 @@ export function createWorld(host, { onTile }) {
 
   // ——— Les dés ———
   const dice = [makeDie(), makeDie()];
-  dice[0].position.set(-1.15, DIE_Y, -6.3);
-  dice[1].position.set(1.15, DIE_Y, -6);
+  // Au-dessus de la table centrale sur ordinateur ; au milieu du lagon sur téléphone, où la carte d'action est en bas.
+  const placeDice = () => {
+    const narrow = size.w < size.h;
+    dice[0].position.set(-1.2, DIE_Y, narrow ? -2.2 : -7);
+    dice[1].position.set(1.2, DIE_Y, narrow ? -1.9 : -6.7);
+  };
   dice.forEach((d) => { d.visible = false; scene.add(d); });
   let diceAnim = null;
   let lastRollN = -1;
 
   // ——— La caméra : toute la carte, tout le temps. On peut tourner ou zoomer, elle revient d'elle-même ———
-  const HOME = { yaw: 0, pitch: 1.12 };
-  const cam = { yaw: HOME.yaw, pitch: HOME.pitch, dist: 120, target: new THREE.Vector3(), wantYaw: HOME.yaw, wantPitch: HOME.pitch, wantDist: 120 };
+  const HOME = { yaw: 0, pitch: 1.0 };
+  const cam = { yaw: HOME.yaw, pitch: HOME.pitch, dist: 120, target: new THREE.Vector3(), wantTarget: new THREE.Vector3(), wantYaw: HOME.yaw, wantPitch: HOME.pitch, wantDist: 120 };
   let snap = true;
   let userUntil = 0;
   let size = { w: 0, h: 0 };
   let fitDist = 120;
 
   const placeCamera = (yaw, pitch, dist) => {
-    camera.position.set(Math.sin(yaw) * Math.cos(pitch) * dist, Math.sin(pitch) * dist, Math.cos(yaw) * Math.cos(pitch) * dist);
+    camera.position.set(cam.target.x + Math.sin(yaw) * Math.cos(pitch) * dist, cam.target.y + Math.sin(pitch) * dist, cam.target.z + Math.cos(yaw) * Math.cos(pitch) * dist);
     camera.lookAt(cam.target);
     camera.updateMatrixWorld(true);
   };
 
   // La plus petite distance qui montre toute la carte, quel que soit l'écran.
   function computeFit() {
+    const keep = cam.target.clone();
+    cam.target.set(0, 0, 0);
     const pts = [];
     for (const x of [-HALF, HALF]) for (const z of [-HALF, HALF]) pts.push(new THREE.Vector3(x, 0, z));
     for (const x of [-HALF, HALF]) pts.push(new THREE.Vector3(x, 4.2, -HALF));
@@ -507,6 +631,7 @@ export function createWorld(host, { onTile }) {
       camera.setViewOffset(size.w, size.h, 0, py - wanted, size.w, size.h);
       camera.updateProjectionMatrix();
     }
+    cam.target.copy(keep);
   }
 
   function recenter() {
@@ -515,14 +640,30 @@ export function createWorld(host, { onTile }) {
     cam.yaw = ((cam.yaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
     cam.wantPitch = HOME.pitch;
     cam.wantDist = fitDist;
+    cam.wantTarget.set(0, 0, 0);
+    focused = null;
     userUntil = 0;
+  }
+
+  // Quand c'est à toi de décider pour une ville, la caméra s'en approche ; le reste du temps, toute la carte.
+  let focused = null;
+  function setFocus(pos) {
+    if (pos === focused) return;
+    focused = pos;
+    if (pos === null) {
+      cam.wantTarget.set(0, 0, 0);
+      cam.wantDist = fitDist;
+      return;
+    }
+    const f = tileFrame(pos);
+    cam.wantTarget.set(f.x * 0.92, 0, f.z * 0.92 + (size.w < size.h ? 0.5 : 4.6));
+    cam.wantDist = fitDist * 0.56;
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
   let raf = 0;
   let last = 0;
   const quality = { frames: 0, total: 0, step: 0 };
-  const reduced = reducedMotion();
 
   function lowerQuality() {
     quality.step += 1;
@@ -542,6 +683,8 @@ export function createWorld(host, { onTile }) {
   }
 
   let view = null;
+  let lifeTimer = 0;
+  const lifeOn = () => !reduced && quality.step < 2;
 
   function tick(now) {
     raf = 0;
@@ -576,6 +719,7 @@ export function createWorld(host, { onTile }) {
         if (pawn.t >= 1) {
           pawn.shown = pawn.toPos;
           pawn.to = null;
+          onStep?.();
           if (!pawn.queue.length) pawn.turning = true;
         }
       } else if (pawn.turning) {
@@ -611,8 +755,52 @@ export function createWorld(host, { onTile }) {
       if (k >= 1) diceAnim = null;
     }
 
-    const k = snap || reduced ? 1 : 1 - Math.exp(-dt * 4);
+    for (let i = pops.length - 1; i >= 0; i -= 1) {
+      const p = pops[i];
+      p.t = Math.min(1, p.t + dt / 0.42);
+      const s = 1 + Math.sin(p.t * Math.PI) * 0.16 * (1 - p.t * 0.4);
+      p.mesh?.scale.set(s, 1, s);
+      busy = true;
+      if (p.t >= 1) {
+        p.mesh?.scale.set(1, 1, 1);
+        pops.splice(i, 1);
+      }
+    }
+    for (let i = bursts.length - 1; i >= 0; i -= 1) {
+      const b2 = bursts[i];
+      b2.t += dt;
+      const attr = b2.pts.geometry.attributes.position;
+      b2.vel.forEach((vl, n) => {
+        vl[1] -= 16 * dt;
+        attr.setXYZ(n, attr.getX(n) + vl[0] * dt, Math.max(0.02, attr.getY(n) + vl[1] * dt), attr.getZ(n) + vl[2] * dt);
+      });
+      attr.needsUpdate = true;
+      busy = true;
+      if (b2.t > 1.1) {
+        scene.remove(b2.pts);
+        b2.pts.geometry.dispose();
+        b2.pts.material.dispose();
+        bursts.splice(i, 1);
+      }
+    }
+
+    // Le monde vit doucement : les drapeaux flottent, les bateaux avancent.
+    if (lifeOn()) {
+      const time = now / 1000;
+      flags.userData.time.value = time;
+      boats.forEach((g, i) => {
+        const a = time * 0.05 + i * 2.6;
+        const r = i ? 6.6 : 5;
+        g.position.set(Math.cos(a) * r * 1.05, 0.02 + Math.sin(time * 1.1 + i) * 0.015, Math.sin(a) * r + 1.2);
+        g.rotation.y = -a;
+      });
+    }
+
+    const k = snap || reduced ? 1 : 1 - Math.exp(-dt * 3.2);
     snap = false;
+    cam.target.lerp(cam.wantTarget, k);
+    if (cam.target.distanceTo(cam.wantTarget) > 0.006) busy = true;
+    else cam.target.copy(cam.wantTarget);
     cam.yaw += (cam.wantYaw - cam.yaw) * k;
     cam.pitch += (cam.wantPitch - cam.pitch) * k;
     cam.dist += (cam.wantDist - cam.dist) * k;
@@ -636,6 +824,12 @@ export function createWorld(host, { onTile }) {
       }
     }
     if (busy || pointers.size) wake();
+    else if (lifeOn() && !lifeTimer) { // au repos, une image de temps en temps suffit : la machine reste tranquille
+      lifeTimer = setTimeout(() => {
+        lifeTimer = 0;
+        wake();
+      }, 45);
+    }
   }
   function wake() {
     if (raf) return;
@@ -722,13 +916,14 @@ export function createWorld(host, { onTile }) {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     computeFit();
+    placeDice();
     recenter();
     cam.dist = cam.wantDist;
     wake();
   });
 
   // ——— Mettre le monde à jour avec l'état de la partie ———
-  let firstUpdate = true;
+  let wasOver = false;
   function update(v) {
     view = v;
     let shadows = false;
@@ -796,6 +991,17 @@ export function createWorld(host, { onTile }) {
     }
 
     if (userUntil && performance.now() > userUntil) recenter();
+    if (!userUntil) {
+      const cur = v.players[v.cur];
+      let focus = null;
+      if (!v.over && cur?.id === meId && v.phase === 'buy') focus = cur.pos;
+      else if (v.phase === 'auction' && v.auction.mine === null && v.auction.eligible.includes(meId)) focus = v.auction.pos;
+      setFocus(focus);
+    }
+    if (v.over && !wasOver) {
+      wasOver = true;
+      if (!firstUpdate) for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [0, -7]]) celebrate(x, z, PAWN_COLORS[Math.floor(Math.random() * 10)]);
+    }
     if (shadows || firstUpdate) renderer.shadowMap.needsUpdate = true;
     firstUpdate = false;
     wake();
@@ -811,6 +1017,7 @@ export function createWorld(host, { onTile }) {
     },
     destroy() {
       cancelAnimationFrame(raf);
+      clearTimeout(lifeTimer);
       ro.disconnect();
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointermove', onMove);

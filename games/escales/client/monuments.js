@@ -734,18 +734,20 @@ export function bake(items, { fullColor = false } = {}) {
   const v = new THREE.Vector3();
   const m = new THREE.Matrix4();
   const i2 = new THREE.Matrix4();
-  const push = (geometry, matrix, tone, material) => {
+  const push = (geometry, matrix, tone, material, ao) => {
     const g = geometry.index ? geometry.toNonIndexed() : geometry;
     const p = g.attributes.position;
     const c = material.color;
     for (let i = 0; i < p.count; i += 1) {
       v.fromBufferAttribute(p, i).applyMatrix4(matrix);
       pos.push(v.x, v.y, v.z);
-      if (fullColor) col.push(c.r, c.g, c.b);
+      // ao : la hauteur du sol. Plus une pièce en est proche, plus elle s'assombrit : ça pose les objets dans le décor.
+      const k = ao === undefined ? 1 : 0.56 + 0.44 * Math.min(1, Math.max(0, (v.y - ao) / 1.1)) ** 0.7;
+      if (fullColor) col.push(c.r * k, c.g * k, c.b * k);
       else col.push(tone, tone, tone);
     }
   };
-  for (const { object, matrix, tone } of items) {
+  for (const { object, matrix, tone, ao } of items) {
     object.updateMatrixWorld(true);
     object.traverse((o) => {
       if (o.isInstancedMesh) {
@@ -753,12 +755,12 @@ export function bake(items, { fullColor = false } = {}) {
           o.getMatrixAt(i, i2);
           m.multiplyMatrices(o.matrixWorld, i2);
           if (matrix) m.premultiply(matrix);
-          push(o.geometry, m, toneOf(o.material), o.material);
+          push(o.geometry, m, toneOf(o.material), o.material, ao);
         }
       } else if (o.isMesh) {
         m.copy(o.matrixWorld);
         if (matrix) m.premultiply(matrix);
-        push(o.geometry, m, tone ?? toneOf(o.material), o.material);
+        push(o.geometry, m, tone ?? toneOf(o.material), o.material, ao);
       }
     });
   }

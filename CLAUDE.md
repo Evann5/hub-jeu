@@ -9,7 +9,7 @@ Hub privé de jeux de société en ligne pour la classe de Minh (études sup, 20
 - Pas encore en ligne : Minh parle maintenant d'un VPS plutôt que d'O2Switch, à confirmer avant la mise en ligne (`docs/questions-ouvertes.md`, guide O2Switch `docs/mise-en-ligne.md`).
 
 ## Règles de chaque session
-- **Pas d'agents** pour le hub : l'assistant principal le code lui-même, en utilisant les skills et les fiches des agents (design, développement, pièges connus) (demande de Minh, 23/10/2026). Exception du 29/10/2026 : des agents peuvent écrire de nouveaux jeux, chacun ne touchant qu'à son dossier de `games/`.
+- **Agents autorisés** : depuis le 04/11/2026, l'assistant lance tous les agents dont il a besoin sur ce projet, sans redemander (Minh : « lance tous les agents dont tu as besoin à partir de maintenant »). Publier, committer et supprimer restent à l'assistant principal, après le oui de Minh.
 - Trois personnes : Minh (le hub), un élève qui écrit les jeux, un élève qui gère et paie O2Switch. Minh ne déploie pas lui-même.
 - Une seule appli Node.js sur O2Switch (cPanel, Passenger), **une seule instance** : Express + Socket.IO, front en JS sans build, SQLite via `node:sqlite` (Node 22.13 ou plus). Aucune dépendance native.
 - L'appli doit marcher à n'importe quelle adresse, sous-dossier compris : URL relatives côté client, `BASE_PATH` côté serveur.

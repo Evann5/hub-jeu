@@ -2,6 +2,8 @@
 // qui dit quoi faire, et les fenêtres (une ville, toutes les villes, proposer un échange). Les règles restent côté serveur (rules.js).
 import { REGIONS, TILES, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS, FLY_COST } from './client/board.js';
 import { createWorld, PAWN_COLORS } from './client/scene.js';
+import { FLAGS } from './client/countries.js';
+import { createSound } from './client/sound.js';
 
 const money = (n) => `${Number(n).toLocaleString('fr-FR')} €`;
 
@@ -26,6 +28,8 @@ export function mount(root, api) {
   let gone = false;
 
   const meId = api.me.id;
+  const sound = createSound();
+  const before = { cash: new Map(), rollN: null, cur: null, owners: new Map(), levels: 0, over: false };
   const send = (action) => api.sendMove(action).catch(() => {});
   const nameOf = (id) => (id === meId ? 'Toi' : v.players.find((p) => p.id === id)?.pseudo ?? '?');
   const me = () => v.players.find((p) => p.id === meId);
@@ -36,24 +40,26 @@ export function mount(root, api) {
   const players = h('div.es-players', { role: 'list', 'aria-label': 'Joueurs' });
   const news = h('p.es-news');
   const round = h('p.es-round');
+  const passTop = h('div.es-pass-top', h('span.es-brand', 'Escales'), round);
   const prompt = h('div.es-prompt');
   const trades = h('div.es-trades');
   const tools = h('div.es-tools',
     h('button.es-link', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, 'Villes'),
     h('button.es-link', { type: 'button', onclick: () => openTrade() }, 'Échanger'),
-    h('button.es-link', { type: 'button', onclick: () => world?.recenter() }, 'Recentrer'));
+    h('button.es-link', { type: 'button', onclick: () => world?.recenter() }, 'Recentrer'),
+    h('button.es-link', { type: 'button', onclick: (e) => { e.currentTarget.textContent = sound.toggle() ? 'Son coupé' : 'Son'; } }, sound.isMuted() ? 'Son coupé' : 'Son'));
   const logBox = h('p.es-log', { 'aria-live': 'polite' });
   const timer = h('div.es-timer', h('i'));
-  const dock = h('section.es-dock', timer, round, news, prompt, trades, logBox);
+  const dock = h('section.es-dock', passTop, timer, news, prompt, trades, logBox);
   const layer = h('div.es-layer');
   const loading = h('p.es-loading', 'Le plateau arrive…');
-  root.append(h('div.es', stage, loading, players, tools, dock, layer));
+  root.append(h('div.es', stage, loading, tools, h('div.es-table', players, dock), layer));
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
   Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"')]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
-      world = createWorld(stage, { onTile: (pos) => openOverlay({ kind: 'city', pos }) });
+      world = createWorld(stage, { meId, onStep: sound.step, onTile: (pos) => openOverlay({ kind: 'city', pos }) });
       if (v) world.update(v);
       loading.remove();
     } catch (err) {
@@ -63,6 +69,36 @@ export function mount(root, api) {
     }
   });
 
+  // L'argent qui bouge se voit : un petit montant s'envole à côté du joueur.
+  function deltaOf(p) {
+    const old = before.cash.get(p.id);
+    const d = old === undefined ? 0 : p.cash - old;
+    if (!d) return null;
+    return h(`span.es-delta${d > 0 ? '.is-up' : '.is-down'}`, { 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d.toLocaleString('fr-FR')} €`);
+  }
+
+  // Chaque événement a son son.
+  function playSounds() {
+    if (before.rollN !== null && v.rollN !== before.rollN) sound.dice();
+    const myOld = before.cash.get(meId);
+    const mine = me();
+    if (mine && myOld !== undefined && mine.cash !== myOld) (mine.cash > myOld ? sound.gain : sound.pay)();
+    let levels = 0;
+    for (const [pos, prop] of Object.entries(v.props)) {
+      levels += prop.level;
+      if (before.owners.size && before.owners.get(pos) !== prop.owner) sound.buy();
+    }
+    if (before.owners.size && levels > before.levels) sound.build();
+    before.levels = levels;
+    if (before.cur !== null && before.cur !== v.cur && v.players[v.cur].id === meId && !v.over) sound.turn();
+    if (v.over && !before.over) sound.win();
+    before.over = v.over;
+    before.rollN = v.rollN;
+    before.cur = v.cur;
+    before.owners = new Map(Object.entries(v.props).map(([pos, prop]) => [pos, prop.owner]));
+    if (!before.owners.size) before.owners.set('-', 0);
+  }
+
   function renderPlayers() {
     players.replaceChildren(...v.players.map((p) => {
       const dot = h('i.es-dot');
@@ -71,16 +107,24 @@ export function mount(root, api) {
       return h(`div.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { role: 'listitem' },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, p.bot ? h('small', ' robot') : null),
-        h('span.es-cash', p.out ? 'Sorti' : money(p.cash)));
+        h('span.es-cash', p.out ? 'Sorti' : money(p.cash), deltaOf(p)));
     }));
   }
 
   // ——— La carte du bas ———
+  const flagOf = (region) => {
+    const c = h('canvas.es-flag', { width: 90, height: 60, 'aria-hidden': 'true' });
+    FLAGS[REGIONS[region].id](c.getContext('2d'), 0, 0, 90, 60);
+    return c;
+  };
+  // La ville comme sur une carte d'embarquement : son code en grand, son drapeau, son pays.
   const cityCard = (pos) => {
     const t = TILES[pos];
+    const code = (t.short ?? t.name).normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
     const el = h('button.es-mini', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos }) },
-      h('b', t.name),
-      h('span', t.type === 'city' ? `${REGIONS[t.region].name}. ${t.fact}` : 'Une escale : de là, un vol pour une autre escale.'));
+      h('span.es-code', code),
+      h('span.es-where', t.type === 'city' ? flagOf(t.region) : null, h('b', t.name), h('small', t.type === 'city' ? REGIONS[t.region].name : 'Escale')),
+      t.fact ? h('span.es-factline', t.fact) : null);
     if (t.type === 'city') el.style.setProperty('--r', REGIONS[t.region].color);
     return el;
   };
@@ -154,6 +198,7 @@ export function mount(root, api) {
 
   function renderDock() {
     round.textContent = `${v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)} sur ${v.maxRounds}` : `Tour ${v.round}`}${v.dice ? `, dés ${v.dice[0]} et ${v.dice[1]}` : ''}`;
+    dock.classList.toggle('is-mine', myTurn() || (v.phase === 'auction' && v.auction.mine === null && v.auction.eligible.includes(meId)));
     news.textContent = v.event?.text ?? '';
     news.hidden = !v.event || v.over;
 
@@ -212,7 +257,7 @@ export function mount(root, api) {
     const prop = v.props[pos];
     const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
     const a = v.actions;
-    const head = h('header.es-poster', h('h2', t.name), h('p', t.type === 'city' ? REGIONS[t.region].name : 'Escale'));
+    const head = h('header.es-poster', t.type === 'city' ? flagOf(t.region) : null, h('div', h('h2', t.name), h('p', t.type === 'city' ? REGIONS[t.region].name : 'Escale')));
     if (t.type === 'city') head.style.setProperty('--r', REGIONS[t.region].color);
     const lines = t.type === 'city'
       ? [['Ville seule', t.rent], ['Majorité de la région', t.rent * 2], ['Région complète', t.rent * 3],
@@ -328,7 +373,9 @@ export function mount(root, api) {
     v = view;
     info = st;
     world?.update(v);
+    playSounds();
     renderPlayers();
+    before.cash = new Map(v.players.map((p) => [p.id, p.cash]));
     renderDock();
     if (overlay && overlay.kind !== 'trade') renderOverlay();
   });
@@ -337,6 +384,7 @@ export function mount(root, api) {
     gone = true;
     clearInterval(tick);
     document.removeEventListener('keydown', onKey);
+    sound.destroy();
     world?.destroy();
   };
 }
