@@ -217,7 +217,7 @@ export function mount(root, api) {
     }));
     if (view.stopBy) {
       const who = view.stopBy === api.me.id ? 'Tu as' : `${name(view.stopBy)} a`;
-      ui.callout.textContent = view.stopBy === api.me.id ? 'Tu as crié Stop !' : `${name(view.stopBy)} crie Stop !`;
+      ui.callout.textContent = view.stopBy === api.me.id ? 'Tu as crié Stop !' : `${name(view.stopBy)} : Stop !`;
       ui.callout.classList.add('is-on');
       ui.note.hidden = true;
       ui.stop.disabled = true;
@@ -337,7 +337,6 @@ export function mount(root, api) {
       .sort((a, b) => b.total - a.total);
     const win = new Set(info.winners);
     pb.replaceChildren(
-      h('header.pb-top', h('div.pb-title', h('p.pb-round', 'Classement final'))),
       h('ol.pb-report', order.map((p, i) => h(`li.pb-report-row${win.has(p.id) ? '.is-winner' : ''}`,
         h('span.pb-report-rank', `${i + 1}`),
         api.token(api.user(p.id), { size: 's' }),
@@ -348,7 +347,7 @@ export function mount(root, api) {
       h('ul.pb-history', view.history.map((r) => h('li',
         h('span.pb-history-letter', r.letter),
         h('span.pb-history-pts', order.filter((p) => r.points[p.id] !== undefined)
-          .map((p) => `${api.user(p.id).pseudo} +${r.points[p.id]}`).join(' · '))))));
+          .map((p) => h('span', api.user(p.id).pseudo, ' ', h('b', `+${r.points[p.id]}`))))))));
     pb.scrollTop = 0;
     if (win.has(api.me.id)) confetti(pb);
     live.textContent = 'Partie terminée.';

@@ -54,9 +54,9 @@
   backdrop-filter: blur(10px);
   border-bottom: 3px solid rgb(255 255 255 / 0.3);
 }
-.g-petit-bac .pb-top-row { display: flex; align-items: center; justify-content: space-between; gap: 6px 14px; }
-.g-petit-bac .pb-title { display: flex; align-items: center; gap: 12px; }
-.g-petit-bac .pb-callout { display: none; margin: 0; padding: 8px 16px; border-radius: 999px; background: var(--lemon); color: var(--ink); font: 800 14px/1.1 var(--display); box-shadow: 0 3px 0 var(--shadow); }
+.g-petit-bac .pb-top-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; }
+.g-petit-bac .pb-title { white-space: nowrap; display: flex; align-items: center; gap: 12px; }
+.g-petit-bac .pb-callout { display: none; order: 3; flex: 1 1 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; padding: 8px 16px; border-radius: 999px; background: var(--lemon); color: var(--ink); font: 800 14px/1.1 var(--display); box-shadow: 0 3px 0 var(--shadow); }
 .g-petit-bac .pb-callout.is-on { display: block; }
 .g-petit-bac .pb-round {
   margin: 0;
@@ -299,16 +299,20 @@
 
 /* ——— Classement final ——— */
 .g-petit-bac .pb-report { display: grid; gap: 14px; margin: 20px auto 0; padding: 0; list-style: none; }
-.g-petit-bac .pb-report-row { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 8px 16px 8px 12px; border-radius: 24px; background: #fff; box-shadow: 0 6px 0 var(--shadow); }
+/* la médaille « Champion ! » se pose sur le coin, pour laisser la place au pseudo */
+.g-petit-bac .pb-report-row {
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 8px 16px 8px 12px; border-radius: 24px; background: #fff; box-shadow: 0 6px 0 var(--shadow); }
 .g-petit-bac .pb-report-rank { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #fff; font: 900 20px/1 var(--display); }
 .g-petit-bac .pb-report-name { flex: 1; min-width: 0; font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
 .g-petit-bac .pb-report-total { font: 900 20px/1 var(--display); font-variant-numeric: tabular-nums; }
 .g-petit-bac .pb-report-row.is-winner { border: 4px solid #fff; background: linear-gradient(100deg, #FFF06A, #FFA51F); }
 .g-petit-bac .pb-report-row.is-winner .pb-report-rank { background: var(--fuchsia); }
-.g-petit-bac .pb-badge { padding: 5px 12px; border-radius: 999px; background: var(--fuchsia); color: #fff; font: 800 12px/1.2 var(--display); text-transform: uppercase; transform: rotate(-4deg); }
+.g-petit-bac .pb-badge { position: absolute; top: -12px; right: 14px; padding: 4px 12px; border-radius: 999px; background: var(--fuchsia); box-shadow: 0 3px 0 var(--shadow); color: #fff; font: 800 11px/1.2 var(--display); text-transform: uppercase; transform: rotate(-4deg); }
 .g-petit-bac .pb-history-title { margin: 30px auto 10px; color: #fff; font: 800 18px/1 var(--display); }
 .g-petit-bac .pb-history { display: grid; gap: 8px; margin: 0 auto; padding: 0; list-style: none; }
 .g-petit-bac .pb-history li { display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 8px; border-radius: 18px; background: rgb(255 255 255 / 0.92); font-size: 15px; font-weight: 600; }
+.g-petit-bac .pb-history-pts { display: flex; flex-wrap: wrap; gap: 2px 14px; min-width: 0; }
+.g-petit-bac .pb-history-pts b { font-variant-numeric: tabular-nums; color: var(--fuchsia); }
 .g-petit-bac .pb-history-letter { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--lemon); font: 900 17px/1 var(--display); }
 
 .g-petit-bac .pb-confetti { position: absolute; inset: 0 0 auto 0; height: 100%; overflow: hidden; pointer-events: none; z-index: 4; }
@@ -342,6 +346,7 @@
 
 /* ——— Grand écran / téléphone ——— */
 @media (min-width: 700px) {
+  .g-petit-bac .pb-callout { order: 0; flex: 0 0 auto; margin-left: auto; }
   .g-petit-bac .pb-line { grid-template-columns: 170px 1fr auto; grid-template-areas: 'who text side'; min-height: 60px; }
 }
 @media (max-width: 560px) {
@@ -354,7 +359,10 @@
   .g-petit-bac .pb-letter { zoom: 0.62; }
   .g-petit-bac .pb-clock { zoom: 0.62; }
   .g-petit-bac .pb-callout { padding: 6px 12px; font-size: 12px; }
+  .g-petit-bac .pb-mate { font-size: 13px; padding-right: 10px; }
+  .g-petit-bac .pb-mate-name { max-width: 7ch; }
   .g-petit-bac .pb-sheet { grid-template-columns: 1fr; gap: 18px; }
   .g-petit-bac .pb-stop, .g-petit-bac .pb-ready { width: 100%; }
   .g-petit-bac .pb-report-name { font-size: 17px; }
+  .g-petit-bac .pb-report { margin-top: 22px; }
 }

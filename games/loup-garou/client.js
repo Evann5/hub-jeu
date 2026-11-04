@@ -13,6 +13,15 @@ const CAUSE = {
 
 const TONES = { night: 'night', witch: 'night', hunter: 'day', debate: 'day', vote: 'day' };
 
+const heart = (label) => {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'lg-heart');
+  if (label) { svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', label); } else svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = '<path d="M12 21C5 15.5 2.5 12 2.5 8.4 2.5 5.6 4.6 3.6 7.1 3.6c1.9 0 3.7 1 4.9 2.8 1.2-1.8 3-2.8 4.9-2.8 2.5 0 4.6 2 4.6 4.8C21.5 12 19 15.5 12 21z" fill="currentColor"/>';
+  return svg;
+};
+
 const fmt = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -122,7 +131,7 @@ export function mount(root, api) {
     const inner = [
       d ? h('span.lg-seat-medal', medal(d.role, 34)) : api.token(api.user(id), { size: 's' }),
       h('span.lg-seat-text',
-        h('span.lg-seat-name', name(id), isMe ? h('span.lg-me', 'toi') : null, lover ? h('span.lg-heart', { 'aria-label': 'amoureux', role: 'img' }, '♥') : null),
+        h('span.lg-seat-name', name(id), isMe ? h('span.lg-me', 'toi') : null, lover ? heart('amoureux') : null),
         ...sub),
     ];
     const cls = `lg-seat${d ? ' is-dead' : ''}${picked || myVote || myWolfVote ? ' is-picked' : ''}${ok ? ' is-target' : ''}${isMe ? ' is-me' : ''}`;
@@ -193,7 +202,7 @@ export function mount(root, api) {
       return [r, h('section.lg-panel',
         h('h3', 'Cupidon, unis deux cœurs'),
         h('p', 'Choisis deux personnes (tu peux te choisir toi-même). Si l’une meurt, l’autre la suit.'),
-        h('p.lg-chosen', a ? h('b', name(a)) : '…', ' ♥ ', b ? h('b', name(b)) : '…'),
+        h('p.lg-chosen', a ? h('b', name(a)) : '…', heart(), b ? h('b', name(b)) : '…'),
         btn('Les unir', () => { send({ type: 'love', targets: sel }); sel = []; }, { disabled: sel.length !== 2, key: 'confirm' }))];
     }
     if (me.role === 'cupid') {
@@ -224,9 +233,9 @@ export function mount(root, api) {
       const agreed = targets.every((t) => t !== undefined) && new Set(targets).size === 1;
       return [r, h('section.lg-panel',
         h('h3', 'Loup-garou, choisis ta proie'),
-        h('p', mates.length ? `Ta meute : ${join(mates.map(name))}. Touchez la même victime.` : 'Tu es le seul loup. Choisis ta proie.'),
+        h('p', mates.length ? `Ta meute : ${join(mates.map(name))}. Choisissez tous la même victime.` : 'Tu es le seul loup : touche ta victime dans le village.'),
         h('ul.lg-votes', votes),
-        h('p.lg-muted', agreed ? 'Vous êtes d’accord : la nuit avance.' : 'Tant que vous n’êtes pas d’accord, le vote le plus fort l’emporte à la fin du temps. Tu peux changer d’avis.'))];
+        h('p.lg-muted', agreed ? 'Vous êtes d’accord : la nuit avance.' : 'Tu peux changer d’avis jusqu’à la fin du temps.'))];
     }
     return [r, sleepPanel('Tout le monde ferme les yeux. Les rôles de la nuit agissent en secret… attends le lever du jour.')];
   }
@@ -255,7 +264,7 @@ export function mount(root, api) {
       lines.push(h('li', 'Loups : ', join(view.wolves.map(name)), view.wolves.every((w) => view.wolfVotes?.[w] === undefined) ? '' : [' — ', ...view.wolves.map((w) => (view.wolfVotes?.[w] !== undefined ? `${name(w)} → ${name(view.wolfVotes[w])} ` : ''))]));
     }
     if (view.witch) lines.push(h('li', `Sorcière : potion de vie ${view.witch.life ? 'disponible' : 'utilisée'}, potion de mort ${view.witch.death ? 'disponible' : 'utilisée'}${view.witch.victim !== null ? `, victime visée : ${name(view.witch.victim)}` : ''}.`));
-    if (view.lovers) lines.push(h('li', `Amoureux : ${name(view.lovers[0])} ♥ ${name(view.lovers[1])}`));
+    if (view.lovers) lines.push(h('li', 'Amoureux : ', h('b', name(view.lovers[0])), ' et ', h('b', name(view.lovers[1])), '.'));
     return h('section.lg-panel.is-god',
       h('h3', 'Tu es mort'),
       h('p', 'Tu regardes la partie et tu vois tous les rôles. Garde le secret : ne dis rien aux vivants.'),
@@ -273,31 +282,45 @@ export function mount(root, api) {
       ...shots.map((e) => h('p.lg-dawn-shot', who(e.hunter, { role: false }), ' tire une dernière fois sur ', who(e.target), '.')));
   }
 
+  function deadDayPanel() {
+    const d = deadById().get(view.me.id);
+    const wolves = (view.players.filter((id) => view.roles[id] === 'wolf' && isAlive(id)));
+    return h('section.lg-panel.is-god',
+      h('h3', 'Tu es mort'),
+      h('p', `${CAUSE[d?.cause] ?? 'Tu as quitté le jeu'}. Tu vois tous les rôles : ne dis rien aux vivants.`),
+      wolves.length ? h('p.lg-muted', `Loups encore en vie : ${join(wolves.map(name))}.`) : null,
+      view.phase === 'debate' ? h('div.lg-actions', btn('Ouvrir le chat', () => api.openChat(), { kind: 'ghost', key: 'chat' })) : null,
+      view.phase === 'debate'
+        ? h('p.lg-muted', `${view.ready} sur ${view.aliveCount} prêts à voter.`)
+        : h('p.lg-muted', `${view.voted} sur ${view.aliveCount} ont voté.`));
+  }
+
   function debatePanel() {
     const me = view.me;
     const can = me?.alive;
+    if (me && !can) return [deadDayPanel()];
     return [h('section.lg-panel',
       h('h3', 'Le village se réveille'),
       dawnBlock(),
-      h('p', 'Débattez ! Qui se comporte bizarrement ? Parlez dans le chat de la table.'),
+      can ? h('p', 'Qui se comporte bizarrement ? Parlez dans le chat de la table.') : null,
       h('div.lg-actions',
         btn('Ouvrir le chat', () => api.openChat(), { kind: 'ghost', key: 'chat' }),
-        can ? btn(me.ready ? 'Prêt (annuler impossible)' : 'Je suis prêt à voter', () => send({ type: 'ready' }), { disabled: me.ready, key: 'ready' }) : null),
-      h('p.lg-muted', `${view.ready} sur ${view.aliveCount} prêts à voter. Quand tout le monde est prêt, le vote commence.`),
-      !can && me ? h('p.lg-muted', 'Tu es mort : tu peux regarder, mais ne révèle rien.') : null)];
+        can ? btn(me.ready ? 'Prêt, on attend les autres' : 'Je suis prêt à voter', () => send({ type: 'ready' }), { disabled: me.ready, key: 'ready' }) : null),
+      h('p.lg-muted', `${view.ready} sur ${view.aliveCount} prêts. Le vote commence quand tout le monde l’est.`),
+      null)];
   }
 
   function votePanel() {
     const me = view.me;
     const mine = me?.vote;
+    if (me && !me.alive) return [deadDayPanel()];
     return [h('section.lg-panel',
       h('h3', 'Le vote du village'),
-      dawnBlock(),
       me?.alive
-        ? h('p', mine === undefined ? 'Touche le joueur que tu soupçonnes. Tu peux changer d’avis jusqu’à la fin.' : mine === null ? 'Tu as voté blanc.' : ['Tu votes contre ', h('b', name(mine)), '.'])
+        ? h('p', mine === undefined ? 'Touche le joueur que tu soupçonnes. Tu peux changer d’avis.' : mine === null ? 'Tu as voté blanc.' : ['Tu votes contre ', h('b', name(mine)), '.'])
         : h('p', 'Le village vote. Tu es mort ou tu regardes : ta voix ne compte pas.'),
       me?.alive ? h('div.lg-actions', btn('Voter blanc', () => send({ type: 'vote', target: null }), { kind: 'ghost', key: 'blank' })) : null,
-      h('p.lg-muted', `${view.voted} sur ${view.aliveCount} ont voté. En cas d’égalité, personne n’est éliminé.`))];
+      h('p.lg-muted', `${view.voted} sur ${view.aliveCount} ont voté. Égalité : personne n’est éliminé.`))];
   }
 
   function hunterPanel() {
@@ -339,7 +362,7 @@ export function mount(root, api) {
       h('p', subs[w.side]),
       view.me ? h('p.lg-result', meWon ? 'Tu fais partie des gagnants.' : 'Tu as perdu cette fois.') : null,
       h('ul.lg-reveal', order.map((id) => h('li', { class: w.ids.includes(id) ? 'is-win' : '' },
-        medal(view.roles[id], 36), h('span', h('b', name(id)), ` · ${roleName(view.roles[id])}`, view.lovers?.includes(id) ? ' ♥' : '')))))];
+        medal(view.roles[id], 36), h('span', h('b', name(id)), ` · ${roleName(view.roles[id])}`, view.lovers?.includes(id) ? [' ', heart('amoureux')] : '')))))];
   }
 
   function panel() {
@@ -447,6 +470,7 @@ export function mount(root, api) {
     body.replaceChildren(
       h('div.lg-main', ...panel().filter(Boolean)),
       h('div.lg-side', village(tgt), journal()));
+    body.classList.toggle('is-pick-first', Boolean(tgt?.instant));
     tick();
     if (!cardOpen && view.me && view.phase === 'night' && view.n === 1 && !seenCard()) openCard(true);
     else if (cardOpen) renderOverlay();

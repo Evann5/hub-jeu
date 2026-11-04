@@ -81,7 +81,7 @@
 .g-six .sx-card.is-empty::before { display: none; }
 
 /* ——— Joueurs ——— */
-.g-six .sx-score { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px 8px; }
+.g-six .sx-score { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 14px 8px; }
 .g-six .sx-pl {
   position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 8px; padding: 6px 12px 10px 6px;
   border: 3px solid var(--sx-ink); border-radius: 18px; background: var(--pc, #fff); box-shadow: 0 4px 0 var(--sx-ink); min-width: 0;
@@ -180,6 +180,22 @@
 .g-six .sx-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 30; }
 .g-six .sx-confetti i { position: absolute; top: -16px; width: 10px; height: 16px; border-radius: 3px; animation: sx-fall 3s linear forwards; }
 @keyframes sx-fall { to { transform: translateY(110vh) rotate(var(--r)); } }
+
+/* ——— Téléphone : les rangées restent visibles, la main tient sur une seule ligne qu'on fait défiler ——— */
+@container (max-width: 599px) {
+  .g-six .sx { gap: 10px; padding-top: 10px; --cw-hand: 52px; }
+  .g-six .sx-score { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 12px 6px; }
+  .g-six .sx-pl { grid-template-columns: auto minmax(0, 1fr); gap: 2px 6px; padding: 4px 8px 8px 5px; border-radius: 14px; }
+  .g-six .sx-pl-heads { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; font-size: 1.05rem; }
+  .g-six .sx-pl-heads .sx-horn { width: 18px; height: 18px; }
+  .g-six .sx-pl-bar { grid-row: 3; }
+  .g-six .sx-pl-name { font-size: 0.8125rem; }
+  .g-six .sx-handbox { gap: 4px; padding-top: 4px; padding-bottom: 8px; border-radius: 20px 20px 0 0; }
+  .g-six .sx-hand { flex-wrap: nowrap; justify-content: safe center; overflow-x: auto; overscroll-behavior-x: contain; gap: 8px; padding: 16px 6px 6px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .g-six .sx-hand::-webkit-scrollbar { display: none; }
+  .g-six .sx-pick { flex: none; scroll-snap-align: center; }
+  .g-six .sx-go { min-height: 46px; font-size: 1rem; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .g-six .sx-lane.is-choice, .g-six .sx-play.is-pending .sx-card, .g-six .sx-lane.is-taking, .g-six .sx-pl.is-bump, .g-six .sx-play.is-flip,

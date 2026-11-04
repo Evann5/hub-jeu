@@ -244,7 +244,7 @@ export function mount(root, api) {
     } else if (view.turn && view.stack) text = `${api.user(view.turn).pseudo} doit renchérir ou piocher ${view.stack} cartes…`;
     else if (view.turn === api.me.id) {
       text = view.drawn ? `Tu as pioché ${cardName(view.drawn)} : joue-la ou passe.`
-        : view.playable.length ? 'À toi de jouer : touche une carte, puis touche-la encore pour la poser.'
+        : view.playable.length ? 'À toi de jouer.'
           : 'Aucune carte ne va : pioche !';
     } else if (view.turn) text = `${api.user(view.turn).pseudo} réfléchit…`;
     else text = '';

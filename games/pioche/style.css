@@ -231,6 +231,20 @@
 @keyframes pi-land { from { transform: translateY(-26px) scale(1.18); opacity: 0.4; } to { transform: none; opacity: 1; } }
 @keyframes pi-pulse { to { transform: scale(1.05); } }
 @keyframes pi-glow { to { box-shadow: 0 3px 0 rgb(0 0 0 / 0.38), 0 0 26px rgb(255 210 63 / 0.85); } }
+/* ——— Téléphone : table plus petite, la main reste entière à l'écran ——— */
+@media (max-width: 899px) {
+  .g-pioche { --cw: 62px; --ch: 93px; --step: 33px; --tw: 92px; --th: 138px; }
+  .g-pioche .pi { gap: 6px; padding-top: 6px; padding-bottom: 8px; }
+  .g-pioche .pi-opps { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .g-pioche .pi-opps::-webkit-scrollbar { display: none; }
+  .g-pioche .pi-opp { flex: none; }
+  .g-pioche .pi-table { padding: 2px 12px 14px; }
+  .g-pioche .pi-old { display: none; }
+  .g-pioche .pi-say { font-size: 0.95rem; }
+  .g-pioche .pi-btn { min-height: 44px; padding: 0 18px; font-size: 0.95rem; }
+  .g-pioche .pi-hand { padding-top: 16px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .g-pioche *, .g-pioche *::before, .g-pioche *::after { animation: none !important; transition: none !important; }
 }

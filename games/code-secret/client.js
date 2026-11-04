@@ -21,6 +21,7 @@ export function mount(root, api) {
   let active = 0;
   let notice = '';
   let roundKey = '';
+  let prevPhase = null;
   let seen = [0, 0]; // essais déjà vus de chaque joueur, pour animer les nouveaux
   let animateFrom = [Infinity, Infinity];
 
@@ -53,8 +54,8 @@ export function mount(root, api) {
   const dial = h('span.cs-dial', { 'aria-hidden': 'true' }, dialSvg);
   const wrap = h('div.cs',
     h('header.cs-lid',
-      h('div.cs-lid-row', dial, h('h2.cs-logo', 'Code ', h('em', 'secret')), timerEl)),
-    status, secretBar, stage, dock);
+      h('div.cs-lid-row', dial, status, timerEl)),
+    secretBar, stage, dock);
   root.append(wrap);
 
   // ——— Dessin d'un pion, d'une rangée d'indications ———
@@ -209,7 +210,7 @@ export function mount(root, api) {
     }
     if (!iPlay()) return view.phase === 'coding' ? `${pseudo(0)} et ${pseudo(1)} composent leur code…` : `Manche ${view.guesses[0].length + 1} : ${pseudo(0)} et ${pseudo(1)} cherchent…`;
     if (view.phase === 'coding') {
-      return view.codeSet[me()] ? `Code enregistré. ${opp} compose encore le sien…` : `Compose le code que ${opp} devra trouver : ${view.holes} couleurs${view.doubles ? '' : ' différentes'}.`;
+      return view.codeSet[me()] ? `Code enregistré. ${opp} compose encore le sien…` : `Compose ton code secret : ${view.holes} couleurs${view.doubles ? ', doublons permis' : ' différentes'}.`;
     }
     const round = view.guesses[me()].length + 1;
     if (view.myPending) return `Essai ${round} joué. On attend ${opp}…`;
@@ -274,7 +275,6 @@ export function mount(root, api) {
       }, c === null ? null : peg(c));
     });
     return h('div.cs-panel',
-      h('p.cs-lead', `Choisis ${view.holes} couleurs${view.doubles ? ' (les doublons sont permis)' : ' différentes'}. ${pseudo(oppSeat())} ne les verra pas.`),
       h('div.cs-slots', slots),
       rack());
   }
@@ -324,11 +324,14 @@ export function mount(root, api) {
     // Les essais arrivés depuis le dernier état s'animent (pas ceux d'une reconnexion).
     animateFrom = first ? [Infinity, Infinity] : [seen[0], seen[1]];
     seen = [v.guesses[0].length, v.guesses[1].length];
+    const justEnded = v.phase === 'over' && prevPhase !== 'over';
+    prevPhase = v.phase;
     paintAll();
+    if (justEnded) wrap.scrollTop = 0;
     if (v.phase === 'over' && v.winners.includes(api.me.id)) confetti();
     else if (v.phase !== 'over') confettiDone = false;
     // La rangée en cours reste visible sur téléphone.
-    wrap.querySelector('.cs-board.is-mine .cs-row.is-current')?.scrollIntoView({ block: 'nearest' });
+    if (!justEnded) wrap.querySelector('.cs-board.is-mine .cs-row.is-current')?.scrollIntoView({ block: 'nearest' });
   });
 
   return () => {
