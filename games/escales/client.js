@@ -663,6 +663,12 @@ export function mount(root, api) {
     clearTimeout(uiTimer);
     uiTimer = 0;
     playSounds();
+    // Un joueur en paie un autre : on voit l'argent passer.
+    const moved = v.players.map((p) => [p.id, p.cash - (before.cash.get(p.id) ?? p.cash)]).filter(([, d]) => d);
+    if (moved.length === 2 && moved[0][1] + moved[1][1] === 0) {
+      const [payer, payee] = moved[0][1] < 0 ? moved : [moved[1], moved[0]];
+      world?.payCoins(payer[0], payee[0]);
+    }
     renderPlayers();
     before.cash = new Map(v.players.map((p) => [p.id, p.cash]));
     renderAction();

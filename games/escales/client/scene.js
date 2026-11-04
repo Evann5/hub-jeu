@@ -545,7 +545,22 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const fillGeo = plateGeometry(TILE_W - 0.34, TILE_D - 0.34, 0.006, 0.1);
   // La case prend la couleur de son propriétaire, assez claire pour que le texte imprimé reste lisible.
   const ownedColor = (hex) => `#${new THREE.Color(hex).lerp(new THREE.Color('#FFFFFF'), 0.34).getHexString()}`;
-  const levelGeo = new THREE.BoxGeometry(0.26, 1, 0.26);
+  // Une petite maison vue de face : un seul volume, le toit compris. Le dernier niveau est un immeuble.
+  const buildingGeo = (w, wall, roof, d) => {
+    const shape = new THREE.Shape();
+    shape.moveTo(-w / 2, 0);
+    shape.lineTo(w / 2, 0);
+    shape.lineTo(w / 2, wall);
+    if (roof) shape.lineTo(0, wall + roof);
+    else shape.lineTo(w / 2, wall);
+    shape.lineTo(-w / 2, wall);
+    shape.closePath();
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false });
+    geo.translate(0, 0, -d / 2);
+    return geo;
+  };
+  const houseGeo = buildingGeo(0.28, 0.18, 0.15, 0.24);
+  const towerGeo = buildingGeo(0.28, 0.46, 0, 0.24);
 
   const shots = new Map();
   const PORTRAIT = {
@@ -652,6 +667,25 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   };
   // Une petite fête : le cadre rebondit, des confettis partent de la case.
   const pops = [];
+  const coins = [];
+  const fades = [];
+  const coinGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.07, 14);
+  const coinMat = new THREE.MeshLambertMaterial({ color: '#F2B632', emissive: '#7A5200' });
+  // Des pièces volent de celui qui paie vers celui qui reçoit.
+  function payCoins(fromId, toId) {
+    const a = pawns.get(fromId);
+    const b = pawns.get(toId);
+    if (reduced || !a || !b) return;
+    const lift = new THREE.Vector3(0, 1.2, 0);
+    for (let i = 0; i < 7; i += 1) {
+      const mesh = new THREE.Mesh(coinGeo, coinMat);
+      mesh.visible = false;
+      mesh.position.copy(a.mesh.position).add(lift);
+      scene.add(mesh);
+      coins.push({ mesh, t: -i * 0.07, from: a.mesh.position.clone().add(lift), to: b.mesh.position.clone().add(lift) });
+    }
+    wake();
+  }
   const bursts = [];
   function celebrate(x, z, color, mesh) {
     if (mesh) pops.push({ mesh, t: 0 });
@@ -673,16 +707,20 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     bursts.push({ pts, vel, t: 0 });
   }
 
-  const LEVEL_SPOTS = [[-0.68, -1.15], [0.68, -1.15], [-0.68, -0.72], [0.68, -0.72]];
+  // Les niveaux, sur le bord de la case et à côté de son nom : le monument ne les cache pas, et ils ne cachent pas le nom.
+  const levelSpot = (f, i) => {
+    if (f.flat) return [(i - 1.5) * 0.34, f.flip ? -1.36 : 1.4];
+    return [f.rot > 0 ? -0.85 : 0.85, 1.25 - i * 0.31];
+  };
   const setLevels = (part, level, color) => {
     if (part.level === level) return false;
     part.level = level;
     part.levels.clear();
     for (let i = 0; i < level; i += 1) {
-      const h = 0.42 + i * 0.16;
-      const m = new THREE.Mesh(levelGeo, tint(color ?? '#FFFFFF'));
-      m.scale.y = h;
-      m.position.set(LEVEL_SPOTS[i][0], PLATE_H + h / 2, LEVEL_SPOTS[i][1] * (part.f.flip ? -1 : 1));
+      const m = new THREE.Mesh(i === 3 ? towerGeo : houseGeo, tint(color ?? '#FFFFFF'));
+      const [lx, lz] = levelSpot(part.f, i);
+      m.position.set(lx, PLATE_H, lz);
+      m.rotation.y = -part.f.rot; // comme les monuments, les maisons nous font face
       m.castShadow = true;
       part.levels.add(m);
     }
@@ -777,7 +815,12 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       const [sx, sz] = [-Math.sign(f.x), -Math.sign(f.z)];
       return new THREE.Vector3(f.x + sx * d + sx * ox * 0.7, 0, f.z + sz * d - sz * ox * 0.7);
     }
-    const oz = TILE_D / 2 + 0.5 + (i >= 5 ? 0.8 : 0);
+    // Le pion se tient sur sa case, juste devant le monument : il ne cache ni le nom de la ville, ni celui du pays.
+    const second = i >= 5 ? 0.3 : 0;
+    if (!f.flat) { // sur les côtés, le nom est vers le centre : le pion reste côté monument, et ne déborde pas sur le nom de la case d'au-dessus
+      return new THREE.Vector3(f.x + Math.sign(f.x) * 0.45 + ((i % 5) - 2) * 0.28, 0, f.z + 0.9 + second);
+    }
+    const oz = f.flip ? -0.42 - second : 0.45 + second;
     const c = Math.cos(f.rot);
     const s = Math.sin(f.rot);
     return new THREE.Vector3(f.x + ox * c + oz * s, 0, f.z - ox * s + oz * c);
@@ -962,6 +1005,32 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pops.splice(i, 1);
       }
     }
+    for (let i = fades.length - 1; i >= 0; i -= 1) { // la faillite : le pion rétrécit et tombe
+      const f = fades[i];
+      f.t += dt / 0.6;
+      const scale = PAWN_SCALE * Math.max(0, 1 - f.t);
+      f.pawn.mesh.scale.setScalar(scale);
+      f.pawn.mesh.rotation.y += dt * 8;
+      busy = true;
+      if (f.t >= 1) {
+        f.pawn.mesh.visible = false;
+        fades.splice(i, 1);
+      }
+    }
+    for (let i = coins.length - 1; i >= 0; i -= 1) {
+      const c = coins[i];
+      c.t += dt;
+      const k = Math.min(1, Math.max(0, c.t / 0.6));
+      c.mesh.visible = c.t > 0;
+      c.mesh.position.lerpVectors(c.from, c.to, ease(k));
+      c.mesh.position.y += Math.sin(k * Math.PI) * 3.2;
+      c.mesh.rotation.x += dt * 9;
+      busy = true;
+      if (k >= 1) {
+        scene.remove(c.mesh);
+        coins.splice(i, 1);
+      }
+    }
     for (let i = bursts.length - 1; i >= 0; i -= 1) {
       const b2 = bursts[i];
       b2.t += dt;
@@ -1114,8 +1183,12 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pawns.set(p.id, pawn);
       }
       pawn.player = p;
-      pawn.mesh.visible = !p.out;
-      pawn.blob.visible = !p.out;
+      if (p.out && !pawn.gone) {
+        pawn.gone = true;
+        pawn.blob.visible = false;
+        if (firstUpdate || reduced) pawn.mesh.visible = false;
+        else fades.push({ pawn, t: 0 });
+      }
       if (p.out || pawn.goal === p.pos) continue;
       pawn.goal = p.pos;
       const forward = (p.pos - pawn.shown + 48) % 48;
@@ -1223,6 +1296,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   return {
     update,
     walking,
+    payCoins,
     // Le visage d'un voyageur, de près.
     portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT),
     // Le monument entier d'une ville.
