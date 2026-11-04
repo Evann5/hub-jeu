@@ -1,8 +1,8 @@
 // Tests d'Escales : node --test games/escales/rules.test.js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setup, move, view, status, timeout, leave, rentOf, worthOf, SALARY, CATCH_UP, FINE } from './rules.js';
-import { TILES, REGIONS, SIZE, CUSTOMS_POS, FLY_COST, MAX_LEVEL } from './client/board.js';
+import { setup, move, view, status, timeout, leave, rentOf, worthOf, SALARY, CATCH_UP, FINE, FESTIVAL_GAIN, WORKS_FEE } from './rules.js';
+import { TILES, REGIONS, SIZE, CUSTOMS_POS, MAX_LEVEL } from './client/board.js';
 
 const seeded = (seed) => () => {
   seed = (seed * 1664525 + 1013904223) % 4294967296;
@@ -158,16 +158,15 @@ test('gage : la ville rapporte la moitié de son prix, plus de loyer, rachat à 
   assert.equal(s.props[pos].mortgaged, false);
 });
 
-test('escale : le propriétaire encaisse selon ses escales, puis on peut s’envoler', () => {
+test('escale : le propriétaire encaisse selon ses escales, et le tour passe', () => {
   let s = start();
   const [a, b] = s.players.map((p) => p.id);
   own(s, b, 'Escale Nord', 'Escale Est');
   s = roll(s, 2, 4); // case 6
   assert.equal(s.players.find((p) => p.id === a).cash, 1500 - 50);
-  assert.equal(s.phase, 'fly');
-  s = move(s, a, { type: 'fly', pos: posOf('Escale Sud') }, ctxOf()).state;
-  assert.equal(s.players.find((p) => p.id === a).pos, posOf('Escale Sud'));
-  assert.equal(s.players.find((p) => p.id === a).cash, 1500 - 50 - FLY_COST);
+  assert.equal(s.players.find((p) => p.id === b).cash, 1500 + 50);
+  assert.equal(s.phase, 'roll');
+  assert.equal(status(s).turn, b);
 });
 
 test('passer au Départ : salaire, et prime pour qui est loin derrière', () => {
@@ -184,7 +183,7 @@ test('passer au Départ : salaire, et prime pour qui est loin derrière', () => 
   assert.equal(b, s.players[1].id);
 });
 
-test('douane : un double pour sortir, l’amende, le passe, et 3 essais au plus', () => {
+test('douane : un double pour sortir, l’amende, et 3 essais au plus', () => {
   let s = start();
   const a = s.players[0].id;
   put(s, 34);
@@ -212,14 +211,6 @@ test('douane : un double pour sortir, l’amende, le passe, et 3 essais au plus'
   s = move(s, a, { type: 'payFine' }, ctxOf()).state;
   assert.equal(p().blocked, 0);
   assert.equal(p().cash, 1500 - FINE);
-
-  s = start();
-  s.players[0].blocked = 1;
-  assert.throws(() => move(s, a, { type: 'usePass' }, ctxOf()), /passe-douane/);
-  s.players[0].passes = 1;
-  s = move(s, a, { type: 'usePass' }, ctxOf()).state;
-  assert.equal(p().blocked, 0);
-  assert.equal(p().passes, 0);
 });
 
 test('trois doubles de suite : douane', () => {
@@ -237,37 +228,25 @@ test('trois doubles de suite : douane', () => {
   assert.ok(p().blocked);
 });
 
-test('festival : le loyer double jusqu’au prochain tour de l’organisateur', () => {
+test('festival : on gagne de l’argent, sans rien avoir à choisir', () => {
   let s = start();
   const a = s.players[0].id;
-  own(s, a, 'Marrakech');
   put(s, 21);
   s = roll(s, 1, 2); // 24
-  assert.equal(s.phase, 'festival');
-  const pos = posOf('Marrakech');
-  const base = rentOf(s, pos);
-  s = move(s, a, { type: 'festival', pos }, ctxOf()).state;
-  assert.equal(rentOf(s, pos), base * 2);
-  for (let i = 0; i < 2; i += 1) {
-    const id = s.players[s.cur].id;
-    s = move(s, id, { type: 'roll' }, dice(1, 2)).state;
-    if (s.players[s.cur].id === id) s = move(s, id, { type: s.phase === 'buy' ? 'decline' : 'skip' }, ctxOf()).state;
-  }
-  assert.equal(s.players[s.cur].id, a);
-  assert.equal(s.festival, null);
+  assert.equal(TILES[24].type, 'festival');
+  assert.equal(s.players.find((p) => p.id === a).cash, 1500 + FESTIVAL_GAIN);
+  assert.equal(s.phase, 'roll');
+  assert.notEqual(status(s).turn, a);
 });
 
-test('chantier : un niveau à moitié prix', () => {
+test('chantier : on paie, sans rien avoir à choisir', () => {
   let s = start();
   const a = s.players[0].id;
-  own(s, a, 'Chefchaouen', 'Fès', 'Marrakech');
   put(s, 18);
   s = roll(s, 1, 2); // 21
   assert.equal(TILES[21].type, 'chantier');
-  assert.equal(s.phase, 'chantier');
-  s = move(s, a, { type: 'chantier', pos: posOf('Fès') }, ctxOf()).state;
-  assert.equal(s.props[posOf('Fès')].level, 1);
-  assert.equal(s.players.find((p) => p.id === a).cash, 1500 - 25);
+  assert.equal(s.players.find((p) => p.id === a).cash, 1500 - WORKS_FEE);
+  assert.equal(s.phase, 'roll');
 });
 
 test('dette : il faut trouver l’argent, puis payer', () => {
@@ -355,12 +334,10 @@ test('faillite : le créancier récupère tout, la partie continue', () => {
   own(s, b, 'Marrakech');
   own(s, a, 'Casablanca');
   s.players[0].cash = 1;
-  s.players[0].passes = 1;
   s = roll(s, 1, 3);
   s = move(s, a, { type: 'bankrupt' }, ctxOf()).state;
   assert.equal(s.players.find((p) => p.id === a).out, true);
   assert.equal(s.props[posOf('Casablanca')].owner, b);
-  assert.equal(s.players.find((p) => p.id === b).passes, 1);
   assert.equal(s.over, false);
   assert.notEqual(s.players[s.cur].id, a);
 });
@@ -385,7 +362,6 @@ test('fin des tours : le plus gros patrimoine gagne', () => {
     const id = s.players[s.cur].id;
     if (s.phase === 'buy') s = move(s, id, { type: 'decline' }, ctxOf()).state;
     else if (s.phase === 'debt') s = move(s, id, { type: 'bankrupt' }, ctxOf()).state;
-    else if (['fly', 'festival', 'chantier'].includes(s.phase)) s = move(s, id, { type: 'skip' }, ctxOf()).state;
     else if (s.phase === 'end') s = move(s, id, { type: 'endTurn' }, ctxOf()).state;
     else s = move(s, id, { type: 'roll' }, ctxOf(7)).state;
   }
@@ -514,7 +490,6 @@ test('quand c’est au tour d’un robot, il a une échéance courte et il joue 
     else if (s.phase === 'end') s = move(s, 1, { type: 'endTurn' }, ctxOf()).state;
     else if (s.phase === 'debt') s = move(s, 1, { type: 'bankrupt' }, ctxOf()).state;
     else if (s.phase === 'roll') s = move(s, 1, { type: 'roll' }, dice(1, 2)).state;
-    else s = move(s, 1, { type: 'skip' }, ctxOf()).state;
   }
   if (!s.over) {
     assert.ok(s.players[s.cur].bot);
@@ -567,16 +542,12 @@ function botMove(s, id, rnd) {
   const me = v.players.find((p) => p.id === id);
   switch (s.phase) {
     case 'roll':
-      if (me.blocked && me.passes) return { type: 'usePass' };
       if (v.actions.build.length && me.cash > 500) return { type: 'build', pos: pick(v.actions.build) };
       return { type: 'roll' };
     case 'buy': {
       const t = TILES[me.pos];
       return me.cash >= t.price && rnd() < 0.8 ? { type: 'buy' } : { type: 'decline' };
     }
-    case 'fly': return rnd() < 0.2 ? { type: 'fly', pos: pick(TILES.filter((t) => t.type === 'escale' && t.pos !== me.pos)).pos } : { type: 'skip' };
-    case 'festival': return v.actions.festival.length ? { type: 'festival', pos: pick(v.actions.festival) } : { type: 'skip' };
-    case 'chantier': return v.actions.chantier.length ? { type: 'chantier', pos: pick(v.actions.chantier) } : { type: 'skip' };
     case 'end':
       if (v.actions.unmortgage.length && me.cash > 800) return { type: 'unmortgage', pos: pick(v.actions.unmortgage) };
       if (v.actions.build.length && me.cash > 500) return { type: 'build', pos: pick(v.actions.build) };

@@ -66,7 +66,6 @@ export const LEVEL_NAMES = ['Ville nue', 'Quartier', 'Quartier animé', 'Tours',
 export const MAX_LEVEL = 4;
 export const ESCALE_PRICE = 200;
 export const ESCALE_RENTS = [0, 25, 50, 100, 200]; // selon le nombre d'escales du propriétaire
-export const FLY_COST = 50;
 export const CUSTOMS_POS = 12;
 export const SIZE = 48;
 
@@ -100,7 +99,8 @@ export const RULES = [
   'Lance les dés et avance. Un double fait rejouer ; au troisième de suite, c’est la Douane.',
   'Ville libre : achète-la ou passe. Si tu passes, elle reste libre.',
   'Avec 3 villes d’un pays (2 à 2 ou 3 joueurs), le loyer double et tu peux construire. Avec les 4, il triple.',
-  'Escales : le loyer monte avec leur nombre, et de là tu peux t’envoler vers une autre pour 50 €.',
+  'Escales : le loyer monte avec leur nombre.',
+  'Festival : tu gagnes 100 €. Chantier : tu paies 50 €.',
   'Échange à tout moment, même hors de ton tour : villes contre argent.',
   'Plus d’argent ? Vends des constructions, mets des villes en gage ou négocie. Sinon, c’est la faillite.',
   'Au dernier tour, le plus gros patrimoine gagne (argent, villes, constructions).',

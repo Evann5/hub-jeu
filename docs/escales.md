@@ -28,10 +28,10 @@ Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: Th
 - **Ville libre** : on l'achète ou on passe. Si on passe, elle reste libre pour le suivant.
 - **Loyer** : 10 % du prix. Majorité de la région : × 2. Région complète : × 3.
 - **Construire** : il faut la majorité d'une région (3 villes sur 4, ou 2 à 2 ou 3 joueurs). Quatre niveaux : Quartier × 4, Quartier animé × 10, Tours × 22, Skyline × 32 ; 25 % de plus si la région est complète. Revente à moitié prix.
-- **Escales** : loyer de 25, 50, 100 ou 200 € selon le nombre possédé. Après s'y être arrêté, on peut s'envoler vers une autre escale pour 50 €.
-- **Festival** : on choisit une de ses villes, son loyer double jusqu'à son prochain tour. **Chantier** : un niveau à moitié prix.
+- **Escales** : loyer de 25, 50, 100 ou 200 € selon le nombre possédé.
+- **Festival** : on gagne 100 €. **Chantier** : on paie 50 €.
 - **Télex** : une carte au hasard parmi 14, bonne ou mauvaise.
-- **Douane** : pour sortir, un double, 50 € ou un passe-douane. Au troisième échec, on paie et on avance.
+- **Douane** : pour sortir, un double ou 50 €. Au troisième échec, on paie et on avance.
 - **Échanges** : à tout moment, villes et argent ; une ville avec des constructions ne s'échange pas.
 - **Dettes** : on vend, on met en gage (moitié du prix, rachat à 110 %) ou on négocie. Sinon, c'est la faillite : le créancier récupère tout.
 - **Absent** : à la fin du temps, le jeu joue à sa place, au plus prudent. En cas d'abandon, ses villes retournent à la banque.

@@ -314,6 +314,35 @@ function buildEngraving() {
   c.roundRect(at(-inner), at(-inner), inner * 2 * px, (inner * 2 - BOTTOM_LIFT) * px, 0.7 * px);
   c.stroke();
   c.globalAlpha = 1;
+  // Une rose des vents, gravée ton sur ton au milieu de la zone centrale
+  const [rx, rz] = [at(0), at(-0.6)];
+  const R = 5.6 * px;
+  c.strokeStyle = '#205349';
+  c.fillStyle = '#205349';
+  c.lineWidth = 3;
+  for (const f of [1, 0.82]) {
+    c.beginPath();
+    c.arc(rx, rz, R * f, 0, Math.PI * 2);
+    c.stroke();
+  }
+  for (let i = 0; i < 72; i += 1) { // la graduation
+    const a = (i / 72) * Math.PI * 2;
+    c.beginPath();
+    c.moveTo(rx + Math.cos(a) * R * 0.82, rz + Math.sin(a) * R * 0.82);
+    c.lineTo(rx + Math.cos(a) * R * (i % 6 ? 0.87 : 0.93), rz + Math.sin(a) * R * (i % 6 ? 0.87 : 0.93));
+    c.stroke();
+  }
+  for (let i = 0; i < 16; i += 1) { // les pointes : 4 grandes, 4 moyennes, 8 petites
+    const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
+    const len = R * (i % 4 === 0 ? 0.78 : i % 2 === 0 ? 0.52 : 0.34);
+    const w = R * (i % 4 === 0 ? 0.075 : 0.05);
+    c.beginPath();
+    c.moveTo(rx + Math.cos(a) * len, rz + Math.sin(a) * len);
+    c.lineTo(rx + Math.cos(a + Math.PI / 2) * w, rz + Math.sin(a + Math.PI / 2) * w);
+    c.lineTo(rx + Math.cos(a - Math.PI / 2) * w, rz + Math.sin(a - Math.PI / 2) * w);
+    c.closePath();
+    c.fill();
+  }
   // La piste des dés
   const [dx, dz] = [at(0), at(DICE_Z)];
   c.fillStyle = '#143C35';
@@ -668,11 +697,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   scene.add(marker);
   let markerBase = 4;
 
-  // ——— Le festival : un repère au-dessus de la ville ———
-  const festivalMark = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.9, 4), new THREE.MeshLambertMaterial({ color: '#FF2E93' }));
-  festivalMark.rotation.x = Math.PI;
-  festivalMark.visible = false;
-  scene.add(festivalMark);
 
   // ——— Les personnages : ils marchent sur le sol, le long du bord intérieur, pour ne jamais cacher le texte ———
   const personMat = new THREE.MeshLambertMaterial({ vertexColors: true });
@@ -1066,13 +1090,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       if (setLevels(part, prop?.level ?? 0, color)) shadows = true;
     });
 
-    if (v.festival) {
-      const f = tileFrame(v.festival.pos);
-      festivalMark.position.set(f.x, 4.4, f.z);
-      festivalMark.visible = true;
-    } else {
-      festivalMark.visible = false;
-    }
 
     for (const p of v.players) {
       let pawn = pawns.get(p.id);

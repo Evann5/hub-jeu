@@ -1,12 +1,14 @@
 // Escales : on achète des villes, on y construit, on fait payer le passage. Les règles sont pures : ni réseau, ni base, ni affichage.
 // L'heure vient de ctx.now, le hasard de ctx.random. Tout le raisonnement est expliqué dans docs/escales.md.
 //
-// Un tour : « roll » (lancer) → la case décide de la suite (buy, fly, festival, chantier, debt) → « end » → joueur suivant.
-import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, FLY_COST, CUSTOMS_POS, SIZE } from './client/board.js';
+// Un tour : « roll » (lancer) → la case décide de la suite (buy, debt) → « end » → joueur suivant.
+import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE } from './client/board.js';
 
 export const SALARY = 200;
 export const CATCH_UP = 100; // en plus au Départ pour qui a moins de la moitié du patrimoine du premier
 export const FINE = 50; // pour sortir de la Douane
+export const FESTIVAL_GAIN = 100; // en tombant sur le Festival
+export const WORKS_FEE = 50; // en tombant sur un Chantier
 export const MAX_TRADES = 3; // propositions en attente par joueur
 export const BOT_MS = 900; // le temps qu'un robot prend pour jouer, pour qu'on voie ce qu'il fait
 const BOT_NAMES = ['Marco', 'Aïko', 'Leïla', 'Nuno', 'Frida', 'Anh', 'Giulia', 'Sam', 'Noor', 'Paco'];
@@ -39,7 +41,7 @@ function shuffle(list, ctx) {
 const ownedInRegion = (s, id, region) => TILES.filter((t) => t.region === region && s.props[t.pos]?.owner === id).length;
 const escalesOf = (s, id) => TILES.filter((t) => t.type === 'escale' && s.props[t.pos]?.owner === id).length;
 
-// Le loyer dû en tombant sur cette case, tout compris (majorité, niveau, festival).
+// Le loyer dû en tombant sur cette case, tout compris (villes du pays, niveau).
 export function rentOf(s, pos) {
   const t = TILES[pos];
   const prop = s.props[pos];
@@ -49,7 +51,6 @@ export function rentOf(s, pos) {
   let rent = t.rent * LEVEL_MULT[prop.level];
   if (prop.level === 0) rent *= count === 4 ? 3 : count >= s.majority ? 2 : 1;
   else if (count === 4) rent *= 1.25;
-  if (s.festival?.pos === pos) rent *= 2;
   return Math.round(rent);
 }
 
@@ -94,7 +95,7 @@ export function setup(players, options = {}, ctx) {
   const everyone = [...players, ...bots];
   const s = {
     players: shuffle(everyone, ctx).map((p, seat) => ({
-      id: p.id, pseudo: p.pseudo, bot: Boolean(p.bot), seat, cash: Number(options.cash) || 1500, pos: 0, out: false, blocked: 0, doubles: 0, passes: 0,
+      id: p.id, pseudo: p.pseudo, bot: Boolean(p.bot), seat, cash: Number(options.cash) || 1500, pos: 0, out: false, blocked: 0, doubles: 0,
     })),
     cur: 0,
     phase: 'roll',
@@ -110,7 +111,6 @@ export function setup(players, options = {}, ctx) {
     debt: null,
     trades: [],
     tradeSeq: 0,
-    festival: null,
     lastCard: null,
     deck: [],
     log: [],
@@ -157,10 +157,6 @@ function settle(s, ctx) {
 function resume(s, after, ctx) {
   s.after = null;
   if (after?.move) return advance(s, after.move, ctx);
-  if (after === 'fly' && cur(s).cash >= FLY_COST) {
-    s.phase = 'fly';
-    return undefined;
-  }
   return settle(s, ctx);
 }
 
@@ -182,10 +178,6 @@ function nextTurn(s, ctx) {
   s.cur = i;
   const p = cur(s);
   p.doubles = 0;
-  if (s.festival?.owner === p.id) {
-    log(s, `Le festival de ${TILES[s.festival.pos].name} est terminé.`);
-    s.festival = null;
-  }
   s.phase = 'roll';
 }
 
@@ -210,18 +202,12 @@ function eliminate(s, p, to) {
     liquidated += Math.floor((prop.level * (TILES[pos].build || 0)) / 2);
     if (heir) s.props[pos] = { owner: heir.id, level: 0, mortgaged: prop.mortgaged };
     else delete s.props[pos];
-    if (s.festival?.pos === pos) s.festival = null;
   }
-  if (heir) {
-    heir.cash += p.cash + liquidated;
-    heir.passes += p.passes;
-  }
+  if (heir) heir.cash += p.cash + liquidated;
   p.cash = 0;
-  p.passes = 0;
   p.out = true;
   p.blocked = 0;
   s.trades = s.trades.filter((t) => t.from !== p.id && t.to !== p.id);
-  if (s.festival?.owner === p.id) s.festival = null;
   if (active(s).length <= 1) finish(s, 'last');
   else if (!active(s).some((o) => !o.bot)) finish(s, 'humans'); // les robots ne continuent pas sans personne
 }
@@ -280,14 +266,13 @@ function land(s, ctx) {
   switch (t.type) {
     case 'city':
     case 'escale': {
-      const next = t.type === 'escale' ? 'fly' : null;
       const prop = s.props[p.pos];
       if (!prop) {
         s.phase = 'buy';
         return undefined;
       }
-      if (prop.owner === p.id || prop.mortgaged) return resume(s, next, ctx);
-      return charge(s, rentOf(s, p.pos), prop.owner, `à ${byId(s, prop.owner).pseudo} (${t.name})`, ctx, next);
+      if (prop.owner === p.id || prop.mortgaged) return settle(s, ctx);
+      return charge(s, rentOf(s, p.pos), prop.owner, `à ${byId(s, prop.owner).pseudo} (${t.name})`, ctx);
     }
     case 'telex':
       return drawCard(s, ctx);
@@ -296,16 +281,10 @@ function land(s, ctx) {
       return charge(s, amount, null, `(${t.name})`, ctx);
     }
     case 'chantier':
-      if (positionsOf(s, p.id).some((pos) => canBuildAt(s, p.id, pos) && p.cash >= Math.floor(buildCost(s, pos) / 2))) {
-        s.phase = 'chantier';
-        return undefined;
-      }
-      return settle(s, ctx);
+      return charge(s, WORKS_FEE, null, '(Chantier)', ctx);
     case 'festival':
-      if (positionsOf(s, p.id).some((pos) => TILES[pos].type === 'city' && !s.props[pos].mortgaged)) {
-        s.phase = 'festival';
-        return undefined;
-      }
+      p.cash += FESTIVAL_GAIN;
+      log(s, `${p.pseudo} gagne ${money(FESTIVAL_GAIN)} au Festival.`);
       return settle(s, ctx);
     case 'control':
       return sendToCustoms(s, ctx);
@@ -321,7 +300,7 @@ const CARDS = [
   { text: 'Billet retour : retour au Départ.', play: (s, ctx) => goForwardTo(s, 0, ctx) },
   { text: 'Tes bagages sont perdus : paie 50 €.', play: (s, ctx) => charge(s, 50, null, '(bagages perdus)', ctx) },
   { text: 'Tu revends ton carnet de voyage : +100 €.', play: (s, ctx) => gain(s, 100, ctx) },
-  { text: 'Visa accordé : tu gardes un passe-douane.', play: (s, ctx) => { cur(s).passes += 1; return settle(s, ctx); } },
+  { text: 'Tu vends tes photos de voyage : +50 €.', play: (s, ctx) => gain(s, 50, ctx) },
   { text: 'Contrôle surprise : direction la Douane.', play: (s, ctx) => sendToCustoms(s, ctx) },
   { text: 'Ta photo gagne un concours : +150 €.', play: (s, ctx) => gain(s, 150, ctx) },
   { text: 'Amende de stationnement : paie 40 €.', play: (s, ctx) => charge(s, 40, null, '(amende)', ctx) },
@@ -442,7 +421,7 @@ const gainsMajority = (s, p, t) => t.type === 'city' && ownedInRegion(s, p.id, t
 
 // Ce que vaut une proposition pour celui qui la reçoit : les villes qui lui donnent une majorité comptent plus.
 function offerValue(s, to, offer) {
-  return offer.cash + offer.passes * 50 + offer.cities.reduce((sum, pos) => sum + TILES[pos].price * (gainsMajority(s, to, TILES[pos]) ? 1.6 : 1), 0);
+  return offer.cash + offer.cities.reduce((sum, pos) => sum + TILES[pos].price * (gainsMajority(s, to, TILES[pos]) ? 1.6 : 1), 0);
 }
 function botAccepts(s, bot, trade) {
   const give = trade.get;
@@ -451,7 +430,7 @@ function botAccepts(s, bot, trade) {
     const breaks = t.type === 'city' && ownedInRegion(s, bot.id, t.region) >= s.majority;
     return sum + t.price * (breaks ? 2.5 : 1);
   }, 0);
-  return offerValue(s, bot, trade.give) >= (give.cash + give.passes * 50 + lost) * 1.15 && bot.cash - give.cash >= 50;
+  return offerValue(s, bot, trade.give) >= (give.cash + lost) * 1.15 && bot.cash - give.cash >= 50;
 }
 
 // Un robot à qui il manque une ville pour sa majorité essaie de la racheter : à un autre robot, ou en proposant à un joueur.
@@ -464,7 +443,7 @@ function botTrade(s, p, ctx) {
     const offer = Math.floor(t.price * 1.7 / 5) * 5;
     const owner = byId(s, s.props[t.pos].owner);
     if (p.cash < offer + 250) continue;
-    const trade = { from: p.id, to: owner.id, give: { cash: offer, cities: [], passes: 0 }, get: { cash: 0, cities: [t.pos], passes: 0 } };
+    const trade = { from: p.id, to: owner.id, give: { cash: offer, cities: [] }, get: { cash: 0, cities: [t.pos] } };
     if (owner.bot) {
       if (ownedInRegion(s, owner.id, r) >= s.majority || !botAccepts(s, owner, trade)) continue;
       transfer(s, p, owner, trade.give);
@@ -503,12 +482,6 @@ function botStep(s, ctx) {
   const t = TILES[p.pos];
   switch (s.phase) {
     case 'roll':
-      if (p.blocked && p.passes) {
-        p.passes -= 1;
-        p.blocked = 0;
-        log(s, `${p.pseudo} présente un passe-douane.`);
-        return;
-      }
       if (p.blocked && p.cash > 300) {
         p.cash -= FINE;
         p.blocked = 0;
@@ -523,32 +496,9 @@ function botStep(s, ctx) {
         p.cash -= t.price;
         s.props[p.pos] = { owner: p.id, level: 0, mortgaged: false };
         log(s, `${p.pseudo} achète ${t.name} pour ${money(t.price)}.`);
-        resume(s, t.type === 'escale' ? 'fly' : null, ctx);
       } else {
         log(s, `${p.pseudo} laisse ${t.name}.`);
-        resume(s, t.type === 'escale' ? 'fly' : null, ctx);
       }
-      return;
-    case 'festival': {
-      const best = positionsOf(s, p.id).filter((pos) => TILES[pos].type === 'city' && !s.props[pos].mortgaged).sort((a, b) => rentOf(s, b) - rentOf(s, a))[0];
-      if (best !== undefined) {
-        s.festival = { pos: best, owner: p.id };
-        log(s, `Festival à ${TILES[best].name} : loyer doublé jusqu'au prochain tour de ${p.pseudo}.`);
-      }
-      settle(s, ctx);
-      return;
-    }
-    case 'chantier': {
-      const spot = positionsOf(s, p.id).find((pos) => canBuildAt(s, p.id, pos) && p.cash >= Math.floor(buildCost(s, pos) / 2));
-      if (spot !== undefined) {
-        p.cash -= Math.floor(buildCost(s, spot) / 2);
-        s.props[spot].level += 1;
-        log(s, `${p.pseudo} construit à ${TILES[spot].name} à moitié prix.`);
-      }
-      settle(s, ctx);
-      return;
-    }
-    case 'fly':
       settle(s, ctx);
       return;
     case 'end':
@@ -567,18 +517,16 @@ function botStep(s, ctx) {
 
 function cleanOffer(given) {
   const o = given ?? {};
-  if (Number(o.cash) < 0 || Number(o.passes) < 0) throw new Error('Un montant ne peut pas être négatif.');
+  if (Number(o.cash) < 0) throw new Error('Un montant ne peut pas être négatif.');
   return {
     cash: Math.max(0, Math.floor(Number(o.cash) || 0)),
     cities: [...new Set((Array.isArray(o.cities) ? o.cities : []).map(Number))].filter((n) => Number.isInteger(n) && TILES[n]),
-    passes: Math.max(0, Math.floor(Number(o.passes) || 0)),
   };
 }
 
 function checkOffer(s, p, offer, actorId) {
   const mine = p.id === actorId;
   if (p.cash < offer.cash) throw new Error(mine ? `Tu n'as pas ${money(offer.cash)}.` : `${p.pseudo} n'a pas ${money(offer.cash)}.`);
-  if (p.passes < offer.passes) throw new Error(mine ? 'Tu n’as pas assez de passe-douane.' : `${p.pseudo} n'a pas assez de passe-douane.`);
   for (const pos of offer.cities) {
     const prop = s.props[pos];
     if (prop?.owner !== p.id) throw new Error(`${TILES[pos].name} n'appartient pas à ${p.pseudo}.`);
@@ -589,17 +537,14 @@ function checkOffer(s, p, offer, actorId) {
 function transfer(s, from, to, offer) {
   from.cash -= offer.cash;
   to.cash += offer.cash;
-  from.passes -= offer.passes;
-  to.passes += offer.passes;
   for (const pos of offer.cities) {
     s.props[pos].owner = to.id;
-    if (s.festival?.pos === pos) s.festival = null;
   }
 }
 
 // ——— Les coups ———
 
-const TURN_ONLY = new Set(['roll', 'payFine', 'usePass', 'buy', 'decline', 'fly', 'skip', 'festival', 'chantier', 'endTurn', 'pay', 'raise', 'bankrupt', 'build', 'sell', 'mortgage', 'unmortgage']);
+const TURN_ONLY = new Set(['roll', 'payFine', 'buy', 'decline', 'endTurn', 'pay', 'raise', 'bankrupt', 'build', 'sell', 'mortgage', 'unmortgage']);
 const MANAGE_PHASES = new Set(['roll', 'buy', 'end']);
 
 function needPhase(s, ...phases) {
@@ -635,13 +580,6 @@ export function move(state, playerId, given, ctx) {
       p.blocked = 0;
       log(s, `${p.pseudo} paie ${money(FINE)} et passe la Douane.`);
       break;
-    case 'usePass':
-      needPhase(s, 'roll');
-      if (!p.blocked || !p.passes) throw new Error('Tu n’as pas de passe-douane à utiliser.');
-      p.passes -= 1;
-      p.blocked = 0;
-      log(s, `${p.pseudo} présente un passe-douane.`);
-      break;
     case 'buy': {
       needPhase(s, 'buy');
       const t = TILES[p.pos];
@@ -649,49 +587,16 @@ export function move(state, playerId, given, ctx) {
       p.cash -= t.price;
       s.props[p.pos] = { owner: p.id, level: 0, mortgaged: false };
       log(s, `${p.pseudo} achète ${t.name} pour ${money(t.price)}.`);
-      resume(s, t.type === 'escale' ? 'fly' : null, ctx);
+      settle(s, ctx);
       break;
     }
     case 'decline': {
       needPhase(s, 'buy');
       const t = TILES[p.pos];
       log(s, `${p.pseudo} laisse ${t.name}.`);
-      resume(s, t.type === 'escale' ? 'fly' : null, ctx);
-      break;
-    }
-    case 'fly': {
-      needPhase(s, 'fly');
-      const t = TILES[pos];
-      if (t?.type !== 'escale' || pos === p.pos) throw new Error('Choisis une autre escale.');
-      if (p.cash < FLY_COST) throw new Error(`Il te faut ${money(FLY_COST)}.`);
-      p.cash -= FLY_COST;
-      p.pos = pos;
-      log(s, `${p.pseudo} s'envole pour ${t.name}.`);
       settle(s, ctx);
       break;
     }
-    case 'festival':
-      needPhase(s, 'festival');
-      if (ownedProp(s, p.id, pos).mortgaged || TILES[pos].type !== 'city') throw new Error('Choisis une de tes villes actives.');
-      s.festival = { pos, owner: p.id };
-      log(s, `Festival à ${TILES[pos].name} : loyer doublé jusqu'au prochain tour de ${p.pseudo}.`);
-      settle(s, ctx);
-      break;
-    case 'chantier': {
-      needPhase(s, 'chantier');
-      if (!canBuildAt(s, p.id, pos)) throw new Error('Tu ne peux pas construire ici.');
-      const cost = Math.floor(buildCost(s, pos) / 2);
-      if (p.cash < cost) throw new Error(`Il te faut ${money(cost)}.`);
-      p.cash -= cost;
-      s.props[pos].level += 1;
-      log(s, `${p.pseudo} construit à ${TILES[pos].name} à moitié prix.`);
-      settle(s, ctx);
-      break;
-    }
-    case 'skip':
-      needPhase(s, 'fly', 'festival', 'chantier');
-      settle(s, ctx);
-      break;
     case 'endTurn':
       needPhase(s, 'end');
       nextTurn(s, ctx);
@@ -757,7 +662,7 @@ export function move(state, playerId, given, ctx) {
       if (s.trades.filter((t) => t.from === p.id).length >= MAX_TRADES) throw new Error(`Pas plus de ${MAX_TRADES} propositions en attente.`);
       const give = cleanOffer(action.give);
       const get = cleanOffer(action.get);
-      if (!give.cash && !give.cities.length && !give.passes && !get.cash && !get.cities.length && !get.passes) throw new Error('Cette proposition est vide.');
+      if (!give.cash && !give.cities.length && !get.cash && !get.cities.length) throw new Error('Cette proposition est vide.');
       checkOffer(s, p, give, p.id);
       checkOffer(s, other, get, p.id);
       s.tradeSeq += 1;
@@ -815,11 +720,8 @@ export function timeout(state, ctx) {
     case 'roll': doRoll(s, ctx); break;
     case 'buy':
       log(s, `${p.pseudo} laisse ${TILES[p.pos].name}.`);
-      resume(s, TILES[p.pos].type === 'escale' ? 'fly' : null, ctx);
+      settle(s, ctx);
       break;
-    case 'fly':
-    case 'festival':
-    case 'chantier': settle(s, ctx); break;
     case 'end': nextTurn(s, ctx); break;
     case 'debt':
       liquidate(s, p, s.debt.amount);
@@ -869,8 +771,6 @@ export function view(state, playerId) {
       sell: manage || inDebt ? mine.filter((pos) => state.props[pos].level > 0) : [],
       mortgage: manage || inDebt ? mine.filter((pos) => !state.props[pos].mortgaged && !state.props[pos].level) : [],
       unmortgage: manage ? mine.filter((pos) => state.props[pos].mortgaged && me.cash >= unmortgageCost(TILES[pos])) : [],
-      chantier: state.phase === 'chantier' ? mine.filter((pos) => canBuildAt(state, me.id, pos) && me.cash >= Math.floor(buildCost(state, pos) / 2)) : [],
-      festival: state.phase === 'festival' ? mine.filter((pos) => TILES[pos].type === 'city' && !state.props[pos].mortgaged) : [],
     },
     // Tout ce que le joueur en dette peut réunir en vendant.
     raisable: inDebt && mine.length ? me.cash + mine.reduce((sum, pos) => {
