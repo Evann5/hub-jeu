@@ -89,13 +89,14 @@
   font-family: var(--cp-text);
 }
 .g-complot .cp-card svg { width: 100%; height: 100%; }
-.g-complot .cp-card.is-lg { width: min(37vw, 190px); aspect-ratio: 3 / 4.3; border-radius: 18px; }
+.g-complot .cp-card.is-lg { width: min(37vw, 156px); aspect-ratio: 3 / 4.3; border-radius: 18px; }
 .g-complot .cp-card.is-lg svg { position: absolute; inset: 0; height: 74%; }
 .g-complot .cp-card.is-sm { width: 54px; aspect-ratio: 3 / 4.2; border-radius: 10px; border-width: 2px; box-shadow: none; }
 .g-complot .cp-card.is-back { border-color: rgb(255 200 61 / 0.6); }
 .g-complot .cp-card-name { position: absolute; left: 0; right: 0; bottom: 30px; padding: 4px 6px; font: 800 clamp(0.8rem, 0.5rem + 1.1vw, 0.95rem)/1.1 var(--cp-display); background: rgb(14 7 34 / 0.72); }
 .g-complot .cp-card-power { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; display: grid; place-items: center; padding: 0 6px; font-size: 0.72rem; font-weight: 600; background: rgb(14 7 34 / 0.9); color: var(--gold-hi); }
 .g-complot .cp-card-mini { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 2px; font-size: 0.62rem; font-weight: 800; background: rgb(14 7 34 / 0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-complot .cp-seat-cards .cp-card.is-sm.is-dead { width: 66px; }
 .g-complot .cp-card.is-dead { filter: grayscale(0.85) brightness(0.65); border-color: rgb(255 255 255 / 0.3); box-shadow: none; }
 .g-complot .cp-card-lost { position: absolute; top: 8px; left: -28px; right: -28px; transform: rotate(-14deg); background: var(--rose); color: #1A0F33; font: 800 0.8rem var(--cp-display); text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 0; }
 .g-complot .cp-card.is-sm .cp-card-lost { display: none; }
@@ -132,11 +133,12 @@
 .g-complot .cp-act-claim.is-free { color: var(--soft); font-weight: 500; }
 .g-complot .cp-targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
 .g-complot .cp-target { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 6px 12px; border: 2px solid var(--rose); border-radius: 14px; background: rgb(255 77 122 / 0.15); color: var(--text); font-weight: 700; cursor: pointer; }
+.g-complot .cp-target > :first-child { flex: none; }
 .g-complot .cp-target span { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .g-complot .cp-target:hover { background: rgb(255 77 122 / 0.35); }
 .g-complot .cp-react { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .g-complot .cp-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-.g-complot .cp-options .cp-card.is-lg { width: min(30vw, 150px); }
+.g-complot .cp-options .cp-card.is-lg { width: min(30vw, 140px); }
 .g-complot .cp-btn { min-height: 52px; padding: 0 22px; border: 2px solid var(--gold); border-radius: 99px; background: transparent; color: var(--gold-hi); font-weight: 800; font-size: 1rem; cursor: pointer; transition: transform 0.1s; }
 .g-complot .cp-btn.is-main { background: var(--gold); color: #1A0F33; box-shadow: var(--glow); }
 .g-complot .cp-btn.is-danger { background: var(--rose); border-color: var(--rose); color: #1A0F33; box-shadow: 0 0 22px rgb(255 77 122 / 0.5); }
@@ -173,4 +175,6 @@
   .g-complot .cp-tags { align-self: center; }
   .g-complot .cp-acts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .g-complot .cp-act-sub { font-size: 0.75rem; line-height: 1.2; }
+  .g-complot .cp-act-name { font-size: 0.88rem; overflow-wrap: anywhere; }
+  .g-complot .cp-seat-cards .cp-card.is-sm.is-dead { width: 54px; }
 }

@@ -161,6 +161,7 @@ test('Cupidon : deux personnes différentes, une seule fois, seulement la 1re nu
   assert.throws(() => act(t, 3, { type: 'love', targets: [2, 5] }), /Tu ne peux pas/);
   assert.deepEqual(view(t, 2).lovers, [2, 4]);
   assert.deepEqual(view(t, 4).lovers, [2, 4]);
+  assert.deepEqual(view(t, 3).lovers, [2, 4], 'Cupidon connaît le couple qu’il a formé');
   assert.equal(view(t, 5).lovers, null);
   assert.equal(view(t, 2).roles[4], undefined, 'un amoureux ne connaît pas le rôle de l’autre');
 });

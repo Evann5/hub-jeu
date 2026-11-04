@@ -87,9 +87,9 @@ button.uc-card:active { cursor: grabbing; }
 }
 .g-undercover .uc-logo { display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: #fff; color: var(--word); box-shadow: 0 0 0 6px #1F37D6, 0 0 0 8px rgb(255 255 255 / 0.5); }
 .g-undercover .uc-logo svg { width: 46px; height: 46px; }
-.g-undercover .uc-face { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; text-align: center; }
-.g-undercover .uc-word { --pad: 20px; font: 800 min(2.35rem, calc((100cqw - 2 * var(--pad)) / (var(--n, 8) * 0.8)))/1 var(--uc-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
-.g-undercover .uc-card { container-type: inline-size; }
+.g-undercover .uc-face { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--pad); text-align: center; }
+.g-undercover .uc-word { font: 800 min(2.35rem, calc((100cqw - 2 * var(--pad)) / (var(--n, 8) * 0.88)))/1 var(--uc-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.g-undercover .uc-card { --pad: 14px; container-type: inline-size; }
 .g-undercover .uc-q { font-size: 5rem; }
 .g-undercover .uc-white-note { margin-top: 14px; font-weight: 700; }
 .g-undercover .uc-corner { position: absolute; display: grid; place-items: center; font: 800 1rem/1 var(--uc-display); color: var(--word); }
@@ -106,8 +106,7 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .uc-role-sub { margin-top: 8px; font-size: 0.85rem; opacity: 0.9; }
 .g-undercover .uc-avatar-big { display: grid; place-items: center; width: 74px; height: 74px; margin: 0 auto 14px; border-radius: 50%; background: #fff; font-size: 2.2rem; }
 .g-undercover .uc-card.is-small { width: 120px; height: 168px; margin: 0; border-radius: 16px; }
-.g-undercover .uc-card.is-small .uc-word { --pad: 10px; }
-.g-undercover .uc-card.is-small .uc-face { padding: 10px; }
+.g-undercover .uc-card.is-small { --pad: 10px; }
 .g-undercover .uc-card.is-small .uc-q { font-size: 3.4rem; }
 .g-undercover .uc-card.is-small .uc-logo { width: 54px; height: 54px; }
 .g-undercover .uc-card.is-small .uc-logo svg { width: 28px; height: 28px; }
@@ -124,8 +123,7 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .uc-peek .uc-card.uc-back { box-shadow: 0 12px 24px rgb(0 0 30 / 0.3), inset 0 0 0 6px #2E4BFF, inset 0 0 0 7px rgb(255 255 255 / 0.5); }
 .g-undercover .uc-peek .uc-logo { width: 40px; height: 40px; box-shadow: 0 0 0 3px #1F37D6; }
 .g-undercover .uc-peek .uc-logo svg { width: 20px; height: 20px; }
-.g-undercover .uc-peek .uc-word { --pad: 6px; }
-.g-undercover .uc-peek .uc-face { padding: 6px; }
+.g-undercover .uc-peek .uc-card { --pad: 6px; }
 .g-undercover .uc-peek .uc-q { font-size: 2.2rem; }
 .g-undercover .uc-peek .uc-white-note, .g-undercover .uc-peek .uc-corner { display: none; }
 

@@ -200,7 +200,7 @@ function renderLobby() {
         onclick: () => call(state.socket, 'table:kick', { id: cur.id, userId: id }).catch((err) => toast(err.message, { error: true })),
       }, icon('x', `Retirer ${u.pseudo}`)) : null);
   });
-  if (!full) seats.push(h('li.lobby-seat.empty', h('span.token.empty-token', { 'aria-hidden': 'true' }), h('span.label', g.maxPlayers - t.seats.length > 1 ? `${g.maxPlayers - t.seats.length} places libres` : '1 place libre')));
+  if (!full) seats.push(h('li.lobby-seat.empty', h('span.token.empty-token', { 'aria-hidden': 'true' }, icon('plus')), h('span.label', g.maxPlayers - t.seats.length > 1 ? `${g.maxPlayers - t.seats.length} places libres` : '1 place libre')));
 
   const actions = [];
   if (!seated()) {
@@ -217,18 +217,21 @@ function renderLobby() {
     ? `Encore ${count(missing, 'joueur', 'joueurs')} pour lancer.`
     : isHost() ? 'Tout le monde est là ? Lance la partie.' : seated() ? `En attente de ${userOf(t.hostId).pseudo}, qui lance la partie.` : null;
 
+  // Le corps défile ; le pied (message + boutons) reste toujours visible en bas de la carte.
   cur.ui.main.replaceChildren(h('div.lobby',
     h('section.lobby-card',
-      h('div.lobby-top', h('span.lobby-emoji', gameLogo(g)), h('span.game-meta', playersLabel(g), g.duration ? ` · ${g.duration}` : '')),
-      h('h2', g.name),
-      h('p.lobby-desc', g.description),
-      g.how?.length ? h('button.link-btn.dark', { type: 'button', onclick: () => openHow(g) }, 'Comment on joue ?') : null,
-      h('ul.lobby-seats', seats),
-      g.options.length ? h('div.lobby-options',
-        h('h3', 'Réglages', isHost() ? null : h('small', ' · choisis par l’hôte')),
-        g.options.map((d) => optionControl(d, t.options[d.key], isHost()))) : null,
-      hint ? h('p.lobby-note', hint) : null,
-      h('div.card-actions', actions))));
+      h('div.lobby-body',
+        h('div.lobby-top', h('span.lobby-emoji', gameLogo(g)), h('span.game-meta', playersLabel(g), g.duration ? ` · ${g.duration}` : '')),
+        h('h2', g.name),
+        h('p.lobby-desc', g.description),
+        g.how?.length ? h('button.link-btn.dark', { type: 'button', onclick: () => openHow(g) }, 'Comment on joue ?') : null,
+        h('ul.lobby-seats', seats),
+        g.options.length ? h('div.lobby-options',
+          h('h3', 'Réglages', isHost() ? null : h('small', ' · choisis par l’hôte')),
+          g.options.map((d) => optionControl(d, t.options[d.key], isHost()))) : null),
+      h('div.lobby-foot',
+        hint ? h('p.lobby-note', hint) : null,
+        h('div.card-actions', actions)))));
 }
 
 export function openHow(g) {

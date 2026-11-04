@@ -70,10 +70,12 @@
 .g-telepathie .tp-level b { font: 800 1.7rem/1 'TP Unbounded', sans-serif; color: var(--mint); }
 .g-telepathie .tp-meter { display: grid; justify-items: end; gap: 2px; }
 .g-telepathie .tp-meter-label { color: var(--ink-2); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-.g-telepathie .tp-meter-icons { display: flex; gap: 3px; font-size: 1.3rem; line-height: 1; }
-.g-telepathie .tp-meter-icons i { font-style: normal; color: rgb(255 255 255 / 0.25); }
-.g-telepathie .tp-meter-icons i.is-on { color: var(--rose); text-shadow: 0 0 14px rgb(255 159 210 / 0.9); }
-.g-telepathie .tp-meter:nth-of-type(3) .tp-meter-icons i.is-on { color: var(--peach); text-shadow: 0 0 14px rgb(255 201 160 / 0.9); }
+.g-telepathie .tp-meter-icons { display: flex; gap: 4px; line-height: 1; }
+.g-telepathie .tp-meter-icons i { display: block; width: 22px; height: 22px; color: rgb(255 255 255 / 0.28); transition: color 0.3s, filter 0.3s, transform 0.3s; }
+.g-telepathie .tp-meter-icons svg { display: block; width: 100%; height: 100%; fill: currentColor; stroke: currentColor; stroke-width: 1.2; }
+.g-telepathie .tp-meter-icons i.is-on { color: var(--rose); filter: drop-shadow(0 0 6px rgb(255 159 210 / 0.85)); }
+.g-telepathie .tp-meter-icons i.is-star.is-on { color: var(--peach); filter: drop-shadow(0 0 6px rgb(255 201 160 / 0.85)); }
+.g-telepathie .tp-meter-icons i:not(.is-on) svg { fill: none; }
 
 /* Équipage */
 .g-telepathie .tp-crew { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; margin: 0; padding: 0; list-style: none; }
@@ -169,6 +171,7 @@
 .g-telepathie .tp-btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); filter: brightness(1.06); }
 .g-telepathie .tp-btn:active:not(:disabled) { transform: scale(0.96, 0.93); }
 .g-telepathie .tp-btn:disabled { opacity: 0.5; cursor: default; }
+.g-telepathie .tp-btn svg { width: 18px; height: 18px; margin-right: 8px; vertical-align: -3px; fill: currentColor; }
 .g-telepathie .tp-btn:focus-visible, .g-telepathie .tp-card:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 
 /* Concentration / fin */

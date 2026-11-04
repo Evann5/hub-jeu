@@ -406,7 +406,8 @@ export function view(s, playerId) {
     log: s.log,
     roles,
     winner: over ? s.winner : null,
-    lovers: god || (viewer !== null && s.lovers?.includes(viewer)) ? s.lovers : null,
+    // Cupidon connaît le couple qu'il a formé ; les autres ne le voient pas (hors amoureux et morts).
+    lovers: god || (viewer !== null && (s.lovers?.includes(viewer) || myRole === 'cupid')) ? s.lovers : null,
     god,
     me: viewer === null ? null : { id: viewer, role: myRole, alive: !meDead },
     hunter: s.phase === 'hunter' ? s.hunters[0] : null,

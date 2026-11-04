@@ -34,6 +34,23 @@ function showError(form, message) {
   box.textContent = message;
 }
 
+const PASSWORD_MIN = 10;
+
+// Le minimum se vérifie avant l'envoi et se montre sous le champ lui-même (l'indication passe en rouge).
+function passwordLongEnough(form, name, hintId) {
+  const input = form.elements[name];
+  if (input.value.length >= PASSWORD_MIN) return true;
+  input.setAttribute('aria-invalid', 'true');
+  document.getElementById(hintId).classList.add('is-error');
+  input.focus();
+  return false;
+}
+
+function clearPasswordFlag(form, input) {
+  input.removeAttribute('aria-invalid');
+  form.querySelector('small.is-error')?.classList.remove('is-error');
+}
+
 export function renderAuth(root, { mode = 'login', onDone }) {
   const panel = h('div.auth-card');
   const tabs = h('div.switch', { role: 'tablist', 'aria-label': 'Connexion ou inscription' });
@@ -87,8 +104,8 @@ export function renderAuth(root, { mode = 'login', onDone }) {
         h('input.input', { name: 'reg_pseudo', autocomplete: 'username', required: true, autocapitalize: 'none', spellcheck: false, maxlength: 20 }),
         h('small', 'De 3 à 20 caractères. Les autres te verront sous ce nom.')),
       h('label.field', h('span', 'Mot de passe'),
-        h('input.input', { name: 'reg_password', type: 'password', autocomplete: 'new-password', required: true, minlength: 10 }),
-        h('small', 'Au moins 10 caractères.')),
+        h('input.input', { name: 'reg_password', type: 'password', autocomplete: 'new-password', required: true, 'aria-describedby': 'reg-password-hint' }),
+        h('small', { id: 'reg-password-hint' }, 'Au moins 10 caractères.')),
       h('div.check',
         h('input', { type: 'checkbox', id: 'reg-rules', name: 'reg_rules', required: true }),
         h('label', { htmlFor: 'reg-rules' }, "J'accepte les ",
@@ -99,6 +116,7 @@ export function renderAuth(root, { mode = 'login', onDone }) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       showError(form, null);
+      if (!passwordLongEnough(form, 'reg_password', 'reg-password-hint')) return;
       submitting(form, true);
       try {
         const res = await api('register', {
@@ -110,9 +128,11 @@ export function renderAuth(root, { mode = 'login', onDone }) {
         onDone(res);
       } catch (err) {
         showError(form, err.message);
+        if (/mot de passe/i.test(err.message)) form.elements.reg_password.setAttribute('aria-invalid', 'true');
         submitting(form, false);
       }
     });
+    form.elements.reg_password.addEventListener('input', (e) => clearPasswordFlag(form, e.target));
     return form;
   }
 
@@ -125,8 +145,8 @@ export function renderAuth(root, { mode = 'login', onDone }) {
 export function renderForcedPassword(root, { onDone }) {
   const form = h('form', { novalidate: true },
     h('label.field', h('span', 'Nouveau mot de passe'),
-      h('input.input', { name: 'new_password', type: 'password', autocomplete: 'new-password', required: true, minlength: 10 }),
-      h('small', 'Au moins 10 caractères.')),
+      h('input.input', { name: 'new_password', type: 'password', autocomplete: 'new-password', required: true, 'aria-describedby': 'new-password-hint' }),
+      h('small', { id: 'new-password-hint' }, 'Au moins 10 caractères.')),
     h('label.field', h('span', 'Encore une fois'),
       h('input.input', { name: 'new_password2', type: 'password', autocomplete: 'new-password', required: true })),
     h('button.btn.btn-block', { type: 'submit' }, 'Enregistrer mon mot de passe'),
@@ -135,6 +155,7 @@ export function renderForcedPassword(root, { onDone }) {
     e.preventDefault();
     showError(form, null);
     const pass = form.elements.new_password.value;
+    if (!passwordLongEnough(form, 'new_password', 'new-password-hint')) return;
     if (pass !== form.elements.new_password2.value) return showError(form, 'Les deux mots de passe ne sont pas identiques.');
     submitting(form, true);
     try {
@@ -145,6 +166,7 @@ export function renderForcedPassword(root, { onDone }) {
       submitting(form, false);
     }
   });
+  form.elements.new_password.addEventListener('input', (e) => clearPasswordFlag(form, e.target));
   root.replaceChildren(h('main.auth',
     hero(),
     h('section.auth-panel', h('div.auth-card',

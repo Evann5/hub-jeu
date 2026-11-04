@@ -61,14 +61,14 @@ export function mount(root, api) {
   function progress(done, verb) {
     const people = writers();
     return h('ul.us-who', { 'aria-label': `${done.length} sur ${people.length} ${verb}` }, people.map((id) => h(`li${done.includes(id) ? '.is-done' : ''}`,
-      h('span', { 'aria-hidden': 'true' }, api.user(id).avatar), h('span.us-name', name(id)), h('b', { 'aria-hidden': 'true' }, done.includes(id) ? '✓' : '…'))));
+      api.token(api.user(id), { size: 's' }), h('span.us-name', name(id)), h('i.us-mark', { 'aria-hidden': 'true' }), h('span.us-sr', done.includes(id) ? 'fait' : 'en attente'))));
   }
 
   function screenPick() {
     if (amActive()) {
       return [head('À toi de deviner'),
         h('section.us-card', h('h2', 'Choisis un numéro de 1 à 5'),
-          h('p', 'Tu ne verras pas le mot : il sera montré aux autres joueurs, qui t’aideront avec un indice chacun.'),
+          h('p', 'Tu ne verras pas le mot : les autres joueurs le verront.'),
           h('div.us-picks', Array.from({ length: v.choices }, (_, i) => h(`button.us-pick.${color(i)}`, {
             type: 'button', style: tilt(i), dataset: { k: `pick${i}` }, onclick: () => send({ type: 'pick', n: i + 1 }), 'aria-label': `Numéro ${i + 1}`,
           }, h('i.us-pin', { 'aria-hidden': 'true' }), String(i + 1))))),
@@ -76,7 +76,7 @@ export function mount(root, api) {
     }
     return [head(`${name(v.active)} devine`),
       h('section.us-card', h('h2', `${isMe(v.active) ? 'Tu' : name(v.active)} ${isMe(v.active) ? 'choisis' : 'choisit'} un numéro`),
-        h('p', seated() ? 'Dès qu’il a choisi, tu verras le mot mystère et tu écriras ton indice.' : 'Les joueurs vont bientôt écrire leurs indices.'),
+        null,
         h('div.us-picks.is-idle', Array.from({ length: v.choices }, (_, i) => note('?', i))))];
   }
 
@@ -100,20 +100,20 @@ export function mount(root, api) {
 
   function screenWrite() {
     if (amActive()) {
-      return [head('Les autres écrivent'), h('section.us-card', h('h2', 'Tes amis cherchent un indice'), h('p', 'Un seul mot chacun, écrit en secret. Les indices identiques seront annulés.'), progress(v.wrote, 'ont écrit'))];
+      return [head('Les autres écrivent'), h('section.us-card', h('h2', 'Les autres écrivent leur indice'), progress(v.wrote, 'ont écrit'))];
     }
     if (!seated()) return [head(`${name(v.active)} devine`), h('section.us-card', h('h2', 'Les indices s’écrivent…'), progress(v.wrote, 'ont écrit'))];
     return [head(`Aide ${name(v.active)}`), wordCard(),
       h('section.us-card',
-        v.mine === null ? h('h2', 'Écris un indice : un seul mot') : h('h2', 'Ton indice est collé'),
-        v.mine === null ? h('p', `Pas le mot lui-même, ni un mot de sa famille. ${name(v.active)} ne doit pas voir le mot.`) : h('p', 'Attends les autres indices.'),
+        v.mine === null ? h('h2', 'Écris ton indice') : h('h2', 'Ton indice est collé'),
+        v.mine === null ? h('p', 'Pas le mot lui-même, ni un mot de sa famille.') : null,
         clueForm(), progress(v.wrote, 'ont écrit'))];
   }
 
   function screenReview() {
     if (!v.review) {
       return [head(amActive() ? 'Les autres trient' : `${name(v.active)} devine`),
-        h('section.us-card', h('h2', 'Tri des indices'), h('p', `${v.clueCount} indice${v.clueCount > 1 ? 's' : ''} en cours d’examen. Les doublons sont déjà écartés.`), progress(v.done, 'ont validé'))];
+        h('section.us-card', h('h2', 'Tri des indices'), h('p', `${v.clueCount} indice${v.clueCount > 1 ? 's' : ''} en cours d’examen.`), progress(v.done, 'ont validé'))];
     }
     const mineDone = v.done.includes(api.me.id);
     const notes = v.review.map((c, i) => {
@@ -132,7 +132,7 @@ export function mount(root, api) {
     });
     return [head('Trier les indices'), wordCard(),
       h('section.us-card', h('h2', 'Garde les bons indices'),
-        h('p', 'Les doublons et les indices trop proches du mot sont déjà annulés. Tu peux en écarter d’autres : il faut l’accord de plus de la moitié des autres joueurs.'),
+        h('p', 'Doublons et indices trop proches : déjà annulés. Pour en écarter un autre, il faut plus de la moitié des voix.'),
         h('ul.us-clues', notes),
         mineDone ? h('p.us-wait', 'Tu as validé. On attend les autres…') : h('button.us-btn', { type: 'button', dataset: { k: 'done' }, onclick: () => send({ type: 'done' }) }, 'C’est bon pour moi'),
         progress(v.done, 'ont validé'))];
@@ -158,12 +158,11 @@ export function mount(root, api) {
       const clues = v.final.map((t, i) => h(`li.us-clue.${color(i)}`, { style: tilt(i) }, h('i.us-pin', { 'aria-hidden': 'true' }), h('b.us-text', t)));
       return [head('À toi de deviner'),
         h('section.us-card', h('h2', clues.length ? 'Quel est le mot mystère ?' : 'Aucun indice n’a survécu'),
-          h('p', clues.length ? 'Voici les indices restants. Propose un mot, ou passe si tu n’as aucune idée.' : 'Tente ta chance, ou passe.'),
           clues.length ? h('ul.us-clues', clues) : null, guessForm())];
     }
     const clues = (v.finalBy || []).map((c, i) => h(`li.us-clue.${color(i)}`, { style: tilt(i) }, h('i.us-pin', { 'aria-hidden': 'true' }), h('b.us-text', c.text), h('small', isMe(c.by) ? 'ton indice' : name(c.by))));
     return [head(`${name(v.active)} devine`), v.word ? wordCard() : null,
-      h('section.us-card', h('h2', `${name(v.active)} réfléchit…`), h('p', clues.length ? 'Voici les indices qu’il ou elle voit.' : v.clueCount ? `${v.clueCount} indice${v.clueCount > 1 ? 's' : ''} gardé${v.clueCount > 1 ? 's' : ''}.` : 'Aucun indice n’a survécu.'), clues.length ? h('ul.us-clues', clues) : null)];
+      h('section.us-card', h('h2', `${name(v.active)} réfléchit…`), !clues.length ? h('p', 'Aucun indice n’a survécu.') : null, clues.length ? h('ul.us-clues', clues) : null)];
   }
 
   function trail() {

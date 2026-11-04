@@ -111,7 +111,6 @@ export function mount(root, api) {
     const m = me();
     return [
       h('div.es-teams',
-        h('h3', 'Répartition des agents'),
         h('p', 'Le chef connaît la clé, les agents la cherchent. Choisis ton agence.'),
         h('div.es-rosters', roster('red'), roster('blue')),
         m ? h('div.es-actions',
@@ -264,7 +263,7 @@ export function mount(root, api) {
       h('span.es-clue-label', `Indice de l’${TEAM[A].agency.toLowerCase()}`),
       h('span.es-clue-word', c.word),
       h('span.es-clue-num', { 'aria-label': c.number === 0 ? 'nombre illimité' : `nombre ${c.number}` }, c.number === 0 ? '∞' : String(c.number)),
-      left === null ? null : h('span.es-tries', { 'aria-label': `${left} essai${left > 1 ? 's' : ''} possible${left > 1 ? 's' : ''}` }, Array.from({ length: view.max }, (_, i) => h(`i${i < left ? '.is-on' : ''}`)))));
+      left === null ? null : h('span.es-tries', { 'aria-label': `${left} essai${left > 1 ? 's' : ''} possible${left > 1 ? 's' : ''}` }, Array.from({ length: view.max }, (_, i) => h(`i${i < left ? '.is-on' : ''}`)), h('span', `${left} essai${left > 1 ? 's' : ''}`))));
   }
 
   function renderLog() {

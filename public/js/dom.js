@@ -97,7 +97,12 @@ export function token(user, { size = '', online = false } = {}) {
 
 export function toast(text, { error = false, ms = 3500, action = false } = {}) {
   const el = h(`div.toast${error ? '.error' : ''}${action ? '.has-action' : ''}`, text);
-  document.getElementById('toasts').append(el);
+  const box = document.getElementById('toasts');
+  // Sur une table, le message se pose juste sous l'en-tête : il ne cache ni le titre ni « À toi de jouer ».
+  const head = document.querySelector('.view-table .table-head');
+  if (head) box.style.setProperty('--toast-top', `${Math.round(head.getBoundingClientRect().bottom) + 8}px`);
+  else box.style.removeProperty('--toast-top');
+  box.append(el);
   setTimeout(() => el.remove(), ms);
 }
 

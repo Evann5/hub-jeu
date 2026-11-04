@@ -1,6 +1,23 @@
 // Télépathie côté navigateur : un cosmos en verre dépoli sous des aurores boréales. Les cartes sont des bulles translucides dont
 // la teinte va du turquoise (1) au pêche (100), en passant par le bleu, le lilas et le rose. Tout le monde pose sa plus petite carte quand il le sent ; pas de minuteur, pas de tour.
 
+// Vraies icônes (SVG) à la place des caractères ♥ et ★ : même forme partout, quelle que soit la police.
+const ICONS = {
+  heart: 'M12 21.2 4.1 13.6C1.6 11.1 1.6 7.2 4 4.9c2.2-2.1 5.5-1.8 7.2.4l.8 1 .8-1c1.7-2.200 5-2.500 7.200-.4 2.400 2.300 2.400 6.200-.1 8.700Z',
+  star: 'm12 2.600 2.900 6 6.500.9-4.700 4.600 1.100 6.500L12 17.500 6.200 20.600l1.100-6.500L2.600 9.500l6.500-.9Z',
+};
+function icon(kind) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('focusable', 'false');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', ICONS[kind]);
+  path.setAttribute('stroke-linejoin', 'round');
+  svg.append(path);
+  return svg;
+}
+
 const hue = (card) => Math.round((170 + ((card - 1) / 99) * 220) % 360);
 
 // Étoiles scintillantes du fond : positions fixes (aucun hasard à chaque affichage), qui pétillent à tour de rôle.
@@ -64,17 +81,17 @@ export function mount(root, api) {
     }
   }
 
-  function meter(label, filled, max, glyph) {
+  function meter(label, filled, max, kind) {
     return h('div.tp-meter', { role: 'img', 'aria-label': `${label} : ${filled} sur ${max}` },
       h('span.tp-meter-label', label),
-      h('span.tp-meter-icons', { 'aria-hidden': 'true' }, Array.from({ length: max }, (_, i) => h(`i${i < filled ? '.is-on' : ''}`, glyph))));
+      h('span.tp-meter-icons', { 'aria-hidden': 'true' }, Array.from({ length: max }, (_, i) => h(`i.is-${kind}${i < filled ? '.is-on' : ''}`, icon(kind)))));
   }
 
   function header() {
     return h('header.tp-head',
       h('div.tp-level', h('small', 'Niveau'), h('b', `${v.level}`), h('span', `sur ${v.levels}`)),
-      meter('Vies', v.lives, v.livesMax, '♥'),
-      meter('Étoiles', v.stars, v.starsMax, '★'));
+      meter('Vies', v.lives, v.livesMax, 'heart'),
+      meter('Étoiles', v.stars, v.starsMax, 'star'));
   }
 
   function crew() {
@@ -121,8 +138,8 @@ export function mount(root, api) {
       h('button.tp-btn.is-ghost', {
         type: 'button', dataset: { k: 'star' }, disabled: v.stars <= 0,
         onclick: () => api.sendMove({ type: 'star' }).catch(() => {}),
-      }, `★ Proposer une étoile filante${v.stars <= 0 ? ' (plus aucune)' : ''}`),
-      h('small', 'Chacun défausse sa plus petite carte. Il faut l’accord de tous.'));
+      }, icon('star'), `Proposer une étoile filante${v.stars <= 0 ? ' (plus aucune)' : ''}`),
+      h('small', 'Chacun défausse sa plus petite carte, si tout le monde est d’accord.'));
   }
 
   function handView() {
@@ -143,10 +160,10 @@ export function mount(root, api) {
     const isNew = v.notice.id !== animated && ['play', 'mistake', 'star'].includes(v.notice.kind);
     animated = v.notice.id;
     const text = noticeText(v.notice);
+    const quiet = ['play', 'start', 'cleared'].includes(v.notice.kind);
     return [
       header(), crew(), pileView(isNew),
-      h(`p.tp-notice${v.notice.kind === 'mistake' ? '.is-bad' : ''}`, text),
-      h('p.tp-silence', 'Silence : pas de chat ni de signes pendant le niveau.'),
+      quiet ? null : h(`p.tp-notice${v.notice.kind === 'mistake' ? '.is-bad' : ''}`, text),
       // Une proposition d'étoile passe avant la main : sur téléphone, elle doit rester visible sans défiler.
       ...(v.starVote ? [starBox(), handView()] : [handView(), starBox()]),
     ];

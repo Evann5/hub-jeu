@@ -336,7 +336,7 @@ export function mount(root, api) {
     const claim = a.claim ? CHARS[a.claim] : null;
     return h('div.cp-scene',
       h('span.cp-scene-who', pseudo(a.by)),
-      h('span.cp-scene-act', ACT_NAME[a.type].replace(/^(le |la |l’)/, (m) => m.toUpperCase())),
+      h('span.cp-scene-act', ACT_NAME[a.type].replace(/^(le |la |l’)/, (m) => m[0].toUpperCase() + m.slice(1))),
       a.target !== null && a.target !== undefined ? h('span.cp-scene-target', `→ ${pseudo(a.target)}`) : null,
       claim ? h('span.cp-scene-claim', `annonce ${claim.the}`) : null,
       v.block ? h('span.cp-scene-block', `contré par ${pseudo(v.block.by)} (${CHARS[v.block.char].the})`) : null);

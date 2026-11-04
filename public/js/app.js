@@ -17,20 +17,28 @@ let lastConv = null; // dernière conversation ouverte, pour revenir dessus depu
 
 // ——— Démarrage ———
 
+// Écran plein cadre pour ce qui bloque tout (réseau coupé, trop d'onglets) : un titre, une phrase, un bouton.
+function showNotice(title, text) {
+  root.replaceChildren(h('main.notice', h('div.notice-card',
+    h('h1', title),
+    h('p', text),
+    h('button.btn', { type: 'button', onclick: () => location.reload() }, 'Recharger la page'))));
+}
+
 async function boot() {
   root.replaceChildren(h('div.boot', 'Chargement…'));
   try {
     state.options = await api('options');
     setColors(state.options.colors);
   } catch (err) {
-    root.replaceChildren(h('div.boot', err.message));
+    showNotice('Hubuno ne répond pas', err.message);
     return;
   }
   try {
     afterLogin(await api('me'));
   } catch (err) {
     if (err.status === 401) showAuth();
-    else root.replaceChildren(h('div.boot', err.message));
+    else showNotice('Hubuno ne répond pas', err.message);
   }
 }
 
@@ -86,7 +94,7 @@ function startRealtime() {
 
   socket.on('connect_error', (err) => {
     if (err.message === 'non-connecte') actions.logout('Ta session a expiré : reconnecte-toi.');
-    if (err.message === 'trop-de-connexions') root.replaceChildren(h('div.boot', 'Trop d’onglets ou d’appareils ouverts sur ton compte : ferme-en un, puis recharge la page.'));
+    if (err.message === 'trop-de-connexions') showNotice('Trop d’onglets ouverts', 'Ton compte est ouvert sur trop d’onglets ou d’appareils à la fois. Ferme-en un, puis recharge la page.');
   });
   socket.on('disconnect', (reason) => {
     if (reason !== 'io client disconnect') setBanner('Connexion perdue. Reconnexion en cours…');

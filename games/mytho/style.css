@@ -30,7 +30,7 @@
 @keyframes my-shake { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
 
 /* Le mot : un gros sticker */
-.g-mytho .my-entry { display: grid; justify-items: start; gap: 8px; margin: 22px 0 6px; }
+.g-mytho .my-entry { display: grid; justify-items: start; gap: 8px; margin: 16px 0 6px; }
 .g-mytho .my-word {
   margin: 0; padding: 10px 22px 14px; border: 4px solid var(--ink); border-radius: 22px;
   background: #fff; box-shadow: 7px 7px 0 var(--ink);
@@ -40,6 +40,8 @@
 }
 .g-mytho .my-word::first-letter { color: var(--pink); }
 @keyframes my-pop { from { transform: rotate(-6deg) scale(0.6); opacity: 0; } }
+.g-mytho .my-entry.is-small { margin: 14px 0 4px; }
+.g-mytho .is-small .my-word { padding: 6px 16px 9px; border-width: 3px; border-radius: 16px; box-shadow: 5px 5px 0 var(--ink); font-size: clamp(1.5rem, 1rem + 2.4vw, 2.2rem); }
 .g-mytho .my-gram { padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--yellow); font-size: 0.8rem; font-weight: 800; }
 
 /* Saisie : une bulle */
@@ -49,30 +51,36 @@
   background: #fff; color: var(--ink); resize: vertical;
   font: 700 1.15rem/1.4 'MY Figtree', sans-serif; box-shadow: var(--pop);
 }
-.g-mytho .my-form textarea::placeholder { color: #8A8496; font-weight: 600; }
+.g-mytho .my-form textarea::placeholder { color: #6B6579; font-weight: 600; }
 .g-mytho .my-form textarea:focus { outline: none; box-shadow: var(--pop), 0 0 0 4px var(--blue); }
 .g-mytho .my-btn {
-  min-height: 56px; padding: 0 22px; border: var(--line); border-radius: 999px;
+  min-height: 48px; padding: 0 22px; border: var(--line); border-radius: 999px;
   background: var(--pink); color: #fff; box-shadow: var(--pop);
   font: 900 1.02rem 'MY Unbounded', sans-serif; letter-spacing: -0.01em;
   transition: transform 0.1s, box-shadow 0.1s;
 }
-.g-mytho .my-btn:hover { transform: translate(-1px, -1px); box-shadow: 6px 6px 0 var(--ink); }
-.g-mytho .my-btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
-.g-mytho .my-btn.is-line { margin-top: 18px; background: var(--mint); color: var(--ink); }
+.g-mytho .my-btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 6px 6px 0 var(--ink); }
+.g-mytho .my-btn:disabled { background: #fff; color: #6B6579; box-shadow: 3px 3px 0 var(--ink); cursor: default; transform: none; }
+.g-mytho .my-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+
 .g-mytho .my-btn:focus-visible, .g-mytho .my-sense:focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
-.g-mytho .my-tip { margin: 2px 0 0; font-size: 0.9rem; font-weight: 700; opacity: 0.75; }
 .g-mytho .my-mine { position: relative; margin: 20px 0 0; padding: 16px 20px; border: var(--line); border-radius: 24px; background: #fff; box-shadow: var(--pop); font-size: 1.15rem; font-weight: 700; }
 .g-mytho .my-mine::after { content: ''; position: absolute; left: 34px; bottom: -14px; width: 22px; height: 22px; border-right: var(--line); border-bottom: var(--line); background: #fff; transform: rotate(45deg) skew(10deg, 10deg); }
 .g-mytho .my-mine span { display: block; margin-bottom: 4px; color: var(--pink); font: 900 0.72rem 'MY Unbounded', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
 
-.g-mytho .my-waiting { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; padding: 0; list-style: none; font-size: 0.85rem; font-weight: 800; }
-.g-mytho .my-waiting li { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border: 2px dashed rgb(21 18 31 / 0.4); border-radius: 999px; opacity: 0.7; }
-.g-mytho .my-waiting li.is-done { border: var(--line); background: var(--mint); opacity: 1; box-shadow: 3px 3px 0 var(--ink); animation: my-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+/* Les joueurs : toujours visibles, score à droite ; la pastille se remplit quand l'étape est faite */
+.g-mytho .my-roster { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; font-size: 0.85rem; font-weight: 800; }
+.g-mytho .my-roster li { display: flex; align-items: center; gap: 6px; max-width: 100%; padding: 3px 4px 3px 4px; border: 2px dashed rgb(21 18 31 / 0.45); border-radius: 999px; transition: background-color 0.2s, transform 0.2s; }
+.g-mytho .my-roster li.is-done { border: 2px solid var(--ink); background: var(--mint); box-shadow: 2px 2px 0 var(--ink); animation: my-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.g-mytho .my-roster li.is-me .my-name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.g-mytho .my-roster .my-name { max-width: 9ch; }
+.g-mytho .my-roster b { display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--yellow); font: 900 0.8rem 'MY Unbounded', sans-serif; font-variant-numeric: tabular-nums; }
+.g-mytho .my-roster em { margin-right: 4px; font-style: normal; font-weight: 900; }
+.g-mytho .my-roster li:not(.is-done):has(em) { border-style: solid; background: #fff; }
 .g-mytho .my-av { display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid var(--ink); border-radius: 50%; background: #fff; font-size: 0.9rem; }
 
 /* Vote : des bulles numérotées */
-.g-mytho .my-ask { margin: 18px 0 8px; font-weight: 800; }
+.g-mytho .my-ask { margin: 12px 0 6px; font-weight: 800; }
 .g-mytho .my-senses { display: grid; gap: 12px; margin: 6px 0 0; padding: 0; list-style: none; }
 .g-mytho .my-sense {
   position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
@@ -86,36 +94,38 @@
 .g-mytho button.my-sense:disabled { cursor: default; }
 .g-mytho .my-sense b { display: grid; place-items: center; width: 40px; height: 40px; border: var(--line); border-radius: 50%; background: var(--blue); color: #fff; font: 900 1.05rem 'MY Unbounded', sans-serif; }
 .g-mytho .my-sense small { padding: 3px 9px; border-radius: 999px; background: var(--ink); color: var(--yellow); font: 900 0.68rem 'MY Unbounded', sans-serif; letter-spacing: 0.02em; text-transform: uppercase; }
-.g-mytho .my-sense.is-mine { opacity: 0.55; box-shadow: 3px 3px 0 var(--ink); }
+.g-mytho .my-sense.is-mine { background: #F1EEF7; box-shadow: 3px 3px 0 var(--ink); }
 .g-mytho .my-sense.is-voted { background: var(--blue); color: #fff; }
 .g-mytho .my-sense.is-voted b { background: #fff; color: var(--blue); }
 
 /* Révélation */
-.g-mytho .my-gain { align-self: start; margin: 14px 0 6px; padding: 8px 16px; border: var(--line); border-radius: 999px; background: #fff; box-shadow: 4px 4px 0 var(--ink); font: 900 1.1rem 'MY Unbounded', sans-serif; }
+.g-mytho .my-gain { align-self: start; margin: 10px 0 8px; padding: 6px 14px; border: var(--line); border-radius: 999px; background: #fff; box-shadow: 4px 4px 0 var(--ink); font: 900 1rem 'MY Unbounded', sans-serif; }
 .g-mytho .my-gain.is-good { background: var(--mint); animation: my-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
-.g-mytho .is-reveal li { display: grid; gap: 6px; }
+.g-mytho .is-reveal .my-sense { grid-template-columns: 36px minmax(0, 1fr) auto; align-items: start; min-height: 0; padding: 10px 14px 10px 10px; }
+.g-mytho .is-reveal .my-sense b { width: 36px; height: 36px; font-size: 0.95rem; }
+.g-mytho .my-body { display: grid; gap: 3px; min-width: 0; }
 .g-mytho .is-reveal .is-fake .my-sense { background: #F1EEF7; box-shadow: 3px 3px 0 var(--ink); }
-.g-mytho .is-reveal .is-fake .my-sense span { text-decoration: line-through; text-decoration-color: var(--pink); text-decoration-thickness: 3px; }
-.g-mytho .is-reveal .is-truth .my-sense { background: var(--mint); box-shadow: 7px 7px 0 var(--ink); transform: rotate(-0.8deg) scale(1.02); }
+.g-mytho .is-reveal .is-fake .my-text { color: #4A4558; }
+.g-mytho .is-reveal .is-truth .my-sense { background: var(--mint); box-shadow: 6px 6px 0 var(--ink); }
 .g-mytho .is-reveal .is-truth .my-sense b { background: var(--ink); }
-.g-mytho .my-by { margin: 0 0 4px 16px; font-size: 0.85rem; font-weight: 700; }
-.g-mytho .my-by i { font-style: normal; color: var(--pink); font-weight: 900; }
+.g-mytho .my-by { margin: 0; font-size: 0.85rem; font-weight: 700; }
+.g-mytho .my-by i { font-style: normal; color: #C4115F; font-weight: 900; }
 .g-mytho .my-stamp {
-  justify-self: end; padding: 6px 12px; border: var(--line); border-radius: 12px;
+  justify-self: end; align-self: center; padding: 4px 10px; border: var(--line); border-radius: 12px;
   background: var(--pink); color: #fff; box-shadow: 3px 3px 0 var(--ink);
-  font: 900 0.95rem 'MY Unbounded', sans-serif; letter-spacing: 0.04em; text-transform: uppercase;
+  font: 900 0.85rem 'MY Unbounded', sans-serif; letter-spacing: 0.04em; text-transform: uppercase;
   transform: rotate(-8deg);
   animation: my-stamp 0.5s cubic-bezier(0.3, 1.7, 0.4, 1);
 }
 @keyframes my-stamp { from { transform: rotate(-20deg) scale(2.4); opacity: 0; } }
 
-.g-mytho .my-scores { display: grid; gap: 8px; margin: 24px 0 0; padding: 0; list-style: none; counter-reset: rang; }
-.g-mytho .my-scores li { counter-increment: rang; display: grid; grid-template-columns: 34px 30px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px 6px 8px; border: var(--line); border-radius: 18px; background: #fff; box-shadow: 4px 4px 0 var(--ink); }
+.g-mytho .my-foot { position: sticky; bottom: 0; z-index: 2; display: grid; margin: 12px -18px -32px; padding: 12px 18px 20px; background: linear-gradient(to top, var(--yellow) 75%, transparent); }
+.g-mytho .my-scores { display: grid; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; counter-reset: rang; }
+.g-mytho .my-scores li { counter-increment: rang; display: grid; grid-template-columns: 34px 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px 6px 8px; border: var(--line); border-radius: 18px; background: #fff; box-shadow: 4px 4px 0 var(--ink); }
 .g-mytho .my-scores li::before { content: counter(rang); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--yellow); font: 900 0.95rem 'MY Unbounded', sans-serif; }
-.g-mytho .my-scores li:first-child { background: var(--pink); color: #fff; }
+.g-mytho .my-scores li.is-top { background: var(--pink); color: #fff; }
 .g-mytho .my-scores li.is-me { outline: 4px solid var(--blue); outline-offset: 2px; }
 .g-mytho .my-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
-.g-mytho .my-scores em { padding: 2px 8px; border-radius: 999px; background: var(--mint); color: var(--ink); font-size: 0.8rem; font-style: normal; font-weight: 900; }
 .g-mytho .my-scores b { font: 900 1.3rem 'MY Unbounded', sans-serif; font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {
