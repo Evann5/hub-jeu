@@ -373,6 +373,16 @@ test('un joueur ne peut pas repousser le tour d’un robot en lui envoyant des �
   assert.equal(next.deadline, due, 'l’échéance du robot ne bouge pas');
 });
 
+test('messages clairs : mise négative, montant négatif, ton propre argent', () => {
+  let s = start();
+  const [a, b] = s.players.map((p) => p.id);
+  assert.throws(() => move(s, a, { type: 'trade', to: b, give: { cash: -50 }, get: {} }, ctxOf()), /négatif/);
+  assert.throws(() => move(s, a, { type: 'trade', to: b, give: { cash: 999999 }, get: {} }, ctxOf()), /^Error: Tu n'as pas/);
+  s = roll(s, 1, 3);
+  s = move(s, a, { type: 'decline' }, ctxOf()).state;
+  assert.throws(() => move(s, b, { type: 'bid', amount: -5 }, ctxOf()), /négative/);
+});
+
 test('faillite : le créancier récupère tout, la partie continue', () => {
   let s = start();
   const [a, b] = s.players.map((p) => p.id);

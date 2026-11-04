@@ -81,16 +81,17 @@ export function statusOf(t) {
     may: s.over ? [] : [...new Set([...turn, ...list(s.may)])],
     over: Boolean(s.over),
     winners: [].concat(s.winners || []),
+    label: s.over && typeof s.label === 'string' ? s.label : null, // texte de fin fourni par le jeu (un gagnant qui n'est pas un compte)
     deadline: !s.over && Number.isFinite(s.deadline) ? s.deadline : null,
   };
 }
 
 export function summary(t) {
   // `may` reste sur le serveur : il peut dépendre de rôles secrets (les loups, la voyante…).
-  const { turn, over, winners, deadline } = statusOf(t);
+  const { turn, over, winners, label, deadline } = statusOf(t);
   return {
     id: t.id, game: t.game, hostId: t.hostId, status: t.status, seats: t.seats, left: t.left, options: t.options,
-    turn, over, winners, deadline, createdAt: t.createdAt, updatedAt: t.updatedAt,
+    turn, over, winners, label, deadline, createdAt: t.createdAt, updatedAt: t.updatedAt,
   };
 }
 

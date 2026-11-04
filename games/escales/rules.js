@@ -634,6 +634,7 @@ function botStep(s, ctx) {
 
 function cleanOffer(given) {
   const o = given ?? {};
+  if (Number(o.cash) < 0 || Number(o.passes) < 0) throw new Error('Un montant ne peut pas être négatif.');
   return {
     cash: Math.max(0, Math.floor(Number(o.cash) || 0)),
     cities: [...new Set((Array.isArray(o.cities) ? o.cities : []).map(Number))].filter((n) => Number.isInteger(n) && TILES[n]),
@@ -641,9 +642,10 @@ function cleanOffer(given) {
   };
 }
 
-function checkOffer(s, p, offer) {
-  if (p.cash < offer.cash) throw new Error(`${p.pseudo} n'a pas ${money(offer.cash)}.`);
-  if (p.passes < offer.passes) throw new Error(`${p.pseudo} n'a pas assez de passe-douane.`);
+function checkOffer(s, p, offer, actorId) {
+  const mine = p.id === actorId;
+  if (p.cash < offer.cash) throw new Error(mine ? `Tu n'as pas ${money(offer.cash)}.` : `${p.pseudo} n'a pas ${money(offer.cash)}.`);
+  if (p.passes < offer.passes) throw new Error(mine ? 'Tu n’as pas assez de passe-douane.' : `${p.pseudo} n'a pas assez de passe-douane.`);
   for (const pos of offer.cities) {
     const prop = s.props[pos];
     if (prop?.owner !== p.id) throw new Error(`${TILES[pos].name} n'appartient pas à ${p.pseudo}.`);
@@ -728,7 +730,8 @@ export function move(state, playerId, given, ctx) {
       if (!s.auction.eligible.includes(p.id)) throw new Error('Tu ne participes pas à cette enchère.');
       if (p.id in s.auction.bids) throw new Error('Ta mise est déjà posée.');
       const amount = Math.floor(Number(action.amount) || 0);
-      if (amount < 0 || amount > p.cash) throw new Error('Tu ne peux pas miser plus que ton argent.');
+      if (amount < 0) throw new Error('Une mise ne peut pas être négative.');
+      if (amount > p.cash) throw new Error('Tu ne peux pas miser plus que ton argent.');
       s.auction.bids[p.id] = amount;
       s.auction.order.push(p.id);
       if (auctionDone(s)) resolveAuction(s, ctx);
@@ -833,8 +836,8 @@ export function move(state, playerId, given, ctx) {
       const give = cleanOffer(action.give);
       const get = cleanOffer(action.get);
       if (!give.cash && !give.cities.length && !give.passes && !get.cash && !get.cities.length && !get.passes) throw new Error('Cette proposition est vide.');
-      checkOffer(s, p, give);
-      checkOffer(s, other, get);
+      checkOffer(s, p, give, p.id);
+      checkOffer(s, other, get, p.id);
       s.tradeSeq += 1;
       const trade = { id: s.tradeSeq, from: p.id, to: other.id, give, get };
       log(s, `${p.pseudo} propose un échange à ${other.pseudo}.`);
@@ -856,8 +859,8 @@ export function move(state, playerId, given, ctx) {
       if (!t) throw new Error('Cette proposition n’existe plus.');
       s.trades = s.trades.filter((x) => x.id !== t.id);
       const from = byId(s, t.from);
-      checkOffer(s, from, t.give);
-      checkOffer(s, p, t.get);
+      checkOffer(s, from, t.give, p.id);
+      checkOffer(s, p, t.get, p.id);
       transfer(s, from, p, t.give);
       transfer(s, p, from, t.get);
       log(s, `${from.pseudo} et ${p.pseudo} concluent un échange.`);
@@ -966,7 +969,10 @@ export function view(state, playerId) {
 
 export function status(state) {
   // Le hub ne connaît que de vrais comptes : la victoire d'un robot est annoncée par le jeu lui-même.
-  if (state.over) return { turn: null, over: true, winners: state.winners.filter((id) => id > 0), deadline: null };
+  if (state.over) {
+    const names = state.winners.map((id) => `${byId(state, id).pseudo}${id < 0 ? ' (robot)' : ''}`).join(' et ');
+    return { turn: null, over: true, winners: state.winners.filter((id) => id > 0), label: `${names} ${state.winners.length > 1 ? 'gagnent' : 'gagne'}`, deadline: null };
+  }
   const turn = state.phase === 'auction'
     ? state.auction.eligible.filter((id) => !(id in state.auction.bids))
     : cur(state).id;

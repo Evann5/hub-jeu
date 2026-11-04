@@ -210,6 +210,7 @@ export function leave(state, playerId, ctx) { return { state }; }      // facult
 
 - `ctx` vaut `{ now, random }` : utiliser `ctx.now` pour l'heure et `ctx.random()` pour le hasard (les tests passent un hasard fixe). Jamais `Date.now()` ni `Math.random()` dans les règles.
 - L'état doit tenir en JSON (pas de `Set`, de `Map` ni de `Date`) : il est enregistré en base après chaque changement. Ne jamais modifier l'état reçu : en renvoyer un nouveau.
+- `status().label` (facultatif, en fin de partie) : le texte du bandeau de fin, quand le gagnant n'est pas un compte du hub (un robot, par exemple).
 - `status().turn` : l'id du joueur qui doit jouer, une liste d'ids (coups simultanés : votes, réponses…) ou `null`. C'est lui qui allume « À toi de jouer ». `status().may` (facultatif) : d'autres ids qui peuvent aussi envoyer un coup sans que ce soit « leur tour » (dénoncer un oubli, cliquer « Prêt »…). Le hub refuse les coups de tous les autres.
 - **`turn`, `winners` et `deadline` sont publics** : la liste des tables les montre à toute la classe. Rien de secret dedans (pas « les loups » ni « la voyante ») : un coup secret passe par `may`, qui ne quitte jamais le serveur. Le client sait ce qu'il peut faire par sa `view()`. `winners` : liste d'ids. `deadline` : horodatage en ms (calculé avec `ctx.now`) ; à l'échéance le hub appelle `timeout()`.
 - Un coup refusé lève `new Error('…')` avec un message en français qui dit quoi faire ; le joueur le voit tel quel. Toute autre erreur est traitée comme un bug.

@@ -45,13 +45,15 @@ export function mount(root, api) {
   const news = h('p.es-news');
   const round = h('p.es-round');
   const clock = h('span.es-clock', { 'aria-live': 'off' });
-  const passTop = h('div.es-pass-top', h('span.es-brand', 'Escales'), clock, round);
+  const diceLine = h('span.es-diceline');
+  const passTop = h('div.es-pass-top', round, clock, diceLine);
   const tip = h('div.es-tip', { hidden: true, 'aria-hidden': 'true' });
   const prompt = h('div.es-prompt');
   const trades = h('div.es-trades');
+  const tradeLink = h('button.es-link', { type: 'button', onclick: () => openTrade() }, 'Échanger');
   const tools = h('div.es-tools',
     h('button.es-link', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, 'Villes'),
-    h('button.es-link', { type: 'button', onclick: () => openTrade() }, 'Échanger'),
+    tradeLink,
     h('button.es-link', { type: 'button', onclick: () => openOverlay({ kind: 'more' }) }, 'Plus'));
   const logBox = h('p.es-log', { 'aria-live': 'polite' });
   const timer = h('div.es-timer', h('i'));
@@ -68,9 +70,12 @@ export function mount(root, api) {
         onStep: sound.step,
         onHover: showTip,
         onTile: (pos) => openOverlay({ kind: 'city', pos }),
-        topInset: () => tools.getBoundingClientRect().bottom - stage.getBoundingClientRect().top + 6,
+        topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
       });
-      if (v) world.update(v);
+      if (v) {
+        world.update(v);
+        renderPlayers(); // les portraits se préparent ici, au chargement, plutôt qu'en pleine partie
+      }
       loading.remove();
     } catch (err) {
       loading.remove();
@@ -78,6 +83,14 @@ export function mount(root, api) {
       stage.replaceChildren(h('p.es-no3d', 'Ton navigateur n’affiche pas la 3D. Tu peux quand même jouer avec la carte ci-dessous et le bouton Villes.'));
     }
   });
+
+  // Une petite image rendue une fois par le monde 3D.
+  function picture(image, cls = '') {
+    if (!image) return null;
+    const c = h(`canvas${cls}`, { width: image.width, height: image.height, 'aria-hidden': 'true' });
+    c.getContext('2d').putImageData(image, 0, 0);
+    return c;
+  }
 
   // Au survol d'une case : qui la possède et ce qu'elle coûte.
   function showTip(pos, x, y) {
@@ -143,13 +156,12 @@ export function mount(root, api) {
 
   function renderPlayers() {
     players.replaceChildren(...v.players.map((p) => {
-      const dot = h('i.es-dot');
-      dot.style.background = PAWN_COLORS[p.seat];
+      const dot = picture(world?.portrait(p.seat), '.es-face') ?? h('i.es-dot');
       const turn = !v.over && v.players[v.cur].id === p.id;
       const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir le détail`, onclick: () => openOverlay({ kind: 'player', id: p.id }) },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, p.bot ? h('small', ' robot') : null),
-        h('span.es-cash', p.out ? 'Sorti' : money(p.cash), deltaOf(p)));
+        h('span.es-cash', p.out ? 'Sorti' : money(v.over ? p.worth : p.cash), deltaOf(p)));
       return h('div', { role: 'listitem' }, chip);
     }));
     root.style.setProperty('--rows', String(Math.ceil(v.players.length / 2)));
@@ -161,10 +173,11 @@ export function mount(root, api) {
     FLAGS[REGIONS[region].id](c.getContext('2d'), 0, 0, 90, 60);
     return c;
   };
+  const codeOf = (t) => (t.short ?? t.name).normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
   // La ville comme sur une carte d'embarquement : son code en grand, son drapeau, son pays.
   const cityCard = (pos) => {
     const t = TILES[pos];
-    const code = (t.short ?? t.name).normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+    const code = codeOf(t);
     const el = h('button.es-mini', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos }) },
       h('span.es-code', code),
       h('span.es-where', t.type === 'city' ? flagOf(t.region) : null, h('b', t.name), h('small', t.type === 'city' ? REGIONS[t.region].name : 'Escale')),
@@ -222,20 +235,38 @@ export function mount(root, api) {
     const input = h('input.es-input', { type: 'number', min: 0, max: me().cash, step: 1, inputmode: 'numeric', value: String(Math.min(t.price, me().cash)), 'aria-label': 'Ta mise en euros' });
     const submit = (amount) => send({ type: 'bid', amount });
     const cash = me().cash;
+    const submitForm = () => {
+      if (input.value.trim() === '') { // un champ vide n'est pas une mise de 0 : passer est un choix
+        api.toast('Écris ta mise, ou touche Passer.');
+        input.focus();
+        return;
+      }
+      submit(Number(input.value) || 0);
+    };
     const quick = [['Moitié du prix', Math.floor(t.price / 2)], ['Le prix', t.price], ['+ 25 %', Math.round(t.price * 1.25)]].filter(([, n]) => n <= cash);
     return [say(`Enchères secrètes : combien pour ${t.name} ?`), cityCard(pos),
       h('div.es-row', quick.map(([label, n]) => h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => { input.value = String(n); input.focus(); } }, label)),
         h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => { input.value = String(cash); input.focus(); } }, 'Tout')),
-      h('form.es-bid', { noValidate: true, onsubmit: (e) => { e.preventDefault(); submit(Number(input.value) || 0); } },
-        input, h('button.es-btn', { type: 'submit' }, 'Miser')),
-      h('button.es-btn.is-ghost', { type: 'button', onclick: () => submit(0) }, 'Passer')];
+      h('form.es-bid', { noValidate: true, onsubmit: (e) => { e.preventDefault(); submitForm(); } },
+        input, h('button.es-btn', { type: 'submit' }, 'Miser'), h('button.es-btn.is-ghost', { type: 'button', onclick: () => submit(0) }, 'Passer'))];
   }
 
   function promptFor() {
     if (v.over) {
-      const ranked = v.players.filter((p) => !p.out).sort((a, b) => b.worth - a.worth);
-      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} gagne !`),
-        h('ol.es-rank', ranked.map((p) => h('li', h('span', p.pseudo), h('b', money(p.worth)))))];
+      const ranked = [...v.players].sort((a, b) => Number(a.out) - Number(b.out) || b.worth - a.worth);
+      const breakdown = (p) => {
+        const owned = TILES.filter((t) => v.props[t.pos]?.owner === p.id);
+        return `${money(p.cash)} + ${owned.length} ville${owned.length > 1 ? 's' : ''}`;
+      };
+      const STEP = [104, 76, 58];
+      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
+        h('div.es-podium', ranked.slice(0, 3).map((p, i) => {
+          const bar = h('div.es-step', h('b', String(i + 1)));
+          bar.style.height = `${STEP[i]}px`;
+          bar.style.background = PAWN_COLORS[p.seat];
+          return h('div.es-place', picture(world?.portrait(p.seat), '.es-podium-face'), h('b.es-place-name', p.id === meId ? 'Toi' : p.pseudo), h('span', money(p.worth)), h('small', breakdown(p)), bar);
+        })),
+        ranked.length > 3 ? h('ol.es-rank', { start: 4 }, ranked.slice(3).map((p) => h('li', h('span', p.id === meId ? 'Toi' : p.pseudo), h('b', p.out ? 'sorti' : money(p.worth))))) : null];
     }
     if (v.phase === 'auction') return auctionPrompt();
     const p = v.players[v.cur];
@@ -253,7 +284,9 @@ export function mount(root, api) {
             p.cash >= 50 ? btn('Payer 50 €', { type: 'payFine' }, '.is-ghost') : null,
             p.passes ? btn('Utiliser un passe-douane', { type: 'usePass' }, '.is-ghost') : null];
         }
-        return [say(v.again ? 'Un double : tu rejoues !' : 'À toi de jouer.'), btn('Lancer les dés', { type: 'roll' }), buildRow()];
+        return [say(v.again ? 'Un double : tu rejoues !' : 'À toi de jouer.'),
+          h('p.es-here', h('span.es-code.is-small', codeOf(t)), h('span', `Tu es à ${t.name}`)),
+          btn('Lancer les dés', { type: 'roll' }), buildRow()];
       case 'buy':
         return [cityCard(p.pos),
           p.cash >= t.price ? btn(`Acheter ${t.name} : ${money(t.price)}`, { type: 'buy' }) : say(`Il te manque ${money(t.price - p.cash)} pour ${t.name}.`),
@@ -285,14 +318,18 @@ export function mount(root, api) {
   }
 
   function renderDock() {
-    round.textContent = `${v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)} sur ${v.maxRounds}` : `Tour ${v.round}`}${v.dice ? `, dés ${v.dice[0]} et ${v.dice[1]}` : ''}`;
+    round.textContent = v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)}/${v.maxRounds}` : `Tour ${v.round}`;
+    diceLine.textContent = v.dice ? `Dés ${v.dice[0]} et ${v.dice[1]}` : '';
+    const about = v.phase === 'auction' ? TILES[v.auction.pos] : v.phase === 'buy' ? TILES[v.players[v.cur].pos] : null;
+    dock.classList.toggle('has-city', about?.type === 'city');
+    if (about?.type === 'city') dock.style.setProperty('--r', REGIONS[about.region].color);
     dock.classList.toggle('is-mine', myTurn() || (v.phase === 'auction' && v.auction.mine === null && v.auction.eligible.includes(meId)));
     news.textContent = v.event?.text ?? '';
     news.hidden = !v.event || v.over;
 
     const key = JSON.stringify([v.phase, v.cur, v.rollN, v.over, v.auction?.pos, v.auction?.mine,
       v.phase === 'auction' && v.auction.mine !== null ? v.auction.hasBid.length : 0,
-      v.phase === 'auction' ? 0 : me()?.cash, v.actions, v.debt?.amount]);
+      v.phase === 'auction' ? 0 : me()?.cash, me()?.blocked, me()?.passes, v.again, v.raisable, v.actions, v.debt?.amount]);
     if (v.phase !== 'debt') confirmBankrupt = false;
     if (key !== promptKey) {
       promptKey = key;
@@ -301,7 +338,9 @@ export function mount(root, api) {
 
     trades.replaceChildren(...v.trades.filter((t) => t.to === meId || t.from === meId).map(tradeCard));
     tools.hidden = v.over;
+    tradeLink.hidden = !me() || me().out; // un spectateur regarde, il n'échange pas
     logBox.textContent = v.log.filter((l) => !l.text.startsWith('À la une')).at(-1)?.text ?? '';
+    logBox.hidden = v.over || v.phase === 'auction' || v.phase === 'buy'; // la carte le dit déjà
   }
 
   function offerText(o) {
@@ -346,18 +385,32 @@ export function mount(root, api) {
     const prop = v.props[pos];
     const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
     const a = v.actions;
-    const head = h('header.es-poster', t.type === 'city' ? flagOf(t.region) : null, h('div', h('h2', t.name), h('p', t.type === 'city' ? REGIONS[t.region].name : 'Escale')));
+    const head = h('header.es-poster',
+      picture(world?.monument(pos), '.es-thumb'),
+      h('div.es-poster-text',
+        h('span.es-code', codeOf(t)),
+        h('h2', t.name),
+        h('p', t.type === 'city' ? flagOf(t.region) : null, t.type === 'city' ? REGIONS[t.region].name : 'Escale')));
     if (t.type === 'city') head.style.setProperty('--r', REGIONS[t.region].color);
     const lines = t.type === 'city'
-      ? [['Ville seule', t.rent], ['Majorité de la région', t.rent * 2], ['Région complète', t.rent * 3],
+      ? [['Ville seule', t.rent], ['Majorité du pays', t.rent * 2], ['Pays complet', t.rent * 3],
         ...LEVEL_MULT.slice(1).map((m, i) => [LEVEL_NAMES[i + 1], t.rent * m])]
       : ESCALE_RENTS.slice(1).map((r, i) => [`${i + 1} escale${i ? 's' : ''}`, r]);
+    // La ligne qui s'applique en ce moment est mise en avant.
+    let now = -1;
+    if (prop && t.type === 'city') {
+      const count = TILES.filter((x) => x.region === t.region && v.props[x.pos]?.owner === prop.owner).length;
+      now = prop.level ? 2 + prop.level : count === 4 ? 2 : count >= v.majority ? 1 : 0;
+    } else if (prop) {
+      now = TILES.filter((x) => x.type === 'escale' && v.props[x.pos]?.owner === prop.owner).length - 1;
+    }
     return shell(t.name, head,
       h('p.es-fact', t.fact ?? `Le propriétaire encaisse selon ses escales. De là, un vol pour une autre escale coûte ${money(FLY_COST)}.`),
-      h('p', owner ? `${owner.id === meId ? 'À toi' : `À ${owner.pseudo}`}${prop.mortgaged ? ', en gage' : ''}. Loyer actuel : ${money(v.rents[pos] ?? 0)}.` : `Libre. Prix : ${money(t.price)}.`),
+      t.type === 'city' ? standing(t) : null,
+      h('p.es-owner', owner ? `${owner.id === meId ? 'À toi' : `À ${owner.pseudo}`}${prop.mortgaged ? ', en gage' : ''}. Loyer actuel : ${money(v.rents[pos] ?? 0)}.` : `Libre. Prix : ${money(t.price)}.`),
       prop?.level ? h('p', `Niveau : ${LEVEL_NAMES[prop.level]} (${prop.level} sur ${MAX_LEVEL}).`) : null,
-      h('dl.es-rents', lines.map(([k, val]) => [h('dt', k), h('dd', money(val))])),
-      t.build ? h('p.es-note', `Construire un niveau coûte ${money(v.costs[pos] ?? t.build)}. Il faut ${v.majority} villes de la région.`) : null,
+      h('dl.es-rents', lines.map(([k, val], i) => [h(`dt${i === now ? '.is-now' : ''}`, k), h(`dd${i === now ? '.is-now' : ''}`, money(val))])),
+      t.build ? h('p.es-note', `Construire un niveau coûte ${money(v.costs[pos] ?? t.build)}. Il faut ${v.majority} villes du pays.`) : null,
       h('div.es-row',
         a.build.includes(pos) ? btn(`Construire (${money(v.costs[pos])})`, { type: 'build', pos }) : null,
         a.unmortgage.includes(pos) ? btn('Récupérer', { type: 'unmortgage', pos }) : null,
@@ -365,23 +418,30 @@ export function mount(root, api) {
         a.mortgage.includes(pos) ? btn('Mettre en gage', { type: 'mortgage', pos }, '.is-ghost') : null));
   }
 
+  // Les villes, pays par pays : on voit d'un coup où l'on approche de la majorité. Les pays où l'on a le plus viennent d'abord.
   function citiesSheet() {
-    const row = (pos) => {
-      const t = TILES[pos];
-      const prop = v.props[pos];
+    const cell = (t) => {
+      const prop = v.props[t.pos];
       const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
-      const el = h('button.es-line', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos }) },
-        h('b', t.name),
-        h('span', owner ? `${owner.id === meId ? 'À toi' : owner.pseudo}${prop.mortgaged ? ', en gage' : `, loyer ${money(v.rents[pos] ?? 0)}`}${prop.level ? `, ${LEVEL_NAMES[prop.level]}` : ''}` : `Libre, ${money(t.price)}`));
+      const el = h('button.es-cell', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos: t.pos }) },
+        h('b', t.short ?? t.name),
+        h('span', owner ? (prop.mortgaged ? 'en gage' : `loyer ${money(v.rents[t.pos] ?? 0)}`) : money(t.price)),
+        h('small', owner ? (owner.id === meId ? 'à toi' : owner.pseudo) : 'libre'));
       if (t.type === 'city') el.style.setProperty('--r', REGIONS[t.region].color);
-      return h('li', el);
+      if (owner) el.style.setProperty('--o', PAWN_COLORS[owner.seat]);
+      return el;
     };
-    const mine = TILES.filter((t) => v.props[t.pos]?.owner === meId).map((t) => t.pos);
+    const mineIn = (i) => TILES.filter((t) => t.region === i && v.props[t.pos]?.owner === meId).length;
+    const order = REGIONS.map((_, i) => i).sort((a, b) => mineIn(b) - mineIn(a) || a - b);
     return shell('Villes', h('h2', 'Villes'),
       me()?.passes ? h('p.es-note', `Tu as ${me().passes} passe-douane.`) : null,
-      mine.length ? [h('h3', 'À toi'), h('ul.es-list', mine.map(row))] : null,
-      REGIONS.map((r, i) => [h('h3', r.name), h('ul.es-list', TILES.filter((t) => t.region === i).map((t) => row(t.pos)))]),
-      h('h3', 'Escales'), h('ul.es-list', TILES.filter((t) => t.type === 'escale').map((t) => row(t.pos))));
+      order.map((i) => {
+        const n = mineIn(i);
+        return h('section.es-country',
+          h('h3', flagOf(i), REGIONS[i].name, n ? h('small', `${n} sur 4${n >= v.majority ? ', tu peux construire' : ''}`) : null),
+          h('div.es-cells', TILES.filter((t) => t.region === i).map(cell)));
+      }),
+      h('section.es-country', h('h3', 'Escales'), h('div.es-cells', TILES.filter((t) => t.type === 'escale').map(cell))));
   }
 
   // Un joueur : son argent, son patrimoine, ses villes, et de quoi lui proposer un échange.
@@ -417,7 +477,7 @@ export function mount(root, api) {
       h('dl.es-rents', h('dt', 'Nombre de tours'), h('dd', v.maxRounds ? String(v.maxRounds) : 'Sans fin'), h('dt', 'Temps par action'), h('dd', v.timer ? `${v.timer} s` : 'Sans limite'), h('dt', 'Joueurs'), h('dd', String(v.players.length)), h('dt', 'Villes pour construire'), h('dd', `${v.majority} sur 4`)),
       h('h3', 'Les règles en bref'),
       h('ul.es-rules', RULES.map((r) => h('li', r))),
-      h('p.es-note', 'À l’ordinateur : la barre d’espace lance l’action principale. Glisse pour tourner la carte, molette pour zoomer.'));
+      h('p.es-note', 'À l’ordinateur : la barre d’espace lance les dés et termine ton tour. Glisse pour tourner la carte, molette pour zoomer. Pour abandonner : le bouton est à côté de la liste des joueurs (onglet Chat sur téléphone).'));
   }
 
   function logSheet() {
@@ -434,6 +494,7 @@ export function mount(root, api) {
 
   function tradeSheet() {
     const others = v.players.filter((p) => !p.out && p.id !== meId);
+    let recapUpdate = () => {};
     const tradable = (id) => Object.keys(v.props).map(Number).filter((pos) => v.props[pos].owner === id && !v.props[pos].level);
     const picker = (id, set) => {
       const list = tradable(id);
@@ -446,6 +507,7 @@ export function mount(root, api) {
             else set.add(pos);
             el.classList.toggle('is-on');
             el.setAttribute('aria-pressed', String(set.has(pos)));
+            recapUpdate();
           },
         }, TILES[pos].name);
         if (TILES[pos].type === 'city') el.style.setProperty('--r', REGIONS[TILES[pos].region].color);
@@ -454,13 +516,21 @@ export function mount(root, api) {
     };
     const giveCash = h('input.es-input', { type: 'number', min: 0, step: 1, value: '0', inputmode: 'numeric', 'aria-label': 'Argent que tu donnes' });
     const getCash = h('input.es-input', { type: 'number', min: 0, step: 1, value: '0', inputmode: 'numeric', 'aria-label': 'Argent que tu demandes' });
+    const recap = h('p.es-recap', { 'aria-live': 'polite' });
+    const offerLine = (set, cash) => [...[...set].map((pos) => TILES[pos].short ?? TILES[pos].name), Number(cash.value) > 0 ? money(Number(cash.value)) : null].filter(Boolean).join(' + ') || 'rien';
+    const updateRecap = () => { recap.textContent = `Tu donnes ${offerLine(draft.give, giveCash)}. Tu reçois ${offerLine(draft.get, getCash)}.`; };
+    giveCash.addEventListener('input', updateRecap);
+    getCash.addEventListener('input', updateRecap);
+    recapUpdate = updateRecap;
+    updateRecap();
     return shell('Proposer un échange', h('h2', 'Proposer un échange'),
       h('div.es-picks', others.map((p) => h(`button.es-pick${p.id === draft.to ? '.is-on' : ''}`, {
         type: 'button',
         onclick: () => { draft.to = p.id; draft.get = new Set(); renderOverlay({ force: true }); },
       }, p.pseudo))),
-      h('h3', 'Tu donnes'), picker(meId, draft.give), h('label.es-field', 'Argent', giveCash),
-      h('h3', `Tu demandes à ${nameOf(draft.to)}`), picker(draft.to, draft.get), h('label.es-field', 'Argent', getCash),
+      h('h3', 'Tu donnes'), picker(meId, draft.give), h('label.es-field', 'Argent', giveCash, h('span', '€')),
+      h('h3', `Tu demandes à ${nameOf(draft.to)}`), picker(draft.to, draft.get), h('label.es-field', 'Argent', getCash, h('span', '€')),
+      recap,
       h('div.es-row', h('button.es-btn', {
         type: 'button',
         onclick: () => {
@@ -495,8 +565,8 @@ export function mount(root, api) {
   const onKey = (e) => {
     if (e.key === 'Escape' && overlay) closeOverlay();
     // La barre d'espace lance l'action principale, sauf si on écrit quelque part ou qu'une fenêtre est ouverte.
-    // Jamais pour une mise ou une vente : ces décisions-là se prennent à la main.
-    if (e.code === 'Space' && !overlay && !e.repeat && v && myTurn() && ['roll', 'end', 'buy'].includes(v.phase) && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
+    // Jamais pour un achat, une mise ou une vente : ce qui coûte de l'argent se décide à la main.
+    if (e.code === 'Space' && !overlay && !e.repeat && v && myTurn() && ['roll', 'end'].includes(v.phase) && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
       const main = prompt.querySelector('.es-btn:not(.is-ghost):not(.is-danger):not(:disabled)');
       if (main) {
         e.preventDefault();
@@ -508,8 +578,10 @@ export function mount(root, api) {
 
   // ——— Minuteur ———
   const tick = setInterval(() => {
-    if (!info?.deadline) {
+    // Le court délai d'un robot n'est pas un compte à rebours : on ne l'affiche pas.
+    if (!info?.deadline || (v && !v.over && v.phase !== 'auction' && v.players[v.cur].bot)) {
       timer.hidden = true;
+      clock.textContent = '';
       return;
     }
     const total = v?.phase === 'auction' ? 20000 : (v?.timer || 60) * 1000;

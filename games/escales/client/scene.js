@@ -331,7 +331,7 @@ function makeDie() {
   return new THREE.Mesh(roundedCube(1.5, 0.3), materials);
 }
 // Rotation qui met la face voulue sur le dessus.
-const DIE_TOP = { 1: [0, 0, 0], 2: [Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [-Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
+const DIE_TOP = { 1: [0, 0, 0], 2: [-Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
 const DIE_Y = 0.75;
 
 export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70 }) {
@@ -625,10 +625,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       placeCamera(HOME.yaw, HOME.pitch, fitDist);
       const ys = pts.map((p) => v.copy(p).project(camera).y);
       const py = ((1 - Math.max(...ys)) / 2) * size.h;
-      const tall = ((Math.max(...ys) - Math.min(...ys)) / 2) * size.h;
       const inset = topInset();
-      const free = size.h * 0.6 - inset; // entre les joueurs en haut et la carte d'action
-      const wanted = inset + Math.max(0, (free - tall) / 2);
+      const wanted = inset; // le plateau juste sous les joueurs : tout le bas de l'écran reste à la carte d'action
       camera.setViewOffset(size.w, size.h, 0, py - wanted, size.w, size.h);
       camera.updateProjectionMatrix();
     }
@@ -996,6 +994,13 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     }
 
     if (firstUpdate && size.w < size.h && size.w) computeFit(); // la place prise par les joueurs est connue maintenant
+    if (firstUpdate && !reduced && !v.over && v.rollN === 0 && v.round === 1) {
+      // Le début de partie : la caméra part de près, à ras du plateau, et se relève jusqu'à toute la carte.
+      cam.yaw = 0.55;
+      cam.pitch = 0.42;
+      cam.dist = fitDist * 0.62;
+      snap = false;
+    }
     if (userUntil && performance.now() > userUntil) recenter();
     // Le repère montre la ville dont il est question : un achat ou une enchère.
     const at = v.over ? null : v.phase === 'buy' ? v.players[v.cur]?.pos : v.phase === 'auction' ? v.auction.pos : null;
@@ -1009,6 +1014,11 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     }
     if (v.over && !wasOver) {
       wasOver = true;
+      dice.forEach((d, i) => { d.visible = false; diceShadows[i].visible = false; });
+      for (const id of v.winners) { // le gagnant saute de joie
+        const pawn = pawns.get(id);
+        if (pawn && !reduced) for (let i = 0; i < 6; i += 1) pawn.queue.push({ pos: pawn.goal, jump: 0.9 });
+      }
       if (!firstUpdate) for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [0, -7]]) celebrate(x, z, PAWN_COLORS[Math.floor(Math.random() * 10)]);
     }
     if (shadows || firstUpdate) renderer.shadowMap.needsUpdate = true;
@@ -1022,8 +1032,73 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   renderer.compile(scene, camera);
   dice.forEach((d) => { d.visible = false; });
 
+  // ——— De petites images rendues une seule fois : le portrait d'un voyageur, le monument d'une ville ———
+  const shots = new Map();
+  function snapshot(key, build, frame) {
+    if (shots.has(key)) return shots.get(key);
+    const S = 192;
+    const stage2 = new THREE.Scene();
+    stage2.add(new THREE.HemisphereLight('#FFFFFF', '#BAC4D4', 1.9));
+    const light = new THREE.DirectionalLight('#FFE9CF', 2.3);
+    light.position.set(-3, 6, 5);
+    stage2.add(light);
+    const object = build();
+    const mesh = new THREE.Mesh(bake([{ object }], { fullColor: true }), new THREE.MeshLambertMaterial({ vertexColors: true }));
+    mesh.rotation.y = frame.turn ?? 0.45;
+    stage2.add(mesh);
+    const lens = new THREE.PerspectiveCamera(24, 1, 0.05, 100);
+    frame.place(lens, mesh);
+    const target = new THREE.WebGLRenderTarget(S, S, { samples: 4 });
+    const clear = renderer.getClearAlpha();
+    renderer.setClearAlpha(0);
+    renderer.setRenderTarget(target);
+    renderer.clear();
+    renderer.render(stage2, lens);
+    const raw = new Uint8Array(S * S * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, S, S, raw);
+    renderer.setRenderTarget(null);
+    renderer.setClearAlpha(clear);
+    // Une cible de rendu reste en valeurs linéaires : on repasse en couleurs d'écran, et on remet l'image à l'endroit.
+    const out = new ImageData(S, S);
+    const gamma = (x) => (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055) * 255;
+    for (let y = 0; y < S; y += 1) {
+      for (let x = 0; x < S; x += 1) {
+        const from = ((S - 1 - y) * S + x) * 4;
+        const to = (y * S + x) * 4;
+        const a2 = raw[from + 3] / 255;
+        for (let k = 0; k < 3; k += 1) out.data[to + k] = a2 ? gamma(raw[from + k] / 255 / a2) : 0;
+        out.data[to + 3] = raw[from + 3];
+      }
+    }
+    target.dispose();
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+    shots.set(key, out);
+    return out;
+  }
+
   return {
     update,
+    // Le visage d'un voyageur, de près.
+    portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), {
+      turn: 0.3,
+      place(lens) {
+        lens.position.set(0, 0.92, 1.95);
+        lens.lookAt(0, 0.74, 0);
+      },
+    }),
+    // Le monument entier d'une ville.
+    monument: (pos) => snapshot(`m${pos}`, () => (TILES[pos].type === 'city' ? buildMonument(TILES[pos].model) : buildSpecial(TILES[pos].type)), {
+      turn: 0.55,
+      place(lens, mesh) {
+        const box = new THREE.Box3().setFromObject(mesh);
+        const c = box.getCenter(new THREE.Vector3());
+        const sz = box.getSize(new THREE.Vector3());
+        const d = (Math.max(sz.x, sz.y, sz.z) * 1.12) / (2 * Math.tan(THREE.MathUtils.degToRad(12)));
+        lens.position.set(c.x, c.y + d * 0.42, c.z + d * 0.91);
+        lens.lookAt(c);
+      },
+    }),
     recenter() {
       recenter();
       wake();
