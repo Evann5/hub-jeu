@@ -51,6 +51,10 @@ Moyennes sur 40 parties par nombre de joueurs, en 20 tours, avec des robots qui 
 
 À 10 joueurs, la moitié de la table est éliminée à la fin de la partie, et l'écart est grand. C'est le point à surveiller lors des premières vraies parties.
 
+## Les monuments sculptés
+
+La tour Eiffel, le Colisée et le Golden Gate sont sculptés dans Blender (`assets/monuments/*.glb`, sources dans `docs/monuments-blender/`, à relancer avec `run.sh`). Chaque fichier : une seule forme, des couleurs de sommets, moins de 6 000 triangles et 200 Ko. Les autres monuments sont encore écrits en code (`client/monuments.js`) ; si un fichier ne charge pas, le monument en code reprend sa place.
+
 ## Les personnages
 
 Chaque place a son voyageur, dans `CAST` (`client/monuments.js`) : pilote, routard, touriste, marin, hôtesse, cycliste, exploratrice, surfeur, cheffe, grand-père. Même corps pour tous ; la tenue prend la couleur du joueur. Ils marchent sur le sol, le long du bord intérieur du plateau, pour ne jamais cacher le texte des cases.

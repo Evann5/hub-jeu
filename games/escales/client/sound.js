@@ -16,7 +16,9 @@ export function createSound() {
     }
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   };
-  document.addEventListener('pointerdown', unlock);
+  // Sur téléphone, le son ne se débloque qu'à la fin d'un geste : on écoute plusieurs événements.
+  const GESTURES = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'];
+  GESTURES.forEach((g) => document.addEventListener(g, unlock));
 
   const ready = () => ctx && !muted && ctx.state === 'running';
 
@@ -75,7 +77,7 @@ export function createSound() {
       return muted;
     },
     destroy() {
-      document.removeEventListener('pointerdown', unlock);
+      GESTURES.forEach((g) => document.removeEventListener(g, unlock));
       ctx?.close().catch(() => {});
     },
   };

@@ -4,6 +4,7 @@ import { REGIONS, TILES, RULES, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS
 import { createWorld, PAWN_COLORS } from './client/scene.js';
 import { FLAGS } from './client/countries.js';
 import { createSound } from './client/sound.js';
+import { loadSculpted } from './client/monuments.js';
 
 const money = (n) => `${Number(n).toLocaleString('fr-FR')} €`;
 
@@ -22,7 +23,8 @@ export function mount(root, api) {
   let v = null;
   let info = null;
   let promptKey = null;
-  let overlay = null; // { kind: 'city', pos } | { kind: 'cities' } | { kind: 'trade' }
+  let overlay = null; // { kind: 'city', pos } | { kind: 'cities' } | { kind: 'trade' } | { kind: 'player', id } | { kind: 'more' } | { kind: 'log' }
+  let overlaySeen = null;
   let draft = null;
   let world = null;
   let gone = false;
@@ -59,7 +61,7 @@ export function mount(root, api) {
   root.append(h('div.es', stage, loading, tip, tools, h('div.es-table', players, dock), layer));
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
-  Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"')]).catch(() => {}).finally(() => {
+  Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"'), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
       world = createWorld(stage, {
@@ -144,11 +146,11 @@ export function mount(root, api) {
       const dot = h('i.es-dot');
       dot.style.background = PAWN_COLORS[p.seat];
       const turn = !v.over && v.players[v.cur].id === p.id;
-      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { type: 'button', role: 'listitem', style: `--p:${PAWN_COLORS[p.seat]}`, onclick: () => openOverlay({ kind: 'player', id: p.id }) },
+      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir le détail`, onclick: () => openOverlay({ kind: 'player', id: p.id }) },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, p.bot ? h('small', ' robot') : null),
         h('span.es-cash', p.out ? 'Sorti' : money(p.cash), deltaOf(p)));
-      return chip;
+      return h('div', { role: 'listitem' }, chip);
     }));
     root.style.setProperty('--rows', String(Math.ceil(v.players.length / 2)));
   }
@@ -200,7 +202,14 @@ export function mount(root, api) {
       h('div.es-row', list.slice(0, 4).map((pos) => btn(`${TILES[pos].short ?? TILES[pos].name} ${money(v.costs[pos])}`, { type: 'build', pos }, '.is-ghost.is-small')),
         list.length > 4 ? h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, `+ ${list.length - 4}`) : null));
   }
-  const btn = (text, action, cls = '') => h(`button.es-btn${cls}`, { type: 'button', onclick: (e) => { e.currentTarget.disabled = true; send(action); } }, text);
+  const btn = (text, action, cls = '') => h(`button.es-btn${cls}`, {
+    type: 'button',
+    onclick: (e) => {
+      const b = e.currentTarget;
+      b.disabled = true;
+      api.sendMove(action).catch(() => { b.disabled = false; }); // refusé ou coupé : on peut réessayer
+    },
+  }, text);
   const say = (text) => h('p.es-say', text);
 
   function auctionPrompt() {
@@ -314,7 +323,7 @@ export function mount(root, api) {
   // ——— Fenêtres ———
   function openOverlay(next) {
     overlay = next;
-    renderOverlay();
+    renderOverlay({ force: true, focusClose: true });
   }
   function closeOverlay() {
     overlay = null;
@@ -394,7 +403,7 @@ export function mount(root, api) {
       p.id !== meId && !p.out && !v.over && me() && !me().out ? h('div.es-row', h('button.es-btn', { type: 'button', onclick: () => {
         openTrade();
         draft.to = p.id;
-        renderOverlay();
+        renderOverlay({ force: true });
       } }, `Proposer un échange à ${p.pseudo}`)) : null);
   }
 
@@ -448,7 +457,7 @@ export function mount(root, api) {
     return shell('Proposer un échange', h('h2', 'Proposer un échange'),
       h('div.es-picks', others.map((p) => h(`button.es-pick${p.id === draft.to ? '.is-on' : ''}`, {
         type: 'button',
-        onclick: () => { draft.to = p.id; draft.get = new Set(); renderOverlay(); },
+        onclick: () => { draft.to = p.id; draft.get = new Set(); renderOverlay({ force: true }); },
       }, p.pseudo))),
       h('h3', 'Tu donnes'), picker(meId, draft.give), h('label.es-field', 'Argent', giveCash),
       h('h3', `Tu demandes à ${nameOf(draft.to)}`), picker(draft.to, draft.get), h('label.es-field', 'Argent', getCash),
@@ -461,9 +470,15 @@ export function mount(root, api) {
       }, 'Envoyer la proposition')));
   }
 
-  function renderOverlay() {
+  // Pendant le tour des autres, on ne redessine une fenêtre que si son contenu change, et sans déplacer le focus du clavier.
+  function renderOverlay({ force = false, focusClose = false } = {}) {
     if (!overlay || !v) return;
+    const seen = JSON.stringify([overlay, v.props, v.rents, v.actions, v.costs, me()?.passes, overlay.kind === 'player' ? v.players : 0, overlay.kind === 'log' ? v.log.at(-1)?.n : 0]);
+    if (!force && seen === overlaySeen) return;
+    overlaySeen = seen;
     const scroll = layer.querySelector('.es-sheet')?.scrollTop ?? 0;
+    const focusables = () => [...layer.querySelectorAll('button, input')];
+    const focusedAt = focusables().indexOf(document.activeElement);
     const el = overlay.kind === 'city' ? citySheet(overlay.pos)
       : overlay.kind === 'cities' ? citiesSheet()
         : overlay.kind === 'player' ? playerSheet(overlay.id)
@@ -473,13 +488,15 @@ export function mount(root, api) {
     layer.replaceChildren(el);
     const sheet = el.querySelector('.es-sheet');
     if (sheet) sheet.scrollTop = scroll;
-    el.querySelector('.es-close')?.focus({ preventScroll: true });
+    if (focusClose) el.querySelector('.es-close')?.focus({ preventScroll: true });
+    else if (focusedAt >= 0) (focusables()[focusedAt] ?? el.querySelector('.es-close'))?.focus({ preventScroll: true });
   }
 
   const onKey = (e) => {
     if (e.key === 'Escape' && overlay) closeOverlay();
     // La barre d'espace lance l'action principale, sauf si on écrit quelque part ou qu'une fenêtre est ouverte.
-    if (e.code === 'Space' && !overlay && !e.repeat && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
+    // Jamais pour une mise ou une vente : ces décisions-là se prennent à la main.
+    if (e.code === 'Space' && !overlay && !e.repeat && v && myTurn() && ['roll', 'end', 'buy'].includes(v.phase) && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
       const main = prompt.querySelector('.es-btn:not(.is-ghost):not(.is-danger):not(:disabled)');
       if (main) {
         e.preventDefault();

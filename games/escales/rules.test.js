@@ -334,6 +334,45 @@ test('dette : vendre ce qu’il faut en un clic, et on voit ce qu’on peut réu
   assert.equal(s.players.find((p) => p.id === b).cash, 1500 + TILES[4].rent);
 });
 
+test('si le créancier abandonne pendant une dette, on doit à la banque, et rien ne part chez un joueur sorti', () => {
+  let s = start();
+  const [a, b] = s.players.map((p) => p.id);
+  own(s, b, 'Marrakech');
+  own(s, a, 'Casablanca');
+  s.players[0].cash = 1;
+  s = roll(s, 1, 3);
+  s = leave(s, b, ctxOf()).state;
+  assert.equal(s.debt.to, null);
+  s = move(s, a, { type: 'bankrupt' }, ctxOf()).state;
+  assert.equal(s.props[posOf('Casablanca')], undefined, 'la ville retourne à la banque');
+});
+
+test('coups mal formés : un refus propre, pas un plantage', () => {
+  const s = start();
+  const a = s.players[0].id;
+  const b = s.players[1].id;
+  assert.throws(() => move(s, a, { type: 'build' }, ctxOf()), /niveau libre/);
+  assert.doesNotThrow(() => move(s, a, { type: 'trade', to: b, give: null, get: { cash: 1 } }, ctxOf()));
+  assert.throws(() => move(s, a, null, ctxOf()), /Action inconnue/);
+  for (const bad of [{ type: 'fly' }, { type: 'sell' }, { type: 'mortgage', pos: 'x' }, { type: 'bid', amount: 'x' }, { type: 'tradeAccept' }]) {
+    assert.throws(() => move(s, a, bad, ctxOf()), (e) => !(e instanceof TypeError), JSON.stringify(bad));
+  }
+});
+
+test('un joueur ne peut pas repousser le tour d’un robot en lui envoyant des échanges', () => {
+  let s = setup(people(1), { bots: 3, rounds: 20, timer: 0 }, ctxOf(5));
+  while (s.players[s.cur].id === 1 || s.phase === 'auction') {
+    s.cur = (s.cur + 1) % s.players.length;
+    s.phase = 'roll';
+  }
+  s = timeout(s, { now: 1000, random: seeded(3) }).state;
+  while (!s.players[s.cur].bot || s.phase === 'auction') s = timeout(s, { now: 1000, random: seeded(4) }).state;
+  const due = s.deadline;
+  const bot = s.players[s.cur];
+  const next = move(s, 1, { type: 'trade', to: bot.id, give: { cash: 1 }, get: {} }, { now: due - 10, random: seeded(1) }).state;
+  assert.equal(next.deadline, due, 'l’échéance du robot ne bouge pas');
+});
+
 test('faillite : le créancier récupère tout, la partie continue', () => {
   let s = start();
   const [a, b] = s.players.map((p) => p.id);

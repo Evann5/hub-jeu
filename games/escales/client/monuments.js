@@ -438,9 +438,56 @@ export const MONUMENTS = {
   },
 };
 
+// Les monuments sculptés dans Blender (assets/monuments/*.glb) remplacent ceux écrits en code. Chaque fichier ne contient qu'une forme
+// et des couleurs de sommets : ce petit lecteur suffit, sans dépendance. Si un fichier manque, le monument en code reste.
+const SCULPTED = { eiffel: 'eiffel', colisee: 'colisee', goldenGate: 'golden-gate' };
+const sculpted = new Map();
+
+function parseGlb(buffer) {
+  const view = new DataView(buffer);
+  if (view.getUint32(0, true) !== 0x46546c67) throw new Error('Ce n’est pas un fichier GLB.');
+  const jsonLength = view.getUint32(12, true);
+  const json = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 20, jsonLength)));
+  const binStart = 20 + jsonLength + 8;
+  const prim = json.meshes[0].primitives[0];
+  const read = (index) => {
+    const acc = json.accessors[index];
+    const bv = json.bufferViews[acc.bufferView];
+    const offset = binStart + (bv.byteOffset ?? 0) + (acc.byteOffset ?? 0);
+    const size = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 }[acc.type];
+    const Kind = { 5121: Uint8Array, 5123: Uint16Array, 5125: Uint32Array, 5126: Float32Array }[acc.componentType];
+    return { data: new Kind(buffer.slice(offset, offset + acc.count * size * Kind.BYTES_PER_ELEMENT)), size, count: acc.count, max: acc.componentType === 5126 ? 1 : 2 ** (8 * Kind.BYTES_PER_ELEMENT) - 1 };
+  };
+  const position = read(prim.attributes.POSITION);
+  const color = read(prim.attributes.COLOR_0);
+  const indices = read(prim.indices);
+  const rgb = new Float32Array(color.count * 3);
+  for (let i = 0; i < color.count; i += 1) {
+    for (let k = 0; k < 3; k += 1) rgb[i * 3 + k] = color.data[i * color.size + k] / color.max;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(position.data, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+  geo.setIndex(new THREE.BufferAttribute(indices.data, 1));
+  return geo;
+}
+
+export async function loadSculpted(urlOf) {
+  await Promise.all(Object.entries(SCULPTED).map(async ([name, file]) => {
+    try {
+      const res = await fetch(urlOf(`monuments/${file}.glb`));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      sculpted.set(name, parseGlb(await res.arrayBuffer()));
+    } catch (err) {
+      console.warn(`Monument ${name} : on garde la version en code (${err.message}).`);
+    }
+  }));
+}
+
 export function buildMonument(name) {
   const g = new THREE.Group();
-  (MONUMENTS[name] ?? MONUMENTS.maisonsColorees)(g);
+  if (sculpted.has(name)) g.add(new THREE.Mesh(sculpted.get(name), mat('#FFFFFF')));
+  else (MONUMENTS[name] ?? MONUMENTS.maisonsColorees)(g);
   return g;
 }
 
@@ -737,13 +784,15 @@ export function bake(items, { fullColor = false } = {}) {
   const push = (geometry, matrix, tone, material, ao) => {
     const g = geometry.index ? geometry.toNonIndexed() : geometry;
     const p = g.attributes.position;
+    const own = g.attributes.color; // un monument sculpté apporte ses propres couleurs
     const c = material.color;
     for (let i = 0; i < p.count; i += 1) {
       v.fromBufferAttribute(p, i).applyMatrix4(matrix);
       pos.push(v.x, v.y, v.z);
       // ao : la hauteur du sol. Plus une pièce en est proche, plus elle s'assombrit : ça pose les objets dans le décor.
       const k = ao === undefined ? 1 : 0.56 + 0.44 * Math.min(1, Math.max(0, (v.y - ao) / 1.1)) ** 0.7;
-      if (fullColor) col.push(c.r * k, c.g * k, c.b * k);
+      if (own) col.push(own.getX(i) * k, own.getY(i) * k, own.getZ(i) * k);
+      else if (fullColor) col.push(c.r * k, c.g * k, c.b * k);
       else col.push(tone, tone, tone);
     }
   };

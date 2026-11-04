@@ -24,7 +24,7 @@ const PAWN_SCALE = 1.95;
 
 const SPECIAL_COLOR = { start: '#BFE8CF', customs: '#CBD8F2', festival: '#F6CFE0', control: '#F5CFC2', escale: '#F6F4EE', telex: '#F8EFC8', tax: '#F6E3BB', chantier: '#E3E4E6' };
 // Les monuments qui doivent impressionner sont un peu plus grands que les autres.
-const HEROES = { eiffel: 1.22, tourTokyo: 1.18, colisee: 1.18, goldenGate: 1.15, pyramide: 1.12 };
+const HEROES = { eiffel: 1.04, tourTokyo: 1.18, colisee: 1.18, pyramide: 1.12 };
 // La couleur d'un pays sur ses cases : la même teinte, adoucie, pour que les monuments et les joueurs ressortent.
 const softened = (hex, amount = 0.5) => new THREE.Color(hex).lerp(new THREE.Color(WARM), amount);
 
@@ -343,7 +343,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let dpr = startDpr;
   renderer.setPixelRatio(dpr);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.shadowMap.autoUpdate = false; // les ombres ne bougent presque jamais : on les recalcule seulement au besoin
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   host.append(renderer.domElement);

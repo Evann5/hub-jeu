@@ -77,7 +77,7 @@ export function worthOf(s, p) {
 function canBuildAt(s, id, pos) {
   const t = TILES[pos];
   const prop = s.props[pos];
-  return t.type === 'city' && prop?.owner === id && !prop.mortgaged && prop.level < MAX_LEVEL && ownedInRegion(s, id, t.region) >= s.majority;
+  return t?.type === 'city' && prop?.owner === id && !prop.mortgaged && prop.level < MAX_LEVEL && ownedInRegion(s, id, t.region) >= s.majority;
 }
 
 const mortgageValue = (t) => Math.floor(t.price / 2);
@@ -140,15 +140,11 @@ function arm(s, ctx) {
     s.deadline = null;
     return s;
   }
-  if (s.phase !== 'auction' && cur(s).bot) { // un robot joue tout seul, une action à la fois
-    s.armedFor = null;
-    s.deadline = ctx.now + BOT_MS;
-    return s;
-  }
   const key = `${s.phase}:${s.cur}:${s.rollN}:${s.logN > 0 && s.phase === 'auction' ? s.auction.pos : ''}`;
   if (key === s.armedFor) return s;
   s.armedFor = key;
   if (s.phase === 'auction') s.deadline = ctx.now + AUCTION_MS;
+  else if (cur(s).bot) s.deadline = ctx.now + BOT_MS; // un robot joue tout seul, une action à la fois
   else s.deadline = s.timer ? ctx.now + s.timer * 1000 : null;
   return s;
 }
@@ -229,7 +225,8 @@ function finish(s, reason) {
 
 // Le joueur quitte la partie. to : id du créancier, ou null pour la banque.
 function eliminate(s, p, to) {
-  const heir = to ? byId(s, to) : null;
+  const creditor = to ? byId(s, to) : null;
+  const heir = creditor && !creditor.out ? creditor : null;
   let liquidated = 0;
   for (const pos of positionsOf(s, p.id)) {
     const prop = s.props[pos];
@@ -635,7 +632,8 @@ function botStep(s, ctx) {
 
 // ——— Échanges ———
 
-function cleanOffer(o = {}) {
+function cleanOffer(given) {
+  const o = given ?? {};
   return {
     cash: Math.max(0, Math.floor(Number(o.cash) || 0)),
     cities: [...new Set((Array.isArray(o.cities) ? o.cities : []).map(Number))].filter((n) => Number.isInteger(n) && TILES[n]),
@@ -679,7 +677,8 @@ function ownedProp(s, id, pos) {
   return prop;
 }
 
-export function move(state, playerId, action = {}, ctx) {
+export function move(state, playerId, given, ctx) {
+  const action = given ?? {};
   if (state.over) throw new Error('La partie est terminée.');
   const s = clone(state);
   const p = byId(s, playerId);
@@ -914,6 +913,7 @@ export function leave(state, playerId, ctx) {
   if (!p || p.out) return { state: s };
   log(s, `${p.pseudo} quitte la partie.`);
   const wasCurrent = cur(s).id === p.id;
+  if (s.debt?.to === p.id) s.debt.to = null; // on doit désormais cet argent à la banque
   eliminate(s, p, null);
   if (s.over) return { state: arm(s, ctx) };
   if (s.phase === 'auction') {

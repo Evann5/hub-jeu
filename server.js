@@ -28,11 +28,13 @@ app.use((req, res, next) => {
 
 const router = express.Router();
 router.use('/api', api);
-router.use(express.static(join(config.root, 'public'), { maxAge: '1h' }));
+// maxAge 0 : le navigateur revérifie chaque fichier (un 304 ne coûte rien). Avec un cache, une mise à jour qui ajoute un export casserait
+// le chargement chez qui garde l'ancien module, car les imports d'un module ne portent pas le ?v= de la page.
+router.use(express.static(join(config.root, 'public'), { maxAge: 0 }));
 // Fichiers des jeux pour le navigateur : client.js, style.css, client/ et assets/ seulement (jamais rules.js).
 router.use('/games', (req, res, next) => (
   /^\/[a-z0-9-]+\/(client\.js|style\.css|(client|assets)\/[\w./-]+)$/.test(req.path) && !req.path.includes('..') ? next() : res.sendStatus(404)
-), express.static(gamesDir, { maxAge: '1h', index: false, fallthrough: false }));
+), express.static(gamesDir, { maxAge: 0, index: false, fallthrough: false }));
 // Les écrans de l'appli passent par l'ancre (#/c/1) : toute autre adresse renvoie à l'accueil.
 router.get('/{*rest}', (req, res) => res.redirect(`${config.basePath}/`));
 if (config.basePath) {

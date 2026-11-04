@@ -140,8 +140,13 @@ function startRealtime() {
   socket.on('typing', messages.onTyping);
 
   // ——— Tables de jeu ———
+  // La liste repart à chaque coup de chaque table : on ne redessine que si quelque chose de visible a changé.
+  let tablesSeen = '';
   socket.on('tables', (list) => {
     state.tables = list;
+    const seen = JSON.stringify(list.map(({ updatedAt, deadline, ...visible }) => visible));
+    if (seen === tablesSeen) return;
+    tablesSeen = seen;
     renderNav();
     games.refresh();
     if (state.route.view === 'home') home.render(ui.content);
