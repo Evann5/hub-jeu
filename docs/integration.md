@@ -195,7 +195,7 @@ Le navigateur ne reçoit que `client.js`, `style.css`, `client/` et `assets/`. `
 }
 ```
 
-`color` et `ink` colorent la carte du jeu et son salon (texte `ink` sur fond `color`, contraste 4,5:1). `family` range le jeu dans un filtre de la page Jouer : `plateau` (plateau et dés), `cartes`, `bluff` ou `ambiance`. Le logo du jeu est `assets/logo.svg` : un pictogramme d'une seule couleur, formes pleines et épaisses, sur une grille `viewBox="0 0 64 64"`, sans texte ni image ; le hub le peint à l'encre `ink` sur la couleur `color`. Sans logo, le hub affiche `emoji`. `"featured": true` (facultatif, un seul jeu) en fait le jeu phare : grande carte en haut de la page Jouer. `order` range les jeux sur la page Jouer. `how` s'affiche dans « Comment on joue ? ». Les `options` sont réglées par l'hôte dans le salon ; le hub les borne et les passe à `setup()`.
+`color` et `ink` colorent la carte du jeu et son salon (texte `ink` sur fond `color`, contraste 4,5:1). `family` range le jeu dans un filtre de la page Jouer : `plateau` (plateau et dés), `cartes`, `bluff` ou `ambiance`. Le logo du jeu est `assets/logo.svg` : un pictogramme d'une seule couleur, formes pleines et épaisses, sur une grille `viewBox="0 0 64 64"`, sans texte ni image ; le hub le peint à l'encre `ink` sur la couleur `color`. Sans logo, le hub affiche `emoji`. `"featured": true` (facultatif, un seul jeu) en fait le jeu phare : grande carte en haut de la page Jouer. `"wide": true` (facultatif) donne toute la largeur au jeu pendant la partie : les joueurs et le chat passent dans un panneau qu'on ouvre d'un bouton. `order` range les jeux sur la page Jouer. `how` s'affiche dans « Comment on joue ? ». Les `options` sont réglées par l'hôte dans le salon ; le hub les borne et les passe à `setup()`.
 
 ### rules.js
 
@@ -252,7 +252,7 @@ export function mount(root, api) {
 
 Tout est dans `docs/mise-en-ligne.md` : cPanel, « Setup Node.js App », Node 22.13 ou plus, fichier de démarrage `server.js`, variables `CLASS_CODE`, `ADMINS` et `BASE_PATH`.
 
-Pour une mise à jour, remplacer `src`, `public`, `server.js` et `package*.json`, puis « Run NPM Install » et « Restart ». **Ne jamais toucher à `data/`.**
+Pour une mise à jour, remplacer `src`, `public`, `games`, `server.js` et `package*.json`, puis « Run NPM Install » et « Restart ». **Ne jamais toucher à `data/`.**
 
 Point encore ouvert : on ne sait pas si O2Switch laisse passer les WebSockets. Socket.IO se rabat de lui-même sur le long-polling. La page Admin indique quel mode est utilisé.
 

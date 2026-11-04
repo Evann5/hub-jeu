@@ -1141,6 +1141,17 @@ body:has(.view-table) #toasts { top: max(12px, env(safe-area-inset-top)); bottom
   .page-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* Un jeu « large » sur ordinateur : toute la largeur pour le jeu, joueurs et chat dans un panneau qu'on ouvre. */
+@media (min-width: 761px) {
+  .table-view.is-wide .table-head { padding: 6px 12px; }
+  .table-view.is-wide .table-body { position: relative; grid-template-columns: minmax(0, 1fr); }
+  .table-view.is-wide .table-side { position: absolute; top: 0; right: 0; bottom: 0; z-index: 8; width: 320px; background: var(--bg-2); box-shadow: -18px 0 40px rgb(0 0 0 / 0.45); }
+  .table-view.is-wide.tab-game .table-side { display: none; }
+  .table-view.is-wide .table-tabs { display: flex; margin-left: auto; gap: 4px; padding: 3px; border-radius: 999px; background: var(--bg-1); }
+  .table-view.is-wide .table-tab { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-weight: 700; }
+  .table-view.is-wide .table-tab[aria-selected='true'] { background: var(--bg-3); color: var(--ink); }
+}
+
 /* Sur téléphone : barre de navigation en bas, un écran à la fois. */
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); padding: 0; }

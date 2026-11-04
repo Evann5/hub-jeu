@@ -43,6 +43,7 @@ export async function loadGames() {
         emoji: String(meta.emoji || '🎲'),
         logo: existsSync(join(dir, 'assets', 'logo.svg')), // pictogramme d'une couleur, affiché à la place de l'emoji
         family: FAMILIES.includes(meta.family) ? meta.family : 'ambiance',
+        wide: meta.wide === true, // en partie, le jeu prend toute la largeur ; joueurs et chat passent dans un panneau
         featured: meta.featured === true, // le jeu phare : une grande carte en haut de la page Jouer
         style: existsSync(join(dir, 'style.css')),
         order: Number(meta.order) || 100,

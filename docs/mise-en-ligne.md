@@ -13,7 +13,7 @@ Pour la personne qui gère le compte O2Switch. Compter environ 20 minutes la pre
 1. Dans cPanel, ouvrir **Gestionnaire de fichiers**.
 2. Créer un dossier `hubuno` **à côté** de `public_html`, pas dedans (les données ne doivent pas être visibles sur le web).
 3. Entrer dans `hubuno`, cliquer sur **Charger** et envoyer `hubuno-a-mettre-en-ligne.zip`.
-4. Revenir dans `hubuno`, clic droit sur le zip > **Extraire**. On doit voir `server.js`, `package.json` et les dossiers `src` et `public` directement dans `hubuno`. Supprimer ensuite le zip.
+4. Revenir dans `hubuno`, clic droit sur le zip > **Extraire**. On doit voir `server.js`, `package.json` et les dossiers `src`, `public` et `games` directement dans `hubuno`. Supprimer ensuite le zip.
 
 ## 2. Créer l'application Node.js
 
@@ -51,7 +51,7 @@ Pour la personne qui gère le compte O2Switch. Compter environ 20 minutes la pre
 
 ## Mettre à jour
 
-1. Remplacer les fichiers `src`, `public`, `server.js`, `package.json` et `package-lock.json`. **Ne jamais toucher au dossier `data`** : il contient les comptes et les messages.
+1. Remplacer les fichiers `src`, `public`, `games`, `server.js`, `package.json` et `package-lock.json`. **Ne jamais toucher au dossier `data`** : il contient les comptes et les messages.
 2. **Run NPM Install** si `package.json` a changé, puis **Restart**.
 
 ## Sauvegarder

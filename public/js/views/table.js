@@ -78,23 +78,28 @@ function buildShell() {
     chat: h('section.table-chat', { 'aria-label': 'Chat de la table' }),
   };
   cur.ui.side.append(cur.ui.players, cur.ui.chat);
-  cur.ui.root = h(`div.table-view.tab-${cur.tab}`, { style: `--g:${g.color};--g-ink:${g.ink}` },
+  cur.ui.root = h(`div.${viewClass().replaceAll(' ', '.')}`, { style: `--g:${g.color};--g-ink:${g.ink}` },
     cur.ui.head, h('div.table-body', cur.ui.main, cur.ui.side));
   cur.el.replaceChildren(cur.ui.root);
   renderChat();
 }
 
+// Un jeu « large » prend tout l'écran pendant la partie ; dans le salon, la colonne des joueurs reste visible.
+const isWide = () => Boolean(cur.game?.wide && cur.table?.status !== 'lobby');
+const viewClass = () => `table-view tab-${cur.tab}${isWide() ? ' is-wide' : ''}`;
+
 function setTab(tab) {
   if (!cur?.ui) return;
   cur.tab = tab;
   if (tab === 'chat') cur.chatUnread = 0;
-  cur.ui.root.className = `table-view tab-${tab}`;
+  cur.ui.root.className = viewClass();
   renderHead();
   if (tab === 'chat') scrollChat();
 }
 
 function renderHead() {
   const { table: t, game: g } = cur;
+  cur.ui.root.className = viewClass();
   const label = t.status === 'lobby' ? 'Salon' : t.status === 'over' ? 'Terminée' : t.turn.includes(state.me.id) ? 'À toi de jouer' : 'En cours';
   const tab = (key, text, extra) => h('button.table-tab', {
     type: 'button',
@@ -111,7 +116,7 @@ function renderHead() {
     seated() ? null : h('span.table-pill.is-watch', 'Spectateur'),
     h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
       tab('game', 'Partie'),
-      tab('chat', 'Chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null)),
+      tab('chat', isWide() && !mobile() ? 'Joueurs et chat' : 'Chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null)),
   ].filter(Boolean));
 }
 
@@ -445,7 +450,7 @@ export function onMessage(m) {
   if (cur.chat.some((x) => x.id === m.id)) return;
   cur.chat.push(m);
   if (cur.chat.length > 200) cur.chat.shift();
-  if (m.userId !== state.me.id && mobile() && cur.tab !== 'chat') {
+  if (m.userId !== state.me.id && (mobile() || isWide()) && cur.tab !== 'chat') {
     cur.chatUnread += 1;
     renderHead();
   }

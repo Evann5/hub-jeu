@@ -766,7 +766,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let lastRollN = -1;
 
   // ——— La caméra : une vue fixe, sans perspective. Le plateau reste un rectangle, toutes les cases ont la même taille ———
-  const PITCH = 1.0; // l'inclinaison : assez plongeante pour tout lire, assez basse pour voir les monuments debout
+  const PITCH = 0.85; // l'inclinaison : assez plongeante pour tout lire, assez basse pour voir les monuments debout
   let size = { w: 0, h: 0 };
   camera.position.set(0, Math.sin(PITCH) * 150, Math.cos(PITCH) * 150);
   camera.lookAt(0, 0, 0);
@@ -779,7 +779,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const edge = HALF + 0.75;
     for (const x of [-edge, edge]) {
       for (const z of [-edge, edge]) {
-        for (const y of [-0.7, z < 0 ? 4 : 1.5]) { // le haut des grands monuments du fond doit rester visible
+        for (const y of [-0.7, z < 0 ? 3.4 : 1.5]) { // le haut des grands monuments du fond doit rester visible
           v.set(x, y, z).applyMatrix4(camera.matrixWorldInverse);
           x0 = Math.min(x0, v.x);
           x1 = Math.max(x1, v.x);
@@ -789,9 +789,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       }
     }
     const narrow = size.w < size.h;
-    const top = narrow ? topInset() : 10;
-    const bottom = narrow ? 150 : 10;
-    const side = narrow ? 4 : 10;
+    const top = narrow ? topInset() : 4;
+    const bottom = narrow ? 150 : 4;
+    const side = narrow ? 4 : 8;
     const scale = Math.min((size.w - side * 2) / (x1 - x0), Math.max(60, size.h - top - bottom) / (y1 - y0));
     const midX = (x0 + x1) / 2;
     const midY = (y0 + y1) / 2;

@@ -46,7 +46,7 @@
 
 
 /* Les trois liens en haut à droite */
-.g-escales .es-tools { position: absolute; top: 10px; right: 12px; display: flex; gap: 2px; }
+.g-escales .es-tools { position: absolute; top: 10px; right: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .g-escales .es-tools[hidden], .g-escales .es-link[hidden] { display: none; }
 .g-escales .es-link { min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: #fff; font: 650 0.875rem var(--es-text); cursor: pointer; }
 .g-escales .es-link:hover { background: rgb(255 255 255 / 0.16); }
@@ -69,7 +69,8 @@
 .g-escales .es-pass-top::before { left: -8px; }
 .g-escales .es-pass-top::after { right: -8px; }
 .g-escales .es-diceline { margin-left: auto; color: var(--soft); font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.g-escales .es-dock.has-city { border-left: 8px solid var(--r); }
+.g-escales .es-dock.has-city { padding-left: 20px; background: linear-gradient(90deg, var(--r) 8px, #FFFDF8 8px); }
+.g-escales .es-dock.has-city .es-pass-top { margin-left: -20px; padding-left: 20px; }
 .g-escales .es-face { width: 26px; height: 26px; border-radius: 50%; background: var(--p); }
 .g-escales .es-here { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--soft); font-size: 0.875rem; font-weight: 600; }
 .g-escales .es-code.is-small { color: var(--ink); font-size: 1.25rem; }
@@ -186,7 +187,7 @@
   .g-escales .es-players { position: absolute; top: 6px; right: 6px; left: 6px; gap: 2px; padding: 3px; }
   .g-escales .es-chip { min-height: 28px; gap: 5px; padding: 0 6px 0 5px; font-size: 0.8125rem; }
   .g-escales .es-pseudo small { display: none; }
-  .g-escales .es-tools { inset: auto 0 auto auto; top: calc(10px + var(--rows, 2) * 30px); right: 4px; }
+  .g-escales .es-tools { flex-direction: row; inset: auto 0 auto auto; top: calc(10px + var(--rows, 2) * 30px); right: 4px; }
   .g-escales .es-link { min-height: 44px; padding: 0 12px; }
   .g-escales .es-close { top: 8px; right: 8px; width: 44px; height: 44px; }
   .g-escales .es-delta { display: none; }
