@@ -204,18 +204,32 @@ export function mount(root, api) {
     FLAGS[REGIONS[region].id](c.getContext('2d'), 0, 0, 90, 60);
     return c;
   };
-  // La ville à acheter : son monument, son nom, son pays, son loyer. Le reste est dans sa fiche, d'un clic.
+  // La ville à acheter : son monument, son nom, son loyer, où tu en es dans ce pays et ce qu'il te restera. Le reste est dans sa fiche, d'un clic.
   function offer(pos) {
     const t = TILES[pos];
     const isCity = t.type === 'city';
-    const mine = isCity ? TILES.filter((x) => x.region === t.region && v.props[x.pos]?.owner === meId).length : 0;
+    const group = TILES.filter((x) => (isCity ? x.region === t.region : x.type === 'escale'));
+    const mine = group.filter((x) => v.props[x.pos]?.owner === meId).length;
+    const pips = group.map((x) => {
+      const owner = v.props[x.pos] ? v.players.find((p) => p.id === v.props[x.pos].owner) : null;
+      const pip = h(`i${x.pos === pos ? '.is-this' : ''}`);
+      if (owner) pip.style.background = PAWN_COLORS[owner.seat];
+      return pip;
+    });
+    const missing = v.majority - mine - 1;
+    const goal = !isCity ? `Tu en as ${mine} sur 4`
+      : missing <= 0 ? 'Avec celle-ci, tu peux construire'
+        : `Encore ${missing} ville${missing > 1 ? 's' : ''} après celle-ci pour construire`;
+    const left = me().cash - t.price;
     return h('button.es-offer', { type: 'button', 'aria-label': `Voir la fiche de ${t.name}`, onclick: () => openOverlay({ kind: 'city', pos }) },
       picture(world?.monument(pos), '.es-offer-pic'),
       h('span.es-offer-text',
         h('b', t.name),
         h('small', isCity ? flagOf(t.region) : null, isCity ? REGIONS[t.region].name : 'Escale'),
         h('span', `Loyer ${money(isCity ? t.rent : ESCALE_RENTS[1])}`),
-        isCity && mine + 1 >= v.majority ? h('em', 'Avec celle-ci, tu pourras construire') : null));
+        h('span.es-pips-line', { 'aria-hidden': 'true' }, pips),
+        h(isCity && missing <= 0 ? 'em' : 'small.es-offer-goal', goal),
+        left >= 0 ? h('small.es-offer-goal', `Il te restera ${money(left)}`) : null));
   }
 
   // Où en est le pays : à qui sont ses villes, et ce qu'il te manque pour y construire.

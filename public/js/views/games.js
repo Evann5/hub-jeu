@@ -60,7 +60,7 @@ function featuredCard(g) {
   const waiting = live.filter((t) => t.status === 'lobby').length;
   const playing = live.length - waiting;
   const news = [waiting ? count(waiting, 'salon ouvert', 'salons ouverts') : null, playing ? count(playing, 'partie en cours', 'parties en cours') : null].filter(Boolean).join(', ');
-  return h('section.game-hero', { style: `--g:${g.color};--g-ink:${g.ink}` },
+  return h('section.game-hero', { 'data-game': g.id, style: `--g:${g.color};--g-ink:${g.ink}` },
     gameLogo(g),
     h('div.game-hero-text',
       h('p.game-hero-kicker', 'Le jeu de la classe'),

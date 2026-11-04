@@ -16,6 +16,7 @@ Hub privé de jeux de société en ligne pour la classe de Minh (études sup, 20
 - Comptes : code de classe + pseudo + mot de passe, aucun e-mail ; un admin réinitialise les mots de passe.
 - Messagerie : salon général, canaux créés par les admins, messages privés, chat de table ; texte, emojis, réactions ; pas d'images ni de modification. Messages effacés après 1 an.
 - Le serveur charge `rules.js` et `game.json` au démarrage : après les avoir modifiés, le redémarrer, recharger la page ne suffit pas.
+- Escales, fonctionnalités : Minh (04/11/2026) ne veut rien de plus que ce que fait Rich Up ; on s'en tient aux bases du genre, sans en copier le look. Sur le reste, on améliore l'interface et le visuel.
 - Les jeux sont des dossiers dans `games/` qui suivent le guide de branchement ; le hub fournit tables, tours, spectateurs et reconnexion.
 - Pas de nom ni de visuels de Monopoly. Captures pour le portfolio : pseudos inventés.
 - Look : style « Néon » validé le 23/10/2026 (disposition Discord, presque noir, cartes de couleur vive, Unbounded + Figtree), téléphone et ordinateur. Captures de référence dans `docs/captures/`, démo vidéo dans `docs/demo/`.
