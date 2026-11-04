@@ -1303,6 +1303,11 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .search { width: 100%; }
 }
 
+/* Très petits téléphones : le titre de la table passe avant le logo du jeu (il est déjà dans le salon). */
+@media (max-width: 370px) {
+  .table-view:not(.is-wide) .table-emoji { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
