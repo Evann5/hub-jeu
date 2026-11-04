@@ -581,7 +581,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
     fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H);
     const top = new THREE.Box3().setFromObject(model).max.y;
-    items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m, ao: PLATE_H });
+    items.push({ object: base, matrix: m, tile: t.pos }, { object: plate, matrix: m, tile: t.pos }, { object: model, matrix: m, ao: PLATE_H, tile: t.pos, lift: true });
+    const mid = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()).applyMatrix4(m);
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
     hit.position.set(f.x, 1.2, f.z);
     hit.rotation.y = f.rot;
@@ -592,7 +593,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     levels.position.set(f.x, 0, f.z);
     levels.rotation.y = f.rot;
     scene.add(levels);
-    return { f, w, top, levels, level: 0, rim: null, fill: null, shade: null, badge: null, color: null };
+    return { f, w, top, mid, levels, level: 0, rim: null, fill: null, shade: null, badge: null, color: null };
   });
 
   REGIONS.forEach((reg, r) => {
@@ -616,6 +617,20 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   });
 
   const world = new THREE.Mesh(bake(items, { fullColor: true }), new THREE.MeshLambertMaterial({ vertexColors: true }));
+  // Les monuments sont fondus en une seule forme : c'est le shader qui soulève ceux d'une case et qui assombrit les autres, sans redessiner plus.
+  const focusU = { lift: { value: new Float32Array(49) }, dim: { value: new Float32Array(49).fill(1) } };
+  const focusTo = { lift: new Float32Array(49), dim: new Float32Array(49).fill(1) };
+  world.material.onBeforeCompile = (shader) => {
+    shader.uniforms.uLift = focusU.lift;
+    shader.uniforms.uDim = focusU.dim;
+    shader.vertexShader = `attribute vec2 tileInfo;\nuniform float uLift[49];\nuniform float uDim[49];\nvarying float vDim;\n${shader.vertexShader}`.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      transformed.y += tileInfo.y * uLift[int(tileInfo.x)];
+      vDim = uDim[int(tileInfo.x)];`,
+    );
+    shader.fragmentShader = `varying float vDim;\n${shader.fragmentShader}`.replace('#include <color_fragment>', '#include <color_fragment>\n      diffuseColor.rgb *= vDim;');
+  };
   world.castShadow = true;
   world.receiveShadow = true;
   world.frustumCulled = false;
@@ -757,6 +772,41 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const pops = [];
   const coins = [];
   const fades = [];
+  // ——— Un joueur sélectionné : ses villes s'élèvent dans sa couleur, le reste s'efface ———
+  let focusId = null;
+  const focusGroup = new THREE.Group();
+  scene.add(focusGroup);
+  const glowGeo = plateGeometry(TILE_W - 0.04, TILE_D - 0.04, 0.02, 0.16);
+  const beamGeo = new THREE.CylinderGeometry(0.72, 0.72, 1.7, 18, 1, true);
+  function applyFocus() {
+    const player = focusId === null ? null : view?.players.find((p) => p.id === focusId);
+    for (const child of [...focusGroup.children]) {
+      focusGroup.remove(child);
+      child.material.dispose();
+    }
+    const owned = new Set(player ? Object.keys(view.props).map(Number).filter((pos) => view.props[pos].owner === player.id) : []);
+    parts.forEach((part, pos) => {
+      const mine = owned.has(pos);
+      focusTo.lift[pos] = mine ? 1.55 : 0;
+      focusTo.dim[pos] = player && !mine ? 0.42 : 1;
+      const show = !player || mine;
+      for (const key of ['rim', 'fill', 'shade', 'badge']) if (part[key]) part[key].visible = show;
+      part.levels.visible = show;
+      if (!mine) return;
+      const color = PAWN_COLORS[player.seat];
+      const glow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({ color, toneMapped: false }));
+      glow.position.set(part.f.x, PLATE_H - 0.018, part.f.z); // juste sous l'étiquette : le nom reste lisible
+      glow.rotation.y = part.f.rot;
+      const beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+      beam.position.set(part.mid.x, PLATE_H + 0.85, part.mid.z);
+      focusGroup.add(glow, beam);
+    });
+    if (reduced) {
+      focusU.lift.value.set(focusTo.lift);
+      focusU.dim.value.set(focusTo.dim);
+    }
+    wake();
+  }
   const rising = [];
   // Un personnage réagit : il saute de joie en tournant, ou il baisse la tête.
   function react(id, kind, count = 1) {
@@ -909,14 +959,14 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const ox = ((i % 5) - 2) * 0.5;
     if (f.corner) { // sur un coin, tout le monde attend en rang dans l'espace libre à côté de la case : aucun nom n'est caché
       const row = i >= 5 ? 0.45 : 0;
-      return new THREE.Vector3(f.x - Math.sign(f.x) * (TILE_D / 2 + 1) + ((i % 5) - 2) * 0.42, 0, (f.z < 0 ? -9.15 : 10.7) + row);
+      return new THREE.Vector3(f.x - Math.sign(f.x) * (TILE_D / 2 + 1) + ((i % 5) - 2) * 0.42, 0, (f.z < 0 ? -8.75 : 10.7) + row); // devant le drapeau, pas derrière
     }
     // Le pion se tient sur sa case, juste devant le monument : il ne cache ni le nom de la ville, ni celui du pays.
     const second = i >= 5 ? 0.3 : 0;
     if (!f.flat) { // sur les côtés, le nom est vers le centre : le pion reste côté monument, et ne déborde pas sur le nom de la case d'au-dessus
       return new THREE.Vector3(f.x + Math.sign(f.x) * 0.45 + ((i % 5) - 2) * 0.28, 0, f.z + 0.9 + second);
     }
-    const oz = f.flip ? -0.42 - second : 0.45 + second;
+    const oz = f.flip ? -0.4 - second : 0.32 + second;
     const c = Math.cos(f.rot);
     const s = Math.sin(f.rot);
     return new THREE.Vector3(f.x + ox * c + oz * s, 0, f.z - ox * s + oz * c);
@@ -1150,6 +1200,18 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         p.mesh?.scale.set(1, 1, 1);
         pops.splice(i, 1);
       }
+    }
+    // Les villes du joueur sélectionné montent, puis flottent doucement.
+    if (!reduced) {
+      let moving = focusId !== null;
+      for (let i = 0; i < 48; i += 1) {
+        const target = focusTo.lift[i] ? focusTo.lift[i] + Math.sin(now / 420 + i) * 0.1 : 0;
+        const k = 1 - Math.exp(-dt * 7);
+        focusU.lift.value[i] += (target - focusU.lift.value[i]) * k;
+        focusU.dim.value[i] += (focusTo.dim[i] - focusU.dim.value[i]) * k;
+        if (Math.abs(target - focusU.lift.value[i]) > 0.003 || Math.abs(focusTo.dim[i] - focusU.dim.value[i]) > 0.003) moving = true;
+      }
+      if (moving) busy = true;
     }
     for (const pawn of pawns.values()) {
       const r = pawn.react;
@@ -1423,6 +1485,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       showPodium(v, firstUpdate);
       if (!firstUpdate) for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [0, -7]]) celebrate(x, z, PAWN_COLORS[Math.floor(Math.random() * 10)]);
     }
+    if (focusId !== null) applyFocus();
     if (shadows || firstUpdate) renderer.shadowMap.needsUpdate = true;
     firstUpdate = false;
     wake();
@@ -1481,6 +1544,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     walking,
     payCoins,
     react,
+    focus(id) {
+      focusId = id;
+      applyFocus();
+    },
     // Le visage d'un voyageur, de près.
     portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT),
     // Le monument entier d'une ville.

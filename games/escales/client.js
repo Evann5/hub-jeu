@@ -23,7 +23,8 @@ export function mount(root, api) {
   let v = null;
   let info = null;
   let promptKey = null;
-  let overlay = null; // { kind: 'city', pos } | { kind: 'cities' } | { kind: 'trade' } | { kind: 'player', id } | { kind: 'more' } | { kind: 'log' } | { kind: 'build' }
+  let focusId = null; // le joueur dont les villes ressortent sur le plateau
+  let overlay = null; // { kind: 'city', pos } | { kind: 'cities' } | { kind: 'trade' } | { kind: 'more' } | { kind: 'log' } | { kind: 'build' }
   let overlaySeen = null;
   let draft = null;
   let world = null;
@@ -55,7 +56,8 @@ export function mount(root, api) {
   const timing = h('div.es-timing', { hidden: true }, timer, clock);
   const action = h('section.es-action', { hidden: true }, timing, prompt);
   const flash = h('p.es-flash', { 'aria-live': 'polite' });
-  const side = h('aside.es-side', h('div.es-panel', round, players), tools, trades);
+  const focusCard = h('section.es-focus', { hidden: true });
+  const side = h('aside.es-side', h('div.es-panel', round, players), tools, trades, focusCard);
   const layer = h('div.es-layer');
   const loading = h('p.es-loading', 'Le plateau arrive…');
   const frame = h('div.es', stage, loading, tip, side, flash, action, layer);
@@ -193,7 +195,7 @@ export function mount(root, api) {
     players.replaceChildren(...v.players.map((p) => {
       const dot = picture(world?.portrait(p.seat), '.es-face') ?? h('i.es-dot');
       const turn = !v.over && v.players[v.cur].id === p.id;
-      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir le détail`, onclick: () => openOverlay({ kind: 'player', id: p.id }) },
+      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}${focusId === p.id ? '.is-focus' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-pressed': String(focusId === p.id), 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir ses villes sur le plateau`, onclick: () => setFocus(focusId === p.id ? null : p.id) },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, h('small', citiesOf(p.id))),
         h('span.es-cash', numberOf(p), deltaOf(p)));
@@ -494,27 +496,37 @@ export function mount(root, api) {
       h('section.es-country', h('h3', 'Escales'), h('div.es-cells', TILES.filter((t) => t.type === 'escale').map(cell))));
   }
 
-  // Un joueur : son argent, son patrimoine, ses villes, et de quoi lui proposer un échange.
-  function playerSheet(id) {
-    const p = v.players.find((x) => x.id === id);
-    if (!p) return shell('Joueur', h('p', 'Ce joueur n’est plus là.'));
-    const owned = TILES.filter((t) => v.props[t.pos]?.owner === id);
-    const head = h('header.es-who-head', picture(world?.portrait(p.seat), '.es-thumb-face') ?? h('i.es-dot'), h('h2', p.id === meId ? 'Toi' : p.pseudo));
-    head.style.setProperty('--p', PAWN_COLORS[p.seat]);
-    return shell(p.pseudo, head,
-      h('dl.es-rents', h('dt', 'Argent'), h('dd', money(p.cash)), h('dt', 'Patrimoine'), h('dd', money(p.worth)), h('dt', 'Villes et escales'), h('dd', String(owned.length))),
-      owned.length ? h('ul.es-list', owned.map((t) => {
-        const el = h('button.es-line', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos: t.pos }) },
-          t.type === 'city' ? flagOf(t.region) : null,
-          h('b', t.name),
-          h('span', v.props[t.pos].mortgaged ? 'en gage' : `loyer ${money(v.rents[t.pos] ?? 0)}`));
-        return h('li', el);
-      })) : h('p.es-note', 'Pas encore de ville.'),
-      p.id !== meId && !p.out && !v.over && me() && !me().out ? h('div.es-row', h('button.es-btn', { type: 'button', onclick: () => {
+  // Un joueur sélectionné : ses villes ressortent sur le plateau, et une petite carte résume ce qu'il a, sans rien cacher.
+  function setFocus(id) {
+    focusId = id;
+    world?.focus(id);
+    renderPlayers();
+    renderFocus();
+  }
+
+  function renderFocus() {
+    const p = focusId === null ? null : v.players.find((x) => x.id === focusId);
+    focusCard.hidden = !p;
+    if (!p) return;
+    const owned = TILES.filter((t) => v.props[t.pos]?.owner === p.id);
+    focusCard.style.setProperty('--p', PAWN_COLORS[p.seat]);
+    focusCard.replaceChildren(...[
+      h('header.es-focus-head',
+        picture(world?.portrait(p.seat), '.es-face'),
+        h('span', h('b', p.id === meId ? 'Toi' : p.pseudo), h('small', `Patrimoine ${money(p.worth)}`)),
+        h('button.es-focus-close', { type: 'button', 'aria-label': 'Fermer', onclick: () => setFocus(null) }, '×')),
+      owned.length ? h('ul.es-focus-list', owned.map((t) => h('li', h('button', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos: t.pos }) },
+        t.type === 'city' ? flagOf(t.region) : null,
+        h('span', t.short ?? t.name),
+        h('small', v.props[t.pos].mortgaged ? 'en gage' : money(v.rents[t.pos] ?? 0))))))
+        : h('p.es-note', 'Pas encore de ville.'),
+      p.id !== meId && !p.out && !v.over && me() && !me().out ? h('button.es-btn.is-small', { type: 'button', onclick: () => {
         openTrade();
-        draft.to = p.id;
-        renderOverlay({ force: true });
-      } }, `Proposer un échange à ${p.pseudo}`)) : null);
+        if (draft) {
+          draft.to = p.id;
+          renderOverlay({ force: true });
+        }
+      } }, `Échanger avec ${p.pseudo}`) : null].filter(Boolean));
   }
 
   function moreSheet() {
@@ -526,7 +538,7 @@ export function mount(root, api) {
       h('dl.es-rents', h('dt', 'Tour'), h('dd', v.maxRounds ? `${Math.min(v.round, v.maxRounds)} sur ${v.maxRounds}` : String(v.round)), h('dt', 'Temps par action'), h('dd', v.timer ? `${v.timer} s` : 'Sans limite'), h('dt', 'Joueurs'), h('dd', String(v.players.length)), h('dt', 'Villes pour construire'), h('dd', `${v.majority} sur 4`)),
       h('h3', 'Les règles en bref'),
       h('ul.es-rules', RULES.map((r) => h('li', r))),
-      h('p.es-note', 'À l’ordinateur : la barre d’espace lance les dés et termine ton tour. Touche une case pour voir sa fiche. Pour abandonner : le bouton est à côté de la liste des joueurs (onglet Chat sur téléphone).'));
+      h('p.es-note', 'À l’ordinateur : la barre d’espace lance les dés et termine ton tour. Touche une case pour voir sa fiche, et un joueur pour voir ses villes. Pour abandonner : le bouton est à côté de la liste des joueurs (onglet Chat sur téléphone).'));
   }
 
   // Construire : les villes possibles, un bouton par ville.
@@ -633,7 +645,7 @@ export function mount(root, api) {
   // Pendant le tour des autres, on ne redessine une fenêtre que si son contenu change, et sans déplacer le focus du clavier.
   function renderOverlay({ force = false, focusClose = false } = {}) {
     if (!overlay || !v) return;
-    const seen = JSON.stringify([overlay, v.props, v.rents, v.actions, v.costs, overlay.kind === 'player' ? v.players : 0, overlay.kind === 'log' ? v.log.at(-1)?.n : 0]);
+    const seen = JSON.stringify([overlay, v.props, v.rents, v.actions, v.costs, overlay.kind === 'log' ? v.log.at(-1)?.n : 0]);
     if (!force && seen === overlaySeen) return;
     overlaySeen = seen;
     const scroll = layer.querySelector('.es-sheet')?.scrollTop ?? 0;
@@ -641,7 +653,6 @@ export function mount(root, api) {
     const focusedAt = focusables().indexOf(document.activeElement);
     const el = overlay.kind === 'city' ? citySheet(overlay.pos)
       : overlay.kind === 'cities' ? citiesSheet()
-        : overlay.kind === 'player' ? playerSheet(overlay.id)
           : overlay.kind === 'more' ? moreSheet()
             : overlay.kind === 'log' ? logSheet()
               : overlay.kind === 'build' ? buildSheet()
@@ -654,7 +665,10 @@ export function mount(root, api) {
   }
 
   const onKey = (e) => {
-    if (e.key === 'Escape' && overlay) closeOverlay();
+    if (e.key === 'Escape') {
+      if (overlay) closeOverlay();
+      else if (focusId !== null) setFocus(null);
+    }
     // La barre d'espace lance l'action principale, sauf si on écrit quelque part ou qu'une fenêtre est ouverte.
     // Jamais pour un achat, une mise ou une vente : ce qui coûte de l'argent se décide à la main.
     if (e.code === 'Space' && !overlay && !action.hidden && !e.repeat && v && myTurn() && ['roll', 'end'].includes(v.phase) && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
@@ -705,6 +719,7 @@ export function mount(root, api) {
     renderPlayers();
     before.cash = new Map(v.players.map((p) => [p.id, p.cash]));
     renderAction();
+    renderFocus();
     if (overlay && overlay.kind !== 'trade') renderOverlay();
   }
 

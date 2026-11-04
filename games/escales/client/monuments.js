@@ -787,6 +787,9 @@ function toneOf(material) {
 export function bake(items, { fullColor = false } = {}) {
   const pos = [];
   const col = [];
+  const info = []; // pour chaque sommet : le numéro de sa case (48 = hors case), et 1 s'il peut s'élever au-dessus
+  let tileNow = 48;
+  let liftNow = 0;
   const v = new THREE.Vector3();
   const m = new THREE.Matrix4();
   const i2 = new THREE.Matrix4();
@@ -798,6 +801,7 @@ export function bake(items, { fullColor = false } = {}) {
     for (let i = 0; i < p.count; i += 1) {
       v.fromBufferAttribute(p, i).applyMatrix4(matrix);
       pos.push(v.x, v.y, v.z);
+      info.push(tileNow, liftNow);
       // ao : la hauteur du sol. Plus une pièce en est proche, plus elle s'assombrit : ça pose les objets dans le décor.
       const k = ao === undefined ? 1 : 0.56 + 0.44 * Math.min(1, Math.max(0, (v.y - ao) / 1.1)) ** 0.7;
       if (own) col.push(own.getX(i) * k, own.getY(i) * k, own.getZ(i) * k);
@@ -805,7 +809,9 @@ export function bake(items, { fullColor = false } = {}) {
       else col.push(tone, tone, tone);
     }
   };
-  for (const { object, matrix, tone, ao } of items) {
+  for (const { object, matrix, tone, ao, tile = 48, lift = false } of items) {
+    tileNow = tile;
+    liftNow = lift ? 1 : 0;
     object.updateMatrixWorld(true);
     object.traverse((o) => {
       if (o.isInstancedMesh) {
@@ -825,6 +831,7 @@ export function bake(items, { fullColor = false } = {}) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setAttribute('tileInfo', new THREE.Float32BufferAttribute(info, 2));
   geo.computeVertexNormals();
   return geo;
 }
