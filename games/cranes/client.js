@@ -127,10 +127,12 @@ export function mount(root, api) {
     return h(`li.cr-mat${isActor ? '.is-turn' : ''}${out ? '.is-out' : ''}${id === me ? '.is-me' : ''}`,
       h('div.cr-who',
         api.token(api.user(id), { size: 's' }),
-        h('span.cr-name', id === me ? `${api.user(id).pseudo} (toi)` : api.user(id).pseudo),
-        isActor ? h('span.sr-only', ', à son tour') : null,
-        pips),
-      h('div.cr-line', pile(id), h('span.cr-count', { 'aria-label': plural(v.discs[id], 'disque en jeu', 'disques en jeu') }, out ? '–' : `${v.discs[id]} ✿`)),
+        h('div.cr-meta',
+          h('span.cr-name', id === me ? `${api.user(id).pseudo} (toi)` : api.user(id).pseudo),
+          isActor ? h('span.sr-only', ', à son tour') : null,
+          h('div.cr-sub', pips,
+            h('span.cr-count', { 'aria-label': plural(v.discs[id], 'disque en jeu', 'disques en jeu') }, out ? '–' : [h('b', String(v.discs[id])), art('back', 'cr-count-ico')])))),
+      pile(id),
       tags.length ? h('div.cr-tags', tags) : null);
   }
 
@@ -139,23 +141,22 @@ export function mount(root, api) {
   function banner() {
     const actor = v.actor;
     const cName = v.challenger ? name(v.challenger) : '';
-    const you = v.me !== null && !v.out.includes(me);
-    switch (v.phase) {
+        switch (v.phase) {
       case 'place1': {
         const done = v.order.filter((id) => !v.out.includes(id) && v.piles[id].length > 0).length;
         const all = v.order.filter((id) => !v.out.includes(id)).length;
         return actor === me
-          ? ['À toi : pose un disque.', 'Face cachée, devant toi. Rose ou crâne ?']
-          : [`${name(actor)} pose son disque…`, `${done} sur ${all} ont posé. ${you ? 'Ton disque est posé ou le sera bientôt.' : ''}`.trim()];
+          ? ['À toi : pose un disque.', 'Rose ou crâne, face cachée.']
+          : [`${name(actor)} pose son disque…`, `${done} sur ${all} ont posé.`];
       }
       case 'choose':
         return actor === me
-          ? ['À toi : pose ou défie.', 'Ajoute un disque à ta pile, ou lance un défi : combien peux-tu en retourner ?']
+          ? ['À toi : pose ou défie.', 'Ajoute un disque, ou parie combien de roses tu retournes.']
           : [`${name(actor)} réfléchit…`, `${plural(v.total, 'disque', 'disques')} sur la table.`];
       case 'bid':
         return actor === me
-          ? [`Défi à ${v.bid.n} : surenchéris ou passe.`, `${name(v.bid.by)} parie ${plural(v.bid.n, 'disque', 'disques')} sur ${v.total}.`]
-          : [`${name(actor)} hésite…`, `${name(v.bid.by)} parie ${plural(v.bid.n, 'disque', 'disques')} sur ${v.total}.`];
+          ? [`Défi à ${v.bid.n} : surenchéris ou passe.`, `${v.bid.by === me ? 'Tu paries' : `${name(v.bid.by)} parie`} ${plural(v.bid.n, 'disque', 'disques')} sur ${v.total}.`]
+          : [`${name(actor)} hésite…`, `${v.bid.by === me ? 'Tu paries' : `${name(v.bid.by)} parie`} ${plural(v.bid.n, 'disque', 'disques')} sur ${v.total}.`];
       case 'flip': {
         const own = v.piles[v.challenger].some((d) => !d.up);
         const left = v.bid.n - v.flipped;
@@ -191,7 +192,6 @@ export function mount(root, api) {
       type: 'button', disabled: !can, 'aria-label': label, dataset: { key }, onclick,
     }, art(kind));
     return h('div.cr-hand-row',
-      h('p.cr-label', 'Ta main'),
       h('div.cr-hand', { role: 'group', 'aria-label': 'Ta main' },
         roses.map((i) => btn('rose', `Poser une rose (${hd.roses} en main)`, () => send({ type: 'place', disc: 'rose' }), `rose-${i}`)),
         hd.skull ? btn('skull', 'Poser le crâne', () => send({ type: 'place', disc: 'skull' }), 'skull') : null,
@@ -204,14 +204,13 @@ export function mount(root, api) {
     bidDraft = Math.min(max, Math.max(min, bidDraft));
     const set = (n) => { bidDraft = Math.min(max, Math.max(min, n)); render(); };
     return h('div.cr-bid',
-      h('p.cr-label', v.phase === 'choose' ? 'Lancer un défi' : 'Surenchérir'),
       h('div.cr-stepper',
-        h('button', { type: 'button', disabled: bidDraft <= min, 'aria-label': 'Moins', dataset: { key: 'minus' }, onclick: () => set(bidDraft - 1) }, '−'),
+        h('button.cr-step', { type: 'button', disabled: bidDraft <= min, 'aria-label': 'Moins', dataset: { key: 'minus' }, onclick: () => set(bidDraft - 1) }, '−'),
         h('output', { 'aria-live': 'polite', 'aria-label': `${bidDraft} disques` }, String(bidDraft)),
-        h('button', { type: 'button', disabled: bidDraft >= max, 'aria-label': 'Plus', dataset: { key: 'plus' }, onclick: () => set(bidDraft + 1) }, '+')),
+        h('button.cr-step', { type: 'button', disabled: bidDraft >= max, 'aria-label': 'Plus', dataset: { key: 'plus' }, onclick: () => set(bidDraft + 1) }, '+')),
       h('button.cr-btn.is-main', { type: 'button', dataset: { key: 'bid' }, onclick: () => send({ type: 'bid', n: bidDraft }) },
         v.phase === 'choose' ? `Défier : ${plural(bidDraft, 'disque', 'disques')}` : `Monter à ${bidDraft}`),
-      v.phase === 'bid' ? h('button.cr-btn', { type: 'button', dataset: { key: 'pass' }, onclick: () => send({ type: 'pass' }) }, 'Passer') : null);
+      v.phase === 'bid' ? h('button.cr-btn.is-quiet', { type: 'button', dataset: { key: 'pass' }, onclick: () => send({ type: 'pass' }) }, 'Passer') : null);
   }
 
   function action() {
@@ -224,13 +223,12 @@ export function mount(root, api) {
         v.ready.includes(me)
           ? h('p.cr-note', `En attente de ${plural(waiting, 'joueur', 'joueurs')}…`)
           : h('button.cr-btn.is-main', { type: 'button', dataset: { key: 'ready' }, onclick: () => send({ type: 'ready' }) }, 'Manche suivante'),
-        h('p.cr-note', `${v.ready.length} prêt${v.ready.length > 1 ? 's' : ''} · la manche suivante démarre toute seule.`));
+        h('p.cr-note', `${v.ready.length} prêt${v.ready.length > 1 ? 's' : ''} sur ${v.order.filter((id) => !v.out.includes(id)).length}`));
     }
     const parts = [];
     if (['place1', 'choose'].includes(v.phase) && v.hand) parts.push(handRow());
     if (canAct() && ['choose', 'bid'].includes(v.phase)) parts.push(bidPanel());
-    if (v.phase === 'flip' && canAct()) parts.push(h('p.cr-note', 'Touche le disque à retourner, sur l’une des piles ci-dessus.'));
-    return parts.length ? h('div.cr-actions', parts) : null;
+    return parts.length ? h(`div.cr-actions${canAct() ? '.is-mine' : ''}`, parts) : null;
   }
 
   // ——— Journal ———
@@ -281,6 +279,7 @@ export function mount(root, api) {
       span = v.deadline ? Math.max(1000, v.deadline - api.now()) : 0;
     }
     const [title, sub] = banner();
+    const mine = v.me !== null && !v.out.includes(me) && (v.phase === 'result' ? !v.ready.includes(me) : canAct() && v.phase !== 'over');
     const order = v.me !== null ? [...v.order.slice(v.order.indexOf(me)), ...v.order.slice(0, v.order.indexOf(me))] : v.order;
     el.replaceChildren(
       flags(),
@@ -289,7 +288,7 @@ export function mount(root, api) {
           h('span.cr-round', `Manche ${v.round}`),
           h('span.cr-total', `${plural(v.total, 'disque', 'disques')} posé${v.total > 1 ? 's' : ''}`),
           timer()),
-        h('div.cr-banner', { 'aria-live': 'polite' }, h('h2', title), h('p', sub)),
+        h(`div.cr-banner${mine ? '.is-mine' : ''}`, { 'aria-live': 'polite' }, h('h2', title), h('p', sub)),
         h('ul.cr-mats', order.map(mat)),
         action(),
         logBox()));

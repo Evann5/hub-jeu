@@ -139,10 +139,9 @@ export function mount(root, api) {
     const meSeat = v.seats.find((s) => s.id === api.me.id);
     let text = '';
     if (v.phase === 'bet') {
-      const waiting = v.seats.filter((s) => !s.placed && !s.out).map((s) => api.user(s.id).pseudo);
-      text = meSeat && !meSeat.placed && !meSeat.out ? 'Place ta mise.' : waiting.length ? `On attend la mise de ${waiting.join(', ')}.` : 'Distribution…';
+      text = meSeat && !meSeat.placed && !meSeat.out ? 'Place ta mise.' : '';
     } else if (v.phase === 'play') {
-      text = v.turn === api.me.id ? 'À toi de jouer.' : v.turn ? `${api.user(v.turn).pseudo} joue.` : '';
+      text = v.turn === api.me.id ? 'À toi de jouer.' : '';
     } else if (v.phase === 'result') {
       const d = meSeat?.delta || 0;
       text = !meSeat || meSeat.out && !meSeat.hands.length ? 'Manche terminée.' : d > 0 ? `Manche gagnée : ${signed(d)} jetons.` : d < 0 ? `Manche perdue : ${signed(d)} jetons.` : 'Manche à égalité : tu récupères ta mise.';

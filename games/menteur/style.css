@@ -42,6 +42,7 @@
   font: 800 0.78rem/1.2 var(--text); white-space: nowrap;
 }
 .g-menteur .mt-round { background: var(--lemon); font: 900 0.8rem/1.2 var(--display); }
+.g-menteur .mt-total { display: inline-block; }
 .g-menteur .mt-timer { margin-left: auto; min-width: 3.6ch; justify-content: center; background: var(--mint); font: 900 0.9rem/1.2 var(--display); font-variant-numeric: tabular-nums; }
 .g-menteur .mt-timer:empty { display: none; }
 .g-menteur .mt-timer.is-low { background: var(--pink); color: #fff; animation: mt-wiggle 0.5s ease-in-out infinite; }
@@ -87,7 +88,7 @@
   background: #fff; border: 4px solid var(--navy); border-radius: 30px; box-shadow: 0 7px 0 var(--navy);
   animation: mt-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
-.g-menteur .mt-plaque { background: linear-gradient(180deg, #fff 60%, #e6f5ff); }
+.g-menteur .mt-plaque { background: #fff; }
 .g-menteur .mt-plaque-big { margin: 0; display: flex; align-items: center; justify-content: center; gap: 14px; font: 900 3.6rem/1 var(--display); }
 .g-menteur .mt-plaque-big b { font-weight: 900; color: var(--pink); -webkit-text-stroke: 0; text-shadow: 3px 3px 0 var(--navy); }
 .g-menteur .mt-plaque-big span:not(.mt-die) { font-size: 2rem; color: var(--navy-2); }
@@ -116,11 +117,11 @@
 .g-menteur .mt-seat {
   --pc: #ff3d8b;
   position: relative; display: grid; gap: 4px; padding: 8px 10px 10px; border-radius: 26px;
-  background: linear-gradient(180deg, rgb(27 58 168 / 0.78), rgb(15 35 112 / 0.7));
+  background: rgb(22 48 140 / 0.82);
   border: 4px solid #fff; box-shadow: 0 6px 0 rgb(15 35 112 / 0.6);
   transition: transform 0.2s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
-.g-menteur .mt-seat.is-turn { background: linear-gradient(180deg, #fff6a8, var(--lemon)); border-color: var(--navy); box-shadow: 0 6px 0 var(--navy); transform: translateY(-4px); animation: mt-bob 1.2s ease-in-out infinite; }
+.g-menteur .mt-seat.is-turn { background: var(--lemon); border-color: var(--navy); box-shadow: 0 6px 0 var(--navy); transform: translateY(-4px); animation: mt-bob 1.2s ease-in-out infinite; }
 @keyframes mt-bob { 50% { transform: translateY(-9px); } }
 .g-menteur .mt-seat.is-out { opacity: 0.55; filter: grayscale(0.8); }
 .g-menteur .mt-seat.is-hit { border-color: var(--pink); }
@@ -163,7 +164,7 @@
 /* ——— Poste de jeu en bas : mes dés et mes choix ——— */
 .g-menteur .mt-dock {
   flex: none; display: grid; gap: 10px; padding: 12px 12px calc(14px + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, var(--navy-2), var(--navy)); border-top: 5px solid #fff;
+  background: var(--navy); border-top: 5px solid #fff;
   border-radius: 28px 28px 0 0; box-shadow: 0 -6px 0 var(--navy);
 }
 .g-menteur .mt-dock.is-empty { display: none; }
@@ -204,10 +205,10 @@
 }
 .g-menteur .mt-btn:disabled { opacity: 0.5; cursor: default; }
 .g-menteur .mt-btn:not(:disabled):active { transform: translateY(4px) scale(0.98); }
-.g-menteur .mt-btn-bid, .g-menteur .mt-btn-next { color: var(--navy); background: linear-gradient(180deg, #fff27a, var(--lemon)); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; }
+.g-menteur .mt-btn-bid, .g-menteur .mt-btn-next { color: var(--navy); background: var(--lemon); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; }
 .g-menteur .mt-btn-bid:not(:disabled):active, .g-menteur .mt-btn-next:not(:disabled):active { box-shadow: 0 1px 0 #0a1750, 0 0 0 3px #fff; }
-.g-menteur .mt-btn-liar { color: #fff; font-size: 1.15rem; background: linear-gradient(180deg, #ff7ab0, var(--pink)); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; text-shadow: 2px 2px 0 var(--navy); }
-.g-menteur .mt-btn-exact { color: var(--navy); background: linear-gradient(180deg, #8bffe0, var(--mint)); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; }
+.g-menteur .mt-btn-liar { color: #fff; font-size: 1.15rem; background: #e0176f; box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; text-shadow: 2px 2px 0 var(--navy); }
+.g-menteur .mt-btn-exact { color: var(--navy); background: var(--mint); box-shadow: 0 5px 0 #0a1750, 0 0 0 3px #fff; }
 .g-menteur .mt-btn.is-armed { animation: mt-glow 0.8s ease-in-out infinite; font-size: 0.85rem; outline: 4px solid var(--lemon); outline-offset: 3px; }
 
 /* Confettis de victoire */
@@ -215,19 +216,43 @@
 .g-menteur .mt-confetti i { position: absolute; top: -8%; left: var(--x); width: 12px; height: 18px; border-radius: 4px; background: var(--c); animation: mt-fall 3s cubic-bezier(0.3, 0.2, 0.5, 1) var(--d) both; }
 @keyframes mt-fall { to { transform: translateY(115vh) rotate(var(--r)); } }
 
-/* ——— Petit écran ——— */
+/* ——— Petit écran : joueurs et annonce restent visibles au-dessus du poste de jeu ——— */
 @media (max-width: 480px) {
   .g-menteur .mt-bar { gap: 6px; padding: 8px 10px 0; }
   .g-menteur .mt-round, .g-menteur .mt-total, .g-menteur .mt-paco, .g-menteur .mt-timer { padding: 3px 9px; font-size: 0.72rem; }
   .g-menteur .mt-long { display: none; }
-  .g-menteur .mt-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-inline: 10px; gap: 10px; }
-  .g-menteur .mt-seat { padding: 7px 8px 9px; }
-  .g-menteur .mt-plaque-big { font-size: 3rem; }
-  .g-menteur .mt-winner { font-size: 1.4rem; }
-  .g-menteur .mt-hand { justify-content: flex-start; gap: 10px; }
-  .g-menteur .mt-hand-dice { gap: 7px; }
-  .g-menteur .mt-hand-dice .mt-die { --s: 40px; }
+  .g-menteur .mt-scroll { padding-top: 8px; }
+  .g-menteur .mt-board { padding: 4px 10px 8px; gap: 8px; }
+  .g-menteur .mt-plaque { padding: 6px 14px 8px; border-radius: 24px; box-shadow: 0 5px 0 var(--navy); }
+  .g-menteur .mt-plaque-big { font-size: 2.3rem; gap: 10px; }
+  .g-menteur .mt-plaque-big span:not(.mt-die) { font-size: 1.4rem; }
+  .g-menteur .mt-plaque-big .mt-die { --s: 40px; }
+  .g-menteur .mt-plaque-by { margin-top: 2px; font-size: 0.85rem; }
+  .g-menteur .mt-plaque-none { font-size: 1.2rem; }
+  .g-menteur .mt-verdict { padding: 12px 16px 14px; gap: 4px; border-radius: 24px; box-shadow: 0 5px 0 var(--navy); }
+  .g-menteur .mt-verdict p { font-size: 0.9rem; line-height: 1.3; }
+  .g-menteur .mt-shout { font-size: 1.15rem; }
+  .g-menteur .mt-winner { font-size: 1.25rem; padding-top: 6px; border-top-width: 3px; }
+  .g-menteur .mt-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-inline: 10px; gap: 8px; }
+  .g-menteur .mt-seat { padding: 6px 7px 7px; border-radius: 22px; border-width: 3px; gap: 2px; }
+  .g-menteur .mt-name { font-size: 0.85rem; }
+  .g-menteur .mt-stage { height: 52px; }
+  .g-menteur .mt-cup { width: 76px; height: 46px; margin-left: -38px; bottom: 4px; }
+  .g-menteur .mt-under { inset: 0 0 4px; gap: 3px; }
+  .g-menteur .mt-under .mt-die { --s: 22px; }
+  .g-menteur .mt-seatfoot { min-height: 22px; font-size: 0.8rem; }
+  .g-menteur .mt-dock { gap: 8px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; }
+  .g-menteur .mt-hand { justify-content: flex-start; gap: 8px; flex-wrap: nowrap; }
+  .g-menteur .mt-handlabel { font-size: 0.8rem; }
+  .g-menteur .mt-hand-dice { gap: 6px; padding-bottom: 4px; }
+  .g-menteur .mt-hand-dice .mt-die { --s: 36px; }
+  .g-menteur .mt-builder { gap: 8px; }
+  .g-menteur .mt-face { height: 44px; border-radius: 14px; }
+  .g-menteur .mt-face .mt-die { --s: 28px; }
+  .g-menteur .mt-qty-val { font-size: 1.6rem; }
+  .g-menteur .mt-btn { min-height: 48px; }
   .g-menteur .mt-btn-bid { font-size: 0.85rem; padding-inline: 8px; }
+  .g-menteur .mt-btn-liar { font-size: 1.05rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

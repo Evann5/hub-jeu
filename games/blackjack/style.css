@@ -133,7 +133,8 @@
 
 /* Bas : statut et boutons */
 .g-blackjack .bj-bottom { display: grid; gap: 4px; margin: 0 -8px; padding: 6px 10px calc(8px + env(safe-area-inset-bottom)); background: var(--ink); border-top: 4px solid var(--cyan); box-shadow: 0 -6px 24px rgb(25 227 255 / 0.35); }
-.g-blackjack .bj-status { margin: 0; min-height: 1.2em; font-weight: 700; font-size: 0.82rem; color: #fff; text-align: center; }
+.g-blackjack .bj-status:empty { display: none; }
+.g-blackjack .bj-status { margin: 0; font-weight: 700; font-size: 0.82rem; color: #fff; text-align: center; }
 .g-blackjack .bj-panel { display: grid; gap: 8px; width: min(640px, 100%); margin: 0 auto; }
 .g-blackjack .bj-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .g-blackjack .bj-btn { min-height: 48px; padding: 6px 4px; border: 3px solid #000; border-radius: 16px; font: 900 0.78rem/1.1 'BJ Unbounded', system-ui, sans-serif; color: var(--ink); box-shadow: 0 4px 0 #000, inset 0 4px 0 rgb(255 255 255 / 0.45); cursor: pointer; transition: transform 0.08s, box-shadow 0.08s; }

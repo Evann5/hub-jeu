@@ -142,7 +142,7 @@ export function mount(root, api) {
         bid ? h('span.mt-lastbid', bidLabel(bid)) : null,
         bidding() && v.turn === id ? h('span.mt-turn', 'parle') : null,
         v.phase === 'over' && v.winner === id ? h('span.mt-turn', 'gagne') : null,
-        v.phase === 'reveal' && !out ? h('span.mt-ready', v.ready.includes(id) ? 'prêt' : '…') : null));
+        v.phase === 'reveal' && !out && v.ready.includes(id) ? h('span.mt-ready', 'prêt') : null));
   }
 
   function board() {
@@ -231,7 +231,7 @@ export function mount(root, api) {
     const ok = canBid();
     const hint = !possible ? 'Plus aucune annonce possible : il faut dire « Menteur ! ».'
       : pick.qty < min ? `Minimum : ${plural(min, 'dé', 'dés')} de ${pick.face}.`
-        : pick.face === 1 ? 'Les 1 comptent seuls (pas de jokers).' : 'Les 1 comptent aussi.';
+        : pick.face === 1 ? 'Les 1 comptent seuls (pas de jokers).' : '';
     const faces = FACES.map((f) => h('button.mt-face', {
       type: 'button',
       dataset: { k: `face-${f}` },
@@ -254,7 +254,7 @@ export function mount(root, api) {
           h('button.mt-step', { type: 'button', dataset: { k: 'qty-plus' }, 'aria-label': 'Un dé de plus', disabled: busy || pick.qty >= v.total, onclick: () => { pick.qty += 1; renderDock('qty-plus'); } }, '+')),
         h('button.mt-btn.mt-btn-bid', { type: 'button', dataset: { k: 'bid' }, disabled: busy || !ok, onclick: () => ok && send({ type: 'bid', qty: pick.qty, face: pick.face }) },
           'Annoncer ', bidLabel({ qty: pick.qty, face: pick.face }))),
-      h('p.mt-hint', { 'aria-live': 'polite' }, hint),
+      hint ? h('p.mt-hint', { 'aria-live': 'polite' }, hint) : null,
       calls);
   }
 

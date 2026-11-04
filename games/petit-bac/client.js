@@ -89,6 +89,16 @@ export function mount(root, api) {
     return { clock, bar: clockBox, clockBox };
   }
 
+  // L'en-tête collant : manche, lettre, annonce du Stop, chrono, puis la rangée des joueurs (toujours visible).
+  function top(ui, strip) {
+    return h('header.pb-top',
+      h('div.pb-top-row',
+        h('div.pb-title', ui.head, ui.letter),
+        ui.callout,
+        ui.clockBox),
+      strip);
+  }
+
   // Confettis de victoire (rien du tout si l'utilisateur préfère moins de mouvement).
   function confetti(into) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -141,24 +151,22 @@ export function mount(root, api) {
       inputs[i]));
     const { clock, bar, clockBox } = bomb();
     const alert = h('p.pb-alert', { 'aria-live': 'assertive' });
-    const note = h('p.pb-note');
+    const note = h('p.pb-note', { id: 'pb-stop-note' }, 'Tout est rempli ? Les autres n’auront que 10 secondes.');
     const stop = h('button.pb-stop', {
       type: 'button',
       onclick: onStop,
     }, 'Stop !');
-    const mates = h('ul.pb-mates', { 'aria-label': 'Où en sont les autres' });
+    const mates = h('ul.pb-strip', { 'aria-label': 'Où en sont les autres' });
     ui = {
       kind: 'writing', inputs, clock, bar, clockBox, alert, note, stop, mates,
+      callout: h('p.pb-callout', { role: 'status' }),
       head: h('p.pb-round'), letter: h('div.pb-letter', { role: 'img' }, h('span')),
     };
     pb.replaceChildren(
-      h('header.pb-top',
-        h('div.pb-title', ui.head, ui.letter),
-        clockBox),
+      top(ui, mates),
       alert,
       h('ol.pb-sheet', rows),
-      player ? h('div.pb-actions', stop, note) : h('p.pb-note', 'Tu regardes la partie : les réponses restent cachées jusqu’à la fin de la manche.'),
-      mates);
+      player ? h('div.pb-actions', stop, note) : h('p.pb-note', 'Tu regardes la partie : les réponses restent cachées jusqu’à la fin de la manche.'));
     pb.scrollTop = 0;
     if (player && !('ontouchstart' in window)) inputs[0].focus({ preventScroll: true });
     live.textContent = `Manche ${view.round} sur ${view.rounds}. La lettre est ${view.letter}.`;
@@ -205,23 +213,20 @@ export function mount(root, api) {
       return h(`li.pb-mate${done ? '.is-done' : ''}`,
         api.token(api.user(id), { size: 's' }),
         h('span.pb-mate-name', name(id)),
-        h('span.pb-mate-n', { 'aria-label': `${n} cases sur ${view.categories.length}` }, done ? '✓' : `${n}/${view.categories.length}`));
+        h('span.pb-mate-n', { 'aria-label': done ? 'a tout rempli' : `${n} cases sur ${view.categories.length}` }, done ? h('span.pb-check', { 'aria-hidden': 'true' }) : `${n}/${view.categories.length}`));
     }));
     if (view.stopBy) {
       const who = view.stopBy === api.me.id ? 'Tu as' : `${name(view.stopBy)} a`;
-      ui.note.id = 'pb-stop-note';
-      ui.note.textContent = view.stopBy === api.me.id
-        ? 'Stop ! Les autres ont 10 secondes pour finir.'
-        : `${who} crié « Stop ! » : finis vite !`;
-      ui.note.classList.add('is-stopped');
+      ui.callout.textContent = view.stopBy === api.me.id ? 'Tu as crié Stop !' : `${name(view.stopBy)} crie Stop !`;
+      ui.callout.classList.add('is-on');
+      ui.note.hidden = true;
       ui.stop.disabled = true;
-      ui.stop.textContent = 'Stop !';
       if (ui.lastStop !== view.stopBy) live.textContent = `${who} crié stop. Dix secondes.`;
       ui.lastStop = view.stopBy;
     } else {
-      ui.note.id = 'pb-stop-note';
-      ui.note.textContent = 'Quand tout est rempli, crie « Stop ! » : les autres n’ont plus que 10 secondes.';
-      ui.note.classList.remove('is-stopped');
+      ui.callout.textContent = '';
+      ui.callout.classList.remove('is-on');
+      ui.note.hidden = false;
       ui.stop.disabled = false;
     }
     updateFilled();
@@ -260,7 +265,7 @@ export function mount(root, api) {
         const row = h('li.pb-line',
           h('span.pb-who', api.token(api.user(c.id), { size: 's' }), h('span.pb-who-name', name(c.id))),
           h('span.pb-text', ans, why),
-          h('span.pb-side', pts, btn));
+          h('span.pb-side', btn, pts));
         cells.set(`${ci}:${c.id}`, { row, ans, why, pts, btn, count, ci, id: c.id });
         return row;
       });
@@ -269,18 +274,15 @@ export function mount(root, api) {
         h('ul.pb-lines', rows));
     });
     const { clock, bar, clockBox } = bomb();
-    const ready = h('button.pb-ready', { type: 'button', onclick: () => api.sendMove({ type: 'ready' }).catch(() => {}) }, 'J’ai fini de vérifier');
+    const ready = h('button.pb-ready', { type: 'button', onclick: () => api.sendMove({ type: 'ready' }).catch(() => {}) }, 'J’ai fini');
     ui = {
       kind: 'review', cells, clock, bar, clockBox, ready,
+      callout: null,
       head: h('p.pb-round'), letter: h('div.pb-letter', { role: 'img' }, h('span')),
-      board: h('ol.pb-board', { 'aria-label': 'Classement' }),
+      board: h('ol.pb-strip', { 'aria-label': 'Classement' }),
     };
     pb.replaceChildren(
-      h('header.pb-top',
-        h('div.pb-title', ui.head, ui.letter),
-        clockBox),
-      h('p.pb-help', 'Lis chaque réponse. Si elle ne passe pas, conteste-la : quand la majorité conteste, elle est refusée.'),
-      ui.board,
+      top(ui, ui.board),
       h('div.pb-correction', sections),
       h('footer.pb-foot', player ? ready : h('p.pb-note', 'Tu regardes la partie.')));
     pb.scrollTop = 0;
@@ -314,12 +316,12 @@ export function mount(root, api) {
     const order = view.players.filter((id) => !view.left.includes(id))
       .map((id) => ({ id, total: view.scores[id] || 0, gain: view.roundPoints[id] || 0 }))
       .sort((a, b) => b.total + b.gain - (a.total + a.gain));
-    ui.board.replaceChildren(...order.map((p) => h('li.pb-rank',
+    ui.board.replaceChildren(...order.map((p) => h('li.pb-mate',
       { 'aria-label': `${name(p.id)} : ${p.total + p.gain} points, dont ${p.gain} gagnés à cette manche` },
       api.token(api.user(p.id), { size: 's' }),
-      h('span.pb-rank-name', name(p.id)),
-      h('span.pb-rank-total', `${p.total + p.gain} pts`),
-      h('span.pb-rank-gain', `+${p.gain}`))));
+      h('span.pb-mate-name', name(p.id)),
+      h('span.pb-mate-n', `${p.total + p.gain}`),
+      h('span.pb-mate-gain', `+${p.gain}`))));
     const iAmReady = !info.turn.includes(api.me.id);
     ui.ready.disabled = iAmReady;
     ui.ready.textContent = iAmReady
