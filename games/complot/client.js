@@ -235,8 +235,7 @@ export function mount(root, api) {
           }, api.token(api.user(id), { size: 's' }), h('span', pseudo(id)), coins(v.p[id].coins)))),
           h('button.cp-btn.is-ghost', { type: 'button', onclick: () => { picking = null; render(); } }, 'Annuler'));
       }
-      return h('div.cp-panel',
-        h('p.cp-label', 'Ton action'),
+      return h('div.cp-panel', { role: 'group', 'aria-label': 'Ton action' },
         h('div.cp-acts', ACTS.map((d) => {
           const noCoins = q.coins < (d.cost ?? 0);
           const forced = v.mustCoup && d.type !== 'coup';
@@ -248,6 +247,7 @@ export function mount(root, api) {
             style: d.claim ? `--c1:${SKIN[d.claim][0]}` : null,
             onclick: () => (d.target ? ((picking = d.type), render()) : send({ type: d.type })),
           },
+          d.claim ? h('span.cp-act-face', { 'aria-hidden': 'true', style: `--c1:${SKIN[d.claim][0]};--c2:${SKIN[d.claim][1]}` }, art(d.claim)) : h('span.cp-act-face.is-free', { 'aria-hidden': 'true' }, coinIcon()),
           h('span.cp-act-name', d.label),
           h('span.cp-act-sub', why),
           d.claim ? h('span.cp-act-claim', `avec ${CHARS[d.claim].the}`) : h('span.cp-act-claim.is-free', 'sans bluff'));
@@ -355,7 +355,7 @@ export function mount(root, api) {
   function render() {
     if (!v) return;
     const focus = document.activeElement?.closest?.('.cp') ? document.activeElement.dataset?.key : null;
-    const opened = el.querySelector('.cp-log') ? el.querySelector('.cp-log').open : true;
+    const opened = el.querySelector('.cp-log') ? el.querySelector('.cp-log').open : matchMedia('(min-width: 700px)').matches;
     const scroll = root.scrollTop;
     if (v.deadline !== lastDeadline) {
       lastDeadline = v.deadline;
@@ -364,6 +364,7 @@ export function mount(root, api) {
     if (!(v.phase === 'action' && v.actor === me && canAct())) picking = null;
     if (selTurn !== `${v.turnNo}-${v.phase}`) { sel = new Set(); selTurn = `${v.turnNo}-${v.phase}`; }
     const [title, sub] = banner();
+    const choosingCard = v.me !== null && v.phase === 'lose' && v.lose.player === me;
     const others = v.me !== null ? [...v.order.slice(v.order.indexOf(me) + 1), ...v.order.slice(0, v.order.indexOf(me))] : v.order;
     el.replaceChildren(h('div.cp-in',
       h('header.cp-top',
@@ -372,9 +373,11 @@ export function mount(root, api) {
         timer()),
       h('div.cp-banner', { 'aria-live': 'polite' }, h('h2', title), h('p', sub)),
       scene(),
-      h('ul.cp-seats', others.map(seat)),
-      myCards(),
+      // Ce que je dois faire passe avant tout : sur téléphone, le panneau d'action reste sur le premier écran.
       actionPanel(),
+      choosingCard ? myCards() : null,
+      h('ul.cp-seats', others.map(seat)),
+      choosingCard ? null : myCards(),
       logBox(opened)));
     if (v.phase === 'over' && v.winner !== null && !confettiShown) {
       confettiShown = true;

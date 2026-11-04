@@ -318,10 +318,14 @@
 @media (max-width: 760px) {
   /* Les outils à portée du pouce, dans la place libre sous le plateau. */
   .g-escales .es-tools { position: fixed; right: 6px; bottom: calc(10px + env(safe-area-inset-bottom)); left: 6px; }
-  .g-escales .es:has(.es-action:not([hidden])) .es-tools { bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .g-escales .es:has(.es-action:not([hidden])) .es-tools { bottom: calc(var(--act-h, 90px) + 8px); }
+  .g-escales .es.is-buying .es-tools { display: none; } /* une seule décision à la fois */
   /* La carte d'un joueur remplace le bouton le temps de la lire. */
   .g-escales .es:has(.es-focus:not([hidden])) .es-action, .g-escales .es:has(.es-focus:not([hidden])) .es-tools { display: none; }
   .g-escales .es-focus-list { display: grid; max-height: 130px; }
+  .g-escales .es-action.is-over:has(.is-long) { width: 100%; }
+  .g-escales .es-rank.is-long { grid-template-columns: minmax(0, 1fr); }
+  .g-escales .es-rank.is-long li { min-height: 28px; }
   .g-escales .es-cell { padding: 6px 5px; }
   .g-escales .es-cell b { font-size: 0.75rem; overflow-wrap: normal; word-break: normal; }
 }

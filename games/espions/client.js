@@ -112,7 +112,7 @@ export function mount(root, api) {
     return [
       h('div.es-teams',
         h('h3', 'Répartition des agents'),
-        h('p', 'Choisis ton agence. Chaque agence a un chef, qui connaît la clé, et des agents, qui la cherchent. Quand tout est prêt, lance l’opération.'),
+        h('p', 'Le chef connaît la clé, les agents la cherchent. Choisis ton agence.'),
         h('div.es-rosters', roster('red'), roster('blue')),
         m ? h('div.es-actions',
           btn('Répartir au hasard', () => send({ type: 'shuffle' }).catch(swallow), { kind: 'ghost', key: 'shuffle' }),
@@ -160,7 +160,7 @@ export function mount(root, api) {
       h('div.es-tab', { 'aria-hidden': 'true' }, h('span', `DOSSIER N° ${dossierNo()}`)),
       h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))),
       view.key && view.phase !== 'over'
-        ? h('p.es-legend', h('b', 'Clé secrète. '), 'R : contact rouge · B : contact bleu · · : passant · ✕ : assassin. Ne la montre à personne.')
+        ? h('p.es-legend', h('b', 'Clé secrète'), ' : ne la montre à personne.')
         : null,
     ];
   }
@@ -188,7 +188,7 @@ export function mount(root, api) {
     },
     h('label', { for: 'es-clue' }, 'Ton indice'),
     input,
-    h('p.es-hint', { id: 'es-clue-help' }, 'Un seul mot, qui ne figure pas sur la grille. Puis le nombre de mots qu’il évoque (∞ : autant qu’on veut).'),
+    h('p.es-hint', { id: 'es-clue-help' }, 'Un seul mot hors grille, puis combien de mots il évoque (∞ : sans limite).'),
     numbers,
     h('button.es-btn.primary', { type: 'submit', dataset: { key: 'send-clue' } }, 'Donner l’indice'));
     return form;
@@ -204,42 +204,45 @@ export function mount(root, api) {
     const m = me();
     const A = view.active;
     if (view.phase === 'teams') return null;
-    if (view.phase === 'over') return h('div.es-note', h('h3', 'Dossier classé'), h('p', 'Tout le monde voit maintenant la clé. Le hub propose la revanche.'));
+    if (view.phase === 'over') return h('div.es-note', h('h3', 'Dossier classé'), h('p', 'La clé est dévoilée.'));
     if (view.phase === 'clue') {
       if (m && m.role === 'chef' && m.team === A) {
         clueForm ??= buildClueForm();
         return clueForm;
       }
-      return h('div.es-note', h('h3', `Le chef de l’${TEAM[A].agency.toLowerCase()} réfléchit`),
-        h('p', m?.role === 'chef' ? 'Tu observes : ton tour viendra.' : `${name(view.lead[A])} cherche un indice qui fait penser à plusieurs de ses mots.`));
+      return null;
     }
     // phase guess
     if (canPick()) {
       const picked = sel !== null ? view.cards[sel]?.word : null;
       const myPick = view.picks[m.id];
       const mates = Object.entries(view.picks).map(([id, c]) => `${name(Number(id))} : ${c === -1 ? 's’arrêter' : view.cards[c].word}`);
-      return h('div.es-note',
-        h('h3', 'À vous de chercher'),
-        h('p', `${triesText()} La carte est retournée quand la majorité de l’agence l’a désignée.`),
+      return h('div.es-note.is-pick',
         h('div.es-actions',
-          btn(picked ? `Désigner « ${picked} »` : 'Touche un mot de la grille', () => {
+          btn(picked ? `Désigner ${picked}` : 'Touche un mot', () => {
             const card = sel;
             sel = null;
             send({ type: 'pick', card }).catch(swallow);
           }, { disabled: sel === null, key: 'confirm' }),
           view.guesses > 0 ? btn(myPick === -1 ? 'Tu veux t’arrêter' : 'S’arrêter ici', () => send({ type: 'pick', card: -1 }).catch(swallow), { kind: 'ghost', key: 'stop' }) : null,
           myPick !== undefined ? btn('Retirer mon choix', () => send({ type: 'pick', card: null }).catch(swallow), { kind: 'ghost', key: 'clear' }) : null),
-        mates.length ? h('p.es-hint', `Choix de l’agence : ${mates.join(' · ')}.`) : h('p.es-hint', 'Personne n’a encore désigné de carte.'));
+        mates.length ? h('p.es-hint', `Choix de l’agence : ${mates.join(' · ')}.`) : null);
     }
-    if (m && m.role === 'chef' && m.team === A) return h('div.es-note', h('h3', 'Tes agents cherchent'), h('p', 'Ne dis rien, ne fais pas de signe : le chef se tait.'));
-    return h('div.es-note', h('h3', `L’${TEAM[A].agency.toLowerCase()} cherche`), h('p', m ? 'Patiente : ce n’est pas ton tour.' : 'Tu regardes la partie.'));
+    if (m && m.role === 'chef' && m.team === A) return h('div.es-note.is-quiet', h('h3', 'Tes agents cherchent'), h('p', 'Ne dis rien, pas de signe.'));
+    return null;
   }
 
   // ——— Indice en cours, compteurs, journal ———
   function renderScore() {
-    const teamBox = (t) => h(`div.es-count.t-${t}${view.active === t && view.phase !== 'over' && view.phase !== 'teams' ? '.is-active' : ''}`,
-      h('b', view.left ? String(view.left[t]) : '–'),
-      h('span', TEAM[t].agency, h('small', view.left ? `à retrouver${view.first === t ? ' · commence' : ''}` : `${membersOf(t).length} agent${membersOf(t).length > 1 ? 's' : ''}`)));
+    const teamBox = (t) => {
+      const mem = membersOf(t).sort((a, b) => (b === view.lead[t]) - (a === view.lead[t]));
+      return h(`div.es-count.t-${t}${view.active === t && view.phase !== 'over' && view.phase !== 'teams' ? '.is-active' : ''}`,
+        h('b', { 'aria-label': `${view.left ? view.left[t] : 0} contacts à retrouver` }, view.left ? String(view.left[t]) : '–'),
+        h('span.es-count-name', h('span.es-long', TEAM[t].agency), h('span.es-short', TEAM[t].name === 'rouge' ? 'Rouge' : 'Bleue'),
+          h('small', view.left ? `à retrouver${view.first === t ? ' · commence' : ''}` : '')),
+        h('span.es-crew', { 'aria-label': `Agents : ${mem.map(name).join(', ')}` }, mem.slice(0, 5).map((id) => h(`span.es-crew-one${id === view.lead[t] ? '.is-chef' : ''}`, { title: `${name(id)}${id === view.lead[t] ? ' (chef)' : ''}` }, api.token(api.user(id), { size: 's' }))),
+          mem.length > 5 ? h('small', `+${mem.length - 5}`) : null));
+    };
     score.replaceChildren(teamBox('red'), teamBox('blue'));
   }
 
@@ -252,14 +255,16 @@ export function mount(root, api) {
     clueBox.hidden = false;
     const A = view.active;
     if (view.phase === 'clue') {
-      clueBox.replaceChildren(h(`p.es-turn.t-${A}`, `${TEAM[A].agency} · le chef prépare un indice`));
+      clueBox.replaceChildren(h(`p.es-turn.t-${A}`, h('i.es-dot', { 'aria-hidden': 'true' }), `Le chef de l’${TEAM[A].agency.toLowerCase()} prépare un indice`));
       return;
     }
     const c = view.clue;
+    const left = view.max === null ? null : view.max - view.guesses;
     clueBox.replaceChildren(h(`div.es-clue.t-${A}`,
       h('span.es-clue-label', `Indice de l’${TEAM[A].agency.toLowerCase()}`),
       h('span.es-clue-word', c.word),
-      h('span.es-clue-num', { 'aria-label': c.number === 0 ? 'nombre illimité' : `nombre ${c.number}` }, c.number === 0 ? '∞' : String(c.number))));
+      h('span.es-clue-num', { 'aria-label': c.number === 0 ? 'nombre illimité' : `nombre ${c.number}` }, c.number === 0 ? '∞' : String(c.number)),
+      left === null ? null : h('span.es-tries', { 'aria-label': `${left} essai${left > 1 ? 's' : ''} possible${left > 1 ? 's' : ''}` }, Array.from({ length: view.max }, (_, i) => h(`i${i < left ? '.is-on' : ''}`)))));
   }
 
   function renderLog() {
@@ -270,7 +275,7 @@ export function mount(root, api) {
     }
     log.hidden = false;
     const rows = [...view.log].reverse().map((e) => h(`li.t-${e.team}`,
-      h('p.es-log-head', h('b', TEAM[e.team].agency), e.word ? [' · ', h('span.es-hand', e.word), ` · ${e.number === 0 ? '∞' : e.number}`] : ' · pas d’indice'),
+      h('p.es-log-head', h('i.es-dot', { 'aria-hidden': 'true' }), h('b', TEAM[e.team].agency), e.word ? [' · ', h('span.es-hand', e.word), ` · ${e.number === 0 ? '∞' : e.number}`] : ' · pas d’indice'),
       e.guesses.length ? h('p.es-chips', e.guesses.map((g) => h(`span.es-chip.is-${g.kind}`, view.cards[g.card].word))) : null,
       e.ended ? h('p.es-log-end', `${e.ended === 'skipped' ? 'L’agence' : 'Elle'} ${ENDED[e.ended]}`) : null));
     log.replaceChildren(h('h3', 'Journal de l’opération'), rows.length ? h('ol', rows) : h('p.es-empty', 'Aucun indice pour l’instant.'));
@@ -304,9 +309,9 @@ export function mount(root, api) {
     };
     const won = me() && me().team === w.team;
     return h(`div.es-banner.t-${w.team}`,
-      h('p.es-stamp-big', 'Mission accomplie'),
+      h('p.es-stamp-big', !me() ? `${TEAM[w.team].agency} gagne` : won ? 'Mission accomplie' : 'Mission échouée'),
       h('p', reasons[w.reason]),
-      me() ? h('p.es-hand', won ? 'Bravo, agent.' : 'Ce sera pour la prochaine fois.') : null);
+      null);
   }
 
   // ——— Rendu général ———
@@ -336,7 +341,8 @@ export function mount(root, api) {
       folder.className = `es-folder${view.phase === 'over' ? ' is-over' : ''}`;
       folder.replaceChildren(...board().filter(Boolean));
       const next = view.phase === 'over' ? overBanner() : actionPanel();
-      if (!(next === clueForm && panel.firstChild === clueForm)) panel.replaceChildren(next);
+      if (!(next === clueForm && panel.firstChild === clueForm)) panel.replaceChildren(...(next ? [next] : []));
+      panel.hidden = !next;
     }
     renderLog();
     tick();

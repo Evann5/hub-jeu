@@ -392,10 +392,25 @@ test('échange : vide, avec constructions ou devenu impossible, c’est refusé'
   assert.throws(() => move(s, a, { type: 'trade', to: b, give: { cities: [posOf('Fès')] }, get: {} }, ctxOf()), /constructions/);
   s = move(s, a, { type: 'trade', to: b, give: { cash: 1000 }, get: {} }, ctxOf()).state;
   s.players.find((p) => p.id === a).cash = 10;
-  assert.throws(() => move(s, b, { type: 'tradeAccept', id: 1 }, ctxOf()), /n'a pas/);
+  s = move(s, b, { type: 'tradeAccept', id: 1 }, ctxOf()).state; // devenu impossible : annulé sans erreur
+  assert.equal(s.trades.find((t) => t.id === 1), undefined);
   s = move(s, a, { type: 'trade', to: b, give: { cash: 5 }, get: {} }, ctxOf()).state;
   s = move(s, b, { type: 'tradeReject', id: 2 }, ctxOf()).state;
   assert.equal(s.trades.find((t) => t.id === 2), undefined);
+});
+
+test('échange devenu impossible : il disparaît sans erreur, et rien ne change', () => {
+  let s = start();
+  const [a, b] = s.players.map((p) => p.id);
+  const all = s.players[0].cash;
+  s = move(s, a, { type: 'trade', to: b, give: { cash: all }, get: {} }, ctxOf()).state;
+  s = move(s, a, { type: 'trade', to: b, give: { cash: all }, get: {} }, ctxOf()).state;
+  const [first, second] = s.trades;
+  s = move(s, b, { type: 'tradeAccept', id: first.id }, ctxOf()).state;
+  const cash = s.players.map((p) => p.cash);
+  s = move(s, b, { type: 'tradeAccept', id: second.id }, ctxOf()).state;
+  assert.equal(s.trades.length, 0);
+  assert.deepEqual(s.players.map((p) => p.cash), cash);
 });
 
 test('abandon : les villes retournent à la banque, le jeu continue', () => {

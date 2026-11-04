@@ -71,7 +71,7 @@ export function mount(root, api) {
         h('span.uc-corner.tl', m.white ? 'W' : eye(true)),
         m.white
           ? h('div', h('div.uc-word.uc-q', '?'), h('div.uc-white-note', 'Tu es Mr. White'))
-          : h('span.uc-word', m.word),
+          : h('span.uc-word', { style: `--n:${Math.max(4, m.word.length)}` }, m.word),
         h('span.uc-corner.br', m.white ? 'W' : eye(true)));
       card.replaceChildren(face);
     };
@@ -169,16 +169,13 @@ export function mount(root, api) {
         av(id), h('span.uc-name', name(id)),
         c ? h('span.uc-chip', clueText(c)) : isCur ? h('span.uc-tag', id === api.me.id ? 'À toi' : 'Réfléchit…') : h('span'));
     });
-    const nodes = [bar(), h('h2.uc-title', mine ? 'À toi de donner ton indice' : 'Tour des indices'), rows];
+    // À mon tour, la saisie vient juste sous le titre : sur un petit téléphone elle resterait sinon hors de l'écran.
+    const nodes = [bar(), h('h2.uc-title', mine ? 'Ton indice' : 'Tour des indices')];
+    if (mine && me() && !me().out) nodes.push(h('div.uc-mine', input('Ton indice', (text) => ({ type: 'clue', text }), { label: 'Ton indice' }), note('Un mot ou une courte expression, jamais ton mot.')));
+    nodes.push(rows);
     if (v.round > 1) nodes.push(h('p.uc-sub', 'Les indices des manches précédentes :'), chips());
     nodes.push(h('div.uc-grow'));
-    if (me() && !me().out) {
-      nodes.push(h('div.uc-peek', h('span', 'Ton mot'), holdCard({ small: true })));
-      if (mine) {
-        nodes.push(input('Ton indice', (text) => ({ type: 'clue', text }), { label: 'Ton indice' }));
-        nodes.push(note('Un mot ou une courte expression, jamais ton mot.'));
-      }
-    }
+    if (me() && !me().out) nodes.push(h('div.uc-peek', h('span', 'Ton mot'), holdCard({ small: true })));
     return nodes;
   }
 

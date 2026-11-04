@@ -44,7 +44,7 @@
 .g-undercover .uc-time.is-low { animation: uc-blink 1s steps(2) infinite; }
 @keyframes uc-blink { 50% { opacity: 0.45; } }
 
-.g-undercover .uc-title { margin: 16px 0 0; font: 800 clamp(2rem, 1.5rem + 2.2vw, 2.8rem)/0.95 var(--uc-display); text-transform: uppercase; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.g-undercover .uc-title { margin: 16px 0 0; font: 800 clamp(1.7rem, 1.2rem + 2.2vw, 2.8rem)/0.95 var(--uc-display); text-transform: uppercase; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .g-undercover .uc-sub { margin: 10px 0 0; font-size: 0.98rem; opacity: 0.9; }
 .g-undercover .uc-note { margin: 10px 0 0; font-size: 0.85rem; text-align: center; opacity: 0.85; }
 .g-undercover .uc-out { margin: 0 0 6px; padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / 0.22); font-size: 0.85rem; font-weight: 650; text-align: center; }
@@ -88,7 +88,8 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .uc-logo { display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: #fff; color: var(--word); box-shadow: 0 0 0 6px #1F37D6, 0 0 0 8px rgb(255 255 255 / 0.5); }
 .g-undercover .uc-logo svg { width: 46px; height: 46px; }
 .g-undercover .uc-face { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; text-align: center; }
-.g-undercover .uc-word { font: 800 2.35rem/1 var(--uc-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.g-undercover .uc-word { --pad: 20px; font: 800 min(2.35rem, calc((100cqw - 2 * var(--pad)) / (var(--n, 8) * 0.8)))/1 var(--uc-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.g-undercover .uc-card { container-type: inline-size; }
 .g-undercover .uc-q { font-size: 5rem; }
 .g-undercover .uc-white-note { margin-top: 14px; font-weight: 700; }
 .g-undercover .uc-corner { position: absolute; display: grid; place-items: center; font: 800 1rem/1 var(--uc-display); color: var(--word); }
@@ -105,7 +106,8 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .uc-role-sub { margin-top: 8px; font-size: 0.85rem; opacity: 0.9; }
 .g-undercover .uc-avatar-big { display: grid; place-items: center; width: 74px; height: 74px; margin: 0 auto 14px; border-radius: 50%; background: #fff; font-size: 2.2rem; }
 .g-undercover .uc-card.is-small { width: 120px; height: 168px; margin: 0; border-radius: 16px; }
-.g-undercover .uc-card.is-small .uc-word { font-size: 1.25rem; }
+.g-undercover .uc-card.is-small .uc-word { --pad: 10px; }
+.g-undercover .uc-card.is-small .uc-face { padding: 10px; }
 .g-undercover .uc-card.is-small .uc-q { font-size: 3.4rem; }
 .g-undercover .uc-card.is-small .uc-logo { width: 54px; height: 54px; }
 .g-undercover .uc-card.is-small .uc-logo svg { width: 28px; height: 28px; }
@@ -118,11 +120,12 @@ button.uc-card:active { cursor: grabbing; }
 
 /* Le mot à revoir pendant les indices : petite carte à maintenir */
 .g-undercover .uc-peek { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-size: 0.85rem; font-weight: 650; }
-.g-undercover .uc-peek .uc-card { width: 72px; height: 100px; border-radius: 12px; transform: rotate(4deg); box-shadow: 0 12px 24px rgb(0 0 30 / 0.3); }
+.g-undercover .uc-peek .uc-card { width: 100px; height: 84px; border-radius: 12px; transform: rotate(4deg); box-shadow: 0 12px 24px rgb(0 0 30 / 0.3); }
 .g-undercover .uc-peek .uc-card.uc-back { box-shadow: 0 12px 24px rgb(0 0 30 / 0.3), inset 0 0 0 6px #2E4BFF, inset 0 0 0 7px rgb(255 255 255 / 0.5); }
 .g-undercover .uc-peek .uc-logo { width: 40px; height: 40px; box-shadow: 0 0 0 3px #1F37D6; }
 .g-undercover .uc-peek .uc-logo svg { width: 20px; height: 20px; }
-.g-undercover .uc-peek .uc-word { font-size: 0.95rem; }
+.g-undercover .uc-peek .uc-word { --pad: 6px; }
+.g-undercover .uc-peek .uc-face { padding: 6px; }
 .g-undercover .uc-peek .uc-q { font-size: 2.2rem; }
 .g-undercover .uc-peek .uc-white-note, .g-undercover .uc-peek .uc-corner { display: none; }
 
@@ -188,6 +191,22 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .uc-rc.civil { background: #fff; color: var(--civil); }
 .g-undercover .uc-rc.under { background: var(--under); color: #fff; box-shadow: 0 0 0 2px #fff; }
 .g-undercover .uc-rc.white { box-shadow: inset 0 0 0 2px #fff; }
+
+/* Petit écran en hauteur (téléphone avec la barre du hub) : tout doit tenir, bouton principal compris. */
+@media (max-height: 720px) {
+  .g-undercover .uc-screen { padding: 12px 16px 14px; }
+  .g-undercover .uc-title { margin-top: 10px; }
+  .g-undercover .uc-grow { min-height: 8px; }
+  .g-undercover .uc-card { width: 176px; height: 246px; margin-top: 14px; }
+  .g-undercover .uc-card.is-reveal { width: 150px; height: 206px; }
+  .g-undercover .uc-card.is-small { width: 96px; height: 134px; }
+  .g-undercover .uc-card.is-tilt { margin-top: 14px; }
+  .g-undercover .uc-rows { gap: 6px; margin-top: 12px; }
+  .g-undercover .uc-r { min-height: 48px; }
+  .g-undercover .uc-av { width: 36px; height: 36px; }
+  .g-undercover .uc-btn, .g-undercover .uc-wait { min-height: 52px; }
+  .g-undercover .uc-avatar-big { width: 56px; height: 56px; margin-bottom: 8px; font-size: 1.7rem; }
+}
 
 /* Le bouton « Ouvrir le chat » ne sert que sur téléphone (sur ordinateur, le chat est à côté). */
 @media (min-width: 761px) {

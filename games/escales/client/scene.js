@@ -1393,7 +1393,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   };
   let downAt = null;
   const onDown = (e) => { downAt = { x: e.clientX, y: e.clientY }; };
-  const onUp = (e) => {
+  // Sur « click » et pas « pointerup » : au doigt, le clic arrive juste après, et il refermerait la fiche qui vient de s'ouvrir sous lui.
+  const onClick = (e) => {
     const start = downAt;
     downAt = null;
     if (!start || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 12) return;
@@ -1424,7 +1425,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
   canvas.addEventListener('pointerleave', onLeave);
-  canvas.addEventListener('pointerup', onUp);
+  canvas.addEventListener('click', onClick);
   canvas.addEventListener('webglcontextlost', onLost);
   canvas.addEventListener('webglcontextrestored', onRestored);
 
@@ -1614,7 +1615,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerleave', onLeave);
-      canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('click', onClick);
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);
       scene.traverse((o) => {

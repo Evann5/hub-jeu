@@ -57,14 +57,14 @@
 
 /* Adversaires */
 .g-complot .cp-seats { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px; }
-.g-complot .cp-seat { display: grid; gap: 8px; padding: 12px; border-radius: 18px; background: var(--panel); border: 2px solid rgb(255 255 255 / 0.1); transition: border-color 0.2s, box-shadow 0.2s; }
+.g-complot .cp-seat { display: grid; gap: 6px; padding: 10px 12px; border-radius: 18px; background: var(--panel); border: 2px solid rgb(255 255 255 / 0.1); transition: border-color 0.2s, box-shadow 0.2s; }
 .g-complot .cp-seat.is-turn { border-color: var(--gold); box-shadow: var(--glow); }
 .g-complot .cp-seat.is-wait { border-color: var(--violet); box-shadow: 0 0 18px rgb(138 77 255 / 0.55); }
 .g-complot .cp-seat.is-target { border-color: var(--rose); }
 .g-complot .cp-seat.is-out { opacity: 0.5; }
 .g-complot .cp-seat-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .g-complot .cp-name { flex: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.g-complot .cp-seat-cards { display: flex; gap: 8px; min-height: 80px; align-items: center; }
+.g-complot .cp-seat-cards { display: flex; gap: 8px; min-height: 76px; align-items: center; }
 .g-complot .cp-gone { color: var(--soft); font-size: 0.85rem; font-style: italic; }
 .g-complot .cp-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .g-complot .cp-tag { padding: 2px 10px; border-radius: 99px; background: rgb(255 255 255 / 0.14); font-size: 0.78rem; font-weight: 700; }
@@ -89,13 +89,13 @@
   font-family: var(--cp-text);
 }
 .g-complot .cp-card svg { width: 100%; height: 100%; }
-.g-complot .cp-card.is-lg { width: min(44vw, 190px); aspect-ratio: 3 / 4.3; border-radius: 18px; }
+.g-complot .cp-card.is-lg { width: min(37vw, 190px); aspect-ratio: 3 / 4.3; border-radius: 18px; }
 .g-complot .cp-card.is-lg svg { position: absolute; inset: 0; height: 74%; }
-.g-complot .cp-card.is-sm { width: 52px; aspect-ratio: 3 / 4.2; border-radius: 10px; border-width: 2px; box-shadow: none; }
+.g-complot .cp-card.is-sm { width: 54px; aspect-ratio: 3 / 4.2; border-radius: 10px; border-width: 2px; box-shadow: none; }
 .g-complot .cp-card.is-back { border-color: rgb(255 200 61 / 0.6); }
-.g-complot .cp-card-name { position: absolute; left: 0; right: 0; bottom: 30px; padding: 4px 6px; font: 800 0.95rem/1.1 var(--cp-display); background: rgb(14 7 34 / 0.72); }
+.g-complot .cp-card-name { position: absolute; left: 0; right: 0; bottom: 30px; padding: 4px 6px; font: 800 clamp(0.8rem, 0.5rem + 1.1vw, 0.95rem)/1.1 var(--cp-display); background: rgb(14 7 34 / 0.72); }
 .g-complot .cp-card-power { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; display: grid; place-items: center; padding: 0 6px; font-size: 0.72rem; font-weight: 600; background: rgb(14 7 34 / 0.9); color: var(--gold-hi); }
-.g-complot .cp-card-mini { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 2px; font-size: 0.55rem; font-weight: 800; background: rgb(14 7 34 / 0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-complot .cp-card-mini { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 2px; font-size: 0.62rem; font-weight: 800; background: rgb(14 7 34 / 0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .g-complot .cp-card.is-dead { filter: grayscale(0.85) brightness(0.65); border-color: rgb(255 255 255 / 0.3); box-shadow: none; }
 .g-complot .cp-card-lost { position: absolute; top: 8px; left: -28px; right: -28px; transform: rotate(-14deg); background: var(--rose); color: #1A0F33; font: 800 0.8rem var(--cp-display); text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 0; }
 .g-complot .cp-card.is-sm .cp-card-lost { display: none; }
@@ -119,10 +119,13 @@
 .g-complot .cp-panel { display: grid; gap: 10px; padding: 14px; border-radius: 20px; background: var(--panel); border: 2px solid var(--gold); box-shadow: var(--glow); }
 .g-complot .cp-label { margin: 0; font: 800 1.05rem var(--cp-display); color: var(--gold-hi); }
 .g-complot .cp-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-.g-complot .cp-act { display: grid; gap: 2px; align-content: start; min-height: 76px; padding: 10px 12px; border: 2px solid rgb(255 255 255 / 0.2); border-radius: 14px; background: var(--panel-2); color: var(--text); text-align: left; cursor: pointer; transition: transform 0.1s, border-color 0.15s; }
-.g-complot .cp-act.is-claim { border-left: 8px solid var(--c1); }
+.g-complot .cp-act { display: grid; grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px; row-gap: 1px; align-content: center; min-height: 66px; padding: 8px 10px; border: 2px solid rgb(255 255 255 / 0.2); border-radius: 14px; background: var(--panel-2); color: var(--text); text-align: left; cursor: pointer; transition: transform 0.1s, border-color 0.15s; }
 .g-complot .cp-act:not(:disabled):hover { border-color: var(--gold); transform: translateY(-2px); }
-.g-complot .cp-act:disabled { opacity: 0.4; cursor: default; }
+.g-complot .cp-act:disabled { opacity: 0.55; cursor: default; }
+.g-complot .cp-act-face { grid-row: 1 / span 3; align-self: center; position: relative; overflow: hidden; width: 38px; height: 46px; border-radius: 10px; background: linear-gradient(170deg, var(--c1), var(--c2)); box-shadow: inset 0 0 0 1.5px rgb(255 200 61 / 0.7); }
+.g-complot .cp-act-face svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.g-complot .cp-act-face.is-free { display: grid; place-items: center; background: rgb(255 255 255 / 0.08); box-shadow: none; }
+.g-complot .cp-act-face.is-free svg { position: static; width: 26px; height: 26px; }
 .g-complot .cp-act-name { font: 800 1rem var(--cp-display); }
 .g-complot .cp-act-sub { font-size: 0.8rem; color: var(--soft); }
 .g-complot .cp-act-claim { font-size: 0.75rem; font-weight: 700; color: var(--gold-hi); }
@@ -133,7 +136,7 @@
 .g-complot .cp-target:hover { background: rgb(255 77 122 / 0.35); }
 .g-complot .cp-react { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .g-complot .cp-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-.g-complot .cp-options .cp-card.is-lg { width: min(38vw, 150px); }
+.g-complot .cp-options .cp-card.is-lg { width: min(30vw, 150px); }
 .g-complot .cp-btn { min-height: 52px; padding: 0 22px; border: 2px solid var(--gold); border-radius: 99px; background: transparent; color: var(--gold-hi); font-weight: 800; font-size: 1rem; cursor: pointer; transition: transform 0.1s; }
 .g-complot .cp-btn.is-main { background: var(--gold); color: #1A0F33; box-shadow: var(--glow); }
 .g-complot .cp-btn.is-danger { background: var(--rose); border-color: var(--rose); color: #1A0F33; box-shadow: 0 0 22px rgb(255 77 122 / 0.5); }
@@ -157,4 +160,17 @@
 }
 @media (min-width: 900px) {
   .g-complot .cp-card.is-sm { width: 58px; }
+}
+/* Téléphone : l'adversaire tient sur deux lignes (nom et pièces, puis cartes et état), pour que la table reste visible. */
+@media (max-width: 560px) {
+  .g-complot .cp-in { padding: 10px 12px 24px; gap: 10px; }
+  .g-complot .cp-banner { padding: 10px 14px; }
+  .g-complot .cp-banner p { margin-top: 3px; font-size: 0.85rem; }
+  .g-complot .cp-seat { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+  .g-complot .cp-seat-top { grid-column: 1 / -1; }
+  .g-complot .cp-seat-cards { min-height: 0; }
+  .g-complot .cp-seat-cards .cp-card.is-sm { width: 44px; }
+  .g-complot .cp-tags { align-self: center; }
+  .g-complot .cp-acts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .g-complot .cp-act-sub { font-size: 0.75rem; line-height: 1.2; }
 }

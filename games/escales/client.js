@@ -375,7 +375,7 @@ export function mount(root, api) {
     const fresh = flashN !== null && last && last.n > flashN;
     flashN = last?.n ?? 0;
     // Une fiche à décider cache la ligne, sauf pour la réponse à un échange : elle ne doit pas passer inaperçue.
-    if (v.over || (busy && !(fresh && /échange/.test(last.text)))) {
+    if (v.over || (busy && !(fresh && /échange/i.test(last.text)))) {
       flash.classList.remove('is-on');
       return;
     }
@@ -409,6 +409,9 @@ export function mount(root, api) {
     }
 
     action.hidden = !prompt.childElementCount;
+    // Sur téléphone, les outils se posent juste au-dessus de la carte d'action, quelle que soit sa hauteur.
+    frame.style.setProperty('--act-h', `${action.hidden ? 0 : action.offsetHeight}px`);
+    frame.classList.toggle('is-buying', v.phase === 'buy' && myTurn());
 
     const mineTrades = v.trades.filter((t) => t.to === meId || t.from === meId);
     const tradesKey = JSON.stringify(mineTrades);

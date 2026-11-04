@@ -685,8 +685,13 @@ export function move(state, playerId, given, ctx) {
       if (!t) throw new Error('Cette proposition n’existe plus.');
       s.trades = s.trades.filter((x) => x.id !== t.id);
       const from = byId(s, t.from);
-      checkOffer(s, from, t.give, p.id);
-      checkOffer(s, p, t.get, p.id);
+      try {
+        checkOffer(s, from, t.give, p.id);
+        checkOffer(s, p, t.get, p.id);
+      } catch {
+        log(s, `L'échange entre ${from.pseudo} et ${p.pseudo} n'est plus possible : il est annulé.`); // la situation a changé depuis la proposition
+        break;
+      }
       transfer(s, from, p, t.give);
       transfer(s, p, from, t.get);
       log(s, `${from.pseudo} et ${p.pseudo} concluent un échange.`);

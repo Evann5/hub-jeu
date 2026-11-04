@@ -26,7 +26,7 @@ export function mount(root, api) {
     const rows = v.ranking.filter((id) => !v.left.includes(id)).slice(0, big ? 20 : 6);
     return h(`ol.qz-board${big ? '.is-big' : ''}`, rows.map((id, i) => h(`li${id === api.me.id ? '.is-me' : ''}`,
       h('span.qz-rank', String(i + 1)),
-      h('span.qz-av', { 'aria-hidden': 'true' }, api.user(id).avatar),
+      api.token(api.user(id), { size: 's' }),
       h('span.qz-pseudo', api.user(id).pseudo),
       v.gained[id] ? h('span.qz-plus', `+${fmtPts(v.gained[id])}`) : null,
       h('b', fmtPts(v.scores[id] || 0)))));
@@ -36,7 +36,6 @@ export function mount(root, api) {
     return h('div.qz-center',
       h('p.qz-kicker', `${v.total} questions`),
       h('h2.qz-big', 'Prêts\u202f?'),
-      h('p.qz-sub', 'Touche la bonne réponse le plus vite possible.'),
       h('span.qz-sec.qz-count'));
   }
 
@@ -63,7 +62,7 @@ export function mount(root, api) {
     if (reveal) {
       const g = v.gained[api.me.id];
       status = v.mine === null && info.isPlayer ? 'Pas de réponse cette fois.'
-        : g ? `Bonne réponse ! +${fmtPts(g)} points` : info.isPlayer ? 'Raté !' : 'Voici la bonne réponse.';
+        : g ? `Bonne réponse ! +${fmtPts(g)} points` : info.isPlayer ? 'Raté, +0 point' : 'Voici la bonne réponse.';
     } else {
       status = v.mine !== null ? `Réponse enregistrée. ${answeredCount} sur ${v.players.length - v.left.length} ont répondu.`
         : info.isPlayer ? 'Choisis ta réponse.' : 'Les joueurs répondent…';
@@ -76,19 +75,18 @@ export function mount(root, api) {
       reveal ? h('div.qz-timer.is-done') : h('div.qz-timer', h('i')),
       h('h2.qz-q', q.q),
       h('div.qz-tiles', tiles),
-      h(`p.qz-status${reveal && v.gained[api.me.id] ? '.is-good' : ''}`, { 'aria-live': 'polite' }, status),
+      h(`p.qz-status${reveal ? (v.gained[api.me.id] ? '.is-good' : info.isPlayer ? '.is-bad' : '') : ''}`, { 'aria-live': 'polite' }, status),
     ];
   }
 
   function screenOver() {
     const rank = v.ranking.filter((id) => !v.left.includes(id));
     const podium = [rank[1], rank[0], rank[2]].map((id, i) => (id === undefined ? h('div.qz-step.is-empty') : h(`div.qz-step.p${[2, 1, 3][i]}`,
-      h('span.qz-av.is-big', api.user(id).avatar),
+      h('span.qz-av.is-big', api.token(api.user(id))),
       h('b', api.user(id).pseudo),
       h('span', `${fmtPts(v.scores[id])} pts`),
       h('div.qz-block', String([2, 1, 3][i])))));
     return h('div.qz-over',
-      h('p.qz-kicker', 'Fin du quiz'),
       h('h2.qz-big.qz-winner', rank[0] !== undefined && v.scores[rank[0]] > 0
         ? (rank[0] === api.me.id ? 'Tu gagnes\u202f!' : `${api.user(rank[0]).pseudo} gagne\u202f!`)
         : 'Personne n’a marqué'),
