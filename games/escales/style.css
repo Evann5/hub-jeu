@@ -285,7 +285,7 @@
 }
 
 /* Le hub entier s'efface pendant la partie : barre de gauche et fond passent aux couleurs du jeu. */
-body:has(.table-view[data-game='escales'].is-wide) { --bg-0: #061A17; --bg-1: #0A221E; --bg-2: #0E2B27; --bg-3: #1C4A42; --bg-4: #2A5F54; --ink: #FBF3E0; --ink-2: #C3CFBF; --ink-3: #93A796; --accent: #F2B632; --on-color: #14302B; --glow: rgb(242 182 50 / 0.3); background: #061A17; }
+body:has(.table-view[data-game='escales'].is-wide) { --bg-0: #061A17; --bg-1: #0A221E; --bg-2: #0E2B27; --bg-3: #1C4A42; --bg-4: #2A5F54; --ink: #FBF3E0; --ink-2: #C3CFBF; --ink-3: #93A796; --accent: #F2B632; --violet: #F2B632; --on-color: #14302B; --glow: rgb(242 182 50 / 0.3); background: #061A17; }
 /* L'en-tête et le panneau de la table, le temps d'une partie : ils passent aux couleurs du jeu. */
 .table-view[data-game='escales'].is-wide { --bg-1: #0A221E; --bg-2: #123630; --bg-3: #1C4A42; --bg-4: #2A5F54; --ink: #FBF3E0; --ink-2: #C3CFBF; --ink-3: #93A796; --accent: #F2B632; --on-color: #14302B; --glow: rgb(242 182 50 / 0.3); background: #0E2B27; color: #FBF3E0; }
 .table-view[data-game='escales'].is-wide .table-title h1 { font: 400 1.25rem/1.1 'ES Alfa', Georgia, serif; letter-spacing: 0; }

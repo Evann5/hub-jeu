@@ -3,6 +3,7 @@ const KEY = 'escales-son';
 
 export function createSound() {
   let ctx = null;
+  let out = null; // la sortie commune : elle évite la saturation quand plusieurs sons se superposent
   let muted = false;
   try {
     muted = localStorage.getItem(KEY) === 'non';
@@ -13,6 +14,8 @@ export function createSound() {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return;
       ctx = new Ctx();
+      out = ctx.createDynamicsCompressor();
+      out.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   };
@@ -32,7 +35,7 @@ export function createSound() {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(ctx.destination);
+    o.connect(g).connect(out);
     o.start(t);
     o.stop(t + dur + 0.02);
   };
@@ -50,7 +53,7 @@ export function createSound() {
     f.frequency.value = freq;
     const g = ctx.createGain();
     g.gain.value = vol;
-    src.connect(f).connect(g).connect(ctx.destination);
+    src.connect(f).connect(g).connect(out);
     src.start(t);
   };
 
@@ -59,15 +62,20 @@ export function createSound() {
   };
 
   return {
-    dice: play(() => [0, 0.09, 0.17, 0.27, 0.4, 0.56].forEach((at, i) => knock(at, 0.2 - i * 0.022, 1500 + i * 180))),
+    dice: play(() => [0, 0.09, 0.17, 0.27, 0.4, 0.56].forEach((at, i) => { knock(at, 0.2 - i * 0.022, 1500 + i * 180); tone(240 - i * 12, at, 0.05, { vol: 0.05 }); })),
     step: play(() => knock(0, 0.05, 900)),
     buy: play(() => { tone(880, 0, 0.09, { type: 'triangle' }); tone(1320, 0.08, 0.22, { type: 'triangle' }); }),
     gain: play(() => { tone(1046, 0, 0.1, { vol: 0.07 }); tone(1568, 0.07, 0.2, { vol: 0.07 }); }),
     pay: play(() => tone(320, 0, 0.2, { type: 'triangle', vol: 0.1, to: 170 })),
     build: play(() => { knock(0, 0.18, 500); tone(180, 0, 0.14, { vol: 0.14, to: 90 }); knock(0.1, 0.12, 700); }),
     turn: play(() => { tone(587, 0, 0.12, { vol: 0.08 }); tone(784, 0.1, 0.2, { vol: 0.08 }); }),
-    bid: play(() => tone(660, 0, 0.1, { type: 'square', vol: 0.03 })),
-    win: play(() => [523, 659, 784, 1046].forEach((f, i) => tone(f, i * 0.13, 0.4, { type: 'triangle', vol: 0.1 }))),
+    // Les pièces qui volent : une par pièce, au même rythme que l'animation.
+    coins: play(() => [0, 0.07, 0.14, 0.21, 0.28, 0.35, 0.42].forEach((at, i) => { tone(2600 + (i % 3) * 700, 0.5 + at, 0.09, { vol: 0.035 }); tone(4100 + (i % 2) * 500, 0.5 + at, 0.05, { vol: 0.018 }); })),
+    fail: play(() => [392, 330, 262, 196].forEach((f, i) => tone(f, i * 0.16, 0.34, { type: 'triangle', vol: 0.1 }))),
+    win: play(() => {
+      [523, 659, 784, 1046].forEach((f, i) => tone(f, i * 0.13, 0.4, { type: 'triangle', vol: 0.09 }));
+      [1046, 1318, 1568].forEach((f) => tone(f, 0.56, 0.9, { type: 'triangle', vol: 0.05 })); // l'accord final, tenu
+    }),
     isMuted: () => muted,
     toggle() {
       muted = !muted;

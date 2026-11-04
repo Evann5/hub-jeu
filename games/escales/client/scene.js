@@ -24,7 +24,7 @@ const DICE_Z = -7.15; // la piste des dés, en haut de la zone centrale
 const BOTTOM_LIFT = 1.2; // les bandeaux du bas remontent : les monuments de la rangée du bas, debout devant eux, ne cachent plus leur nom
 const PAWN_SCALE = 2.25;
 
-const SIDE_H = 2.3; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
+const SIDE_H = 2.15; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
 const SIDE_HEROES = { eiffel: 3.7, empire: 3.1, gratteCiel2: 3 }; // sauf ceux qu'on doit reconnaître de loin
 const BOTTOM_CORNER_H = 1.7; // au-delà, ce qui est posé sur un coin du bas cacherait le nom de la ville juste derrière
 const SPECIAL_COLOR = { start: '#7FD9A4', customs: '#9DB6F0', festival: '#F59BC4', control: '#F4A58E', escale: '#E3EAF3', telex: '#F6DE7E', tax: '#F3C66E', chantier: '#C9CED9' };
@@ -579,7 +579,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
     model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
-    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : SIDE_HEROES[t.model] ?? SIDE_H);
+    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H);
     const top = new THREE.Box3().setFromObject(model).max.y;
     items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m, ao: PLATE_H });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
@@ -907,10 +907,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const f = tileFrame(pos);
     const i = p.seat;
     const ox = ((i % 5) - 2) * 0.5;
-    if (f.corner) { // sur un coin, le sol libre est en diagonale, vers le centre du plateau
-      const d = TILE_D / 2 + 0.62 + (i >= 5 ? 0.8 : 0);
-      const [sx, sz] = [-Math.sign(f.x), -Math.sign(f.z)];
-      return new THREE.Vector3(f.x + sx * d + sx * ox * 0.7, 0, f.z + sz * d - sz * ox * 0.7);
+    if (f.corner) { // sur un coin, tout le monde attend en rang dans l'espace libre à côté de la case : aucun nom n'est caché
+      const row = i >= 5 ? 0.45 : 0;
+      return new THREE.Vector3(f.x - Math.sign(f.x) * (TILE_D / 2 + 1) + ((i % 5) - 2) * 0.42, 0, (f.z < 0 ? -9.15 : 10.7) + row);
     }
     // Le pion se tient sur sa case, juste devant le monument : il ne cache ni le nom de la ville, ni celui du pays.
     const second = i >= 5 ? 0.3 : 0;

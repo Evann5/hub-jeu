@@ -174,6 +174,9 @@ export function mount(root, api) {
       navigator.vibrate?.(70); // sur téléphone, on sent que c'est à soi
     }
     document.title = !v.over && document.hidden && myTurn() ? `À toi ! ${pageTitle}` : pageTitle;
+    const outNow = v.players.filter((p) => p.out).length;
+    if (before.out !== undefined && outNow > before.out && !v.over) sound.fail();
+    before.out = outNow;
     if (v.over && !before.over) sound.win();
     before.over = v.over;
     before.cur = v.cur;
@@ -690,6 +693,7 @@ export function mount(root, api) {
     if (moved.length === 2 && moved[0][1] + moved[1][1] === 0) {
       const [payer, payee] = moved[0][1] < 0 ? moved : [moved[1], moved[0]];
       world?.payCoins(payer[0], payee[0]);
+      sound.coins();
       world?.react(payer[0], 'sad');
       world?.react(payee[0], 'joy');
     }
