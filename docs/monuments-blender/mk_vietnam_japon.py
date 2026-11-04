@@ -1,0 +1,45 @@
+"""Construit des monuments et les exporte en GLB (centrés en x et z, base à y = 0).
+Usage : Blender -b --factory-startup -P mk_vietnam_japon.py -- <dossier_sortie> <module> [<module> ...]"""
+import sys, os, importlib
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import bpy
+
+def export(name, out_dir):
+    mod = importlib.import_module(name)
+    m = mod.build()
+    verts, cols, tris = m.welded()
+    xs = [v[0] for v in verts]; zs = [v[2] for v in verts]; ys = [v[1] for v in verts]
+    cx = (min(xs)+max(xs))/2; cz = (min(zs)+max(zs))/2
+    verts = [(x-cx, y, z-cz) for (x, y, z) in verts]
+    print(f'[{name}] triangles {len(tris)} sommets {len(verts)}  emprise {max(xs)-min(xs):.2f} x {max(zs)-min(zs):.2f}  hauteur {max(ys):.2f}')
+    bv = [(x, -z, y) for (x, y, z) in verts]       # repère glTF -> repère Blender
+    for o in list(bpy.data.objects):
+        bpy.data.objects.remove(o)
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(bv, [], tris)
+    mesh.update()
+    attr = mesh.color_attributes.new('Color', 'FLOAT_COLOR', 'POINT')
+    flat = []
+    for c in cols:
+        flat += [c[0], c[1], c[2], 1.0]
+    attr.data.foreach_set('color', flat)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, name + '.glb')
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.export_scene.gltf(
+        filepath=path, export_format='GLB', use_selection=True, export_apply=True,
+        export_yup=True, export_materials='NONE', export_normals=False,
+        export_texcoords=False, export_vertex_color='ACTIVE',
+        export_active_vertex_color_when_no_material=True,
+        export_cameras=False, export_lights=False, export_animations=False)
+    print('écrit', path, os.path.getsize(path), 'octets')
+
+if __name__ == '__main__':
+    argv = sys.argv[sys.argv.index('--')+1:]
+    for n in argv[1:]:
+        export(n, argv[0])
