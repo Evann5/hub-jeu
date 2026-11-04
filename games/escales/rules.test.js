@@ -445,6 +445,107 @@ test('la vue ne dévoile pas le paquet', () => {
   assert.ok(Array.isArray(v.players) && v.players[0].worth === 1500);
 });
 
+// ——— Les robots du jeu ———
+
+function untilMyTurn(state, id) {
+  let s = state;
+  let guard = 0;
+  while (!s.over && !(s.players[s.cur].id === id && s.phase !== 'auction') && !(s.phase === 'auction' && !(id in s.auction.bids))) {
+    guard += 1;
+    assert.ok(guard < 5000, 'les robots tournent en rond');
+    s = timeout(s, ctxOf(guard)).state;
+  }
+  return s;
+}
+
+test('seul à la table : 3 robots s’ajoutent et on peut jouer', () => {
+  const s = setup(people(1), { rounds: 20, timer: 0 }, ctxOf());
+  assert.equal(s.players.length, 4);
+  assert.equal(s.players.filter((p) => p.bot).length, 3);
+  assert.equal(new Set(s.players.map((p) => p.pseudo)).size, 4);
+  assert.equal(s.majority, 3);
+  const st = status(s);
+  assert.deepEqual(st.may, [1], 'seul l’humain peut envoyer des coups');
+});
+
+test('le nombre de robots est borné à 10 joueurs au total', () => {
+  assert.equal(setup(people(4), { bots: 9, timer: 0 }, ctxOf()).players.length, 10);
+  assert.equal(setup(people(2), { bots: 0, timer: 0 }, ctxOf()).players.length, 2);
+  assert.equal(setup(people(1), { bots: 1, timer: 0 }, ctxOf()).players.length, 2);
+});
+
+test('quand c’est au tour d’un robot, il a une échéance courte et il joue tout seul', () => {
+  let s = setup(people(1), { bots: 3, rounds: 3, timer: 0 }, ctxOf(5));
+  s = untilMyTurn(s, 1);
+  assert.equal(s.players[s.cur].id, 1);
+  assert.equal(s.deadline, null, 'sans minuteur, le jeu attend le joueur');
+  s = move(s, 1, { type: 'roll' }, dice(1, 2)).state;
+  while (s.players[s.cur].id === 1 && !s.over) {
+    if (s.phase === 'buy') s = move(s, 1, { type: 'decline' }, ctxOf()).state;
+    else if (s.phase === 'auction') s = move(s, 1, { type: 'bid', amount: 0 }, ctxOf()).state;
+    else if (s.phase === 'end') s = move(s, 1, { type: 'endTurn' }, ctxOf()).state;
+    else if (s.phase === 'debt') s = move(s, 1, { type: 'bankrupt' }, ctxOf()).state;
+    else if (s.phase === 'roll') s = move(s, 1, { type: 'roll' }, dice(1, 2)).state;
+    else s = move(s, 1, { type: 'skip' }, ctxOf()).state;
+  }
+  if (!s.over) {
+    assert.ok(s.players[s.cur].bot);
+    assert.ok(s.deadline > 0);
+  }
+});
+
+test('enchères : les robots ont déjà misé, leurs mises restent secrètes', () => {
+  let s = setup(people(1), { bots: 3, rounds: 20, timer: 0 }, ctxOf(9));
+  s = untilMyTurn(s, 1);
+  s.phase = 'buy';
+  s.players[s.cur].pos = 4;
+  s = move(s, 1, { type: 'decline' }, ctxOf()).state;
+  assert.equal(s.phase, 'auction');
+  assert.deepEqual(status(s).turn, [1]);
+  const v = view(s, 1);
+  assert.equal(v.auction.hasBid.length, 3);
+  assert.equal(JSON.stringify(v.auction).includes('"bids"'), false);
+  s = move(s, 1, { type: 'bid', amount: 400 }, ctxOf()).state;
+  assert.equal(s.props[4].owner, 1);
+});
+
+test('échange avec un robot : réponse immédiate, il accepte une bonne affaire et refuse une mauvaise', () => {
+  let s = setup(people(1), { bots: 3, rounds: 20, timer: 0 }, ctxOf(3));
+  const bot = s.players.find((p) => p.bot);
+  own(s, bot.id, 'Fès');
+  const pos = posOf('Fès');
+  const bad = move(s, 1, { type: 'trade', to: bot.id, give: { cash: 1 }, get: { cities: [pos] } }, ctxOf()).state;
+  assert.equal(bad.props[pos].owner, bot.id);
+  assert.equal(bad.trades.length, 0);
+  const good = move(s, 1, { type: 'trade', to: bot.id, give: { cash: 500 }, get: { cities: [pos] } }, ctxOf()).state;
+  assert.equal(good.props[pos].owner, 1);
+});
+
+test('si le dernier humain part, les robots ne continuent pas sans lui', () => {
+  const s = setup(people(1), { bots: 3, rounds: 0, timer: 0 }, ctxOf());
+  const out = leave(s, 1, ctxOf()).state;
+  assert.equal(out.over, true);
+  assert.equal(out.reason, 'humans');
+  assert.deepEqual(status(out).winners, [], 'un robot n’est pas un compte du hub');
+});
+
+test('des parties avec un humain absent et des robots vont au bout', () => {
+  for (let seed = 1; seed <= 30; seed += 1) {
+    const rnd = seeded(seed * 53);
+    let now = 0;
+    const ctx = () => ({ now: (now += 500), random: rnd });
+    let s = setup(people(1 + (seed % 3)), { bots: 1 + (seed % 7), rounds: 12, timer: 30 }, ctx());
+    let guard = 0;
+    while (!s.over) {
+      guard += 1;
+      assert.ok(guard < 20000, 'partie sans fin');
+      s = timeout(s, ctx()).state;
+      for (const p of s.players) assert.ok(Number.isInteger(p.cash) && p.cash >= 0, `argent invalide ${p.pseudo} ${p.cash}`);
+    }
+    assert.ok(s.winners.length >= 1);
+  }
+});
+
 // ——— Parties complètes jouées par des robots ———
 
 function botMove(s, id, rnd) {

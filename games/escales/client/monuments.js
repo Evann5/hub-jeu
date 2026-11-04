@@ -577,6 +577,141 @@ export const CAST = [
   },
 ];
 
+// Les petits éléments de chaque pays, posés sur son bandeau.
+export const PROPS = {
+  palmier: (k) => {
+    k.cyl(0.05, 0.09, 1, 6, '#9A6B3F', 0, 0, 0);
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * Math.PI * 2;
+      const leaf = k.cone(0.13, 0.75, 4, i % 2 ? '#2FA65A' : '#3CBF6C', Math.cos(a) * 0.3, 0.86, Math.sin(a) * 0.3);
+      leaf.rotation.set(Math.sin(a) * 1.25, 0, -Math.cos(a) * 1.25);
+    }
+  },
+  tajine: (k) => {
+    k.cyl(0.42, 0.34, 0.1, 12, '#B5532F', 0, 0, 0);
+    k.cone(0.32, 0.5, 12, '#D9703F', 0, 0.1, 0);
+    k.ball(0.06, '#F2C14E', 0, 0.62, 0);
+  },
+  bambou: (k) => {
+    for (const [x, z, h] of [[-0.14, 0, 1.3], [0.12, 0.1, 1.05], [0.02, -0.15, 1.5]]) {
+      k.cyl(0.04, 0.05, h, 6, '#6DB33F', x, 0, z);
+      for (let y = 0.3; y < h; y += 0.35) k.cyl(0.055, 0.055, 0.03, 6, '#4C8A2A', x, y, z);
+      const leaf = k.cone(0.09, 0.4, 4, '#4C9F38', x + 0.12, h - 0.22, z);
+      leaf.rotation.z = -1.1;
+    }
+  },
+  lanternePied: (k) => {
+    k.cyl(0.02, 0.03, 0.95, 6, '#3A2E2A', 0, 0, 0);
+    const lamp = k.ball(0.22, '#E5322D', 0, 1.12, 0);
+    lamp.scale.y = 1.15;
+    k.cyl(0.1, 0.1, 0.04, 8, '#F2C14E', 0, 1.34, 0);
+    k.cyl(0.1, 0.1, 0.04, 8, '#F2C14E', 0, 0.88, 0);
+  },
+  citronnier: (k) => {
+    k.cyl(0.05, 0.07, 0.55, 6, '#7A5534', 0, 0, 0);
+    k.ball(0.42, '#3F9E43', 0, 0.82, 0);
+    for (const [x, y, z] of [[0.28, 0.9, 0.26], [-0.26, 0.74, 0.3], [0.05, 1.08, 0.3], [0.32, 0.66, -0.14]]) k.ball(0.08, '#FFE14D', x, y, z);
+  },
+  sardine: (k) => {
+    k.cyl(0.26, 0.28, 0.08, 14, '#F2F0E6', 0, 0, 0);
+    for (const [x, c] of [[-0.12, '#7FB3D5'], [0.12, '#5F9BC4']]) {
+      const f = k.ball(0.1, c, x, 0.14, 0);
+      f.scale.set(0.55, 0.5, 2);
+    }
+  },
+  cactus: (k) => {
+    const g = '#2F9E58';
+    k.cyl(0.13, 0.15, 1.05, 8, g, 0, 0, 0);
+    k.ball(0.13, g, 0, 1.05, 0);
+    k.cyl(0.07, 0.07, 0.42, 7, g, 0.3, 0.42, 0);
+    k.box(0.28, 0.12, 0.12, g, 0.14, 0.4, 0);
+    k.ball(0.07, g, 0.3, 0.84, 0);
+    k.cyl(0.07, 0.07, 0.34, 7, g, -0.28, 0.55, 0);
+    k.box(0.26, 0.12, 0.12, g, -0.14, 0.52, 0);
+    k.ball(0.07, g, -0.28, 0.89, 0);
+    k.ball(0.06, '#FF5FA2', 0, 1.2, 0);
+  },
+  sombrero: (k) => {
+    k.cyl(0.55, 0.58, 0.05, 18, '#F2C14E', 0, 0.02, 0);
+    k.cyl(0.16, 0.24, 0.34, 12, '#F2C14E', 0, 0.07, 0);
+    k.cyl(0.245, 0.25, 0.06, 12, '#E5322D', 0, 0.08, 0);
+    k.cyl(0.58, 0.58, 0.02, 18, '#E5322D', 0, 0.06, 0);
+  },
+  cypres: (k) => {
+    k.cyl(0.05, 0.06, 0.25, 6, '#6B4A2E', 0, 0, 0);
+    const c = k.ball(0.26, '#1F6E4A', 0, 0.85, 0);
+    c.scale.y = 2.7;
+  },
+  vespa: (k) => {
+    const c = '#7FD8BE';
+    const w = (z) => { const m = k.cyl(0.12, 0.12, 0.07, 12, '#23202A', 0, 0, 0); m.rotation.z = Math.PI / 2; m.position.set(0, 0.12, z); };
+    w(0.34);
+    w(-0.34);
+    k.box(0.2, 0.2, 0.42, c, 0, 0.14, -0.14);
+    k.box(0.2, 0.42, 0.08, c, 0, 0.12, 0.28);
+    k.box(0.17, 0.08, 0.3, '#6B4A2E', 0, 0.34, -0.14);
+    k.box(0.44, 0.04, 0.04, '#23202A', 0, 0.56, 0.28);
+    k.ball(0.06, '#FFF3BF', 0, 0.5, 0.33);
+  },
+  cerisier: (k) => {
+    k.cyl(0.05, 0.08, 0.55, 6, '#5B3E31', 0, 0, 0);
+    k.ball(0.42, '#FF8FB5', 0, 0.82, 0);
+    k.ball(0.26, '#FFA9C7', 0.28, 0.95, 0.12);
+    k.ball(0.24, '#FF9ABD', -0.27, 0.72, 0.16);
+    k.ball(0.2, '#FFC2D6', -0.12, 1.12, -0.12);
+  },
+  lanternePierre: (k) => {
+    const s = '#A7A8A5';
+    k.cyl(0.2, 0.26, 0.1, 6, s, 0, 0, 0);
+    k.cyl(0.07, 0.09, 0.4, 6, s, 0, 0.1, 0);
+    k.cyl(0.2, 0.14, 0.08, 6, s, 0, 0.5, 0);
+    k.box(0.2, 0.2, 0.2, '#FFE9A8', 0, 0.58, 0);
+    k.cone(0.34, 0.2, 6, s, 0, 0.78, 0);
+    k.ball(0.05, s, 0, 1, 0);
+  },
+  reverbere: (k) => {
+    k.cyl(0.03, 0.05, 1.25, 6, '#26382F', 0, 0, 0);
+    k.bars([[[0, 1.1, 0], [0.26, 1.2, 0], 0.016], [[0, 1.1, 0], [-0.26, 1.2, 0], 0.016]], '#26382F');
+    for (const x of [-0.27, 0.27]) {
+      k.ball(0.08, '#FFF3BF', x, 1.11, 0);
+      k.cone(0.08, 0.07, 6, '#26382F', x, 1.18, 0);
+    }
+  },
+  kiosque: (k) => {
+    k.cyl(0.26, 0.28, 0.72, 10, '#2D5A47', 0, 0, 0);
+    k.cyl(0.285, 0.285, 0.2, 10, '#FF9248', 0, 0.42, 0);
+    const d = k.dome(0.33, '#2D5A47', 0, 0.72, 0);
+    d.scale.y = 0.8;
+    k.ball(0.04, '#D9A441', 0, 1, 0);
+  },
+  taxi: (k) => {
+    const y = '#FFC21A';
+    for (const z of [-0.3, 0.3]) for (const x of [-0.2, 0.2]) {
+      const m = k.cyl(0.09, 0.09, 0.06, 10, '#23202A', 0, 0, 0);
+      m.rotation.z = Math.PI / 2;
+      m.position.set(x, 0.09, z);
+    }
+    k.box(0.4, 0.17, 0.95, y, 0, 0.08, 0);
+    k.box(0.36, 0.15, 0.48, '#2C3550', 0, 0.25, -0.04);
+    k.box(0.37, 0.025, 0.5, y, 0, 0.4, -0.04);
+    k.box(0.18, 0.06, 0.08, '#FFFFFF', 0, 0.425, -0.04);
+  },
+  borne: (k) => {
+    k.cyl(0.11, 0.13, 0.42, 10, '#E5322D', 0, 0, 0);
+    k.dome(0.11, '#E5322D', 0, 0.42, 0);
+    k.ball(0.03, '#F5F5F0', 0, 0.54, 0);
+    const a = k.cyl(0.045, 0.045, 0.32, 8, '#F5F5F0', 0, 0, 0);
+    a.rotation.z = Math.PI / 2;
+    a.position.set(0, 0.28, 0);
+  },
+};
+
+export function buildProp(name) {
+  const g = new THREE.Group();
+  PROPS[name]?.(kit(g));
+  return g;
+}
+
 export function buildCharacter(seat, color) {
   const g = new THREE.Group();
   CAST[seat % CAST.length](kit(g), color);

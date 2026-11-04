@@ -1,6 +1,6 @@
 # Escales : le raisonnement du jeu
 
-Le jeu phare de Hubuno, de 2 à 10 joueurs : un jeu d'achat de villes, du même genre que Monopoly ou Rich Up, avec son propre nom, son plateau et ses règles. Le plateau est une maquette blanche en 3D : chaque ville a son monument, et une ville achetée prend la couleur de son propriétaire.
+Le jeu phare de Hubuno, de 2 à 10 joueurs : un jeu d'achat de villes, du même genre que Monopoly ou Rich Up, avec son propre nom, son plateau et ses règles. Toute la carte se voit d'un coup d'œil, en 3D : chaque pays a sa couleur, son drapeau et ses éléments, chaque ville son monument. Un cadre de la couleur du joueur montre à qui elle appartient. On peut jouer seul : des robots complètent la table.
 
 ## Le constat de départ
 
@@ -21,7 +21,7 @@ Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: Th
 
 48 cases sur un anneau : 32 villes en 8 régions de 4, de la moins chère à la plus chère, 4 escales, 4 Télex, 2 taxes, 2 chantiers et 4 coins (Départ, Douane, Festival, Contrôle).
 
-**Pour changer les villes** : tout est dans `games/escales/client/board.js`, dans `REGIONS`. Chaque ville a un nom, une phrase et un monument (`model`). Les monuments sont dans `games/escales/client/monuments.js`.
+**Pour changer les villes** : tout est dans `games/escales/client/board.js`, dans `REGIONS`. Chaque ville a un nom, une phrase et un monument (`model`). Les monuments et les éléments des pays sont dans `client/monuments.js`. Le drapeau, le motif au sol et les éléments de chaque pays sont dans `client/countries.js`.
 
 ## Les règles
 

@@ -9,6 +9,8 @@ export const CATCH_UP = 100; // en plus au Départ pour qui a moins de la moiti�
 export const FINE = 50; // pour sortir de la Douane
 export const AUCTION_MS = 20_000;
 export const MAX_TRADES = 3; // propositions en attente par joueur
+export const BOT_MS = 900; // le temps qu'un robot prend pour jouer, pour qu'on voie ce qu'il fait
+const BOT_NAMES = ['Marco', 'Aïko', 'Leïla', 'Nuno', 'Frida', 'Anh', 'Giulia', 'Sam', 'Noor', 'Paco'];
 
 const clone = (s) => structuredClone(s);
 const d6 = (ctx) => 1 + Math.floor(ctx.random() * 6);
@@ -89,17 +91,22 @@ function canManage(s, p) {
 
 // ——— Mise en place ———
 
-// options : cash (argent de départ), rounds (tours avant le décompte, 0 = jusqu'au dernier), timer (secondes par action, 0 = sans).
+// options : cash (argent de départ), rounds (tours avant le décompte, 0 = jusqu'au dernier), timer (secondes par action, 0 = sans),
+// bots (robots à ajouter). Seul à la table, 3 robots s'ajoutent d'office : on peut toujours jouer.
 export function setup(players, options = {}, ctx) {
+  const wanted = Math.max(0, Math.floor(Number(options.bots) || 0));
+  const count = Math.min(wanted || (players.length === 1 ? 3 : 0), 10 - players.length);
+  const bots = shuffle(BOT_NAMES, ctx).slice(0, count).map((pseudo, i) => ({ id: -(i + 1), pseudo, bot: true }));
+  const everyone = [...players, ...bots];
   const s = {
-    players: shuffle(players, ctx).map((p, seat) => ({
-      id: p.id, pseudo: p.pseudo, seat, cash: Number(options.cash) || 1500, pos: 0, out: false, blocked: 0, doubles: 0, passes: 0,
+    players: shuffle(everyone, ctx).map((p, seat) => ({
+      id: p.id, pseudo: p.pseudo, bot: Boolean(p.bot), seat, cash: Number(options.cash) || 1500, pos: 0, out: false, blocked: 0, doubles: 0, passes: 0,
     })),
     cur: 0,
     phase: 'roll',
     props: {}, // position -> { owner, level, mortgaged }
     round: 1,
-    majority: players.length <= 3 ? 2 : 3, // villes d'une région à posséder pour y construire
+    majority: everyone.length <= 3 ? 2 : 3, // villes d'une région à posséder pour y construire
     maxRounds: Number(options.rounds ?? 20) || 0,
     timer: Number(options.timer ?? 60) || 0,
     dice: null,
@@ -131,6 +138,11 @@ export function setup(players, options = {}, ctx) {
 function arm(s, ctx) {
   if (s.over) {
     s.deadline = null;
+    return s;
+  }
+  if (s.phase !== 'auction' && cur(s).bot) { // un robot joue tout seul, une action à la fois
+    s.armedFor = null;
+    s.deadline = ctx.now + BOT_MS;
     return s;
   }
   const key = `${s.phase}:${s.cur}:${s.rollN}:${s.logN > 0 && s.phase === 'auction' ? s.auction.pos : ''}`;
@@ -212,7 +224,7 @@ function finish(s, reason) {
   const best = Math.max(...left.map((p) => worthOf(s, p)));
   s.winners = left.filter((p) => worthOf(s, p) === best).map((p) => p.id);
   const names = s.winners.map((id) => byId(s, id).pseudo).join(' et ');
-  log(s, reason === 'rounds' ? `Fin des tours : ${names} a le plus gros patrimoine (${money(best)}).` : `${names} est le dernier en jeu.`);
+  log(s, reason === 'last' ? `${names} est le dernier en jeu.` : `${reason === 'rounds' ? 'Fin des tours' : 'Plus aucun humain en jeu'} : ${names} a le plus gros patrimoine (${money(best)}).`);
 }
 
 // Le joueur quitte la partie. to : id du créancier, ou null pour la banque.
@@ -237,6 +249,7 @@ function eliminate(s, p, to) {
   s.trades = s.trades.filter((t) => t.from !== p.id && t.to !== p.id);
   if (s.festival?.owner === p.id) s.festival = null;
   if (active(s).length <= 1) finish(s, 'last');
+  else if (!active(s).some((o) => !o.bot)) finish(s, 'humans'); // les robots ne continuent pas sans personne
 }
 
 // ——— Se déplacer et tomber sur une case ———
@@ -384,6 +397,13 @@ function startAuction(s, pos, ctx, after) {
   s.after = after;
   s.phase = 'auction';
   log(s, `Enchères secrètes pour ${TILES[pos].name}.`);
+  for (const id of eligible) {
+    const p = byId(s, id);
+    if (!p.bot) continue;
+    s.auction.bids[id] = botBid(s, p, pos, ctx);
+    s.auction.order.push(id);
+  }
+  if (auctionDone(s)) return resolveAuction(s, ctx);
   return undefined;
 }
 
@@ -478,6 +498,139 @@ function goBankrupt(s, ctx) {
   log(s, `${p.pseudo} fait faillite.`);
   eliminate(s, p, to);
   if (!s.over) nextTurn(s, ctx);
+}
+
+// ——— Les robots ———
+// Ils jouent simplement : ils achètent s'il leur reste de quoi, cherchent la majorité d'une région et construisent.
+
+const gainsMajority = (s, p, t) => t.type === 'city' && ownedInRegion(s, p.id, t.region) + 1 >= s.majority;
+
+function botBid(s, p, pos, ctx) {
+  const t = TILES[pos];
+  const value = t.price * (0.6 + ctx.random() * 0.5) * (gainsMajority(s, p, t) ? 1.4 : 1);
+  return Math.max(0, Math.floor(Math.min(p.cash - 100, value) / 5) * 5);
+}
+
+// Ce que vaut une proposition pour celui qui la reçoit : les villes qui lui donnent une majorité comptent plus.
+function offerValue(s, to, offer) {
+  return offer.cash + offer.passes * 50 + offer.cities.reduce((sum, pos) => sum + TILES[pos].price * (gainsMajority(s, to, TILES[pos]) ? 1.6 : 1), 0);
+}
+function botAccepts(s, bot, trade) {
+  const give = trade.get;
+  const lost = give.cities.reduce((sum, pos) => {
+    const t = TILES[pos];
+    const breaks = t.type === 'city' && ownedInRegion(s, bot.id, t.region) >= s.majority;
+    return sum + t.price * (breaks ? 2.5 : 1);
+  }, 0);
+  return offerValue(s, bot, trade.give) >= (give.cash + give.passes * 50 + lost) * 1.15 && bot.cash - give.cash >= 50;
+}
+
+// Un robot à qui il manque une ville pour sa majorité essaie de la racheter : à un autre robot, ou en proposant à un joueur.
+function botTrade(s, p, ctx) {
+  if (ctx.random() > 0.35) return false;
+  for (let r = 0; r < REGIONS.length; r += 1) {
+    if (ownedInRegion(s, p.id, r) !== s.majority - 1) continue;
+    const t = TILES.find((x) => x.region === r && s.props[x.pos] && s.props[x.pos].owner !== p.id && !s.props[x.pos].level);
+    if (!t) continue;
+    const offer = Math.floor(t.price * 1.7 / 5) * 5;
+    const owner = byId(s, s.props[t.pos].owner);
+    if (p.cash < offer + 250) continue;
+    const trade = { from: p.id, to: owner.id, give: { cash: offer, cities: [], passes: 0 }, get: { cash: 0, cities: [t.pos], passes: 0 } };
+    if (owner.bot) {
+      if (ownedInRegion(s, owner.id, r) >= s.majority || !botAccepts(s, owner, trade)) continue;
+      transfer(s, p, owner, trade.give);
+      transfer(s, owner, p, trade.get);
+      log(s, `${p.pseudo} rachète ${t.name} à ${owner.pseudo} pour ${money(offer)}.`);
+      return true;
+    }
+    if (s.trades.some((x) => x.from === p.id || (x.get.cities[0] === t.pos && x.to === owner.id))) continue;
+    s.tradeSeq += 1;
+    s.trades.push({ id: s.tradeSeq, ...trade });
+    log(s, `${p.pseudo} propose un échange à ${owner.pseudo}.`);
+    return true;
+  }
+  return false;
+}
+
+function botManage(s, p) {
+  const owned = positionsOf(s, p.id);
+  const again = owned.find((pos) => s.props[pos].mortgaged && p.cash >= unmortgageCost(TILES[pos]) + 400);
+  if (again !== undefined) {
+    p.cash -= unmortgageCost(TILES[again]);
+    s.props[again].mortgaged = false;
+    log(s, `${p.pseudo} récupère ${TILES[again].name}.`);
+    return true;
+  }
+  const spot = owned.filter((pos) => canBuildAt(s, p.id, pos) && p.cash >= buildCost(s, pos) + 300).sort((a, b) => s.props[b].level - s.props[a].level)[0];
+  if (spot === undefined) return false;
+  p.cash -= buildCost(s, spot);
+  s.props[spot].level += 1;
+  log(s, `${p.pseudo} construit à ${TILES[spot].name}.`);
+  return true;
+}
+
+function botStep(s, ctx) {
+  const p = cur(s);
+  const t = TILES[p.pos];
+  switch (s.phase) {
+    case 'roll':
+      if (p.blocked && p.passes) {
+        p.passes -= 1;
+        p.blocked = 0;
+        log(s, `${p.pseudo} présente un passe-douane.`);
+        return;
+      }
+      if (p.blocked && p.cash > 300) {
+        p.cash -= FINE;
+        p.blocked = 0;
+        log(s, `${p.pseudo} paie ${money(FINE)} et passe la Douane.`);
+        return;
+      }
+      if (botTrade(s, p, ctx) || botManage(s, p)) return;
+      doRoll(s, ctx);
+      return;
+    case 'buy':
+      if (p.cash >= t.price + 60) {
+        p.cash -= t.price;
+        s.props[p.pos] = { owner: p.id, level: 0, mortgaged: false };
+        log(s, `${p.pseudo} achète ${t.name} pour ${money(t.price)}.`);
+        resume(s, t.type === 'escale' ? 'fly' : null, ctx);
+      } else {
+        startAuction(s, p.pos, ctx, t.type === 'escale' ? 'fly' : null);
+      }
+      return;
+    case 'festival': {
+      const best = positionsOf(s, p.id).filter((pos) => TILES[pos].type === 'city' && !s.props[pos].mortgaged).sort((a, b) => rentOf(s, b) - rentOf(s, a))[0];
+      if (best !== undefined) {
+        s.festival = { pos: best, owner: p.id };
+        log(s, `Festival à ${TILES[best].name} : loyer doublé jusqu'au prochain tour de ${p.pseudo}.`);
+      }
+      settle(s, ctx);
+      return;
+    }
+    case 'chantier': {
+      const spot = positionsOf(s, p.id).find((pos) => canBuildAt(s, p.id, pos) && p.cash >= Math.floor(buildCost(s, pos) / 2));
+      if (spot !== undefined) {
+        p.cash -= Math.floor(buildCost(s, spot) / 2);
+        s.props[spot].level += 1;
+        log(s, `${p.pseudo} construit à ${TILES[spot].name} à moitié prix.`);
+      }
+      settle(s, ctx);
+      return;
+    }
+    case 'fly':
+      settle(s, ctx);
+      return;
+    case 'end':
+      if (!botManage(s, p)) nextTurn(s, ctx);
+      return;
+    case 'debt':
+      liquidate(s, p, s.debt.amount);
+      if (p.cash >= s.debt.amount) settleDebt(s, ctx);
+      else goBankrupt(s, ctx);
+      return;
+    default:
+  }
 }
 
 // ——— Échanges ———
@@ -678,8 +831,19 @@ export function move(state, playerId, action = {}, ctx) {
       checkOffer(s, p, give);
       checkOffer(s, other, get);
       s.tradeSeq += 1;
-      s.trades.push({ id: s.tradeSeq, from: p.id, to: other.id, give, get });
+      const trade = { id: s.tradeSeq, from: p.id, to: other.id, give, get };
       log(s, `${p.pseudo} propose un échange à ${other.pseudo}.`);
+      if (other.bot) { // un robot répond tout de suite
+        if (botAccepts(s, other, trade)) {
+          transfer(s, p, other, give);
+          transfer(s, other, p, get);
+          log(s, `${other.pseudo} accepte l'échange de ${p.pseudo}.`);
+        } else {
+          log(s, `${other.pseudo} refuse l'échange de ${p.pseudo}.`);
+        }
+      } else {
+        s.trades.push(trade);
+      }
       break;
     }
     case 'tradeAccept': {
@@ -712,6 +876,11 @@ export function timeout(state, ctx) {
   if (state.over) return { state };
   const s = clone(state);
   const p = cur(s);
+  if (s.phase !== 'auction' && p.bot) {
+    botStep(s, ctx);
+    s.armedFor = null;
+    return { state: arm(s, ctx) };
+  }
   switch (s.phase) {
     case 'roll': doRoll(s, ctx); break;
     case 'buy': startAuction(s, p.pos, ctx, TILES[p.pos].type === 'escale' ? 'fly' : null); break;
@@ -784,9 +953,10 @@ export function view(state, playerId) {
 }
 
 export function status(state) {
-  if (state.over) return { turn: null, over: true, winners: state.winners, deadline: null };
+  // Le hub ne connaît que de vrais comptes : la victoire d'un robot est annoncée par le jeu lui-même.
+  if (state.over) return { turn: null, over: true, winners: state.winners.filter((id) => id > 0), deadline: null };
   const turn = state.phase === 'auction'
     ? state.auction.eligible.filter((id) => !(id in state.auction.bids))
     : cur(state).id;
-  return { turn, may: active(state).map((p) => p.id), over: false, winners: [], deadline: state.deadline };
+  return { turn, may: active(state).filter((p) => !p.bot).map((p) => p.id), over: false, winners: [], deadline: state.deadline };
 }

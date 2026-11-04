@@ -17,7 +17,7 @@ Précision de Minh (29/10/2026) : **« un style différent à chaque jeu, pas vi
 
 | Jeu | Dossier | Univers pop |
 |---|---|---|
-| Escales | `games/escales` | La maquette blanche : plateau et monuments en 3D, tout en blanc plâtre sur un sol gris uni ; une ville achetée prend la couleur de son propriétaire. Interface minimale, une seule police (Figtree) |
+| Escales | `games/escales` | Tour du monde en 3D, vu du dessus sur une mer claire : chaque pays a sa couleur, son drapeau, son motif au sol et ses éléments, chaque ville son monument. Interface sobre, une seule police (Figtree) |
 | Morpion | `games/morpion` | Le hub (Néon), jeu d'exemple |
 | Undercover | `games/undercover` | « Code » : cartes modernes, une couleur plein écran par phase (validé par Minh le 23/10) |
 | Quiz | `games/quiz` | Plateau de jeu télé d'aujourd'hui : violet électrique, spots, tuiles bonbon, gros chiffres |

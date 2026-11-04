@@ -1,7 +1,7 @@
 {
   "name": "Escales",
   "tagline": "Achète les villes du monde, fais payer le passage.",
-  "description": "Le grand jeu de plateau de la classe, de 2 à 10 joueurs : achète des villes, prends la majorité d'une région pour y construire, négocie, et fais payer tout le monde. Au dernier tour, le plus gros patrimoine gagne.",
+  "description": "Le grand jeu de plateau de la classe, jusqu'à 10 joueurs, avec des robots si vous êtes moins nombreux : achète des villes, prends la majorité d'une région pour y construire, négocie, et fais payer tout le monde. Au dernier tour, le plus gros patrimoine gagne.",
   "how": [
     "À ton tour, lance les dés et avance sur le plateau de 48 cases. Un double te fait rejouer ; au troisième de suite, c'est la Douane.",
     "Tombe sur une ville libre : achète-la, ou laisse-la aux enchères. Les enchères sont secrètes et durent 20 secondes : tout le monde mise en même temps, le plus offrant l'emporte.",
@@ -12,7 +12,7 @@
     "Plus d'argent ? Vends des constructions, mets des villes en gage, ou négocie. Sinon, c'est la faillite : ton créancier récupère tout.",
     "La partie s'arrête au dernier tour : le plus gros patrimoine gagne (argent, villes, constructions). Ou avant, s'il ne reste qu'un joueur. Si tu passes au Départ avec moins de la moitié du patrimoine du premier, tu touches 100 € de plus."
   ],
-  "minPlayers": 2,
+  "minPlayers": 1,
   "maxPlayers": 10,
   "duration": "45 min",
   "emoji": "🗺️",
@@ -22,6 +22,8 @@
   "order": 1,
   "featured": true,
   "options": [
+    { "key": "bots", "label": "Robots", "help": "Ils complètent la table, 10 joueurs au plus. Seul à la table, 3 robots s'ajoutent d'office.", "type": "choice", "default": 0,
+      "choices": [{ "value": 0, "label": "Aucun" }, { "value": 1, "label": "1" }, { "value": 3, "label": "3" }, { "value": 5, "label": "5" }, { "value": 9, "label": "9" }] },
     { "key": "rounds", "label": "Nombre de tours", "help": "À la fin, le plus gros patrimoine gagne.", "type": "choice", "default": 20,
       "choices": [{ "value": 12, "label": "12" }, { "value": 20, "label": "20" }, { "value": 30, "label": "30" }, { "value": 0, "label": "Sans fin" }] },
     { "key": "timer", "label": "Temps par action", "help": "Si le temps est écoulé, le jeu joue à ta place, au plus prudent.", "type": "choice", "default": 45,

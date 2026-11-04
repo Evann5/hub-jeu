@@ -3,50 +3,50 @@
 // model : le monument 3D de la ville (client/monuments.js).
 
 export const REGIONS = [
-  { id: 'maroc', name: 'Maroc', color: '#FF8A4C', cities: [
+  { id: 'maroc', name: 'Maroc', color: '#2EC4B6', cities: [
     { name: 'Chefchaouen', model: 'maisonsBleues', fact: 'La ville bleue, ruelles peintes du sol au toit.' },
     { name: 'Fès', model: 'riad', fact: 'La plus grande médina piétonne du monde.' },
     { name: 'Marrakech', model: 'minaret', fact: 'Jemaa el-Fna s’allume à la tombée de la nuit.' },
     { name: 'Casablanca', model: 'mosquee', fact: 'L’océan, l’art déco et la mosquée Hassan II.' },
   ] },
-  { id: 'vietnam', name: 'Vietnam', color: '#2FD07F', cities: [
+  { id: 'vietnam', name: 'Vietnam', color: '#FFC93C', cities: [
     { name: 'Hội An', model: 'lanternes', fact: 'Des lanternes par milliers au-dessus de la rivière.' },
     { name: 'Huế', model: 'porte', fact: 'L’ancienne cité impériale, sur la rivière des Parfums.' },
     { name: 'Hanoï', model: 'pagodeUnPilier', fact: 'Le vieux quartier et ses 36 rues de métiers.' },
-    { name: 'Hô Chi Minh-Ville', model: 'gratteCiel', fact: 'Des millions de scooters, jour et nuit.' },
+    { name: 'Hô Chi Minh-Ville', short: 'Hô Chi Minh', model: 'gratteCiel', fact: 'Des millions de scooters, jour et nuit.' },
   ] },
-  { id: 'portugal', name: 'Portugal', color: '#FFD23F', cities: [
+  { id: 'portugal', name: 'Portugal', color: '#6CC551', cities: [
     { name: 'Faro', model: 'phare', fact: 'La porte de l’Algarve et de ses falaises dorées.' },
     { name: 'Coimbra', model: 'tourHorloge', fact: 'Une des plus vieilles universités d’Europe.' },
     { name: 'Porto', model: 'pontArche', fact: 'Les quais de la Ribeira, face aux caves du Douro.' },
     { name: 'Lisbonne', model: 'tram', fact: 'Le tram 28 grimpe les collines de l’Alfama.' },
   ] },
-  { id: 'mexique', name: 'Mexique', color: '#FF5C9E', cities: [
+  { id: 'mexique', name: 'Mexique', color: '#FF5FA2', cities: [
     { name: 'Oaxaca', model: 'maisonsColorees', fact: 'La capitale du mole et des alebrijes.' },
     { name: 'Guanajuato', model: 'maisonsColorees2', fact: 'Des maisons de toutes les couleurs et des rues sous terre.' },
     { name: 'Guadalajara', model: 'cathedrale', fact: 'Le berceau des mariachis.' },
     { name: 'Mexico', model: 'pyramide', fact: 'Une ville géante, posée sur un ancien lac.' },
   ] },
-  { id: 'italie', name: 'Italie', color: '#5BE0C8', cities: [
+  { id: 'italie', name: 'Italie', color: '#FF9248', cities: [
     { name: 'Naples', model: 'volcan', fact: 'La pizza, avec le Vésuve en toile de fond.' },
     { name: 'Florence', model: 'duomo', fact: 'Le dôme de Brunelleschi domine les toits rouges.' },
     { name: 'Venise', model: 'gondole', fact: 'Plus de 400 ponts et aucune voiture.' },
     { name: 'Rome', model: 'colisee', fact: 'On y marche sur 2 000 ans d’histoire.' },
   ] },
-  { id: 'japon', name: 'Japon', color: '#FF6B6B', cities: [
+  { id: 'japon', name: 'Japon', color: '#FFB3C7', cities: [
     { name: 'Nara', model: 'pagode', fact: 'Des daims en liberté saluent les passants.' },
     { name: 'Kyoto', model: 'torii', fact: 'Plus de mille temples et les allées de bambous.' },
     { name: 'Osaka', model: 'chateau', fact: 'Dotonbori et ses enseignes géantes, la cuisine du pays.' },
     { name: 'Tokyo', model: 'tourTokyo', fact: 'Shibuya, le carrefour le plus traversé au monde.' },
   ] },
-  { id: 'france', name: 'France', color: '#6D9BFF', cities: [
+  { id: 'france', name: 'France', color: '#6FA1FF', cities: [
     { name: 'Marseille', model: 'basilique', fact: 'Le Vieux-Port, et la Bonne Mère qui veille.' },
     { name: 'Bordeaux', model: 'arcades', fact: 'Le miroir d’eau face à la place de la Bourse.' },
     { name: 'Lyon', model: 'basilique2', fact: 'Les traboules et les bouchons.' },
     { name: 'Paris', model: 'eiffel', fact: 'La tour Eiffel scintille à chaque heure, le soir.' },
   ] },
-  { id: 'usa', name: 'États-Unis', color: '#B07CFF', cities: [
-    { name: 'La Nouvelle-Orléans', model: 'bateauVapeur', fact: 'Du jazz à tous les coins de rue.' },
+  { id: 'usa', name: 'États-Unis', color: '#FF6B5E', cities: [
+    { name: 'La Nouvelle-Orléans', short: 'Nlle-Orléans', model: 'bateauVapeur', fact: 'Du jazz à tous les coins de rue.' },
     { name: 'Chicago', model: 'gratteCiel2', fact: 'Le berceau des gratte-ciel, au bord du lac Michigan.' },
     { name: 'San Francisco', model: 'goldenGate', fact: 'Le Golden Gate sort du brouillard.' },
     { name: 'New York', model: 'empire', fact: 'Times Square ne s’éteint jamais.' },
@@ -76,7 +76,7 @@ const ESCALES = ['Escale Nord', 'Escale Est', 'Escale Sud', 'Escale Ouest'];
 function buildTiles() {
   const tiles = [];
   const city = (r, i) => ({
-    type: 'city', region: r, name: REGIONS[r].cities[i].name, model: REGIONS[r].cities[i].model, fact: REGIONS[r].cities[i].fact,
+    type: 'city', region: r, name: REGIONS[r].cities[i].name, short: REGIONS[r].cities[i].short, model: REGIONS[r].cities[i].model, fact: REGIONS[r].cities[i].fact,
     price: PRICES[r][i], build: BUILD[r], rent: Math.round(PRICES[r][i] / 10),
   });
   const SIDES = [

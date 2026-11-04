@@ -38,15 +38,10 @@ export function mount(root, api) {
   const round = h('p.es-round');
   const prompt = h('div.es-prompt');
   const trades = h('div.es-trades');
-  const viewBtn = h('button.es-link', { type: 'button', onclick: () => {
-    if (!world) return;
-    world.setOverview(!world.isOverview());
-    viewBtn.textContent = world.isOverview() ? 'Suivre le jeu' : 'Tout voir';
-  } }, 'Tout voir');
   const tools = h('div.es-tools',
     h('button.es-link', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, 'Villes'),
     h('button.es-link', { type: 'button', onclick: () => openTrade() }, 'Échanger'),
-    viewBtn);
+    h('button.es-link', { type: 'button', onclick: () => world?.recenter() }, 'Recentrer'));
   const logBox = h('p.es-log', { 'aria-live': 'polite' });
   const timer = h('div.es-timer', h('i'));
   const dock = h('section.es-dock', timer, round, news, prompt, trades, logBox);
@@ -75,7 +70,7 @@ export function mount(root, api) {
       const turn = !v.over && v.players[v.cur].id === p.id;
       return h(`div.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { role: 'listitem' },
         dot,
-        h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo),
+        h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, p.bot ? h('small', ' robot') : null),
         h('span.es-cash', p.out ? 'Sorti' : money(p.cash)));
     }));
   }
@@ -110,7 +105,7 @@ export function mount(root, api) {
   function promptFor() {
     if (v.over) {
       const ranked = v.players.filter((p) => !p.out).sort((a, b) => b.worth - a.worth);
-      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : `${v.winners.map(nameOf).join(' et ')} gagne !`),
+      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} gagne !`),
         h('ol.es-rank', ranked.map((p) => h('li', h('span', p.pseudo), h('b', money(p.worth)))))];
     }
     if (v.phase === 'auction') return auctionPrompt();

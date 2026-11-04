@@ -1,10 +1,10 @@
-/* Escales : la maquette blanche. Un sol gris clair uni, une seule police, de l'encre et du blanc ; la couleur est réservée
-   à ce qui a un sens (les joueurs, les régions). L'interface tient en peu d'éléments, sans ombres décoratives. Tout est sous .g-escales. */
+/* Escales : toute la carte d'un coup d'œil, sur la mer. Les couleurs viennent des pays ; l'interface reste sobre, d'une seule police,
+   et la carte d'action se pose au centre du plateau. Tout est sous .g-escales. */
 
 @font-face { font-family: 'ES Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
 
 .g-escales {
-  --field: #E3E7ED;
+  --field: #A9DFEA;
   --ink: #12151F;
   --soft: #4D5566;
   --line: #D5DAE2;
@@ -25,12 +25,13 @@
 .g-escales .es-no3d, .g-escales .es-loading { position: absolute; inset: 40% 16px auto; margin: 0; color: var(--soft); font-weight: 600; text-align: center; }
 
 /* Le tableau des joueurs : du texte sur le sol, rien de plus */
-.g-escales .es-players { position: absolute; top: 10px; left: 10px; display: grid; gap: 1px; padding: 4px; border-radius: 10px; background: rgb(227 231 237 / 0.88); pointer-events: none; }
+.g-escales .es-players { position: absolute; top: 10px; left: 10px; display: grid; gap: 1px; padding: 4px; border-radius: 10px; background: rgb(255 255 255 / 0.9); pointer-events: none; }
 .g-escales .es-chip { display: grid; grid-template-columns: 12px minmax(0, 104px) auto; align-items: center; gap: 8px; min-height: 24px; padding: 0 8px; border-radius: 6px; color: var(--soft); font-size: 0.875rem; font-weight: 600; }
 .g-escales .es-chip.is-turn { background: var(--ink); color: #fff; }
 .g-escales .es-chip.is-out { opacity: 0.45; text-decoration: line-through; }
 .g-escales .es-dot { width: 11px; height: 11px; border-radius: 50%; }
 .g-escales .es-pseudo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-escales .es-pseudo small { font-size: 0.6875rem; font-weight: 600; opacity: 0.7; }
 .g-escales .es-cash { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
 .g-escales .es-chip:not(.is-turn) .es-cash { color: var(--ink); }
 
@@ -43,17 +44,18 @@
 /* La carte du bas : une seule chose à faire à la fois */
 .g-escales .es-dock {
   position: absolute;
-  bottom: 16px;
+  top: 53%;
   left: 50%;
   display: grid;
-  gap: 10px;
-  width: min(400px, calc(100% - 32px));
-  max-height: calc(100% - 32px);
-  padding: 16px;
+  gap: 8px;
+  width: min(340px, 40%);
+  max-height: 50%;
+  padding: 14px;
   overflow-y: auto;
   border-radius: 14px;
   background: var(--paper);
-  transform: translateX(-50%);
+  box-shadow: 0 4px 0 rgb(18 69 89 / 0.25);
+  transform: translate(-50%, -50%);
 }
 .g-escales .es-round { margin: 0; color: var(--soft); font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .g-escales .es-news { margin: 0; font-size: 0.8125rem; font-weight: 600; }
@@ -118,8 +120,8 @@
   .g-escales .es-players { top: 6px; right: 6px; left: 6px; display: flex; gap: 2px; padding: 0; background: none; overflow-x: auto; scrollbar-width: none; pointer-events: auto; }
   .g-escales .es-chip { flex: none; grid-template-columns: 10px auto auto; gap: 5px; padding: 0 8px; }
   .g-escales .es-pseudo { max-width: 68px; }
-  .g-escales .es-tools { top: 34px; right: 4px; }
-  .g-escales .es-dock { bottom: 0; left: 0; width: 100%; max-height: 62%; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); gap: 8px; border-radius: 14px 14px 0 0; transform: none; }
+  .g-escales .es-tools { inset: auto 0 auto auto; top: 32px; right: 4px; }
+  .g-escales .es-dock { top: auto; bottom: 0; left: 0; width: 100%; max-height: 48%; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); gap: 8px; border-radius: 14px 14px 0 0; box-shadow: none; transform: none; }
   .g-escales .es-mini span { display: none; }
   .g-escales .es-sheet-wrap { padding: 8px; }
 }
