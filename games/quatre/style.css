@@ -36,14 +36,14 @@
   transition: background-color 0.2s;
 }
 .g-quatre .q-player.is-turn { animation: q-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
-.g-quatre .q-player.is-turn.p0 { background: #FF9ACF; }
-.g-quatre .q-player.is-turn.p1 { background: #6CF2E5; }
+.g-quatre .q-player.is-turn.p0, .g-quatre .q-player.is-won.p0 { background: #FF9ACF; }
+.g-quatre .q-player.is-turn.p1, .g-quatre .q-player.is-won.p1 { background: #6CF2E5; }
 .g-quatre .q-chip { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--ink); }
 .g-quatre .p0 > .q-chip { background: radial-gradient(circle closest-side at 50% 50%, #FFB3D9 0 22%, var(--pink) 23%); }
 .g-quatre .p1 > .q-chip { background: radial-gradient(circle closest-side at 50% 50%, #fff 0 20%, var(--turq) 21%); }
 .g-quatre .q-who { display: grid; min-width: 0; }
 .g-quatre .q-name { overflow: hidden; font: 800 0.95rem/1.2 var(--text); text-overflow: ellipsis; white-space: nowrap; }
-.g-quatre .q-tag { font: 700 0.8rem/1.2 var(--text); }
+.g-quatre .q-tag { overflow: hidden; font: 700 0.8rem/1.2 var(--text); text-overflow: ellipsis; white-space: nowrap; }
 @keyframes q-pop { 0% { transform: scale(0.92); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
 /* Ligne d'état et minuteur */

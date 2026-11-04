@@ -18,7 +18,7 @@ Précision de Minh (29/10/2026) : **« un style différent à chaque jeu, pas vi
 | Jeu | Dossier | Univers pop |
 |---|---|---|
 | Escales | `games/escales` | Sombre et moderne, volontairement différent du hub : couleurs franches sans dorures, sur un globe en points (palette à confirmer : nuit, ardoise ou prune). Titres en Alfa Slab One, texte en Barlow Semi Condensed. Plateau en 3D, vue fixe : chaque pays a sa couleur, son drapeau, son motif et ses éléments, chaque ville son monument. Cases à étiquette crème, plaques de pays en relief, boutons à tranche |
-| Morpion | `games/morpion` | Le hub (Néon), jeu d'exemple |
+| Morpion | `games/morpion` | Le hub (Néon), jeu d'exemple : cases en cartes arrondies, croix violettes et ronds orange tracés au trait épais, citron vert pour le tour et la victoire, aperçu du signe au survol |
 | Undercover | `games/undercover` | « Code » : cartes modernes, une couleur plein écran par phase (validé par Minh le 23/10) |
 | Quiz | `games/quiz` | Plateau de jeu télé d'aujourd'hui : violet électrique, spots, tuiles bonbon, gros chiffres |
 | Mytho | `games/mytho` | Bulles de BD pop et stickers : jaune citron, bulles blanches à gros contour, tampons « MYTHO ! » |

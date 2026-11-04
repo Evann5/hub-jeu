@@ -55,7 +55,6 @@ export function mount(root, api) {
   const frame = h('div.r-frame', grid);
 
   root.append(h('div.r',
-    h('header.r-head', h('h2.r-title', 'Retourne'), h('p.r-sub', 'Galets kawaii · 8 × 8')),
     h('div.r-scores', scoreEls.map((s) => s.box)),
     h('div.r-statusrow', status, timer),
     h('div.r-boardwrap', frame)));
@@ -123,7 +122,7 @@ export function mount(root, api) {
       box.replaceChildren(
         h('span.r-token', { 'aria-hidden': 'true' }),
         api.token(api.user(id), { size: 's' }),
-        h('span.r-who', h('span.r-name', api.user(id).pseudo), h('span.r-side', `${SIDE[seat]}${won ? ' · gagne' : ''}`)),
+        h('span.r-who', h('span.r-name', api.user(id).pseudo), h('span.r-side', `${SIDE[seat]}${id === api.me.id ? ' · toi' : ''}${won ? ' · gagne' : ''}`)),
         h('span.r-count', { 'aria-label': `${s.counts[seat]} pions` }, String(s.counts[seat])));
     });
   }

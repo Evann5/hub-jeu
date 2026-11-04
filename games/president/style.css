@@ -109,7 +109,7 @@
 .g-president .pr-seat.is-me { box-shadow: inset 0 0 0 1.5px var(--pr-cyan); }
 .g-president .pr-seat.is-me.is-turn { box-shadow: 0 0 0 2px var(--pr-ivory), 0 0 22px rgb(255 62 165 / 0.55); }
 .g-president .pr-pts { display: inline-flex; align-items: baseline; font-family: var(--pr-serif); font-weight: 800; font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--pr-gold); }
-.g-president .pr-pts small { font-size: 0.6rem; font-weight: 700; }
+.g-president .pr-pts small { margin-left: 2px; font-size: 0.6rem; font-weight: 700; }
 .g-president .pr-seat.is-turn .pr-pts { color: var(--pr-ink); }
 .g-president .pr-seat-main { display: grid; line-height: 1.1; min-width: 0; }
 .g-president .pr-seat-name { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }

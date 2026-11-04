@@ -175,7 +175,7 @@
 .g-poker .pk-btn.is-raise { background: var(--lemon); }
 .g-poker .pk-btn.is-raise[aria-expanded='true'] { background: #fff; }
 .g-poker .pk-btn.is-go { grid-column: 1 / -1; background: var(--orange); font-size: 1rem; min-height: 50px; }
-.g-poker .pk-wait { margin: 0; padding: 10px 14px; border-radius: 16px; background: rgb(255 255 255 / 0.12); text-align: center; font-weight: 700; }
+.g-poker .pk-wait { grid-column: 1 / -1; margin: 0; padding: 10px 14px; border-radius: 16px; background: rgb(255 255 255 / 0.12); text-align: center; font-weight: 700; }
 .g-poker .pk-next { font: 900 1rem 'PK Rubik', system-ui, sans-serif; color: var(--lemon); font-variant-numeric: tabular-nums; }
 
 /* Relance : curseur, boutons rapides, montant exact */
@@ -224,12 +224,14 @@
   .g-poker .pk-stack { font-size: 1rem; }
   .g-poker .pk-panel { grid-template-columns: auto minmax(0, 1fr); width: min(780px, 100%); margin: 0 auto; border-radius: 22px 22px 0 0; border: 4px solid var(--pink); border-bottom: 0; }
   .g-poker .pk-btn { font-size: 1rem; min-height: 52px; }
-  .g-poker .pk-raise { left: 50%; right: auto; width: min(560px, 90%); transform: translateX(-50%); }
+  .g-poker .pk-raise { left: 50%; right: auto; width: min(560px, 90%); translate: -50% 0; }
 }
 @container (max-width: 420px) {
   .g-poker .pk { --cw-md: 37px; }
-  .g-poker .pk-seat { --sw: 74px; }
-  .g-poker .pk-center { width: 60%; top: 54%; gap: 4px; }
+  .g-poker .pk-seat { --sw: 80px; }
+  .g-poker .pk-av { display: none; }
+  .g-poker .pk-name { font-size: 0.7rem; }
+  .g-poker .pk-center { width: 56%; top: 54%; gap: 4px; }
   .g-poker .pk-rl { display: none; }
   .g-poker .pk-result { padding: 6px 10px; }
   .g-poker .pk-win { font-size: 0.95rem; }

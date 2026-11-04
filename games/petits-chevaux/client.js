@@ -282,7 +282,7 @@ export function mount(root, api) {
 
   function describeLast() {
     const l = v.last;
-    if (!l) return 'Le premier joueur lance le dé. Il faut un 6 pour sortir un cheval.';
+    if (!l) return '';
     const who = l.seat === v.you ? 'Tu as' : `${api.user(v.players[l.seat]).pseudo} a`;
     if (l.horse === null) {
       if (v.phase === 'choose' && v.turn === l.seat) return `${who} fait ${l.die}.`;
@@ -307,7 +307,7 @@ export function mount(root, api) {
     if (v.left.includes(v.players[v.you])) return 'Tu as quitté la partie : tu regardes.';
     if (myTurn()) {
       if (v.phase === 'choose') return `Tu as fait ${v.die} : choisis ton cheval.`;
-      return v.tries > 1 ? `À toi ! Tous tes chevaux sont à l’écurie : il te reste ${v.tries} essais pour sortir un 6.` : 'À toi : lance le dé !';
+      return v.tries > 1 ? `À toi : sors un cheval avec un 6 (${v.tries} essais)` : 'À toi : lance le dé !';
     }
     return `${api.user(v.players[v.turn]).pseudo} ${v.phase === 'choose' ? 'choisit un cheval' : 'lance le dé'}…`;
   }
@@ -331,7 +331,8 @@ export function mount(root, api) {
           svgEl('svg', { viewBox: '-20 -20 40 40', width: 26, height: 26 }, svgEl('g', { fill: COLORS[v.colors[seat]].fill, stroke: INK, 'stroke-width': 3.4, 'stroke-linejoin': 'round' }, tokenShape(v.colors[seat], 15)))),
         api.token(api.user(id), { size: 's' }),
         h('span.pc-pname', h('b', api.user(id).pseudo + (seat === v.you ? ' (toi)' : '')),
-          h('small', left ? 'a quitté la partie' : `${COLORS[v.colors[seat]].name} · ${home}/4 arrivés · ${stable} à l’écurie`)),
+          h('small', left ? 'a quitté la partie' : `${COLORS[v.colors[seat]].name} · ${stable} à l’écurie`)),
+        left ? null : h('b.pc-score', { title: `${home} cheval${home > 1 ? 'x' : ''} arrivé${home > 1 ? 's' : ''} sur 4` }, `${home}/4`),
         turn ? h('span.pc-turn', seat === v.you ? 'à toi' : 'joue') : null);
     }));
   }

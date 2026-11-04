@@ -109,7 +109,8 @@ export function mount(root, api) {
     built = true;
     const n = v.seats.length;
     const myIdx = v.seats.findIndex((s) => s.id === api.me.id);
-    const rx = n <= 3 ? 38 : 40;
+    const narrow = (root.clientWidth || 400) < 420; // téléphone : joueurs un peu plus rentrés pour laisser de la place aux noms
+    const rx = narrow ? 37 : n <= 3 ? 38 : 40;
     const ry = n <= 3 ? 44 : 41;
     v.seats.forEach((s, i) => {
       const r = (i - Math.max(myIdx, 0) + n) % n;
@@ -348,7 +349,7 @@ export function mount(root, api) {
       raiseOpen = false;
       statusEl.textContent = meSeat.folded ? `Tu t’es couché. ${v.toAct ? `${api.user(v.toAct).pseudo} doit parler.` : ''}`
         : meSeat.allIn ? 'Tu es à tapis : plus qu’à attendre les cartes.' : v.toAct ? `${api.user(v.toAct).pseudo} doit parler.` : '';
-      actionsEl.append(h('p.pk-wait', meSeat.folded ? 'Attends la prochaine main.' : 'Ce n’est pas ton tour.'));
+      if (meSeat.folded) actionsEl.append(h('p.pk-wait', 'Attends la prochaine main.'));
       return;
     }
 
