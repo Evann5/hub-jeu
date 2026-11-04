@@ -1,11 +1,12 @@
 // Routes HTTP : inscription, connexion, mot de passe, suppression du compte.
 import express from 'express';
-import { db } from './db.js';
+import { db, transaction } from './db.js';
 import { config } from './config.js';
 import { COLORS, AVATARS, REACTIONS, LIMITS } from './options.js';
 import * as auth from './auth.js';
-import { markAllChannelsRead } from './chat.js';
-import { broadcastUser, disconnectUser, removeUser } from './realtime.js';
+import { markAllChannelsRead, deleteUserData } from './chat.js';
+import { broadcastUser, disconnectUser, disconnectSession, removeUser } from './realtime.js';
+import { sameOrigin } from './securite.js';
 
 export const api = express.Router();
 
@@ -19,18 +20,23 @@ class ApiError extends Error {
 // Les requêtes qui modifient quelque chose doivent venir de Hubuno lui-même, en JSON.
 api.use((req, res, next) => {
   if (req.method === 'GET') return next();
-  const origin = req.get('origin');
-  if (origin && new URL(origin).host !== req.get('host')) return res.status(403).json({ error: 'Requête refusée.' });
+  if (!sameOrigin(req.get('origin'), req.get('host'))) return res.status(403).json({ error: 'Requête refusée.' });
   if (!req.is('application/json')) return res.status(415).json({ error: 'Requête refusée.' });
   next();
 });
+// Connexion et inscription ne reçoivent que quelques champs : 1 ko suffit ; le reste des routes garde 10 ko.
+api.post(['/login', '/register'], express.json({ limit: '1kb' }));
 api.use(express.json({ limit: '10kb' }));
+api.use((req, res, next) => {
+  req.body ??= {};
+  next();
+});
 
 function setSessionCookie(req, res, { token, expires }) {
   res.cookie(auth.COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: req.secure,
+    secure: process.env.NODE_ENV === 'production' || req.secure,
     path: config.basePath || '/',
     expires: new Date(expires),
   });
@@ -58,62 +64,73 @@ api.get('/me', (req, res) => {
   res.json({ user: auth.publicUser(user), mustChangePassword: Boolean(user.must_change_password) });
 });
 
-api.post('/register', (req, res) => {
+api.post('/register', async (req, res) => {
   const pseudo = str(req.body.pseudo).trim();
   const password = str(req.body.password);
   const code = str(req.body.classCode).trim();
 
+  if (auth.badCodeBlocked(req.ip)) throw new ApiError(429, 'Trop de codes de classe ratés depuis cette connexion. Réessaie dans 15 minutes.');
+  if (auth.signupBlocked(req.ip)) throw new ApiError(429, 'Trop d’inscriptions depuis cette connexion. Réessaie dans une heure.');
   const expected = auth.classCode();
   if (!expected) throw new ApiError(503, "Les inscriptions ne sont pas encore ouvertes : aucun code de classe n'est réglé.");
-  if (code.toLowerCase() !== expected.toLowerCase()) {
+  if (!auth.codeMatches(code, expected)) {
+    auth.recordBadCode(req.ip);
     throw new ApiError(400, 'Ce code de classe ne marche pas. Demande-le à un admin.');
   }
   const pseudoError = auth.validatePseudo(pseudo);
   if (pseudoError) throw new ApiError(400, pseudoError);
-  const passError = auth.validatePassword(password);
+  const passError = auth.validatePassword(password, pseudo);
   if (passError) throw new ApiError(400, passError);
   if (req.body.acceptRules !== true) throw new ApiError(400, 'Coche la case pour accepter les règles de Hubuno.');
   if (auth.findUserByPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
 
-  const user = auth.createUser({ pseudo, password });
+  const passHash = await auth.hashPassword(password);
+  // Pendant le calcul, quelqu'un d'autre a pu prendre le pseudo : on revérifie juste avant d'écrire.
+  if (auth.findUserByPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
+  const user = auth.createUser({ pseudo, passHash });
+  auth.recordSignup(req.ip);
   markAllChannelsRead(user.id);
   setSessionCookie(req, res, auth.createSession(user.id));
   broadcastUser(user);
   res.status(201).json({ user: auth.publicUser(user), mustChangePassword: false });
 });
 
-api.post('/login', (req, res) => {
+api.post('/login', async (req, res) => {
   const pseudo = str(req.body.pseudo).trim();
   const password = str(req.body.password);
-  const key = `${req.ip}|${pseudo.toLowerCase()}`;
-  if (auth.tooManyFailures(key)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans 15 minutes, ou demande à un admin.');
+  if (auth.tooManyFailures(req.ip, pseudo)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans 15 minutes, ou demande à un admin.');
 
+  // Le calcul se fait aussi quand le pseudo n'existe pas : même durée dans les deux cas.
   const user = auth.findUserByPseudo(pseudo);
-  if (!user || !auth.checkPassword(password, user.pass_hash)) {
-    auth.recordFailure(key);
+  const ok = await auth.checkPassword(password, user?.pass_hash);
+  if (!user || !ok) {
+    auth.recordFailure(req.ip, pseudo);
     throw new ApiError(400, 'Pseudo ou mot de passe incorrect.');
   }
   if (user.banned) throw new ApiError(403, 'Ce compte a été bloqué par un admin.');
-  auth.clearFailures(key);
+  auth.clearFailures(req.ip, pseudo);
   setSessionCookie(req, res, auth.createSession(user.id));
   res.json({ user: auth.publicUser(user), mustChangePassword: Boolean(user.must_change_password) });
 });
 
 api.post('/logout', (req, res) => {
-  auth.deleteSession(auth.readCookie(req.headers.cookie, auth.COOKIE));
+  const token = auth.readCookie(req.headers.cookie, auth.COOKIE);
+  auth.deleteSession(token);
+  disconnectSession(token); // les connexions en direct de cette session se ferment aussi
   res.clearCookie(auth.COOKIE, { path: config.basePath || '/' });
   res.json({ ok: true });
 });
 
-api.post('/password', (req, res) => {
+api.post('/password', async (req, res) => {
   const user = requireUser(req);
   const password = str(req.body.password);
-  if (!user.must_change_password && !auth.checkPassword(str(req.body.current), user.pass_hash)) {
+  if (!user.must_change_password && !(await auth.checkPassword(str(req.body.current), user.pass_hash))) {
     throw new ApiError(400, 'Le mot de passe actuel est incorrect.');
   }
-  const passError = auth.validatePassword(password);
+  const passError = auth.validatePassword(password, user.pseudo);
   if (passError) throw new ApiError(400, passError);
-  db.prepare('UPDATE users SET pass_hash = ?, must_change_password = 0 WHERE id = ?').run(auth.hashPassword(password), user.id);
+  const passHash = await auth.hashPassword(password);
+  db.prepare('UPDATE users SET pass_hash = ?, must_change_password = 0 WHERE id = ?').run(passHash, user.id);
   // Les autres appareils sont déconnectés ; celui-ci reçoit une nouvelle session.
   auth.deleteUserSessions(user.id);
   disconnectUser(user.id, 'Ton mot de passe a changé : reconnecte-toi.');
@@ -121,13 +138,16 @@ api.post('/password', (req, res) => {
   res.json({ ok: true });
 });
 
-api.post('/delete-account', (req, res) => {
+api.post('/delete-account', async (req, res) => {
   const user = requireUser(req);
-  if (!auth.checkPassword(str(req.body.password), user.pass_hash)) throw new ApiError(400, 'Mot de passe incorrect.');
-  // Supprime le compte, ses sessions, ses messages et ses réactions (clés étrangères en cascade).
-  db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+  if (!(await auth.checkPassword(str(req.body.password), user.pass_hash))) throw new ApiError(400, 'Mot de passe incorrect.');
+  // Supprime le compte, ses sessions, ses messages et ses réactions (clés étrangères en cascade), puis ses messages privés et ses lectures.
+  transaction(() => {
+    deleteUserData(user.id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+  });
   disconnectUser(user.id, 'Ton compte a été supprimé.');
-  removeUser(user.id);
+  removeUser(user.id, { deleted: true });
   res.clearCookie(auth.COOKIE, { path: config.basePath || '/' });
   res.json({ ok: true });
 });
@@ -138,6 +158,9 @@ api.use((req, res) => res.status(404).json({ error: 'Adresse inconnue.' }));
 api.use((err, req, res, next) => {
   if (err instanceof ApiError) return res.status(err.status).json({ error: err.message });
   if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Requête illisible.' });
+  if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Requête trop volumineuse.' });
+  if (err instanceof auth.BusyError) return res.status(503).json({ error: err.message });
+  if (err.status >= 400 && err.status < 500) return res.status(err.status).json({ error: 'Requête refusée.' });
   console.error(err);
   res.status(500).json({ error: 'Erreur du serveur, réessaie dans un instant.' });
 });

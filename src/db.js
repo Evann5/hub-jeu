@@ -11,8 +11,9 @@ db.exec(`
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
 
+  -- AUTOINCREMENT : l'identifiant d'un compte supprimé n'est jamais redonné à un autre (sinon il hériterait de ses messages privés).
   CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     pseudo TEXT NOT NULL UNIQUE COLLATE NOCASE,
     pass_hash TEXT NOT NULL,
     avatar TEXT NOT NULL DEFAULT '🎲',

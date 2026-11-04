@@ -88,8 +88,8 @@ function changed(t, id = t?.id, events) {
 }
 
 // Un compte disparaît (supprimé ou bloqué) : on libère ses places dans les salons.
-export function dropUserFromTables(userId) {
-  for (const { id, table } of tables.dropUser(userId)) changed(table, id);
+export function dropUserFromTables(userId, options) {
+  for (const { id, table } of tables.dropUser(userId, options)) changed(table, id);
 }
 
 export function purgeTables() {
@@ -115,7 +115,7 @@ export function registerPlay(socket, handler) {
     const t = tables.createTable(String(game), me.id);
     changed(t);
     return { id: t.id };
-  }));
+  }, { event: 'table:create', muteBlocked: true }));
 
   socket.on('table:watch', handler(socket, async ({ id }) => {
     const t = tables.getTable(tableId(id));
@@ -162,7 +162,7 @@ export function registerPlay(socket, handler) {
     const { table, events } = tables.playMove(tableId(id), me.id, action);
     changed(table, table.id, events);
     return {};
-  }));
+  }, { generalLimit: false })); // les coups ont leur propre limite (tooFast)
 
   socket.on('table:restart', handler(socket, ({ id }, me) => {
     changed(tables.restartTable(tableId(id), me.id));
@@ -186,5 +186,5 @@ export function registerPlay(socket, handler) {
     if (!targets.length) throw new ChatError('Choisis au moins une personne.');
     for (const uid of targets) io.to(`u:${uid}`).emit('invite', { tableId: t.id, game: t.game, from: me.id });
     return { sent: targets.length };
-  }));
+  }, { event: 'table:invite', muteBlocked: true }));
 }

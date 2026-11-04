@@ -22,7 +22,7 @@ export const REACTIONS = ['👍', '😂', '❤️', '😮', '😢', '🔥', '�
 export const LIMITS = {
   pseudoMin: 3,
   pseudoMax: 20,
-  passwordMin: 8,
+  passwordMin: 10,
   bioMax: 140,
   messageMax: 2000,
   channelNameMax: 30,

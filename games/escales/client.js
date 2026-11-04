@@ -83,7 +83,7 @@ export function mount(root, api) {
           if (t.type === 'city') world.focus({ tiles: TILES.filter((x) => x.region === t.region).map((x) => x.pos), color: REGIONS[t.region].color });
           else if (t.type === 'escale') world.focus({ tiles: TILES.filter((x) => x.type === 'escale').map((x) => x.pos), color: '#CBD5E1' });
         },
-        topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden || getComputedStyle(tools).position === 'fixed' ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
+        topInset: () => Math.max(6, Math.max(players.getBoundingClientRect().bottom, tools.hidden || getComputedStyle(tools).position === 'fixed' ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6), // jamais négatif : à la fin de partie, le panneau disparaît sur téléphone
         rightInset: () => side.offsetWidth + 12,
         continents: continentsImage,
         onFit: ([cx, cy], [, fy], [, oy], [, by]) => {
@@ -169,7 +169,7 @@ export function mount(root, api) {
   function deltaOf(p) {
     const old = before.cash.get(p.id);
     const d = old === undefined ? 0 : p.cash - old;
-    if (!d || v.over) return null;
+    if (!d || v.over || p.out) return null;
     return h(`span.es-delta${d > 0 ? '.is-up' : '.is-down'}`, { 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d.toLocaleString('fr-FR')} €`);
   }
 
@@ -541,13 +541,13 @@ export function mount(root, api) {
     focusCard.replaceChildren(...[
       h('header.es-focus-head',
         picture(world?.portrait(p.seat), '.es-face'),
-        h('span', h('b', p.id === meId ? 'Toi' : p.pseudo), h('small', `Patrimoine ${money(p.worth)}`)),
+        h('span', h('b', p.id === meId ? 'Toi' : p.pseudo), h('small', p.out ? 'Sorti de la partie' : `Patrimoine ${money(p.worth)}`)),
         h('button.es-focus-close', { type: 'button', 'aria-label': 'Fermer', onclick: () => setFocus(null) }, '×')),
       owned.length ? h('ul.es-focus-list', owned.map((t) => h('li', h('button', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos: t.pos }) },
         t.type === 'city' ? flagOf(t.region) : null,
         h('span', t.short ?? t.name),
         h('small', v.props[t.pos].mortgaged ? 'en gage' : money(v.rents[t.pos] ?? 0))))))
-        : h('p.es-note', 'Pas encore de ville.'),
+        : p.out ? null : h('p.es-note', 'Pas encore de ville.'),
       p.id !== meId && !p.out && !v.over && me() && !me().out ? h('button.es-btn.is-small', { type: 'button', onclick: () => {
         openTrade();
         if (draft) {

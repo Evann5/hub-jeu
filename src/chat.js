@@ -14,7 +14,7 @@ export function dmScope(a, b) {
 
 // Vérifie que l'utilisateur peut lire et écrire dans ce scope ; renvoie ce qu'on sait du scope.
 export function checkScope(scope, userId) {
-  const m = /^(c|dm|t):(\d+)(?::(\d+))?$/.exec(String(scope));
+  const m = typeof scope === 'string' ? /^(c|dm|t):(\d+)(?::(\d+))?$/.exec(scope) : null; // un scope qui n'est pas du texte n'est jamais valide
   if (!m) throw new ChatError('Conversation introuvable.');
   if (m[1] === 't') {
     // Chat d'une table : ouvert aux joueurs et aux spectateurs (toute la classe peut regarder).
@@ -48,6 +48,7 @@ function withReactions(rows) {
 }
 
 export function history(scope, before) {
+  before = Number(before) || 0;
   const rows = before
     ? db.prepare('SELECT * FROM messages WHERE scope = ? AND id < ? ORDER BY id DESC LIMIT ?').all(scope, Number(before), PAGE)
     : db.prepare('SELECT * FROM messages WHERE scope = ? ORDER BY id DESC LIMIT ?').all(scope, PAGE);
@@ -175,6 +176,14 @@ export function deleteChannel(id) {
   db.prepare('DELETE FROM reads WHERE scope = ?').run(scope);
   const res = db.prepare('DELETE FROM channels WHERE id = ?').run(Number(id));
   if (!res.changes) throw new ChatError("Ce canal n'existe plus.");
+}
+
+// Suppression d'un compte : efface ses messages privés (dans les deux sens) et les « lus » de ces conversations.
+// Ses messages dans les canaux et ses réactions partent avec la ligne du compte (clés étrangères en cascade).
+export function deleteUserData(userId) {
+  const mine = [`dm:${Number(userId)}:%`, `dm:%:${Number(userId)}`];
+  db.prepare('DELETE FROM messages WHERE scope LIKE ? OR scope LIKE ?').run(...mine);
+  db.prepare('DELETE FROM reads WHERE scope LIKE ? OR scope LIKE ?').run(...mine);
 }
 
 // Efface les messages de plus d'un an (décision du 23/10/2026).

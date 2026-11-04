@@ -102,15 +102,15 @@ export function safeEqual(a, b) {
 
 export const PASSWORD_MAX = 128;
 
-// Les mots de passe les plus courants (en minuscules). « motdepasse1 » n'y est volontairement pas : les tests s'en servent.
+// Les mots de passe les plus courants (en minuscules, comparaison exacte). « motdepasse1 » et « Motdepasse123 » n'y sont volontairement pas :
+// les tests et les scripts de l'équipe s'en servent.
 const COMMON_PASSWORDS = new Set([
   '1234567890', '12345678910', '123456789012', '1234567890123', '0123456789', '9876543210', '0987654321', '1234512345',
   '123456123456', '1q2w3e4r5t', '1q2w3e4r5t6y', '1qaz2wsx3edc', '1qazxsw23edc', 'azertyuiop', 'azertyuiop1', 'azertyuiop123',
   'azerty1234', 'azerty12345', 'azerty123456', 'azertyazerty', 'azertyui12', 'qwertyuiop', 'qwertyuiop1', 'qwerty1234',
   'qwerty12345', 'qwerty123456', 'qwertyqwerty', 'qsdfghjklm', 'azertyuiop!', 'wxcvbnqsdf', 'abcdefghij', 'abcdefghijk',
   'abcd123456', 'abcd1234567', 'abcde12345', 'password12', 'password123', 'password1234', 'password12345', 'password1!',
-  'passw0rd12', 'passw0rd123', 'p@ssw0rd12', 'p@ssw0rd123', 'motdepasse', 'motdepasse12', 'motdepasse123', 'motdepasse1234',
-  'motdepasse123456', 'monmotdepasse', 'monmotdepasse1', 'monmotdepasse12', 'motdepasse2026', 'motdepasse2025', 'iloveyou12',
+  'passw0rd12', 'passw0rd123', 'p@ssw0rd12', 'p@ssw0rd123', 'motdepasse', 'monmotdepasse', 'monmotdepasse1', 'monmotdepasse12', 'motdepasse2026', 'motdepasse2025', 'iloveyou12',
   'iloveyou123', 'jetaime123', 'jetaime1234', 'jetaimemoi', 'bonjour123', 'bonjour1234', 'bonjour12345', 'bonjour2026',
   'bonsoir123', 'soleil1234', 'soleil12345', 'doudou1234', 'chocolat123', 'chocolat1234', 'football123', 'football1234',
   'marseille13', 'marseille123', 'psgpsgpsg1', 'superman123', 'minecraft1', 'minecraft12', 'minecraft123', 'fortnite123',

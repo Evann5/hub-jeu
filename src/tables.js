@@ -253,11 +253,46 @@ export function closeTable(id, user) {
   remove(t);
 }
 
-// Un compte supprimé ou bloqué libère ses places dans les salons.
-export function dropUser(userId) {
+// Un compte supprimé ou bloqué libère ses places dans les salons. Un compte supprimé quitte aussi les parties en cours
+// (par abandon, si le jeu le permet) et les parties terminées, et laisse son rôle d'hôte à un autre joueur.
+export function dropUser(userId, { deleted = false } = {}) {
   const changed = [];
   for (const t of [...tables.values()]) {
-    if (t.status === 'lobby' && t.seats.includes(userId)) changed.push({ id: t.id, table: leaveTable(t.id, userId) });
+    if (!t.seats.includes(userId) && t.hostId !== userId) continue;
+    let table = t;
+    let touched = false;
+    if (t.seats.includes(userId)) {
+      if (t.status === 'lobby') {
+        table = leaveTable(t.id, userId);
+        touched = true;
+      } else if (deleted && t.status === 'playing') {
+        try {
+          table = leaveTable(t.id, userId);
+          touched = true;
+        } catch (err) {
+          // Le jeu ne permet pas d'abandonner : la place reste, avec « Compte supprimé » (un vrai bogue est seulement journalisé).
+          if (!(err instanceof ChatError)) console.error(err);
+        }
+      } else if (deleted && t.status === 'over') {
+        touched = true;
+        t.seats = t.seats.filter((x) => x !== userId);
+        t.left = t.left.filter((x) => x !== userId);
+        if (t.seats.length) persist(t);
+        else {
+          remove(t);
+          table = null;
+        }
+      }
+    }
+    if (deleted && table && table.hostId === userId) {
+      const next = table.seats.find((x) => x !== userId);
+      if (next) {
+        table.hostId = next;
+        persist(table);
+        touched = true;
+      }
+    }
+    if (touched) changed.push({ id: t.id, table });
   }
   return changed;
 }
