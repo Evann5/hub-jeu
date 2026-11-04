@@ -85,6 +85,14 @@ function buildShell() {
 }
 
 // Un jeu « large » prend tout l'écran pendant la partie ; dans le salon, la colonne des joueurs reste visible.
+// Essai des palettes d'Escales : ?theme=nuit, ardoise ou prune dans l'adresse. À retirer quand Minh aura choisi.
+try {
+  const asked = new URLSearchParams(window.location.search).get('theme');
+  if (asked) localStorage.setItem('escales-theme', asked);
+  const theme = localStorage.getItem('escales-theme');
+  if (theme) document.documentElement.dataset.esTheme = theme;
+} catch { /* pas de stockage : la palette par défaut */ }
+
 const isWide = () => Boolean(cur.game?.wide && cur.table?.status !== 'lobby');
 const viewClass = () => `table-view tab-${cur.tab}${isWide() ? ' is-wide' : ''}`;
 

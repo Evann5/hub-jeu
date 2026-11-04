@@ -74,7 +74,13 @@ export function mount(root, api) {
         onStep: sound.step,
         onHover: showTip,
         onStill: () => { if (uiTimer) applyUI(); },
-        onTile: (pos) => openOverlay({ kind: 'city', pos }),
+        onTile: (pos) => {
+          openOverlay({ kind: 'city', pos });
+          // Toucher une ville : les autres villes de son pays montent avec elle.
+          const t = TILES[pos];
+          if (t.type === 'city') world.focus({ tiles: TILES.filter((x) => x.region === t.region).map((x) => x.pos), color: REGIONS[t.region].color });
+          else if (t.type === 'escale') world.focus({ tiles: TILES.filter((x) => x.type === 'escale').map((x) => x.pos), color: '#CBD5E1' });
+        },
         topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
         rightInset: () => side.offsetWidth + 12,
         onFit: ([cx, cy], [, fy], [, oy]) => {
@@ -195,7 +201,10 @@ export function mount(root, api) {
     players.replaceChildren(...v.players.map((p) => {
       const dot = picture(world?.portrait(p.seat), '.es-face') ?? h('i.es-dot');
       const turn = !v.over && v.players[v.cur].id === p.id;
-      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}${focusId === p.id ? '.is-focus' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-pressed': String(focusId === p.id), 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir ses villes sur le plateau`, onclick: () => setFocus(focusId === p.id ? null : p.id) },
+      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}${focusId === p.id ? '.is-focus' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-pressed': String(focusId === p.id), 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir ses villes sur le plateau`, onclick: () => setFocus(focusId === p.id ? null : p.id),
+        // À la souris, survoler un joueur suffit pour voir ses villes ; le clic garde la sélection.
+        onmouseenter: () => { if (focusId === null && !overlay) world?.focus({ player: p.id }); },
+        onmouseleave: () => { if (!overlay) restoreFocus(); } },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, h('small', citiesOf(p.id))),
         h('span.es-cash', numberOf(p), deltaOf(p)));
@@ -423,7 +432,9 @@ export function mount(root, api) {
     overlay = null;
     draft = null;
     layer.replaceChildren();
+    restoreFocus();
   }
+  const restoreFocus = () => world?.focus(focusId === null ? null : { player: focusId });
 
   function shell(title, ...body) {
     return h('div.es-sheet-wrap', { onclick: (e) => { if (e.target === e.currentTarget) closeOverlay(); } },
@@ -499,7 +510,7 @@ export function mount(root, api) {
   // Un joueur sélectionné : ses villes ressortent sur le plateau, et une petite carte résume ce qu'il a, sans rien cacher.
   function setFocus(id) {
     focusId = id;
-    world?.focus(id);
+    restoreFocus();
     renderPlayers();
     renderFocus();
   }

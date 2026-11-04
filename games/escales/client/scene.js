@@ -10,8 +10,8 @@ import { FLAGS, PATTERNS, PROPS_OF } from './countries.js';
 // Les 10 couleurs des joueurs.
 export const PAWN_COLORS = ['#E5213C', '#FF8A00', '#F5D000', '#16A34A', '#0891B2', '#2563EB', '#7C3AED', '#DB2777', '#92602F', '#475569'];
 
-const WARM = '#FFF6E8';
-const SLAB = '#1C4A42';
+const WARM = '#FFFFFF';
+const cssColor = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; // les palettes sont dans app.css
 const INK = '#12151F';
 const TILE_W = 2; // largeur d'une case le long du côté
 const TILE_D = 3; // profondeur
@@ -27,7 +27,7 @@ const PAWN_SCALE = 2.25;
 const SIDE_H = 2.15; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
 const SIDE_HEROES = { eiffel: 3.7, empire: 3.1, gratteCiel2: 3 }; // sauf ceux qu'on doit reconnaître de loin
 const BOTTOM_CORNER_H = 1.7; // au-delà, ce qui est posé sur un coin du bas cacherait le nom de la ville juste derrière
-const SPECIAL_COLOR = { start: '#7FD9A4', customs: '#9DB6F0', festival: '#F59BC4', control: '#F4A58E', escale: '#E3EAF3', telex: '#F6DE7E', tax: '#F3C66E', chantier: '#C9CED9' };
+const SPECIAL_COLOR = { start: '#34D399', customs: '#60A5FA', festival: '#F472B6', control: '#FB7185', escale: '#CBD5E1', telex: '#FBBF24', tax: '#F59E0B', chantier: '#94A3B8' };
 // Les monuments qui doivent impressionner sont un peu plus grands que les autres.
 const HEROES = { eiffel: 1.04, colisee: 1.15, empire: 0.82, gratteCiel2: 0.88, tourTokyo: 0.95, gratteCiel: 0.95, mosquee: 0.92 };
 // La couleur d'un pays sur ses cases : la même teinte, adoucie, pour que les monuments et les joueurs ressortent.
@@ -117,7 +117,7 @@ function labelFrame(f) {
 }
 
 // Tous les textes des cases sur une seule image : le nom, le petit drapeau et le prix. Toujours lisibles depuis la caméra.
-function buildPrint() {
+function buildPrint(focusU) {
   const COLS = 6;
   const ROWS = 8;
   const CW = 340;
@@ -130,6 +130,7 @@ function buildPrint() {
   c.textBaseline = 'middle';
   const pos = [];
   const uv = [];
+  const tiles = [];
   for (const t of TILES) {
     const col = t.pos % COLS;
     const row = Math.floor(t.pos / COLS);
@@ -140,7 +141,7 @@ function buildPrint() {
     const LW = CW - 26;
     const LH = t.price ? CH - 24 : 92;
     const lx = cx - LW / 2;
-    c.fillStyle = '#FFF8E8';
+    c.fillStyle = '#FFFFFF';
     c.beginPath();
     c.roundRect(lx, cy - LH / 2, LW, LH, 20);
     c.fill();
@@ -175,8 +176,18 @@ function buildPrint() {
     const f = tileFrame(t.pos);
     const { w, h, center } = labelFrame(f);
     pushQuad(pos, uv, center, new THREE.Vector3(w / 2, 0, 0), new THREE.Vector3(0, 0, -h / 2), [col / COLS, 1 - (row + 1) / ROWS, (col + 1) / COLS, 1 - row / ROWS]);
+    for (let n = 0; n < 6; n += 1) tiles.push(t.pos);
   }
   const m = flatMesh(pos, uv, canvas);
+  m.geometry.setAttribute('tile', new THREE.Float32BufferAttribute(tiles, 1));
+  m.material.onBeforeCompile = (shader) => {
+    shader.uniforms.uLift = focusU.lift;
+    shader.uniforms.uDim = focusU.dim;
+    shader.vertexShader = `attribute float tile;\nuniform float uLift[49];\nuniform float uDim[49];\nvarying float vDim;\n${shader.vertexShader}`.replace('#include <begin_vertex>', `#include <begin_vertex>
+      transformed.y += uLift[int(tile)];
+      vDim = uDim[int(tile)];`);
+    shader.fragmentShader = `varying float vDim;\n${shader.fragmentShader}`.replace('#include <map_fragment>', '#include <map_fragment>\n      diffuseColor.rgb *= max(vDim, 0.6);');
+  };
   m.renderOrder = 2;
   return m;
 }
@@ -306,7 +317,7 @@ function buildFlags() {
   return mesh;
 }
 
-// Ce qui est gravé dans la dalle : le liseré doré, la piste ronde des dés et le nom du jeu.
+// Ce qui est dessiné sur la dalle : la zone centrale, la piste des dés et le nom du jeu. Net et sans ornement.
 function buildEngraving() {
   const SIZE = 2048;
   const WORLD = HALF * 2 + 1.5;
@@ -316,117 +327,19 @@ function buildEngraving() {
   canvas.height = SIZE;
   const c = canvas.getContext('2d');
   const at = (u) => SIZE / 2 + u * px;
-  const gold = '#C9A45C';
-  // Le pourtour plus sombre, comme une table sous une lampe.
-  const edgeShade = c.createRadialGradient(SIZE / 2, SIZE / 2, SIZE * 0.3, SIZE / 2, SIZE / 2, SIZE * 0.72);
-  edgeShade.addColorStop(0, 'rgba(0,0,0,0)');
-  edgeShade.addColorStop(1, 'rgba(0,0,0,0.34)');
-  c.fillStyle = edgeShade;
-  c.beginPath();
-  c.roundRect(0, 0, SIZE, SIZE, 1.1 * px); // comme la dalle : rien ne doit dépasser de ses coins arrondis
-  c.fill();
-  // Le liseré autour du plateau, et un filet plus fin autour de la zone centrale.
-  c.strokeStyle = gold;
-  c.lineWidth = 5;
-  c.beginPath();
-  c.roundRect(at(-WORLD / 2 + 0.26), at(-WORLD / 2 + 0.26), (WORLD - 0.52) * px, (WORLD - 0.52) * px, 0.85 * px);
-  c.stroke();
   const inner = HALF - TILE_D - BANNER_D - 0.32;
-  // Un second filet, plus fin, et un losange à chaque coin : le plateau a l'air gravé à la main.
-  c.lineWidth = 1.5;
+  c.fillStyle = cssColor('--es-zone', '#1C1A40');
   c.beginPath();
-  c.roundRect(at(-WORLD / 2 + 0.42), at(-WORLD / 2 + 0.42), (WORLD - 0.84) * px, (WORLD - 0.84) * px, 0.72 * px);
-  c.stroke();
-  // La zone centrale, un peu creusée.
-  const zone = [at(-inner), at(-inner), inner * 2 * px, (inner * 2 - BOTTOM_LIFT) * px, 0.7 * px];
-  c.fillStyle = 'rgba(0,0,0,0.14)';
-  c.beginPath();
-  c.roundRect(...zone);
+  c.roundRect(at(-inner), at(-inner), inner * 2 * px, (inner * 2 - BOTTOM_LIFT) * px, 0.7 * px);
   c.fill();
-  c.save();
+  c.fillStyle = cssColor('--es-tray', '#15132E');
   c.beginPath();
-  c.roundRect(...zone);
-  c.clip();
-  c.shadowColor = 'rgba(0,0,0,0.55)';
-  c.shadowBlur = 26;
-  c.strokeStyle = 'rgba(0,0,0,0.6)';
-  c.lineWidth = 8;
-  c.beginPath();
-  c.roundRect(...zone);
-  c.stroke();
-  c.restore();
-  c.strokeStyle = gold;
-  c.globalAlpha = 0.6;
-  c.lineWidth = 2.5;
-  c.beginPath();
-  c.roundRect(...zone);
-  c.stroke();
-  c.globalAlpha = 1;
-  c.fillStyle = gold;
-  for (const [cx, cy] of [[at(0), at(-inner)], [at(0), at(-inner + inner * 2 - BOTTOM_LIFT)], [at(-inner), at(-BOTTOM_LIFT / 2)], [at(inner), at(-BOTTOM_LIFT / 2)]]) {
-    c.beginPath();
-    c.moveTo(cx, cy - 9);
-    c.lineTo(cx + 9, cy);
-    c.lineTo(cx, cy + 9);
-    c.lineTo(cx - 9, cy);
-    c.closePath();
-    c.fill();
-  }
-  // Une rose des vents, gravée ton sur ton au milieu de la zone centrale
-  const [rx, rz] = [at(0), at(-0.6)];
-  const R = 5.6 * px;
-  c.strokeStyle = '#205349';
-  c.fillStyle = '#205349';
-  c.lineWidth = 3;
-  for (const f of [1, 0.82]) {
-    c.beginPath();
-    c.arc(rx, rz, R * f, 0, Math.PI * 2);
-    c.stroke();
-  }
-  for (let i = 0; i < 72; i += 1) { // la graduation
-    const a = (i / 72) * Math.PI * 2;
-    c.beginPath();
-    c.moveTo(rx + Math.cos(a) * R * 0.82, rz + Math.sin(a) * R * 0.82);
-    c.lineTo(rx + Math.cos(a) * R * (i % 6 ? 0.87 : 0.93), rz + Math.sin(a) * R * (i % 6 ? 0.87 : 0.93));
-    c.stroke();
-  }
-  for (let i = 0; i < 16; i += 1) { // les pointes : 4 grandes, 4 moyennes, 8 petites
-    const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
-    const len = R * (i % 4 === 0 ? 0.78 : i % 2 === 0 ? 0.52 : 0.34);
-    const w = R * (i % 4 === 0 ? 0.075 : 0.05);
-    c.beginPath();
-    c.moveTo(rx + Math.cos(a) * len, rz + Math.sin(a) * len);
-    c.lineTo(rx + Math.cos(a + Math.PI / 2) * w, rz + Math.sin(a + Math.PI / 2) * w);
-    c.lineTo(rx + Math.cos(a - Math.PI / 2) * w, rz + Math.sin(a - Math.PI / 2) * w);
-    c.closePath();
-    c.fill();
-  }
-  // La piste des dés
-  const [dx, dz] = [at(0), at(DICE_Z)];
-  const felt = c.createRadialGradient(dx, dz - 0.2 * px, 0.2 * px, dx, dz, 3 * px);
-  felt.addColorStop(0, '#1A4A41');
-  felt.addColorStop(1, '#0B2A25');
-  c.fillStyle = felt;
-  c.beginPath();
-  c.ellipse(dx, dz, 3 * px, 1.5 * px, 0, 0, Math.PI * 2);
+  c.roundRect(at(-3.1), at(DICE_Z - 1.45), 6.2 * px, 2.9 * px, 1.45 * px);
   c.fill();
-  c.lineWidth = 1.5;
-  c.strokeStyle = gold;
-  c.beginPath();
-  c.ellipse(dx, dz, 3.14 * px, 1.62 * px, 0, 0, Math.PI * 2);
-  c.stroke();
-  c.strokeStyle = gold;
-  c.lineWidth = 3;
-  c.beginPath();
-  c.ellipse(dx, dz, 3 * px, 1.5 * px, 0, 0, Math.PI * 2);
-  c.stroke();
-  // Le nom du jeu, gravé ton sur ton en bas de la zone centrale
   c.font = `400 ${Math.round(1.5 * px)}px "ES Alfa", Georgia, serif`;
   c.textAlign = 'center';
   c.textBaseline = 'middle';
-  c.fillStyle = 'rgba(0,0,0,0.3)';
-  c.fillText('Escales', at(0) + 3, at(6.85) + 4);
-  c.fillStyle = '#2C6256';
+  c.fillStyle = cssColor('--es-line', '#4A46A0');
   c.fillText('Escales', at(0), at(6.85));
   const t = new THREE.CanvasTexture(canvas);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -546,8 +459,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 400);
 
   // Une fin de journée : un soleil bas et chaud, des ombres longues et bleutées.
-  scene.add(new THREE.HemisphereLight('#FFF3E0', '#2F5A50', 1.85));
-  const sun = new THREE.DirectionalLight('#FFD9A8', 3.1);
+  scene.add(new THREE.HemisphereLight('#FFFFFF', '#3F3F5C', 1.9));
+  const sun = new THREE.DirectionalLight('#FFF1DE', 2.9);
   sun.position.set(-14, 30, 12); // assez haut : la lumière reste chaude, et les ombres ne salissent plus les noms
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -560,7 +473,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   scene.add(sun);
 
   // Le plateau : une grande dalle mate et épaisse, un objet posé là, sur un fond uni.
-  const slab = new THREE.Mesh(plateGeometry(HALF * 2 + 1.5, HALF * 2 + 1.5, 0.7, 1.1), new THREE.MeshLambertMaterial({ color: SLAB }));
+  const slab = new THREE.Mesh(plateGeometry(HALF * 2 + 1.5, HALF * 2 + 1.5, 0.7, 1.1), new THREE.MeshLambertMaterial({ color: cssColor('--es-slab', '#25224F') }));
   slab.position.y = -0.7;
   slab.receiveShadow = true;
   scene.add(slab);
@@ -581,7 +494,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
     fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H);
     const top = new THREE.Box3().setFromObject(model).max.y;
-    items.push({ object: base, matrix: m, tile: t.pos }, { object: plate, matrix: m, tile: t.pos }, { object: model, matrix: m, ao: PLATE_H, tile: t.pos, lift: true });
+    items.push({ object: base, matrix: m, tile: t.pos, lift: true }, { object: plate, matrix: m, tile: t.pos, lift: true }, { object: model, matrix: m, ao: PLATE_H, tile: t.pos, lift: true });
     const mid = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()).applyMatrix4(m);
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
     hit.position.set(f.x, 1.2, f.z);
@@ -635,7 +548,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   world.receiveShadow = true;
   world.frustumCulled = false;
   const flags = buildFlags();
-  scene.add(groundShadow(), world, buildEngraving(), buildBanners(), flags, buildPrint());
+  scene.add(groundShadow(), world, buildEngraving(), buildBanners(), flags, buildPrint(focusU));
 
   // ——— À qui sont les villes ———
   const tints = new Map();
@@ -648,7 +561,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const shadeGeo = plateGeometry(TILE_W - 0.34, TILE_D - 0.34, 0.01, 0.1);
   const fillGeo = plateGeometry(TILE_W - 0.34, TILE_D - 0.34, 0.006, 0.1);
   // La case prend la couleur de son propriétaire, assez claire pour que le texte imprimé reste lisible.
-  const ownedColor = (hex) => `#${new THREE.Color(hex).lerp(new THREE.Color('#FFFFFF'), 0.34).getHexString()}`;
+  const ownedColor = (hex) => `#${new THREE.Color(hex).lerp(new THREE.Color('#FFFFFF'), 0.1).getHexString()}`;
   // Une petite maison vue de face : un seul volume, le toit compris. Le dernier niveau est un immeuble.
   const buildingGeo = (w, wall, roof, d) => {
     const shape = new THREE.Shape();
@@ -675,35 +588,27 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     },
   };
   // Le visage du propriétaire, posé sur la case : la couleur n'est pas le seul signe (daltonisme, et on reconnaît son personnage).
-  const badgeGeo = new THREE.PlaneGeometry(0.4, 0.4);
+  const badgeGeo = new THREE.PlaneGeometry(0.34, 0.34);
   badgeGeo.rotateX(-Math.PI / 2);
   const badgeMats = new Map();
   const badgeMat = (seat) => {
     if (!badgeMats.has(seat)) {
-      const image = snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT);
+      // Une pastille à la couleur du joueur, avec son initiale : on la lit même en petit, et la couleur n'est pas le seul signe.
       const c = document.createElement('canvas');
-      c.width = image.width;
-      c.height = image.height;
+      c.width = 128;
+      c.height = 128;
       const g = c.getContext('2d');
+      const color = new THREE.Color(PAWN_COLORS[seat]);
       g.fillStyle = PAWN_COLORS[seat];
       g.beginPath();
-      g.arc(c.width / 2, c.height / 2, c.width / 2 - 2, 0, Math.PI * 2);
+      g.arc(64, 64, 60, 0, Math.PI * 2);
       g.fill();
-      const face = document.createElement('canvas');
-      face.width = image.width;
-      face.height = image.height;
-      face.getContext('2d').putImageData(image, 0, 0);
-      g.save();
-      g.beginPath();
-      g.arc(c.width / 2, c.height / 2, c.width / 2 - 2, 0, Math.PI * 2);
-      g.clip();
-      g.drawImage(face, 0, 0);
-      g.restore();
-      g.lineWidth = 8;
-      g.strokeStyle = '#FFFFFF';
-      g.beginPath();
-      g.arc(c.width / 2, c.height / 2, c.width / 2 - 5, 0, Math.PI * 2);
-      g.stroke();
+      const name = view?.players.find((p) => p.seat === seat)?.pseudo ?? '?';
+      g.fillStyle = 0.3 * color.r + 0.59 * color.g + 0.11 * color.b > 0.45 ? INK : '#FFFFFF';
+      g.font = '800 84px "ES Barlow", system-ui, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(name.slice(0, 1).toUpperCase(), 64, 70);
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
       t.anisotropy = 4;
@@ -772,39 +677,45 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const pops = [];
   const coins = [];
   const fades = [];
-  // ——— Un joueur sélectionné : ses villes s'élèvent dans sa couleur, le reste s'efface ———
-  let focusId = null;
+  // ——— Une sélection (un joueur, ou un pays) : ses cases montent comme des blocs à sa couleur, avec un halo au sol ; le reste s'efface ———
+  let focusSpec = null;
   const focusGroup = new THREE.Group();
   scene.add(focusGroup);
-  const glowGeo = plateGeometry(TILE_W - 0.04, TILE_D - 0.04, 0.02, 0.16);
-  const beamGeo = new THREE.CylinderGeometry(0.72, 0.72, 1.7, 18, 1, true);
+  const blockGeo = plateGeometry(TILE_W - 0.06, TILE_D - 0.06, 1, 0.16);
+  const capGeo = plateGeometry(TILE_W - 0.34, TILE_D - 0.34, 0.006, 0.1);
+  const haloGeo = plateGeometry(TILE_W + 0.5, TILE_D + 0.5, 0.01, 0.3);
   function applyFocus() {
-    const player = focusId === null ? null : view?.players.find((p) => p.id === focusId);
     for (const child of [...focusGroup.children]) {
       focusGroup.remove(child);
       child.material.dispose();
     }
-    const owned = new Set(player ? Object.keys(view.props).map(Number).filter((pos) => view.props[pos].owner === player.id) : []);
+    const player = focusSpec?.player !== undefined ? view?.players.find((p) => p.id === focusSpec.player) : null;
+    const chosen = new Set(player ? Object.keys(view.props).map(Number).filter((pos) => view.props[pos].owner === player.id) : focusSpec?.tiles ?? []);
+    const active = Boolean(player || focusSpec?.tiles);
+    const color = player ? PAWN_COLORS[player.seat] : focusSpec?.color;
     parts.forEach((part, pos) => {
-      const mine = owned.has(pos);
-      focusTo.lift[pos] = mine ? 1.55 : 0;
-      focusTo.dim[pos] = player && !mine ? 0.42 : 1;
-      const show = !player || mine;
+      const mine = chosen.has(pos);
+      focusTo.lift[pos] = mine ? 1.25 : 0;
+      focusTo.dim[pos] = active && !mine ? 0.34 : 1;
+      const show = !active || mine || !player;
       for (const key of ['rim', 'fill', 'shade', 'badge']) if (part[key]) part[key].visible = show;
       part.levels.visible = show;
       if (!mine) return;
-      const color = PAWN_COLORS[player.seat];
-      const glow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({ color, toneMapped: false }));
-      glow.position.set(part.f.x, PLATE_H - 0.018, part.f.z); // juste sous l'étiquette : le nom reste lisible
-      glow.rotation.y = part.f.rot;
-      const beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
-      beam.position.set(part.mid.x, PLATE_H + 0.85, part.mid.z);
-      focusGroup.add(glow, beam);
+      const block = new THREE.Mesh(blockGeo, new THREE.MeshLambertMaterial({ color }));
+      block.position.set(part.f.x, 0, part.f.z);
+      block.rotation.y = part.f.rot;
+      block.userData = { pos, kind: 'block' };
+      const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color, toneMapped: false }));
+      cap.position.set(part.f.x, PLATE_H + 0.002, part.f.z);
+      cap.rotation.y = part.f.rot;
+      cap.userData = { pos, kind: 'cap' };
+      const halo = new THREE.Mesh(haloGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.75, depthWrite: false, toneMapped: false }));
+      halo.position.set(part.f.x, 0.03, part.f.z);
+      halo.rotation.y = part.f.rot;
+      halo.renderOrder = 1;
+      halo.userData = { pos, kind: 'halo' };
+      focusGroup.add(block, cap, halo);
     });
-    if (reduced) {
-      focusU.lift.value.set(focusTo.lift);
-      focusU.dim.value.set(focusTo.dim);
-    }
     wake();
   }
   const rising = [];
@@ -1201,17 +1112,38 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pops.splice(i, 1);
       }
     }
-    // Les villes du joueur sélectionné montent, puis flottent doucement.
-    if (!reduced) {
-      let moving = focusId !== null;
+    // Les cases sélectionnées montent, puis flottent doucement ; tout ce qui est posé dessus suit.
+    {
+      let moving = Boolean(focusSpec);
+      const k = reduced ? 1 : 1 - Math.exp(-dt * 9);
       for (let i = 0; i < 48; i += 1) {
-        const target = focusTo.lift[i] ? focusTo.lift[i] + Math.sin(now / 420 + i) * 0.1 : 0;
-        const k = 1 - Math.exp(-dt * 7);
+        const target = focusTo.lift[i] && !reduced ? focusTo.lift[i] + Math.sin(now / 480 + i) * 0.07 : focusTo.lift[i];
         focusU.lift.value[i] += (target - focusU.lift.value[i]) * k;
         focusU.dim.value[i] += (focusTo.dim[i] - focusU.dim.value[i]) * k;
         if (Math.abs(target - focusU.lift.value[i]) > 0.003 || Math.abs(focusTo.dim[i] - focusU.dim.value[i]) > 0.003) moving = true;
+        const l = focusU.lift.value[i];
+        const part = parts[i];
+        for (const key of ['rim', 'fill', 'shade', 'badge']) {
+          const o = part[key];
+          if (o) {
+            o.userData.y0 ??= o.position.y;
+            o.position.y = o.userData.y0 + l;
+          }
+        }
+        part.levels.position.y = l;
       }
-      if (moving) busy = true;
+      for (const o of focusGroup.children) {
+        const l = focusU.lift.value[o.userData.pos];
+        if (o.userData.kind === 'block') o.scale.y = Math.max(0.001, l + BASE_H);
+        else if (o.userData.kind === 'cap') o.position.y = PLATE_H + 0.002 + l;
+        else o.material.opacity = 0.6 + Math.sin(now / 300) * 0.25;
+      }
+      if (!view?.over) {
+        for (const pawn of pawns.values()) {
+          if (!pawn.to && !pawn.react && !pawn.gone) pawn.mesh.position.y = focusU.lift.value[pawn.shown] ?? 0;
+        }
+      }
+      if (moving && !reduced) busy = true;
     }
     for (const pawn of pawns.values()) {
       const r = pawn.react;
@@ -1346,6 +1278,16 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const tileAt = (e) => {
     const r = canvas.getBoundingClientRect();
     raycaster.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    // Un clic sur une étiquette ouvre toujours sa case, même si la zone de clic d'un monument voisin passe devant.
+    const { origin, direction } = raycaster.ray;
+    const t = (PLATE_H - origin.y) / direction.y;
+    const gx = origin.x + direction.x * t;
+    const gz = origin.z + direction.z * t;
+    const onLabel = parts.findIndex((part) => {
+      const { w, h, center } = labelFrame(part.f);
+      return Math.abs(gx - center.x) <= w / 2 && Math.abs(gz - center.z) <= h / 2;
+    });
+    if (onLabel >= 0) return onLabel;
     return raycaster.intersectObjects(hitBoxes, false)[0]?.object.userData.pos ?? null;
   };
   let downAt = null;
@@ -1485,7 +1427,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       showPodium(v, firstUpdate);
       if (!firstUpdate) for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [0, -7]]) celebrate(x, z, PAWN_COLORS[Math.floor(Math.random() * 10)]);
     }
-    if (focusId !== null) applyFocus();
+    if (focusSpec) applyFocus();
     if (shadows || firstUpdate) renderer.shadowMap.needsUpdate = true;
     firstUpdate = false;
     wake();
@@ -1544,8 +1486,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     walking,
     payCoins,
     react,
-    focus(id) {
-      focusId = id;
+    // spec : { player: id }, { tiles: [positions], color }, ou null pour tout remettre.
+    focus(spec) {
+      focusSpec = spec;
       applyFocus();
     },
     // Le visage d'un voyageur, de près.
