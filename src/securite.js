@@ -14,14 +14,20 @@ export function createLimiter({ max, windowMs, cap = 10_000 }) {
   const sweep = (now = Date.now()) => {
     for (const [key, e] of map) if (!fresh(e, now)) map.delete(key);
   };
+  // Table pleine : on nettoie les périmées, mais au plus une fois par seconde (sinon une rafale ferait un nettoyage complet à chaque requête).
+  let lastSweep = -Infinity;
+  const makeRoom = (now) => {
+    if (now - lastSweep >= 1000 || now < lastSweep) {
+      lastSweep = now;
+      sweep(now);
+    }
+    return map.size < cap;
+  };
   const limiter = {
     blocked(key, now = Date.now()) {
       const e = map.get(key);
       if (fresh(e, now)) return e.count >= max;
-      if (map.size >= cap) {
-        sweep(now);
-        return map.size >= cap;
-      }
+      if (map.size >= cap) return !makeRoom(now);
       return false;
     },
     hit(key, now = Date.now()) {
@@ -30,14 +36,17 @@ export function createLimiter({ max, windowMs, cap = 10_000 }) {
         e.count++;
         return;
       }
-      if (map.size >= cap) {
-        sweep(now);
-        if (map.size >= cap) return;
-      }
+      if (map.size >= cap && !makeRoom(now)) return;
       map.set(key, { count: 1, first: now });
     },
     clear(key) {
       map.delete(key);
+    },
+    // Annule un événement déjà compté (le calcul a finalement réussi).
+    undo(key, now = Date.now()) {
+      const e = map.get(key);
+      if (!fresh(e, now)) return;
+      if (--e.count <= 0) map.delete(key);
     },
     sweep,
     get size() {

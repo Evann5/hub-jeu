@@ -28,8 +28,8 @@ Pour la personne qui gère le compte O2Switch. Compter environ 20 minutes la pre
 
 | Nom | Valeur | À quoi ça sert |
 |---|---|---|
-| `CLASS_CODE` | le code de la classe | Sans lui, personne ne peut s'inscrire. Les admins peuvent le changer ensuite dans Hubuno. |
-| `ADMINS` | `minh,pseudo-eleve-jeux` | Ces pseudos deviennent admins en créant leur compte. |
+| `CLASS_CODE` | le code de la classe | Sans lui, personne ne peut s'inscrire. Les admins peuvent le changer ensuite dans Hubuno (10 caractères au moins pour un code choisi dans Hubuno ; choisis-en un long, car le code est la seule barrière à l'inscription). |
+| `ADMINS` | `minh,pseudo-eleve-jeux` | Ces pseudos deviennent admins en créant leur compte. **Règle : Minh et l'élève des jeux créent leur compte avant que le code de la classe soit donné à qui que ce soit** (sinon un autre élève pourrait prendre leur pseudo et devenir admin à leur place). Minh s'inscrit en premier : le premier admin créé est le propriétaire du hub, et aucun autre admin ne peut lui changer son mot de passe, son rôle ni le bloquer. |
 | `BASE_PATH` | `/hubuno` | **Seulement** si Hubuno est dans un sous-dossier. Pour un sous-domaine, ne pas l'ajouter. |
 
 4. **Create**, puis **Run NPM Install**, puis **Restart**.

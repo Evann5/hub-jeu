@@ -84,11 +84,17 @@ api.post('/register', async (req, res) => {
   if (req.body.acceptRules !== true) throw new ApiError(400, 'Coche la case pour accepter les règles de Hubuno.');
   if (auth.findUserByPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
 
-  const passHash = await auth.hashPassword(password);
-  // Pendant le calcul, quelqu'un d'autre a pu prendre le pseudo : on revérifie juste avant d'écrire.
-  if (auth.findUserByPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
-  const user = auth.createUser({ pseudo, passHash });
-  auth.recordSignup(req.ip);
+  auth.recordSignup(req.ip); // compté d'avance (le calcul est asynchrone), rendu si l'inscription échoue
+  let user;
+  try {
+    const passHash = await auth.hashPassword(password);
+    // Pendant le calcul, quelqu'un d'autre a pu prendre le pseudo : on revérifie juste avant d'écrire.
+    if (auth.findUserByPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
+    user = auth.createUser({ pseudo, passHash });
+  } catch (err) {
+    auth.refundSignup(req.ip);
+    throw err;
+  }
   markAllChannelsRead(user.id);
   setSessionCookie(req, res, auth.createSession(user.id));
   broadcastUser(user);
@@ -100,15 +106,15 @@ api.post('/login', async (req, res) => {
   const password = str(req.body.password);
   if (auth.tooManyFailures(req.ip, pseudo)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans 15 minutes, ou demande à un admin.');
 
+  auth.recordAttempt(req.ip, pseudo); // compté d'avance, rendu si le mot de passe est bon
   // Le calcul se fait aussi quand le pseudo n'existe pas : même durée dans les deux cas.
   const user = auth.findUserByPseudo(pseudo);
   const ok = await auth.checkPassword(password, user?.pass_hash);
   if (!user || !ok) {
-    auth.recordFailure(req.ip, pseudo);
     throw new ApiError(400, 'Pseudo ou mot de passe incorrect.');
   }
   if (user.banned) throw new ApiError(403, 'Ce compte a été bloqué par un admin.');
-  auth.clearFailures(req.ip, pseudo);
+  auth.recordSuccess(req.ip, pseudo);
   setSessionCookie(req, res, auth.createSession(user.id));
   res.json({ user: auth.publicUser(user), mustChangePassword: Boolean(user.must_change_password) });
 });

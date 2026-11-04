@@ -192,22 +192,25 @@ export function mount(root, api) {
   function renderSeats() {
     const ids = view.players;
     const mine = ids.indexOf(api.me.id);
-    const ordered = mine < 0 ? ids : [...ids.slice(mine + 1), ...ids.slice(0, mine)];
+    const ordered = mine < 0 ? ids : [...ids.slice(mine + 1), ...ids.slice(0, mine), ids[mine]];
+    const showPts = view.rounds > 1;
     els.seats.replaceChildren(...ordered.map((id) => {
       const n = view.counts[id];
       const out = view.out.includes(id);
       const done = view.finished.indexOf(id);
       const turn = view.turn === id;
       const role = view.roles[id];
-      const cls = ['pr-seat', turn && 'is-turn', (out || done >= 0) && 'is-done'].filter(Boolean).join('.');
+      const cls = ['pr-seat', turn && 'is-turn', (out || done >= 0) && 'is-done', you(id) && 'is-me'].filter(Boolean).join('.');
       return h(`li.${cls}`,
         api.token(api.user(id), { size: 's' }),
         h('span.pr-seat-main',
-          h('span.pr-seat-name', api.user(id).pseudo),
+          h('span.pr-seat-name', you(id) ? 'Toi' : api.user(id).pseudo),
           role ? h('span.pr-role', role === 'Président' ? crown() : null, role) : null),
+        showPts ? h('span.pr-pts', String(view.scores[id] || 0), h('small', ' pt'), h('span.sr-only', ' points au total')) : null,
         out ? h('span.pr-tag', 'parti')
           : done >= 0 ? h('span.pr-tag.gold', `${done + 1}${done === 0 ? 'er' : 'e'}`)
-            : h('span.pr-seat-n', h('span.pr-mini', { 'aria-hidden': 'true' }), `${n}`, h('span.sr-only', ` carte${n > 1 ? 's' : ''}`)),
+            : you(id) ? null
+              : h('span.pr-seat-n', h('span.pr-mini', { 'aria-hidden': 'true' }), `${n}`, h('span.sr-only', ` carte${n > 1 ? 's' : ''}`)),
         view.passed.includes(id) ? h('span.pr-tag', 'passe') : null,
         turn ? h('span.sr-only', ', à son tour') : null);
     }));
@@ -232,7 +235,7 @@ export function mount(root, api) {
     } else {
       parts.push(h('div.pr-empty',
         h('p.pr-empty-t', view.phase === 'between' || view.phase === 'over' ? 'Fin de manche' : 'Table vide'),
-        h('p', view.turn ? `${you(view.turn) ? 'Tu ouvres' : `${api.user(view.turn).pseudo} ouvre`} : n'importe quelle valeur, jusqu'à 4 cartes identiques.` : '')));
+        view.turn ? h('p', `${you(view.turn) ? 'Tu ouvres' : `${api.user(view.turn).pseudo} ouvre`}.`) : null));
     }
     els.felt.replaceChildren(...parts);
   }
@@ -250,14 +253,14 @@ export function mount(root, api) {
     } else if (myTurn) {
       if (view.pli) {
         text = view.playable.length
-          ? `À toi : pose ${view.pli.count} carte${view.pli.count > 1 ? 's' : ''} de ${manyOf(RANK_ORDER[view.pli.rank])} ou ${view.revolution ? 'plus faible' : 'plus fort'}, ou passe.`
+          ? `À toi : ${view.pli.count} carte${view.pli.count > 1 ? 's' : ''} de ${manyOf(RANK_ORDER[view.pli.rank])} ou ${view.revolution ? 'plus faible' : 'plus fort'}.`
           : 'Tu ne peux rien poser : passe.';
-      } else text = 'À toi d\'ouvrir : choisis 1 à 4 cartes de même valeur.';
+      } else text = 'À toi d\'ouvrir : 1 à 4 cartes de même valeur.';
     } else if (view.turn) text = `${api.user(view.turn).pseudo} réfléchit…`;
     if (view.revolution && view.phase === 'play') text = `Révolution ! L'ordre est inversé : le 3 est la plus forte. ${text}`;
     els.say.textContent = text;
     root.classList.toggle('is-revolution', Boolean(view.revolution) && view.phase === 'play');
-    const recent = view.log.slice(-4).reverse().map(describe).filter(Boolean);
+    const recent = view.log.filter((e) => e.k !== 'play').slice(-1).map(describe).filter(Boolean);
     els.old.replaceChildren(...recent.map((t, i) => h('li', { class: i === 0 ? 'is-latest' : '' }, t)));
   }
 
@@ -314,6 +317,18 @@ export function mount(root, api) {
       return el;
     }));
     els.hand.hidden = api.seat < 0 || !view.hand.length;
+    fitHand();
+  }
+
+  // Les cartes se chevauchent juste assez pour tenir sur une seule rangée.
+  function fitHand() {
+    const n = els.hand.children.length;
+    const first = els.hand.firstElementChild;
+    if (!first || els.hand.hidden) return;
+    const cw = first.getBoundingClientRect().width;
+    const avail = els.hand.clientWidth - 16;
+    const step = n > 1 ? Math.min(cw * 0.62, Math.max(22, (avail - cw) / (n - 1))) : 0;
+    els.hand.style.setProperty('--step', `${step.toFixed(1)}px`);
   }
 
   function renderOverlay() {
@@ -436,9 +451,12 @@ export function mount(root, api) {
     render();
   });
   const tick = setInterval(updateClock, 250);
+  const resize = new ResizeObserver(() => { if (view) fitHand(); });
+  resize.observe(els.hand);
 
   return () => {
     clearInterval(tick);
+    resize.disconnect();
     off();
   };
 }

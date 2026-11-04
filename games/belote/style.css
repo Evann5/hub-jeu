@@ -153,7 +153,6 @@
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; padding: 6px 12px;
   border: 3px solid var(--ink); border-radius: 24px; background: var(--white); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); animation: bl-pop 0.35s var(--pop);
 }
-.g-belote .bl-bidtitle { margin: 0; padding: 2px 10px; border-radius: 999px; background: var(--cyan); text-align: center; font: 900 0.75rem/1.4 var(--display); text-transform: uppercase; }
 .g-belote .bl-wait { margin: 0; font-weight: 800; }
 .g-belote .bl-suits { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .g-belote .bl-btn {
@@ -164,6 +163,7 @@
 @media (hover: hover) { .g-belote .bl-btn:not(:disabled):hover { transform: translateY(-2px) scale(1.03); } }
 .g-belote .bl-btn:not(:disabled):active { transform: translateY(4px) scale(0.97, 0.94); box-shadow: 0 1px 0 var(--ink); }
 .g-belote .bl-btn.is-main { background-color: var(--pink); }
+.g-belote .bl-btn-suit { display: grid; place-items: center; padding: 3px; border-radius: 50%; background: var(--white); box-shadow: inset 0 0 0 2px var(--ink); }
 .g-belote .bl-btn.is-suit { flex-direction: column; gap: 2px; min-width: 74px; min-height: 60px; padding: 4px 10px; border-radius: 20px; background-color: var(--white); font-size: 0.875rem; }
 .g-belote .bl-btn:disabled { opacity: 0.6; cursor: default; }
 .g-belote .bl-btn:focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; }
@@ -183,7 +183,7 @@
 .g-belote .bl-tab { width: min(430px, 100%); border-collapse: separate; border-spacing: 0; overflow: hidden; border: 3px solid var(--ink); border-radius: 18px; background: var(--white); color: var(--ink); box-shadow: var(--shadow); font-size: 1rem; }
 .g-belote .bl-tab th, .g-belote .bl-tab td { padding: 5px 10px; font-weight: 700; }
 .g-belote .bl-tab thead th { background: var(--lemon); font-weight: 900; }
-.g-belote .bl-tab thead th:nth-child(2) { background: var(--pink); color: var(--white); }
+.g-belote .bl-tab thead th:nth-child(2) { background: var(--pink); color: var(--ink); }
 .g-belote .bl-tab thead th.is-taker::after { content: ' (preneur)'; font-size: 0.75rem; font-weight: 700; }
 .g-belote .bl-tab tbody th { text-align: left; }
 .g-belote .bl-tab td { text-align: right; font-variant-numeric: tabular-nums; }
@@ -200,21 +200,52 @@
 @keyframes bl-fall { to { translate: 0 560px; rotate: 560deg; } }
 
 @media (max-width: 520px) {
+  .g-belote { --cw: clamp(54px, 16vw, 70px); --tw: clamp(44px, 14vw, 58px); }
+  .g-belote .bl { gap: 6px; padding: 8px 8px 10px; }
   .g-belote .bl-row:has(.bl-bidbox) .bl-me { display: none; }
-  .g-belote .bl { gap: 8px; padding: 8px; }
-  .g-belote .bl-sc { padding: 5px 10px; }
-  .g-belote .bl-felt { padding: 6px; border-radius: 24px; }
+  .g-belote .bl-slate { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+  .g-belote .bl-scores { flex: none; gap: 6px; }
+  .g-belote .bl-sc { padding: 3px 10px 4px; border-width: 2.5px; border-radius: 16px; box-shadow: 3px 3px 0 var(--ink); }
   .g-belote .bl-sc-name { font-size: 0.6875rem; }
-  .g-belote .bl-trump { padding: 4px 10px 4px 5px; }
-  .g-belote .bl-trump .bl-suit { width: 20px; height: 20px; }
-  .g-belote .bl-who { font-size: 0.8125rem; }
-  .g-belote .bl-trump b { font-size: 0.8125rem; }
+  .g-belote .bl-sc-n { font-size: 1.55rem; }
+  .g-belote .bl-sc-tricks { font-size: 0.75rem; }
+  .g-belote .bl-trump { flex-direction: column; justify-content: center; gap: 0; padding: 3px 8px 4px; border-width: 2.5px; border-radius: 16px; box-shadow: 3px 3px 0 var(--ink); }
+  .g-belote .bl-trump .bl-suit { padding: 3px; width: 20px; height: 20px; }
+  .g-belote .bl-trump span { text-align: center; }
+  .g-belote .bl-trump small { font-size: 0.625rem; }
+  .g-belote .bl-trump b { font-size: 0.6875rem; }
+  .g-belote .bl-trump.is-none { padding-left: 8px; }
+  .g-belote .bl-meta { grid-column: 1 / -1; font-size: 0.75rem; }
+  .g-belote .bl-meta span:not(.bl-clock) { padding: 0 8px; }
+  .g-belote .bl-clock { font-size: 0.8125rem; line-height: 1.4; }
+  .g-belote .bl-felt { min-height: 214px; padding: 6px; border-width: 3px; border-radius: 22px; box-shadow: 4px 4px 0 var(--ink); }
+  .g-belote .bl-grid { grid-template-columns: minmax(56px, 1fr) auto minmax(56px, 1fr); min-height: 198px; gap: 4px; }
+  .g-belote .bl-who { font-size: 0.75rem; padding: 3px 9px 3px 4px; border-width: 2.5px; box-shadow: 2px 2px 0 var(--ink); }
+  .g-belote .bl-seat.rel-1 .bl-who, .g-belote .bl-seat.rel-3 .bl-who { padding: 4px 2px 5px; }
+  .g-belote .bl-seat.rel-1 .bl-name, .g-belote .bl-seat.rel-3 .bl-name { font-size: 0.6875rem; }
+  .g-belote .bl-chip { font-size: 0.625rem; padding: 0 6px; }
+  .g-belote .bl-back { width: 18px; height: 26px; margin-left: -10px; border-width: 2px; border-radius: 5px; box-shadow: 1px 1px 0 var(--ink); }
+  .g-belote .bl-backs { padding-left: 10px; }
+  .g-belote .bl-backs.is-v .bl-back { margin: -19px 0 0; }
+  .g-belote .bl-up small { font-size: 0.6875rem; padding: 0 8px; }
+  .g-belote .bl-status { padding: 3px 12px; font-size: 0.8125rem; }
+  .g-belote .bl-bidbox { flex-wrap: nowrap; gap: 6px; padding: 6px 8px; border-width: 2.5px; border-radius: 20px; box-shadow: 3px 3px 0 var(--ink); }
+  .g-belote .bl-bidbox > .bl-btn { flex: 1 1 0; min-width: 0; padding: 0 10px; font-size: 0.9375rem; white-space: nowrap; }
+  .g-belote .bl-bidbox > .bl-btn.is-main { flex-grow: 1.7; }
+  .g-belote .bl-suits { flex: 3 1 0; flex-wrap: nowrap; gap: 5px; }
+  .g-belote .bl-btn.is-suit { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 3px 2px; font-size: 0.75rem; }
+  .g-belote .bl-hand { min-height: calc(var(--cw) * 1.4 + 14px); padding: 12px 4px 2px; }
+  .g-belote .bl-recap { gap: 6px; padding: 10px 8px; }
+  .g-belote .bl-recap h2 { font-size: 1.15rem; }
+  .g-belote .bl-verdict { font-size: 0.9375rem; }
+  .g-belote .bl-tab { font-size: 0.9375rem; border-width: 2.5px; border-radius: 16px; }
+  .g-belote .bl-tab th, .g-belote .bl-tab td { padding: 3px 10px; }
 }
 
 @media (min-width: 900px) {
   .g-belote .bl-grid { grid-template-columns: minmax(140px, 1fr) auto minmax(140px, 1fr); }
   .g-belote .bl-felt { min-height: 300px; }
-  .g-belote .bl { --cw: clamp(70px, 8vw, 84px); --tw: 70px; }
+  .g-belote .bl { --cw: clamp(76px, 8vw, 98px); --tw: 80px; }
   .g-belote .bl-who { font-size: 1rem; }
   .g-belote .bl-back { width: 30px; height: 42px; margin-left: -15px; }
   .g-belote .bl-backs.is-v .bl-back { margin: -32px 0 0; }

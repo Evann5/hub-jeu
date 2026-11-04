@@ -111,7 +111,7 @@ export function mount(root, api) {
   // Choisit la plus grande taille de domino pour laquelle la chaîne tient dans W × H, et range les dominos en rangées.
   function plan(chain, W, H) {
     let best = null;
-    for (let s = W > 700 ? 56 : 46; s >= 12; s -= 2) {
+    for (let s = W > 700 ? 64 : 46; s >= 12; s -= 2) {
       const gap = Math.max(3, Math.round(s * 0.14));
       const rows = [];
       let cur = [];
@@ -168,31 +168,22 @@ export function mount(root, api) {
       const me = seat === v.seat;
       return h(`div.dm-player.c-${color(seat)}${turnNow ? '.is-turn' : ''}${v.out[seat] ? '.is-out' : ''}`,
         api.token(api.user(v.players[seat]), { size: 's' }),
-        h('span.dm-who', h('b.dm-name', { title: name(seat) }, me ? `${name(seat)} (toi)` : name(seat)),
-          h('small', v.out[seat] ? 'est parti' : `${v.counts[seat]} domino${v.counts[seat] > 1 ? 's' : ''}`)),
+        h('span.dm-who', h('b.dm-name', { title: name(seat) }, name(seat)),
+          h('small', v.out[seat] ? 'est parti' : `${me ? 'toi · ' : ''}${v.counts[seat]} domino${v.counts[seat] > 1 ? 's' : ''}`)),
         h('b.dm-pts', String(v.scores[seat])));
     }));
-  }
-
-  function lastNote() {
-    const m = v.lastMove;
-    if (!m || m.seat === undefined) return null;
-    const who = name(m.seat);
-    const t = m.tile ? m.tile.replace('-', ' | ') : '';
-    const text = m.kind === 'open' ? `${who} ouvre avec ${t}.`
-      : m.kind === 'play' ? `${who} pose ${t}.`
-        : m.kind === 'draw' ? `${who} pioche ${m.count} domino${m.count > 1 ? 's' : ''}.`
-          : m.kind === 'pass' ? `${who} passe son tour.`
-            : `${who} a quitté la partie.`;
-    return h('p.dm-last', text);
   }
 
   function statusText() {
     if (v.phase === 'over') return 'Partie terminée.';
     if (v.phase === 'recap') return 'Bilan de la manche.';
     const mine = v.turn === v.seat;
-    if (!mine) return `${name(v.turn)} réfléchit…`;
-    if (v.playable.length) return selected ? 'Choisis le bout où le poser.' : `À toi : touche un domino qui brille (bouts : ${v.ends[0]} et ${v.ends[1]}).`;
+    if (!mine) {
+      const m = v.lastMove;
+      if (m && m.kind === 'draw' && m.seat === v.turn) return `${name(v.turn)} pioche ${m.count} domino${m.count > 1 ? 's' : ''}…`;
+      return `${name(v.turn)} réfléchit…`;
+    }
+    if (v.playable.length) return selected ? 'Où le poser ?' : 'À toi : pose un domino qui brille.';
     if (v.canDraw) return 'Rien à poser : pioche !';
     return v.draw ? 'Rien à poser et la pioche est vide : passe ton tour.' : 'Rien à poser : passe ton tour (pas de pioche à quatre).';
   }
@@ -202,8 +193,8 @@ export function mount(root, api) {
     const sel = selected ? v.playable.find((p) => p.tile === selected) : null;
     if (sel) {
       return h('div.dm-actions', { role: 'group', 'aria-label': `Où poser le domino ${selected} ?` },
-        h('button.dm-btn', { type: 'button', onclick: () => play({ type: 'play', tile: selected, side: 'left' }) }, `Au début (${v.ends[0]})`),
-        h('button.dm-btn', { type: 'button', onclick: () => play({ type: 'play', tile: selected, side: 'right' }) }, `À la fin (${v.ends[1]})`),
+        h('button.dm-btn', { type: 'button', onclick: () => play({ type: 'play', tile: selected, side: 'left' }) }, `Début · ${v.ends[0]}`),
+        h('button.dm-btn', { type: 'button', onclick: () => play({ type: 'play', tile: selected, side: 'right' }) }, `Fin · ${v.ends[1]}`),
         h('button.dm-btn.is-ghost', { type: 'button', onclick: () => { selected = null; render(); } }, 'Annuler'));
     }
     if (v.canDraw) return h('div.dm-actions', h('button.dm-btn.is-main', { type: 'button', onclick: () => play({ type: 'draw' }) }, `Piocher (${v.stockCount})`));
@@ -240,16 +231,16 @@ export function mount(root, api) {
       h('h2', over ? 'Fin de la partie' : `Manche ${v.handNo} terminée`),
       h('p.dm-verdict', verdict),
       h('table.dm-tab',
-        h('thead', h('tr', ['Joueur', 'Dominos restants', 'Points', 'Marqué', 'Total'].map((c) => h('th', { scope: 'col' }, c)))),
+        h('thead', h('tr', ['Joueur', 'Reste', 'Valeur', 'Marqué', 'Total'].map((c) => h('th', { scope: 'col' }, c)))),
         h('tbody', seats.map((i) => h(`tr.c-${color(i)}${r.winner === i ? '.is-win' : ''}`,
           h('th', { scope: 'row' }, name(i)),
-          h('td.dm-left', r.hands[i].length ? r.hands[i].map((id) => tile(...parseTile(id), { size: 11 })) : h('span', 'aucun')),
+          h('td.dm-left', r.hands[i].length ? r.hands[i].map((id) => tile(...parseTile(id), { size: 16 })) : h('span', 'aucun')),
           h('td', String(r.points[i])),
           h('td', r.gained[i] ? `+${r.gained[i]}` : '0'),
           h('td.dm-total', String(v.scores[i])))))),
       end,
       over || v.seat < 0 ? null : h('button.dm-btn.is-main', { type: 'button', disabled: iAmReady, onclick: () => play({ type: 'next' }) }, iAmReady ? 'En attente des autres…' : 'Manche suivante'),
-      over ? null : h('p.dm-small', `${ready} sur ${active()} prêts · la suite démarre toute seule dans un instant`));
+      over ? null : h('p.dm-small', `${ready} sur ${active()} prêts`));
   }
 
   function confetti() {
@@ -294,7 +285,6 @@ export function mount(root, api) {
         h('div.dm-beach',
           showRecap ? recapPanel() : h('div.dm-chain', { 'aria-label': 'La chaîne de dominos', role: 'img' }),
           showRecap && v.phase === 'over' && v.forfeit === null && (v.seat < 0 || v.winner === v.seat) ? confetti() : null),
-        showRecap ? null : lastNote(),
         h('p.dm-status', { 'aria-live': 'polite', role: 'status' }, statusText()),
         actionBar(),
         mine && !showRecap ? h(`div.dm-hand${hand.length > 7 ? '.is-many' : ''}`, { role: 'group', 'aria-label': 'Ta main', onkeydown: handKeys }, hand.map((id) => handTile(id, byTile.get(id)))) : null));

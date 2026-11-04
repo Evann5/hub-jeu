@@ -86,6 +86,7 @@ function startRealtime() {
 
   socket.on('connect_error', (err) => {
     if (err.message === 'non-connecte') actions.logout('Ta session a expiré : reconnecte-toi.');
+    if (err.message === 'trop-de-connexions') root.replaceChildren(h('div.boot', 'Trop d’onglets ou d’appareils ouverts sur ton compte : ferme-en un, puis recharge la page.'));
   });
   socket.on('disconnect', (reason) => {
     if (reason !== 'io client disconnect') setBanner('Connexion perdue. Reconnexion en cours…');

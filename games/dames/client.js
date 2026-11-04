@@ -47,15 +47,14 @@ export function mount(root, api) {
   const players = h('div.d-players');
   const status = h('p.d-status', { 'aria-live': 'polite' });
   const note = h('p.d-note');
-  const cancel = h('button.d-cancel', { type: 'button', hidden: true, onclick: () => reset() }, 'Annuler la sélection');
+  const cancel = h('button.d-cancel', { type: 'button', hidden: true, onclick: () => reset() }, 'Annuler');
   const timerText = h('span.d-timer-text');
   const timerFill = h('span.d-timer-fill');
   const timer = h('div.d-timer', { hidden: true, 'aria-hidden': 'true' }, h('span.d-timer-bar', timerFill), timerText);
 
   root.append(h('div.d',
-    h('header.d-head', h('h2.d-title', 'Dames'), h('p.d-sub', 'Damier bubble-gum · 10 × 10')),
     players,
-    h('div.d-statusrow', status, note, timer, cancel),
+    h('div.d-statusrow', status, cancel, note, timer),
     h('div.d-boardwrap', frame)));
 
   const myTurn = () => Boolean(state && info && !info.over && !busy && info.turn.includes(api.me.id));

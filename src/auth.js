@@ -163,21 +163,26 @@ export function tooManyFailures(ip, pseudo) {
   return failuresByIp.blocked(ip) || failuresByKey.blocked(loginKey(ip, pseudo));
 }
 
-export function recordFailure(ip, pseudo) {
+// On compte l'essai AVANT de vérifier le mot de passe (le calcul est asynchrone : une rafale en parallèle passerait sinon toute entière
+// entre le contrôle et l'écriture), puis on le rend si la connexion réussit.
+export function recordAttempt(ip, pseudo) {
   failuresByIp.hit(ip);
   failuresByKey.hit(loginKey(ip, pseudo));
 }
 
-// Une connexion réussie remet à zéro le compteur du pseudo, pas celui de l'adresse (sinon un compte à soi servirait à le vider).
-export function clearFailures(ip, pseudo) {
+// Connexion réussie : le compteur du pseudo repart à zéro et l'essai est rendu à l'adresse (qui garde ses vrais échecs : un compte à soi
+// ne sert pas à vider le compteur).
+export function recordSuccess(ip, pseudo) {
   failuresByKey.clear(loginKey(ip, pseudo));
+  failuresByIp.undo(ip);
 }
 
 // Inscriptions : 10 mauvais codes de classe par 15 minutes et 20 inscriptions par heure, par adresse.
 const badCodes = createLimiter({ max: 10, windowMs: WINDOW });
-const signups = createLimiter({ max: 20, windowMs: 3600_000 });
+const signups = createLimiter({ max: 60, windowMs: 3600_000 }); // large : toute une classe peut s'inscrire d'un coup depuis le même Wi-Fi
 
 export const badCodeBlocked = (ip) => badCodes.blocked(ip);
 export const recordBadCode = (ip) => badCodes.hit(ip);
 export const signupBlocked = (ip) => signups.blocked(ip);
 export const recordSignup = (ip) => signups.hit(ip);
+export const refundSignup = (ip) => signups.undo(ip);

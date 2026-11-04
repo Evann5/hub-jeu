@@ -29,13 +29,13 @@
 /* Le conteneur gère son défilement et sert de référence pour dimensionner le plateau. */
 .g-echecs .eq { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; container-type: size; }
 .g-echecs .eq-stage {
-  --pad: 6px;
-  --frame: 14px;
+  --pad: 4px;
+  --frame: 13px;
   --bs: min(calc(100cqw - 2 * var(--pad) - 2 * var(--frame) - 2px), 600px);
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 10px var(--pad) 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 8px var(--pad) 16px;
 }
-.g-echecs .eq-left { display: grid; gap: 10px; width: calc(var(--bs) + 2 * var(--frame) + 2px); }
+.g-echecs .eq-left { display: grid; gap: 6px; width: calc(var(--bs) + 2 * var(--frame) + 2px); }
 .g-echecs .eq-right { display: grid; gap: 12px; width: calc(var(--bs) + 2 * var(--frame) + 2px); }
 
 /* Verre dépoli */
@@ -57,14 +57,16 @@
 
 /* ——— Joueurs ——— */
 .g-echecs .eq-player {
-  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: 'dot token who clock' 'taken taken taken taken';
-  align-items: center; column-gap: 10px; row-gap: 2px;
-  padding: 8px 12px 6px; border-radius: 14px;
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: 'dot token who clock' 'dot token taken clock';
+  align-items: center; column-gap: 10px; row-gap: 0;
+  padding: 7px 12px; border-radius: 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 @container (min-width: 860px) {
-  .g-echecs .eq-player { grid-template-columns: auto auto minmax(0, 1fr) auto auto; grid-template-areas: 'dot token who taken clock'; padding-bottom: 8px; }
+  .g-echecs .eq-player { grid-template-columns: auto auto minmax(0, 1fr) auto auto; grid-template-areas: 'dot token who taken clock'; padding: 8px 12px; }
+  .g-echecs .eq-who small { display: block; }
   .g-echecs .eq-taken { justify-content: flex-end; min-height: 0; }
+  .g-echecs .eq-taken .eq-p { width: 22px; height: 22px; }
 }
 .g-echecs .eq-player.is-turn { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .g-echecs .eq-dot { grid-area: dot; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--text); }
@@ -73,14 +75,14 @@
 .g-echecs .eq-player .token { grid-area: token; }
 .g-echecs .eq-who { grid-area: who; display: grid; min-width: 0; line-height: 1.15; }
 .g-echecs .eq-who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; font-size: 1.05rem; letter-spacing: -0.01em; }
-.g-echecs .eq-who small { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.02em; }
-.g-echecs .eq-taken { grid-area: taken; display: flex; flex-wrap: wrap; align-items: center; min-height: 24px; }
-.g-echecs .eq-taken .eq-p { width: 22px; height: 22px; margin-right: -6px; stroke-width: 4; }
-.g-echecs .eq-taken em { margin-left: 12px; color: var(--muted); font: 600 0.82rem var(--sans); font-style: normal; }
+.g-echecs .eq-who small { display: none; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.02em; }
+.g-echecs .eq-taken { grid-area: taken; display: flex; flex-wrap: wrap; align-items: center; min-height: 18px; }
+.g-echecs .eq-taken .eq-p { width: 18px; height: 18px; margin-right: -6px; stroke-width: 4; }
+.g-echecs .eq-taken em { margin-left: 12px; color: var(--muted); font: 600 0.82rem var(--sans); font-style: normal; font-variant-numeric: tabular-nums; }
 .g-echecs .eq-clock {
-  grid-area: clock; min-width: 84px; padding: 3px 12px; border: 1px solid var(--line); border-radius: 10px;
+  grid-area: clock; min-width: 76px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 10px;
   color: var(--text); text-align: center; background: rgb(0 0 0 / 0.35);
-  font: 600 1.35rem/1.3 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+  font: 600 1.25rem/1.3 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
 }
 .g-echecs .eq-clock.is-running { background: var(--text); border-color: var(--text); color: #08080A; }
 .g-echecs .eq-clock.is-low { color: var(--accent); }
@@ -123,7 +125,7 @@
 /* Promotion */
 .g-echecs .eq-promo { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 8px; background: rgb(8 8 10 / 0.7); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); text-align: center; }
 .g-echecs .eq-promo[hidden] { display: none; }
-.g-echecs .eq-promo p { margin: 0; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.85rem; color: var(--text); }
+.g-echecs .eq-promo p { margin: 0; font-weight: 650; font-size: 1rem; color: var(--text); }
 .g-echecs .eq-promo-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: min(100%, 380px); }
 .g-echecs .eq-promo-btn { display: grid; justify-items: center; gap: 2px; min-height: 88px; padding: 6px 2px; border: 1px solid var(--line); border-radius: 12px; background: var(--light); color: #08080A; font: 650 0.78rem var(--sans); }
 .g-echecs .eq-promo-btn:hover, .g-echecs .eq-promo-btn:focus-visible { background: #fff; outline: 2px solid var(--accent); outline-offset: 0; }
@@ -131,15 +133,23 @@
 .g-echecs .eq-promo-cancel { min-height: 44px; padding: 0 18px; border: 0; background: transparent; color: var(--muted); text-decoration: underline; font: 600 0.9rem var(--sans); }
 
 /* ——— Texte d'état ——— */
-.g-echecs .eq-status { margin: 4px 0 0; min-height: 2.6em; text-align: center; font: 600 1.05rem/1.3 var(--sans); letter-spacing: -0.005em; text-wrap: balance; }
+.g-echecs .eq-status { margin: 2px 0 0; min-height: 1.4em; text-align: center; font: 600 1.05rem/1.3 var(--sans); letter-spacing: -0.005em; text-wrap: balance; }
 .g-echecs .eq-status.is-check { color: var(--accent); }
 .g-echecs .eq-status.is-over { padding: 10px 14px; border-radius: 14px; border-color: var(--accent); font-size: 1.15rem; }
 .g-echecs .eq-status.is-win { background: var(--accent); border-color: var(--accent); color: #08080A; }
 
+/* Fin de partie sur téléphone : le résultat passe au-dessus du plateau, sinon il reste hors de l'écran. */
+@container (max-width: 859px) {
+  .g-echecs .eq-status.is-over { order: -1; margin: 0; }
+}
+/* Le dernier coup reste visible sur les cases claires comme sur les cases foncées. */
+.g-echecs .eq-sq.is-last::before { background: rgb(255 90 31 / 0.55); }
+.g-echecs .eq-sq.is-dark.is-last::before { background: rgb(255 90 31 / 0.7); }
+
 /* ——— Côté droit : actions et feuille de partie ——— */
 .g-echecs .eq-actions { display: grid; gap: 10px; }
 .g-echecs .eq-actions:empty { display: none; }
-.g-echecs .eq-btn { min-height: 46px; padding: 0 22px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--text); font: 600 0.95rem var(--sans); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transition: background-color 0.15s, color 0.15s; }
+.g-echecs .eq-btn { min-height: 46px; padding: 0 22px; border: 1px solid var(--line); border-radius: 999px; touch-action: manipulation; background: var(--panel); color: var(--text); font: 600 0.95rem var(--sans); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transition: background-color 0.15s, color 0.15s; }
 .g-echecs .eq-btn:hover { background: rgb(255 255 255 / 0.16); }
 .g-echecs .eq-btn.is-main { background: var(--text); border-color: var(--text); color: #08080A; }
 .g-echecs .eq-btn.is-main:hover { background: #fff; }
@@ -150,7 +160,7 @@
 .g-echecs .eq-note { margin: 0; padding: 8px 12px; border-radius: 12px; color: var(--muted); font-size: 0.9rem; }
 
 .g-echecs .eq-movebox { display: flex; flex-direction: column; min-height: 0; max-height: 190px; padding: 12px 14px 10px; border-radius: 16px; }
-.g-echecs .eq-movebox h3 { margin: 0 0 6px; font: 650 0.72rem var(--sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.g-echecs .eq-movebox h3 { margin: 0 0 6px; font: 650 0.85rem var(--sans); color: var(--muted); }
 .g-echecs .eq-moves { flex: 1; min-height: 0; margin: 0; padding: 0; overflow-y: auto; list-style: none; font: 550 0.95rem/1.8 var(--sans); font-variant-numeric: tabular-nums; }
 .g-echecs .eq-moves li { display: grid; grid-template-columns: 2.6em 1fr 1fr; padding: 0 6px; border-bottom: 1px solid rgb(255 255 255 / 0.07); }
 .g-echecs .eq-n { color: var(--muted); }

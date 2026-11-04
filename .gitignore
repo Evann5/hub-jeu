@@ -6,3 +6,7 @@ data/
 docs/carte/
 .claude/agent-memory/
 __pycache__/
+.env.*
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

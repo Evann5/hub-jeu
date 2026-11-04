@@ -210,11 +210,10 @@ export function mount(root, api) {
     const myTurn = v.turn === v.seat;
     const first = v.phase === 'bid1';
     const nodes = [];
-    nodes.push(h('p.bl-bidtitle', first ? '1er tour' : '2e tour'));
     if (!myTurn) return null; // la ligne d'état dit déjà qui réfléchit
     if (first) {
-      nodes.push(h('button.bl-btn.is-main', { type: 'button', onclick: () => play({ type: 'take' }) },
-        'Je prends à ', suitIcon(suitOf(up), 20), h('span', SUIT_NAME[suitOf(up)])));
+      nodes.push(h('button.bl-btn.is-main', { type: 'button', 'aria-label': `Je prends à ${SUIT_NAME[suitOf(up)]}`, onclick: () => play({ type: 'take' }) },
+        'Je prends à', h('span.bl-btn-suit', suitIcon(suitOf(up), 22))));
     } else {
       nodes.push(h('div.bl-suits', SUITS.filter((s) => s !== suitOf(up)).map((s) =>
         h('button.bl-btn.is-suit', { type: 'button', 'aria-label': `Atout ${SUIT_NAME[s]}`, onclick: () => play({ type: 'take', suit: s }) },
@@ -285,7 +284,7 @@ export function mount(root, api) {
       over ? null : v.seat >= 0
         ? h('button.bl-btn.is-main', { type: 'button', disabled: iAmReady, onclick: () => play({ type: 'next' }) }, iAmReady ? 'En attente des autres…' : 'Donne suivante')
         : null,
-      over ? null : h('p.bl-small', `${readyCount} sur 4 prêts · la suite démarre toute seule dans un instant`));
+      over ? null : h('p.bl-small', `${readyCount}/4 prêts`));
   }
 
   // Confettis de victoire : des pastilles de couleur qui tombent (coupées si l'animation est réduite).
@@ -305,8 +304,8 @@ export function mount(root, api) {
     if (v.phase === 'over') return v.forfeit !== null ? 'Partie terminée.' : 'Partie terminée : bravo aux gagnants !';
     if (v.phase === 'recap') return 'Bilan de la donne.';
     const mine = v.turn === v.seat;
-    if (v.phase === 'bid1') return mine ? `À toi : prends à ${SUIT_NAME[suitOf(v.upcard)]} ou passe.` : `${name(v.turn)} choisit : prendre ou passer…`;
-    if (v.phase === 'bid2') return mine ? 'À toi : choisis l’atout ou passe.' : `${name(v.turn)} choisit l’atout ou passe…`;
+    if (v.phase === 'bid1') return mine ? `1er tour : prends à ${SUIT_NAME[suitOf(v.upcard)]} ou passe.` : `1er tour : ${name(v.turn)} réfléchit…`;
+    if (v.phase === 'bid2') return mine ? '2e tour : choisis l’atout ou passe.' : `2e tour : ${name(v.turn)} réfléchit…`;
     return mine ? `À toi de jouer. ${v.hint}` : `${name(v.turn)} joue…`;
   }
 

@@ -1,18 +1,32 @@
 // Temps réel avec Socket.IO : présence, messages, réactions, frappe, tables de jeu (play.js) et actions des admins.
 // L'état « qui est en ligne » vit en mémoire : l'appli doit tourner en une seule instance.
+import { randomInt } from 'node:crypto';
 import { Server } from 'socket.io';
 import { db, getSetting, setSetting } from './db.js';
 import { config } from './config.js';
 import { COLORS, AVATARS, LIMITS } from './options.js';
 import {
-  COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions,
+  COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions, tokenHash, ownerId,
 } from './auth.js';
+import { createEventLimiter, sameOrigin } from './securite.js';
 import * as chat from './chat.js';
 import { initPlay, registerPlay, gamesCatalog, tableList, dropUserFromTables } from './play.js';
 
 let io;
 const online = new Map(); // userId -> nombre de connexions ouvertes
 const sendTimes = new Map(); // userId -> horodatages des derniers envois
+
+const MAX_SOCKETS_PER_USER = 5; // onglets et appareils ouverts en même temps, par compte
+const MIN_CLASS_CODE = 10;
+// Limite générale : 60 événements par 5 s et par personne (tous appareils confondus). Les coups de jeu ont la leur (play.js).
+const generalLimit = createEventLimiter(60, 5000);
+// Limites plus strictes pour ce qui ne sert jamais en rafale (chaque minute ou chaque 5 s, par personne).
+const strictLimits = {
+  typing: createEventLimiter(10, 5000),
+  profile: createEventLimiter(5, 60_000),
+  'table:create': createEventLimiter(6, 60_000),
+  'table:invite': createEventLimiter(10, 60_000),
+};
 
 function allUsers() {
   return db.prepare('SELECT * FROM users WHERE banned = 0 ORDER BY pseudo COLLATE NOCASE').all().map(publicUser);
@@ -49,9 +63,17 @@ export function disconnectUser(userId, reason) {
   io.in(`u:${userId}`).disconnectSockets(true);
 }
 
-export function removeUser(userId) {
+// Ferme les connexions en direct d'une seule session (déconnexion depuis un appareil), pas celles des autres appareils.
+export function disconnectSession(token) {
+  if (!io || !token) return;
+  const hash = tokenHash(token);
+  for (const socket of io.sockets.sockets.values()) if (socket.data.tokenHash === hash) socket.disconnect(true);
+}
+
+// deleted : le compte n'existe plus (il quitte aussi les parties en cours) ; sinon il est seulement bloqué.
+export function removeUser(userId, { deleted = false } = {}) {
   io?.to('membres').emit('user:removed', userId);
-  if (io) dropUserFromTables(userId);
+  if (io) dropUserFromTables(userId, { deleted });
 }
 
 function rateLimited(userId) {
@@ -62,17 +84,33 @@ function rateLimited(userId) {
   return times.length > 5;
 }
 
-// Enveloppe un gestionnaire : relit l'utilisateur à jour, transmet les erreurs en français.
-function handler(socket, fn, { admin = false } = {}) {
+function assertNotMuted(me) {
+  if (me.muted_until > Date.now()) {
+    const until = new Date(me.muted_until).toLocaleString('fr-FR', {
+      timeZone: 'Europe/Paris', weekday: 'long', hour: '2-digit', minute: '2-digit',
+    });
+    throw new chat.ChatError(`Un admin t'a mis en sourdine jusqu'à ${until}.`);
+  }
+}
+
+// Enveloppe un gestionnaire : limite le rythme, relit l'utilisateur à jour, transmet les erreurs en français.
+// Options : admin (réservé aux admins), event (limite stricte nommée dans strictLimits), muteBlocked (refusé en sourdine),
+// generalLimit: false (l'événement a sa propre limite, comme les coups de jeu).
+function handler(socket, fn, { admin = false, event = null, muteBlocked = false, generalLimit: general = true } = {}) {
   return async (payload, ack) => {
     const reply = typeof ack === 'function' ? ack : () => {};
     try {
-      const me = getUser(socket.data.userId);
+      const userId = socket.data.userId;
+      if ((general && generalLimit.hit(userId)) || (event && strictLimits[event].hit(userId))) {
+        throw new chat.ChatError('Doucement : trop d’actions d’un coup, réessaie dans quelques secondes.');
+      }
+      const me = getUser(userId);
       if (!me || me.banned) {
         socket.disconnect(true);
         return;
       }
       if (admin && me.role !== 'admin') throw new chat.ChatError('Réservé aux admins.');
+      if (muteBlocked) assertNotMuted(me);
       reply({ ok: true, ...(await fn(payload ?? {}, me)) });
     } catch (err) {
       if (!(err instanceof chat.ChatError)) console.error(err);
@@ -88,15 +126,19 @@ function targetUser(userId, me) {
   return user;
 }
 
+// Le propriétaire du hub (premier admin créé) ne peut être touché par aucun autre admin.
+function notOwner(user, what) {
+  if (user.id === ownerId()) throw new chat.ChatError(`Tu ne peux pas ${what} (le premier admin) : aucun autre admin ne peut le faire.`);
+  return user;
+}
+
 export function attachRealtime(httpServer) {
   io = new Server(httpServer, {
     path: `${config.basePath}/socket.io`,
     serveClient: true,
-    // Refuse les connexions venues d'un autre site.
-    allowRequest: (req, callback) => {
-      const origin = req.headers.origin;
-      callback(null, !origin || new URL(origin).host === req.headers.host);
-    },
+    maxHttpBufferSize: 64 * 1024, // un message de 64 ko au plus (la valeur par défaut est 1 Mo)
+    // Refuse les connexions venues d'un autre site (ou d'une origine illisible).
+    allowRequest: (req, callback) => callback(null, sameOrigin(req.headers.origin, req.headers.host)),
   });
 
   initPlay(io);
@@ -104,7 +146,9 @@ export function attachRealtime(httpServer) {
   io.use((socket, next) => {
     const user = userFromToken(readCookie(socket.request.headers.cookie, COOKIE));
     if (!user) return next(new Error('non-connecte'));
+    if ((online.get(user.id) || 0) >= MAX_SOCKETS_PER_USER) return next(new Error('trop-de-connexions'));
     socket.data.userId = user.id;
+    socket.data.tokenHash = tokenHash(readCookie(socket.request.headers.cookie, COOKIE));
     next();
   });
 
@@ -142,12 +186,7 @@ export function attachRealtime(httpServer) {
 
     socket.on('send', handler(socket, ({ scope, body }, me) => {
       chat.checkScope(scope, me.id);
-      if (me.muted_until > Date.now()) {
-        const until = new Date(me.muted_until).toLocaleString('fr-FR', {
-          timeZone: 'Europe/Paris', weekday: 'long', hour: '2-digit', minute: '2-digit',
-        });
-        throw new chat.ChatError(`Un admin t'a mis en sourdine jusqu'à ${until}.`);
-      }
+      assertNotMuted(me);
       if (rateLimited(me.id)) throw new chat.ChatError('Doucement : attends quelques secondes avant le prochain message.');
       const message = chat.postMessage(scope, me.id, body);
       emitToScope(scope, 'message', message);
@@ -158,6 +197,7 @@ export function attachRealtime(httpServer) {
       const before = chat.getMessage(messageId);
       if (!before) throw new chat.ChatError("Ce message n'existe plus.");
       chat.checkScope(before.scope, me.id);
+      assertNotMuted(me);
       const message = chat.toggleReaction(messageId, me.id, emoji);
       emitToScope(message.scope, 'message:update', message);
       return {};
@@ -181,17 +221,18 @@ export function attachRealtime(httpServer) {
         socket.to('membres').emit('typing', payload);
       }
       return {};
-    }));
+    }, { event: 'typing' }));
 
     socket.on('profile', handler(socket, ({ avatar, color, bio }, me) => {
       if (!AVATARS.includes(avatar)) throw new chat.ChatError('Avatar inconnu.');
       if (!Object.hasOwn(COLORS, color)) throw new chat.ChatError('Couleur inconnue.');
       const cleanBio = String(bio ?? '').trim();
       if (cleanBio.length > LIMITS.bioMax) throw new chat.ChatError(`La bio dépasse ${LIMITS.bioMax} caractères.`);
+      if (cleanBio !== me.bio) assertNotMuted(me); // en sourdine, on peut changer d'avatar mais pas écrire une nouvelle bio
       db.prepare('UPDATE users SET avatar = ?, color = ?, bio = ? WHERE id = ?').run(avatar, color, cleanBio, me.id);
       broadcastUser(getUser(me.id));
       return {};
-    }));
+    }, { event: 'profile' }));
 
     registerPlay(socket, handler);
 
@@ -214,7 +255,7 @@ export function attachRealtime(httpServer) {
     }, { admin: true }));
 
     socket.on('admin:ban', handler(socket, ({ userId, banned }, me) => {
-      const user = targetUser(userId, me);
+      const user = notOwner(targetUser(userId, me), 'bloquer le propriétaire du hub');
       db.prepare('UPDATE users SET banned = ? WHERE id = ?').run(banned ? 1 : 0, user.id);
       if (banned) {
         deleteUserSessions(user.id);
@@ -230,20 +271,20 @@ export function attachRealtime(httpServer) {
       users: db.prepare('SELECT * FROM users WHERE banned = 1 ORDER BY pseudo COLLATE NOCASE').all().map(publicUser),
     }), { admin: true }));
 
-    socket.on('admin:resetPassword', handler(socket, ({ userId }, me) => {
-      const user = targetUser(userId, me);
-      // Mot de passe provisoire facile à dicter : trois syllabes et deux chiffres.
+    socket.on('admin:resetPassword', handler(socket, async ({ userId }, me) => {
+      const user = notOwner(targetUser(userId, me), 'réinitialiser le mot de passe du propriétaire du hub');
+      // Mot de passe provisoire facile à dicter : quatre syllabes et deux chiffres, tirés avec un hasard sûr.
       const syl = ['ba', 'de', 'ki', 'lo', 'mu', 'na', 'pi', 'ro', 'su', 'ta', 'vo', 'ze'];
-      const pick = () => syl[Math.floor(Math.random() * syl.length)];
-      const temp = `${pick()}${pick()}${pick()}${pick()}-${Math.floor(10 + Math.random() * 90)}`;
-      db.prepare('UPDATE users SET pass_hash = ?, must_change_password = 1 WHERE id = ?').run(hashPassword(temp), user.id);
+      const pick = () => syl[randomInt(syl.length)];
+      const temp = `${pick()}${pick()}${pick()}${pick()}-${randomInt(10, 100)}`;
+      db.prepare('UPDATE users SET pass_hash = ?, must_change_password = 1 WHERE id = ?').run(await hashPassword(temp), user.id);
       deleteUserSessions(user.id);
       disconnectUser(user.id, 'Ton mot de passe a été réinitialisé : reconnecte-toi avec le mot de passe provisoire.');
       return { tempPassword: temp };
     }, { admin: true }));
 
     socket.on('admin:setRole', handler(socket, ({ userId, role }, me) => {
-      const user = targetUser(userId, me);
+      const user = notOwner(targetUser(userId, me), 'changer le rôle du propriétaire du hub');
       if (!['membre', 'admin'].includes(role)) throw new chat.ChatError('Rôle inconnu.');
       db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, user.id);
       broadcastUser(getUser(user.id));
@@ -254,7 +295,9 @@ export function attachRealtime(httpServer) {
 
     socket.on('admin:setClassCode', handler(socket, ({ code }) => {
       const clean = String(code ?? '').trim();
-      if (clean.length < 4 || clean.length > 40) throw new chat.ChatError('Le code doit faire de 4 à 40 caractères.');
+      if (clean.length < MIN_CLASS_CODE || clean.length > 40) {
+        throw new chat.ChatError(`Le code doit faire de ${MIN_CLASS_CODE} à 40 caractères (il protège l'inscription : choisis-en un difficile à deviner).`);
+      }
       setSetting('class_code', clean);
       return { classCode: getSetting('class_code') };
     }, { admin: true }));

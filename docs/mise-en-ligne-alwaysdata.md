@@ -20,7 +20,8 @@ Hubuno a besoin d'un serveur Node.js allumé en permanence, du temps réel et d'
 5. Dans **Web > Sites**, créer un site de type **Node.js** :
    - **Commande** : `node /home/nom/hubuno/server.js`
    - **Idle time** : `0`, pour que l'appli ne s'arrête pas et que les connexions restent ouvertes.
-   - **Variables d'environnement** : `CLASS_CODE` (le code de la classe) et `ADMINS` (par exemple `minh`).
+   - **Variables d'environnement** : `CLASS_CODE` (le code de la classe ; long, 10 caractères au moins, car c'est la seule barrière à l'inscription) et `ADMINS` (par exemple `minh,pseudo-eleve-jeux`).
+   - **Règle à respecter** : Minh et l'élève des jeux créent leur compte **avant** que le code de la classe soit donné à qui que ce soit. Sinon un autre élève pourrait prendre leur pseudo et devenir admin à leur place. Minh s'inscrit en premier : le premier admin créé est le propriétaire du hub, et aucun autre admin ne peut lui changer son mot de passe, son rôle ni le bloquer.
 
 Rien à régler pour l'adresse d'écoute : Hubuno écoute déjà sur `::` et le port donné par `PORT`, comme le demande alwaysdata. `BASE_PATH` reste vide, l'appli est à la racine.
 

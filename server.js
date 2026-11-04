@@ -10,6 +10,10 @@ import { purgeExpiredSessions, classCode } from './src/auth.js';
 import { loadGames, gamesDir } from './src/games.js';
 import { purgeTables } from './src/play.js';
 
+// Filet de sécurité : une erreur imprévue est écrite dans le journal, sans arrêter le serveur (et donc sans déconnecter toute la classe).
+process.on('uncaughtException', (err) => console.error('Erreur non rattrapée :', err));
+process.on('unhandledRejection', (reason) => console.error('Promesse rejetée non rattrapée :', reason));
+
 await loadGames();
 
 const app = express();
@@ -22,12 +26,19 @@ app.use((req, res, next) => {
       "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'same-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
   });
+  // HSTS seulement en HTTPS (le navigateur l'ignore en HTTP, et il bloquerait un test en local si on l'envoyait par erreur).
+  if (req.secure) res.set('Strict-Transport-Security', 'max-age=15552000');
   next();
 });
 
 const router = express.Router();
-router.use('/api', api);
+// Les réponses de l'API sont personnelles : jamais gardées en cache (navigateur ou proxy).
+router.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+}, api);
 // maxAge 0 : le navigateur revérifie chaque fichier (un 304 ne coûte rien). Avec un cache, une mise à jour qui ajoute un export casserait
 // le chargement chez qui garde l'ancien module, car les imports d'un module ne portent pas le ?v= de la page.
 router.use(express.static(join(config.root, 'public'), { maxAge: 0 }));

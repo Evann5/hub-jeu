@@ -26,8 +26,9 @@ export function mount(root, api) {
   const panel = h('div.bj-panel');
   const topEl = h('div.bj-top');
   const statusEl = h('p.bj-status', { 'aria-live': 'polite' });
+  const meEl = h('section.bj-me', { 'aria-label': 'Ta main' });
   const table = h('div.bj-table', dealerEl, seatsEl);
-  const el = h('div.bj', topEl, table, h('div.bj-bottom', statusEl, panel));
+  const el = h('div.bj', topEl, table, meEl, h('div.bj-bottom', statusEl, panel));
   root.append(el);
 
   // ——— Éléments ———
@@ -46,6 +47,7 @@ export function mount(root, api) {
       if (suit === 1 || suit === 2) node.classList.add('is-red');
       node.setAttribute('role', 'img');
       node.setAttribute('aria-label', `${RANK_NAME[rank]} de ${SUIT_NAME[suit]}`);
+      if (rank === 10) node.classList.add('is-ten');
       node.append(h('span.bj-rk', RANK_LABEL[rank] || String(rank)), h('span.bj-st', SUIT[suit]), h('span.bj-big', { 'aria-hidden': 'true' }, SUIT[suit]));
     }
     if (fresh && !reduced()) node.classList.add('is-deal');
@@ -70,8 +72,8 @@ export function mount(root, api) {
       h('div.bj-meta',
         hd.cards.length ? h('span.bj-total', `${hd.total}${hd.soft ? ' souple' : ''}`) : null,
         hd.bet ? h('span.bj-bet', chipEl(hd.bet), fmt(hd.bet)) : null,
-        hd.doubled ? h('span.bj-tag', 'Doublé') : null),
-      badge);
+        hd.doubled ? h('span.bj-tag', 'Doublé') : null,
+        badge));
   }
 
   function seatEl(seat) {
@@ -100,8 +102,7 @@ export function mount(root, api) {
   function renderTop() {
     topEl.replaceChildren(
       h('span.bj-pill.is-pink', `Manche ${v.round} / ${v.rounds}`),
-      h('span.bj-pill', `Mise min. 10`),
-      h('span.bj-pill.is-cyan', `Sabot : ${v.shoeLeft} cartes`),
+      h('span.bj-pill.is-cyan', `Sabot ${fmt(v.shoeLeft)}`),
     );
   }
 
@@ -117,17 +118,21 @@ export function mount(root, api) {
     let label = '';
     if (d.cards.length) label = hiddenNow ? `Montre ${d.shown === 11 ? 'un as' : d.shown}` : d.blackjack ? 'Blackjack !' : d.bust ? `Dépasse : ${d.value}` : `Total ${d.value}`;
     dealerEl.replaceChildren(
-      h('div.bj-banque', h('span.bj-logo', 'Banque')),
+      h('div.bj-banque', h('span.bj-logo', 'Banque'),
+        label ? h(`span.bj-total.is-dealer${d.bust ? '.is-bust' : ''}`, label) : null),
       h('div.bj-cards.is-dealer', d.cards.length ? cards : [h('div.bj-empty', { 'aria-hidden': 'true' }), h('div.bj-empty', { 'aria-hidden': 'true' })]),
-      ...(label ? [h(`span.bj-total.is-dealer${d.bust ? '.is-bust' : ''}`, label)] : []),
     );
   }
 
   function renderSeats() {
-    // Toi en dernier : tes cartes sont juste au-dessus de tes boutons.
-    const ordered = [...v.seats.filter((s) => s.id !== api.me.id), ...v.seats.filter((s) => s.id === api.me.id)];
-    seatsEl.dataset.count = String(v.seats.length);
-    seatsEl.replaceChildren(...ordered.map(seatEl));
+    // Ta place est épinglée juste au-dessus de tes boutons : tes cartes restent visibles même si la table défile.
+    const others = v.seats.filter((s) => s.id !== api.me.id);
+    const mine = v.seats.filter((s) => s.id === api.me.id);
+    seatsEl.dataset.count = String(others.length);
+    seatsEl.hidden = !others.length;
+    seatsEl.replaceChildren(...others.map(seatEl));
+    meEl.hidden = !mine.length;
+    meEl.replaceChildren(...mine.map(seatEl));
   }
 
   function renderStatus() {
@@ -180,14 +185,12 @@ export function mount(root, api) {
         return;
       }
       betAmt = Math.min(Math.max(Math.round(betAmt / 10) * 10, o.minBet), o.maxBet);
-      const amount = h('output.bj-amount', { 'aria-live': 'off' });
-      const input = h('input.bj-input', { type: 'number', inputMode: 'numeric', 'aria-label': 'Montant de la mise' });
+      const input = h('input.bj-input', { type: 'number', inputMode: 'numeric', id: 'bj-amount', 'aria-label': 'Montant de la mise' });
       input.min = String(o.minBet);
       input.max = String(o.maxBet);
       input.step = '10';
       const go = h('button.bj-btn.is-go', { type: 'button' });
       const refresh = () => {
-        amount.textContent = fmt(betAmt);
         input.value = String(betAmt);
         go.textContent = `Miser ${fmt(betAmt)}`;
       };
@@ -210,7 +213,7 @@ export function mount(root, api) {
       panel.append(h('div.bj-betbox',
         h('div.bj-stepper',
           h('button.bj-step', { type: 'button', 'aria-label': 'Retirer 10 jetons', onclick: () => add(-10) }, '−'),
-          h('label.bj-amountbox', h('span.bj-lbl', 'Ta mise'), amount, input),
+          h('label.bj-amountbox', h('span.bj-lbl', 'Ta mise'), input),
           h('button.bj-step', { type: 'button', 'aria-label': 'Ajouter 10 jetons', onclick: () => add(10) }, '+')),
         h('div.bj-chips-row', chipBtn(10), chipBtn(50), chipBtn(100), chipBtn(500),
           h('button.bj-chipbtn.is-all', { type: 'button', onclick: () => set(o.maxBet) }, 'Tapis')),

@@ -1,24 +1,69 @@
-/* Morpion : le style du hub (Néon), en grand. Toutes les règles commencent par .g-morpion. */
+/* Morpion : le style du hub (Néon), en grand. Fond presque noir, cases en cartes de couleur vive (violet pour les croix,
+   orange pour les ronds), citron vert pour le tour et la victoire. Toutes les règles commencent par .g-morpion. */
 .g-morpion { background: var(--bg-2); }
-.g-morpion .mp { flex: 1; display: grid; place-content: center; justify-items: center; gap: 22px; padding: 24px 16px; }
-.g-morpion .mp-players { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.g-morpion .mp-player { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 999px; background: var(--bg-1); font-weight: 650; }
-.g-morpion .mp-player.is-turn { background: var(--accent); color: var(--on-color); box-shadow: 0 0 22px var(--glow); --ring: var(--accent); }
-.g-morpion .mp-mark { width: 24px; text-align: center; font-weight: 900; }
-.g-morpion .mp-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(380px, 86vw); aspect-ratio: 1; }
-.g-morpion .mp-cell {
-  display: grid; place-items: center;
-  border: 0; border-radius: 26px;
-  background: var(--bg-1);
-  box-shadow: inset 0 0 0 1px var(--bg-3);
-  font: 800 clamp(2.4rem, 10vw, 4rem)/1 var(--font-display);
-  transition: background-color 0.15s, transform 0.1s;
+.g-morpion .mp { flex: 1; display: grid; place-content: center; justify-items: center; gap: 18px; padding: 16px 14px 20px; }
+
+/* Joueurs : un signe de sa couleur, l'avatar, le pseudo. Celui qui joue passe en citron vert. */
+.g-morpion .mp-players { display: flex; justify-content: center; gap: 8px; width: min(420px, 100%); }
+.g-morpion .mp-player {
+  flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px;
+  border-radius: 999px; background: var(--bg-1); box-shadow: inset 0 0 0 1px var(--bg-3); font-weight: 650;
+  transition: background-color 0.2s, box-shadow 0.2s;
 }
-.g-morpion .mp-cell:not(:disabled):hover { background: var(--bg-3); }
-.g-morpion .mp-cell:not(:disabled):active { transform: scale(0.96); }
+.g-morpion .mp-player.is-turn { background: var(--accent); color: var(--on-color); box-shadow: 0 0 22px var(--glow); --ring: var(--accent); }
+.g-morpion .mp-player.is-won { background: var(--accent); color: var(--on-color); box-shadow: 0 0 26px var(--glow); }
+.g-morpion .mp-chip { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; }
+.g-morpion .p0 > .mp-chip { background: var(--violet); }
+.g-morpion .p1 > .mp-chip { background: var(--orange); }
+.g-morpion .mp-chip .mp-glyph { width: 20px; height: 20px; }
+.g-morpion .mp-name { min-width: 0; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.g-morpion .mp-pseudo { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.g-morpion .mp-name small { flex: none; font-weight: 600; font-size: 0.78em; opacity: 0.8; }
+.g-morpion .mp-name small::before { content: '('; }
+.g-morpion .mp-name small::after { content: ')'; }
+
+/* Grille : 9 cartes arrondies. Une case libre se devine (fond plus clair que la page) et montre le signe qu'on poserait. */
+.g-morpion .mp-board {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  width: min(420px, 100%, max(240px, calc(100dvh - 340px))); aspect-ratio: 1;
+}
+.g-morpion .mp-cell {
+  position: relative; display: grid; place-items: center; min-width: 0; padding: 0;
+  border: 0; border-radius: 28px; background: var(--bg-3); color: var(--on-color);
+  transition: background-color 0.15s, transform 0.12s, opacity 0.25s;
+}
+.g-morpion .mp-cell:not(:disabled):hover, .g-morpion .mp-cell:not(:disabled):focus-visible { background: var(--bg-4); }
+.g-morpion .mp-cell:not(:disabled):active { transform: scale(0.95); }
 .g-morpion .mp-cell:disabled { cursor: default; }
-.g-morpion .mp-cell.is-x { background: var(--violet); color: var(--on-color); }
-.g-morpion .mp-cell.is-o { background: var(--orange); color: var(--on-color); }
+.g-morpion .mp-cell:not(:disabled) { cursor: pointer; }
+.g-morpion .mp-cell:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.g-morpion .mp-cell.is-x { background: var(--violet); }
+.g-morpion .mp-cell.is-o { background: var(--orange); }
 .g-morpion .mp-cell.is-win { background: var(--accent); box-shadow: 0 0 28px var(--glow); animation: mp-win 0.5s var(--ease-out); }
+.g-morpion .mp-cell.is-dim { opacity: 0.4; }
+.g-morpion .mp-cell.is-new { animation: mp-pop 0.28s var(--ease-out); }
+.g-morpion .mp-ghost, .g-morpion .mp-markslot { grid-area: 1 / 1; display: grid; place-items: center; width: 62%; aspect-ratio: 1; }
+.g-morpion .mp-ghost { opacity: 0; transition: opacity 0.12s; color: var(--ink-2); }
+.g-morpion .mp-cell:not(:disabled):hover .mp-ghost, .g-morpion .mp-cell:not(:disabled):focus-visible .mp-ghost { opacity: 0.45; }
+.g-morpion .mp-glyph { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 11; stroke-linecap: round; }
+.g-morpion .mp-ghost .mp-glyph { stroke: var(--ink-2); }
+.g-morpion .p0 .mp-glyph, .g-morpion .p1 .mp-glyph { stroke: var(--on-color); }
+.g-morpion .mp-markslot .mp-glyph * { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.g-morpion .mp-cell.is-new .mp-glyph * { animation: mp-draw 0.32s 0.05s var(--ease-out) both; }
+.g-morpion .mp-cell.is-new .mp-glyph path + path { animation-delay: 0.2s; }
+@keyframes mp-draw { from { stroke-dashoffset: 1; } }
+@keyframes mp-pop { from { transform: scale(0.88); } }
 @keyframes mp-win { 50% { transform: scale(1.06); } }
-.g-morpion .mp-status { margin: 0; font: 700 1.25rem var(--font-display); letter-spacing: -0.02em; text-align: center; }
+
+.g-morpion .mp-status { margin: 0; min-height: 1.5em; font: 700 1.1rem/1.3 var(--font-display); letter-spacing: -0.02em; text-align: center; text-wrap: balance; }
+
+@media (max-width: 480px) {
+  .g-morpion .mp { gap: 14px; padding: 12px 12px 16px; }
+  .g-morpion .mp-board { gap: 8px; }
+  .g-morpion .mp-cell { border-radius: 22px; }
+  .g-morpion .mp-status { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-morpion .mp-cell.is-new, .g-morpion .mp-cell.is-win, .g-morpion .mp-cell.is-new .mp-glyph * { animation: none; }
+  .g-morpion .mp-cell, .g-morpion .mp-player, .g-morpion .mp-ghost { transition: none; }
+}

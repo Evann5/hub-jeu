@@ -44,9 +44,6 @@ export function mount(root, api) {
     }, layer);
   });
 
-  const titleBlock = h('div.q-titleblock',
-    h('p.q-kicker', 'Arcade · 2 joueurs'),
-    h('h2.q-title', h('span.q-title-a', 'Quatre'), h('span.q-title-b', 'à la suite')));
   const players = h('div.q-players');
   const status = h('p.q-status', { 'aria-live': 'polite' });
   const timerText = h('span.q-timer-text');
@@ -68,8 +65,7 @@ export function mount(root, api) {
     return l;
   });
   board.append(winSvg);
-  root.append(h('div.q', titleBlock, players, h('div.q-statusrow', status, timer), h('div.q-boardwrap', board, stamp),
-    ));
+  root.append(h('div.q', players, h('div.q-statusrow', status, timer), h('div.q-boardwrap', board, stamp)));
 
   let state = null;
   let info = null;
@@ -135,7 +131,7 @@ export function mount(root, api) {
         api.token(api.user(id), { size: 's' }),
         h('span.q-who',
           h('span.q-name', api.user(id).pseudo),
-          h('span.q-tag', `${COLOR_NAMES[seat]}${won ? ' · gagne' : ''}`)));
+          h('span.q-tag', `${COLOR_NAMES[seat]}${id === api.me.id ? ' · toi' : ''}${won ? ' · gagne' : ''}`)));
     }));
   }
 

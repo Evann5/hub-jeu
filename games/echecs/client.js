@@ -287,6 +287,7 @@ export function mount(root, api) {
     }
     movesEl.replaceChildren(...(rows.length ? rows : [h('li.eq-empty', 'Aucun coup pour l’instant.')]));
     movesEl.scrollTop = movesEl.scrollHeight;
+    requestAnimationFrame(() => { movesEl.scrollTop = movesEl.scrollHeight; }); // après la mise en page : la dernière ligne reste entière
   }
 
   function renderActions() {

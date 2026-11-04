@@ -27,11 +27,11 @@
   --pr-ink: #14062F;
   --pr-serif: 'Pr Display', 'Unbounded', ui-rounded, system-ui, sans-serif;
   --pr-sans: 'Pr Sans', 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
-  --cw: 72px; /* carte en main */
-  --ch: 101px;
-  --step: 40px; /* largeur visible de chaque carte dans l'éventail */
-  --tw: 80px; /* cartes du pli */
-  --th: 112px;
+  --cw: 64px; /* carte en main */
+  --ch: 90px;
+  --step: 36px; /* largeur visible de chaque carte dans l'éventail (recalculée par le client) */
+  --tw: 76px; /* cartes du pli */
+  --th: 106px;
   background-color: var(--pr-felt);
   background-image:
     radial-gradient(70% 45% at 100% 0%, rgb(255 62 165 / 0.55), transparent 70%),
@@ -43,7 +43,7 @@
   font-family: var(--pr-sans);
 }
 @media (min-width: 900px) {
-  .g-president { --cw: 92px; --ch: 129px; --step: 54px; --tw: 108px; --th: 151px; }
+  .g-president { --cw: 96px; --ch: 134px; --tw: 108px; --th: 151px; }
 }
 /* Néon rose tout autour de l'écran. */
 .g-president::before { content: ''; position: absolute; inset: 7px; z-index: 0; border: 3px solid var(--pr-pink); border-radius: 26px; box-shadow: 0 0 14px rgb(255 62 165 / 0.7), inset 0 0 14px rgb(255 62 165 / 0.35); pointer-events: none; }
@@ -106,6 +106,11 @@
 .g-president .pr-seat { display: flex; align-items: center; gap: 7px; min-height: 40px; padding: 4px 10px 4px 5px; border-radius: 99px; background: rgb(0 0 0 / 0.3); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); font-size: 0.85rem; }
 .g-president .pr-seat.is-turn { background: var(--pr-gold); color: var(--pr-ink); box-shadow: 0 0 0 2px var(--pr-ivory), 0 0 22px rgb(255 62 165 / 0.55); }
 .g-president .pr-seat.is-done { opacity: 0.6; }
+.g-president .pr-seat.is-me { box-shadow: inset 0 0 0 1.5px var(--pr-cyan); }
+.g-president .pr-seat.is-me.is-turn { box-shadow: 0 0 0 2px var(--pr-ivory), 0 0 22px rgb(255 62 165 / 0.55); }
+.g-president .pr-pts { display: inline-flex; align-items: baseline; font-family: var(--pr-serif); font-weight: 800; font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--pr-gold); }
+.g-president .pr-pts small { font-size: 0.6rem; font-weight: 700; }
+.g-president .pr-seat.is-turn .pr-pts { color: var(--pr-ink); }
 .g-president .pr-seat-main { display: grid; line-height: 1.1; min-width: 0; }
 .g-president .pr-seat-name { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .g-president .pr-role { display: inline-flex; align-items: center; gap: 3px; font-family: var(--pr-serif); font-weight: 800; font-size: 0.62rem; color: var(--pr-gold); letter-spacing: 0; }
@@ -142,7 +147,6 @@
 .g-president .pr-news { padding: 0 18px; text-align: center; }
 .g-president .pr-say { margin: 0; font-size: 1rem; font-weight: 700; text-wrap: balance; }
 .g-president .pr-old { margin: 4px 0 0; padding: 0; list-style: none; font-size: 0.78rem; color: rgb(255 255 255 / 0.72); }
-.g-president .pr-old li:nth-child(n + 3) { display: none; }
 .g-president .pr-old li.is-latest { color: var(--pr-ivory); font-weight: 600; }
 
 /* ——— Boutons ——— */
@@ -153,29 +157,23 @@
 .g-president .pr-btn:disabled { cursor: not-allowed; box-shadow: none; background: rgb(0 0 0 / 0.3); color: rgb(255 255 255 / 0.78); }
 .g-president button:focus-visible { outline: 3px solid var(--pr-ivory); outline-offset: 3px; }
 
-/* ——— Main : éventail sur plusieurs rangées ——— */
-.g-president .pr-hand {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: flex-start;
-  padding: 20px calc(var(--cw) - var(--step) + 8px) 18px 8px;
-}
+/* ——— Main : un éventail sur une seule rangée ——— */
+.g-president .pr-hand { display: flex; flex-wrap: nowrap; justify-content: center; padding: 26px 8px 12px; }
 .g-president .pr-h {
-  margin: 0 calc(var(--step) - var(--cw)) calc(var(--ch) * -0.5) 0;
+  margin: 0 calc(var(--step) - var(--cw)) 0 0;
   cursor: pointer;
   transition: transform 0.14s var(--ease-out, ease-out), filter 0.14s;
   touch-action: manipulation;
 }
-.g-president .pr-hand .pr-h:last-child { margin-bottom: 0; }
-.g-president .pr-h.is-ok { transform: translateY(-6px); }
+.g-president .pr-hand .pr-h:last-child { margin-right: 0; }
+.g-president .pr-h.is-ok { transform: translateY(-8px); }
 .g-president .pr-h.is-no { filter: brightness(0.6) saturate(0.6); cursor: not-allowed; }
 .g-president .pr-h.is-received { box-shadow: 0 0 0 3px var(--pr-gold), 0 0 16px rgb(255 62 165 / 0.7); }
-.g-president .pr-h.is-selected { transform: translateY(-22px); box-shadow: 0 0 0 3px var(--pr-gold), 0 12px 20px rgb(0 0 0 / 0.45); }
-.g-president .pr-h:hover.is-ok:not(.is-selected) { transform: translateY(-12px); }
+.g-president .pr-h.is-selected { transform: translateY(-24px); box-shadow: 0 0 0 3px var(--pr-gold), 0 12px 20px rgb(0 0 0 / 0.45); }
+.g-president .pr-h:hover.is-ok:not(.is-selected) { transform: translateY(-14px); }
 
 /* ——— Résultats ——— */
-.g-president .pr-overlay { position: absolute; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgb(20 6 47 / 0.92); overflow-y: auto; }
+.g-president .pr-overlay { position: absolute; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgb(20 6 47 / 0.97); overflow-y: auto; }
 .g-president .pr-panel { width: min(100%, 460px); padding: 20px 18px 18px; border-radius: 32px; background: var(--pr-ivory); color: var(--pr-ink); border: 4px solid var(--pr-ink); box-shadow: 0 0 0 4px var(--pr-pink), 0 10px 0 4px rgb(0 0 0 / 0.4); text-align: center; position: relative; overflow: hidden; }
 .g-president .pr-panel h2 { margin: 0 0 4px; font-family: var(--pr-serif); font-size: 1.4rem; font-weight: 900; letter-spacing: -0.03em; }
 .g-president .pr-panel-line { margin: 0 0 12px; font-weight: 600; }
@@ -216,4 +214,17 @@
 @media (prefers-reduced-motion: no-preference) {
   .g-president.is-revolution { animation: pr-revo 1.6s ease-in-out infinite; }
   @keyframes pr-revo { 50% { box-shadow: inset 0 0 0 6px #FF2E93, inset 0 0 70px rgb(255 46 147 / 0.5); } }
+}
+
+@media (max-width: 520px) {
+  .g-president .pr { gap: 6px; padding-top: 14px; }
+  .g-president .pr-head { padding: 0 20px; }
+  .g-president .pr-seats { gap: 5px 6px; padding: 0 12px; }
+  .g-president .pr-seat { gap: 5px; min-height: 36px; padding: 3px 8px 3px 4px; font-size: 0.75rem; }
+  .g-president .pr-seat-name { max-width: 7ch; }
+  .g-president .pr-felt { min-height: calc(var(--th) + 40px); }
+  .g-president .pr-pli-cap { font-size: 0.75rem; padding: 3px 10px; }
+  .g-president .pr-news { padding: 0 14px; }
+  .g-president .pr-say { font-size: 0.9375rem; }
+  .g-president .pr-btn { min-height: 46px; padding: 0 20px; }
 }
