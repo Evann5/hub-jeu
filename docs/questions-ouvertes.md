@@ -6,5 +6,5 @@
 | Quelle version de Node propose le cPanel ? (il faut 22.13 ou plus) | L'élève qui gère O2Switch | Avant la première mise en ligne |
 | À quelle adresse sera Hubuno (sous-domaine ou sous-dossier) ? | Minh et l'élève qui gère O2Switch | Avant la première mise en ligne |
 | Les villes définitives d'Escales (8 régions de 4 villes) | Minh | Quand il veut : tout est dans `games/escales/client/board.js` |
-| Mise en ligne : VPS ou O2Switch ? La doc parle encore d'O2Switch, Minh parle maintenant d'un VPS | Minh | Avant la première mise en ligne |
+| Mise en ligne : alwaysdata gratuit (recommandé, à valider par un essai, `docs/mise-en-ligne-alwaysdata.md`) ou O2Switch ? Il faut créer le compte et choisir le code de classe | Minh | Avant la première mise en ligne |
 | Le code de classe de départ | Minh | Avant la première mise en ligne |

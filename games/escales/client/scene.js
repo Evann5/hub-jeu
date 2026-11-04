@@ -11,7 +11,7 @@ import { FLAGS, PATTERNS, PROPS_OF } from './countries.js';
 export const PAWN_COLORS = ['#E5213C', '#FF8A00', '#F5D000', '#16A34A', '#0891B2', '#2563EB', '#7C3AED', '#DB2777', '#92602F', '#475569'];
 
 const WARM = '#FFF6E8';
-const SLAB = '#2B2E3A';
+const SLAB = '#1C4A42';
 const INK = '#12151F';
 const TILE_W = 2; // largeur d'une case le long du côté
 const TILE_D = 3; // profondeur
@@ -19,8 +19,11 @@ const BASE_H = 0.1; // le socle blanc, ou le cadre du propriétaire
 const PLATE_H = 0.16;
 const HALF = (11 * TILE_W + 2 * TILE_D) / 2;
 const BANNER_D = 1.8;
+const DICE_Z = -7.15; // la piste des dés, en haut de la zone centrale
+const BOTTOM_LIFT = 1.2; // les bandeaux du bas remontent : les monuments de la rangée du bas, debout devant eux, ne cachent plus leur nom
 const PAWN_SCALE = 2.25;
 
+const BOTTOM_CORNER_H = 1.7; // au-delà, ce qui est posé sur un coin du bas cacherait le nom de la ville juste derrière
 const SPECIAL_COLOR = { start: '#7FD9A4', customs: '#9DB6F0', festival: '#F59BC4', control: '#F4A58E', escale: '#E3EAF3', telex: '#F6DE7E', tax: '#F3C66E', chantier: '#C9CED9' };
 // Les monuments qui doivent impressionner sont un peu plus grands que les autres.
 const HEROES = { eiffel: 1.04, colisee: 1.15, empire: 0.82, gratteCiel2: 0.88, tourTokyo: 0.95, gratteCiel: 0.95, mosquee: 0.92 };
@@ -65,12 +68,12 @@ function plateGeometry(w, d, h, r) {
 }
 
 // Le monument est mis à l'échelle de sa case, aligné sur une ligne avant ; devant, le texte imprimé reste libre.
-function fitModel(model, w, front, hero = 1, flip = false) {
+function fitModel(model, w, front, hero = 1, flip = false, maxH = Infinity) {
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const room = TILE_D / 2 + front + 0.35; // le monument peut déborder vers l'extérieur du plateau
-  const scale = hero * Math.min(1.1, room / Math.max(size.z, 0.01), (w - 0.2) / Math.max(size.x, 0.01));
+  const scale = Math.min(hero * Math.min(1.1, room / Math.max(size.z, 0.01), (w - 0.2) / Math.max(size.x, 0.01)), maxH / Math.max(size.y, 0.01));
   model.scale.setScalar(scale);
   model.position.set(-((box.min.x + box.max.x) / 2) * scale, PLATE_H - box.min.y * scale, flip ? -front - box.min.z * scale : front - box.max.z * scale);
 }
@@ -120,16 +123,16 @@ function buildPrint() {
     const cx = col * CW + CW / 2;
     const cy = row * CH + CH / 2;
     const name = t.short ?? t.name;
-    let size = 66;
+    let size = 78;
     do {
-      c.font = `800 ${size}px "ES Figtree", system-ui, sans-serif`;
+      c.font = `800 ${size}px "ES Barlow", system-ui, sans-serif`;
       size -= 2;
     } while (c.measureText(name).width > CW - 16 && size > 28);
     c.fillStyle = INK;
     c.fillText(name, cx, t.price ? cy - 34 : cy);
     if (t.price) {
       const label = `${t.price.toLocaleString('fr-FR')} €`;
-      c.font = '700 50px "ES Figtree", system-ui, sans-serif';
+      c.font = '700 56px "ES Barlow", system-ui, sans-serif';
       const tw = c.measureText(label).width;
       if (t.type === 'city') {
         const fw = 66;
@@ -149,10 +152,12 @@ function buildPrint() {
       }
     }
     const f = tileFrame(t.pos);
-    const w = f.corner ? 2.5 : f.flat ? 1.68 : 1.42;
+    // Coins du haut : le monument de la case juste devant monte sur le côté extérieur, le nom se range côté centre pour rester visible.
+    const topCorner = f.corner && !f.flip;
+    const w = topCorner ? 1.55 : f.corner ? 2.5 : f.flat ? 1.68 : 1.42;
     const h = w / 2;
     const z = f.corner ? 0.82 : TILE_D / 2 - 0.2 - (f.flat ? h / 2 : w / 2 - 0.2);
-    const center = new THREE.Vector3(0, PLATE_H + 0.012, f.flip ? -z : z).applyMatrix4(placed(f.x, f.z, f.rot));
+    const center = new THREE.Vector3(topCorner ? -Math.sign(f.x) * 0.62 : 0, PLATE_H + 0.012, f.flip ? -z : z).applyMatrix4(placed(f.x, f.z, f.rot));
     pushQuad(pos, uv, center, new THREE.Vector3(w / 2, 0, 0), new THREE.Vector3(0, 0, -h / 2), [col / COLS, 1 - (row + 1) / ROWS, (col + 1) / COLS, 1 - row / ROWS]);
   }
   const m = flatMesh(pos, uv, canvas);
@@ -168,7 +173,7 @@ function bannerFrame(r) {
   const off = [-5, 5][part];
   if (side === 0) return { center: new THREE.Vector3(off, 0, -edge), U: new THREE.Vector3(1, 0, 0), V: new THREE.Vector3(0, 0, -1) };
   if (side === 1) return { center: new THREE.Vector3(edge, 0, off), U: new THREE.Vector3(0, 0, 1), V: new THREE.Vector3(1, 0, 0) };
-  if (side === 2) return { center: new THREE.Vector3(-off, 0, edge), U: new THREE.Vector3(1, 0, 0), V: new THREE.Vector3(0, 0, -1) };
+  if (side === 2) return { center: new THREE.Vector3(-off, 0, edge - BOTTOM_LIFT), U: new THREE.Vector3(1, 0, 0), V: new THREE.Vector3(0, 0, -1) };
   return { center: new THREE.Vector3(-edge, 0, -off), U: new THREE.Vector3(0, 0, -1), V: new THREE.Vector3(-1, 0, 0) };
 }
 
@@ -196,7 +201,7 @@ function buildBanners() {
     c.lineWidth = 3;
     PATTERNS[reg.id](c, W, H);
     // Le nom s'écrit à même la couleur du pays : le motif s'efface doucement derrière lui.
-    c.font = '900 96px "ES Unbounded", "ES Figtree", system-ui, sans-serif';
+    c.font = '400 92px "ES Alfa", Georgia, serif';
     c.textBaseline = 'middle';
     const fw = 120;
     const fh = 80;
@@ -228,7 +233,17 @@ function buildBanners() {
   return m;
 }
 
-// Le grand drapeau de chaque pays, sur son mât : une seule forme, légèrement ondulée.
+// Le pied du mât de chaque pays, là où le drapeau ne cache aucun nom.
+// En haut et en bas : sur le devant du bandeau, à droite de son nom. Sur les côtés : au bout du bandeau, dans l'espace libre juste derrière.
+function flagFoot(r) {
+  const side = Math.floor(r / 2);
+  const { center, U } = bannerFrame(r);
+  if (side === 0 || side === 2) return center.clone().addScaledVector(U, 2.68).setZ(center.z + 0.62);
+  const north = center.z - 4.2;
+  return new THREE.Vector3(side === 1 ? 9.6 : -10.45, 0, north);
+}
+
+// Le drapeau de chaque pays, sur son petit mât : une seule forme, légèrement ondulée.
 function buildFlags() {
   const CW = 150;
   const CH = 100;
@@ -240,19 +255,17 @@ function buildFlags() {
   const uv = [];
   const SEG = 8;
   const along = []; // 0 au mât, 1 au bout : seul le bout du drapeau flotte
-  const FW = 1.5;
-  const FH = 1;
+  const FW = 1.08;
+  const FH = 0.72;
   REGIONS.forEach((reg, r) => {
     const col = r % 4;
     const row = Math.floor(r / 4);
     FLAGS[reg.id](c, col * CW, row * CH, CW, CH);
-    const { center, U } = bannerFrame(r);
-    const px = center.x + U.x * 2.72;
-    const pz = center.z + U.z * 2.72;
+    const { x: px, z: pz } = flagFoot(r);
     for (let i = 0; i < SEG; i += 1) {
       const a = i / SEG;
       const b = (i + 1) / SEG;
-      const P = (t, y) => [px + t * FW, 3.02 + y * FH, pz];
+      const P = (t, y) => [px + t * FW, 1.3 + y * FH, pz];
       const uvAt = (t, y) => [(col + t) / 4, 1 - (row + 1 - y) / 2];
       for (const [t, y] of [[a, 0], [b, 0], [b, 1], [a, 0], [b, 1], [a, 1]]) {
         pos.push(...P(t, y));
@@ -298,28 +311,28 @@ function buildEngraving() {
   c.globalAlpha = 0.55;
   c.lineWidth = 3;
   c.beginPath();
-  c.roundRect(at(-inner), at(-inner), inner * 2 * px, inner * 2 * px, 0.7 * px);
+  c.roundRect(at(-inner), at(-inner), inner * 2 * px, (inner * 2 - BOTTOM_LIFT) * px, 0.7 * px);
   c.stroke();
   c.globalAlpha = 1;
   // La piste des dés
-  const [dx, dz] = [at(0), at(-6.75)];
-  c.fillStyle = '#3B3F4E';
+  const [dx, dz] = [at(0), at(DICE_Z)];
+  c.fillStyle = '#143C35';
   c.beginPath();
-  c.ellipse(dx, dz, 3.1 * px, 1.9 * px, 0, 0, Math.PI * 2);
+  c.ellipse(dx, dz, 3 * px, 1.5 * px, 0, 0, Math.PI * 2);
   c.fill();
   c.strokeStyle = gold;
   c.lineWidth = 3;
   c.beginPath();
-  c.ellipse(dx, dz, 3.1 * px, 1.9 * px, 0, 0, Math.PI * 2);
+  c.ellipse(dx, dz, 3 * px, 1.5 * px, 0, 0, Math.PI * 2);
   c.stroke();
   // Le nom du jeu, gravé ton sur ton en bas de la zone centrale
-  c.font = `900 ${Math.round(2 * px)}px "ES Unbounded", system-ui, sans-serif`;
+  c.font = `400 ${Math.round(1.5 * px)}px "ES Alfa", Georgia, serif`;
   c.textAlign = 'center';
   c.textBaseline = 'middle';
   c.fillStyle = 'rgba(0,0,0,0.3)';
-  c.fillText('Escales', at(0) + 3, at(7.05) + 4);
-  c.fillStyle = '#4C5062';
-  c.fillText('Escales', at(0), at(7.05));
+  c.fillText('Escales', at(0) + 3, at(6.85) + 4);
+  c.fillStyle = '#2C6256';
+  c.fillText('Escales', at(0), at(6.85));
   const t = new THREE.CanvasTexture(canvas);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
@@ -450,7 +463,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
     model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
-    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip);
+    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : Infinity);
     const top = new THREE.Box3().setFromObject(model).max.y;
     items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m, ao: PLATE_H });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
@@ -475,12 +488,12 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     });
     const pole = new THREE.Group();
     const steel = new THREE.MeshBasicMaterial({ color: '#E7EBF0' });
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 4, 6), steel);
-    shaft.position.y = 2;
-    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 5), new THREE.MeshBasicMaterial({ color: '#F2C14E' }));
-    knob.position.y = 4.05;
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 2.02, 6), steel);
+    shaft.position.y = 1.01;
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 5), new THREE.MeshBasicMaterial({ color: '#F2C14E' }));
+    knob.position.y = 2.06;
     pole.add(shaft, knob);
-    const p = center.clone().addScaledVector(U, 2.72);
+    const p = flagFoot(r);
     items.push({ object: pole, matrix: placed(p.x, p.z) });
   });
 
@@ -703,9 +716,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     bubbleName = `${name}|${color}`;
     const c = bubbleCanvas.getContext('2d');
     c.clearRect(0, 0, 512, 148);
-    let size = 62;
+    let size = 70;
     do {
-      c.font = `800 ${size}px "ES Figtree", system-ui, sans-serif`;
+      c.font = `800 ${size}px "ES Barlow", system-ui, sans-serif`;
       size -= 2;
     } while (c.measureText(name).width > 430 && size > 28);
     const w = Math.min(500, c.measureText(name).width + 56);
@@ -757,11 +770,12 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   });
   // Sur leur piste, en haut de la zone centrale.
   const placeDice = () => {
-    dice[0].position.set(-1.2, DIE_Y, -6.95);
-    dice[1].position.set(1.2, DIE_Y, -6.55);
+    dice[0].position.set(-1.15, DIE_Y, DICE_Z - 0.2);
+    dice[1].position.set(1.15, DIE_Y, DICE_Z + 0.2);
     dice.forEach((d, i) => diceShadows[i].position.set(d.position.x + 0.28, 0.015, d.position.z - 0.12));
   };
-  dice.forEach((d) => { d.visible = false; scene.add(d); });
+  // Avant le premier lancer aussi, ils attendent sur leur piste.
+  dice.forEach((d, i) => { d.rotation.set(...DIE_TOP[[3, 4][i]]); diceShadows[i].visible = true; scene.add(d); });
   let diceAnim = null;
   let lastRollN = -1;
 
@@ -795,7 +809,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const scale = Math.min((size.w - side * 2) / (x1 - x0), Math.max(60, size.h - top - bottom) / (y1 - y0));
     const midX = (x0 + x1) / 2;
     const midY = (y0 + y1) / 2;
-    const screenY = (top + size.h - bottom) / 2; // le milieu de la place libre, en pixels depuis le haut
+    // Le milieu du plateau, en pixels depuis le haut. Sur téléphone, il se cale sous les joueurs : le vide éventuel reste en bas, derrière la carte d'action.
+    const screenY = narrow ? top + ((y1 - y0) * scale) / 2 : (top + size.h - bottom) / 2;
     camera.left = midX - size.w / 2 / scale;
     camera.right = midX + size.w / 2 / scale;
     camera.top = midY + screenY / scale;
@@ -1127,9 +1142,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   renderer.shadowMap.needsUpdate = true;
   ro.observe(host);
   // Tout préparer dès le chargement : le premier lancer de dés ne doit pas faire saccader le jeu.
-  dice.forEach((d) => { d.visible = true; });
   renderer.compile(scene, camera);
-  dice.forEach((d) => { d.visible = false; });
 
   // ——— De petites images rendues une seule fois : le portrait d'un voyageur, le monument d'une ville ———
   function snapshot(key, build, frame) {

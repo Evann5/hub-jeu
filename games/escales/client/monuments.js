@@ -474,7 +474,7 @@ function parseGlb(buffer) {
 }
 
 export async function loadSculpted(urlOf) {
-  const names = TILES.filter((t) => t.model).map((t) => t.model);
+  const names = [...TILES.filter((t) => t.model).map((t) => t.model), ...new Set(TILES.filter((t) => t.type !== 'city').map((t) => `special-${t.type}`))];
   await Promise.all(names.map(async (name) => {
     try {
       const res = await fetch(urlOf(`monuments/${fileOf(name)}.glb`));
@@ -902,6 +902,7 @@ export const SPECIALS = {
 
 export function buildSpecial(type) {
   const g = new THREE.Group();
-  SPECIALS[type]?.(g);
+  if (sculpted.has(`special-${type}`)) g.add(new THREE.Mesh(sculpted.get(`special-${type}`), mat('#FFFFFF')));
+  else SPECIALS[type]?.(g);
   return g;
 }

@@ -1221,6 +1221,11 @@ body:has(.view-table) #toasts { top: max(12px, env(safe-area-inset-top)); bottom
   .table-tab { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-weight: 700; }
   .table-tab[aria-selected='true'] { background: var(--bg-3); color: var(--ink); }
   .table-body { grid-template-columns: minmax(0, 1fr); }
+  /* Un jeu « large » sur téléphone : le plateau a besoin de la hauteur. Le logo et les onglets tiennent sur une ligne ; c'est le jeu qui dit à qui c'est le tour. */
+  .table-view.is-wide .table-head { flex-wrap: nowrap; padding: 4px 8px; }
+  .table-view.is-wide .table-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .table-view.is-wide .table-pill:not(.is-watch) { display: none; }
+  .table-view.is-wide .table-tabs { flex: 1; width: auto; }
   .tab-game .table-side, .tab-chat .table-main { display: none; }
   .table-side { box-shadow: none; padding-bottom: env(safe-area-inset-bottom); }
   .lobby { padding: 8px; }

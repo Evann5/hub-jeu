@@ -78,7 +78,7 @@ function buildShell() {
     chat: h('section.table-chat', { 'aria-label': 'Chat de la table' }),
   };
   cur.ui.side.append(cur.ui.players, cur.ui.chat);
-  cur.ui.root = h(`div.${viewClass().replaceAll(' ', '.')}`, { style: `--g:${g.color};--g-ink:${g.ink}` },
+  cur.ui.root = h(`div.${viewClass().replaceAll(' ', '.')}`, { 'data-game': g.id, style: `--g:${g.color};--g-ink:${g.ink}` },
     cur.ui.head, h('div.table-body', cur.ui.main, cur.ui.side));
   cur.el.replaceChildren(cur.ui.root);
   renderChat();

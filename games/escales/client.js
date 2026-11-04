@@ -63,7 +63,10 @@ export function mount(root, api) {
   root.append(h('div.es', stage, loading, tip, tools, h('div.es-table', players, dock), layer));
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
-  Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"'), document.fonts.load('900 60px "ES Unbounded"'), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
+  // Le texte est donné exprès : les accents vietnamiens sont dans un fichier à part, qui ne se charge que si on les demande.
+  const tileText = TILES.map((t) => t.short ?? t.name).join('');
+  const titleText = `${REGIONS.map((r) => r.name).join('')}Escales`;
+  Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('400 60px "ES Alfa"', titleText), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
       world = createWorld(stage, {

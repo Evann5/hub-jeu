@@ -5,8 +5,8 @@ Hub privé de jeux de société en ligne pour la classe de Minh (études sup, 20
 ## Où on en est (02/11/2026)
 - Étape 1 (comptes, messagerie, présence, admin) et étape 2 (tables de jeu) construites.
 - 30 jeux dans `games/`, chacun avec son univers visuel (registre : `docs/da/univers.md`) et ses tests de règles (`node --test games/*/rules.test.js`).
-- Escales (`games/escales`, raisonnement dans `docs/escales.md`) : le grand jeu de plateau, en 3D, fait sur le Mac de Minh ; ses villes définitives et la validation du style sont en attente.
-- Pas encore en ligne : Minh parle maintenant d'un VPS plutôt que d'O2Switch, à confirmer avant la mise en ligne (`docs/questions-ouvertes.md`, guide O2Switch `docs/mise-en-ligne.md`).
+- Escales (`games/escales`, raisonnement dans `docs/escales.md`) : le grand jeu de plateau, en 3D, avec sa propre identité (vert, crème, vermillon ; Alfa Slab One + Barlow), différente du hub ; ses villes définitives restent à choisir.
+- Pas encore en ligne : solution gratuite visée, alwaysdata, à valider par un essai (`docs/mise-en-ligne-alwaysdata.md`) ; plan B O2Switch (`docs/mise-en-ligne.md`).
 
 ## Règles de chaque session
 - **Agents autorisés** : depuis le 04/11/2026, l'assistant lance tous les agents dont il a besoin sur ce projet, sans redemander (Minh : « lance tous les agents dont tu as besoin à partir de maintenant »). Publier, committer et supprimer restent à l'assistant principal, après le oui de Minh.
