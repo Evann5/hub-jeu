@@ -52,12 +52,6 @@
 
 
 .g-escales .es-face { width: 26px; height: 26px; border-radius: 50%; background: var(--p); }
-.g-escales .es-podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; }
-.g-escales .es-place { display: grid; justify-items: center; gap: 1px; min-width: 0; text-align: center; font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.g-escales .es-place small { color: var(--soft); font-size: 0.8125rem; font-weight: 600; }
-.g-escales .es-place-name { max-width: 100%; overflow: hidden; font-size: 0.875rem; text-overflow: ellipsis; white-space: nowrap; }
-.g-escales .es-podium-face { width: 64px; height: 64px; }
-.g-escales .es-step { display: grid; place-items: center; width: 100%; margin-top: 4px; border-radius: 8px 8px 0 0; color: #fff; font: 400 1.25rem var(--es-display); }
 .g-escales .es-tip { position: absolute; top: 0; left: 0; z-index: 3; display: grid; max-width: 220px; padding: 7px 10px; border: 2px solid transparent; border-radius: 9px; background: #FBF3E0; color: var(--ink); font-size: 0.8125rem; box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); pointer-events: none; }
 .g-escales .es-tip[hidden] { display: none; }
 .g-escales .es-tip b { font-size: 0.9375rem; }
@@ -80,8 +74,6 @@
 .g-escales .es-chip.is-turn { transition: background-color 0.2s; }
 .g-escales .es-say { margin: 0; font-size: 1.125rem; font-weight: 700; text-wrap: balance; }
 .g-escales .es-big { margin: 0; font: 400 1.75rem/1.05 var(--es-display); letter-spacing: 0; text-wrap: balance; }
-.g-escales .es-rank { display: grid; gap: 2px; margin: 0; padding: 0 0 0 20px; font-variant-numeric: tabular-nums; }
-.g-escales .es-rank li span { margin-right: 8px; }
 .g-escales .es-flag { grid-row: span 2; width: 39px; height: 26px; border-radius: 3px; box-shadow: 0 0 0 1px rgb(18 21 31 / 0.2); }
 
 .g-escales .es-btn { min-height: 46px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--vermilion); color: #FFF7E6; font: 700 1.0625rem var(--es-text); letter-spacing: 0.01em; cursor: pointer; box-shadow: 0 4px 0 #8A2A14, inset 0 1px 0 rgb(255 255 255 / 0.22); transition: background-color 0.12s, transform 0.08s, box-shadow 0.08s; }
@@ -128,7 +120,15 @@
 
 /* Au centre du plateau : rien, sauf ce que tu as à décider. */
 .g-escales .es-action { position: absolute; top: var(--cy, 50%); left: var(--cx, 50%); z-index: 3; display: grid; gap: 10px; width: min(340px, 80%); max-height: 72%; padding: 14px; overflow-y: auto; border-radius: 16px; background: #FBF3E0; box-shadow: inset 0 0 0 1px #E2CC95, 0 20px 48px rgb(0 0 0 / 0.55); transform: translate(-50%, -50%); }
-.g-escales .es-action.is-over { width: min(430px, 86%); }
+.g-escales .es-action.is-over { top: var(--oy, 52%); width: min(430px, 86%); max-height: calc(100% - var(--oy, 52%) - 8px); transform: translateX(-50%); }
+.g-escales .es-rank { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-variant-numeric: tabular-nums; }
+.g-escales .es-rank li { display: grid; grid-template-columns: 18px auto minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 40px; padding: 2px 8px 2px 4px; border-radius: 8px; }
+.g-escales .es-rank li:first-child { background: rgb(242 182 50 / 0.3); }
+.g-escales .es-rank-n { font: 400 0.9375rem var(--es-display); text-align: center; }
+.g-escales .es-rank-name { display: grid; min-width: 0; line-height: 1.15; }
+.g-escales .es-rank-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-escales .es-rank-name small { color: var(--soft); font-size: 0.75rem; font-weight: 600; }
+.g-escales .es-rank-worth { font-weight: 800; }
 .g-escales .es-action.is-plain { width: min(280px, 70%); padding: 0; overflow: visible; background: none; box-shadow: none; }
 .g-escales .es-action.is-plain .es-btn { min-height: 60px; font: 400 1.25rem var(--es-display); box-shadow: 0 6px 0 #8A2A14, 0 18px 30px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.22); }
 .g-escales .es-action.is-plain .es-btn:active:not(:disabled) { box-shadow: 0 2px 0 #8A2A14, 0 8px 16px rgb(0 0 0 / 0.45); transform: translateY(4px); }
@@ -244,14 +244,14 @@
   .g-escales .es-link { min-height: 40px; }
   .g-escales .es-tcols { grid-template-columns: minmax(0, 1fr); }
   .g-escales .es-big { font-size: 1.375rem; }
-  .g-escales .es-podium-face { width: 44px; height: 44px; }
-  .g-escales .es-rank { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 26px; font-size: 0.875rem; }
   .g-escales .es-sheet.is-trade { max-height: 88%; }
   .g-escales .es-action, .g-escales .es-action.is-plain, .g-escales .es-action.is-over { top: auto; bottom: 0; left: 0; width: 100%; max-height: 50%; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); border-radius: 14px 14px 0 0; box-shadow: 0 -3px 0 var(--gold), 0 -12px 30px rgb(0 0 0 / 0.4); transform: none; }
   .g-escales .es-action.is-plain { background: none; box-shadow: none; }
   /* Fin de partie : le podium et le classement prennent toute la place, ils remplacent le panneau des joueurs. */
   .g-escales .es.is-over .es-side { display: none; }
-  .g-escales .es-action.is-over { --k: 0.5; max-height: 100%; }
+  .g-escales .es-action.is-over { max-height: 62%; transform: none; }
+  .g-escales .es-rank li { min-height: 34px; }
+  .g-escales .es-rank-name small { display: none; }
   .g-escales .es-flash { max-width: 92%; font-size: 0.875rem; }
   .g-escales .es-offer-pic { width: 72px; height: 72px; }
   .g-escales .es-chip { min-height: 28px; gap: 5px; padding: 0 6px 0 5px; font-size: 0.8125rem; }

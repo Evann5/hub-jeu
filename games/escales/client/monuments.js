@@ -521,7 +521,14 @@ function person(k, { skin, hair, top, bottom = NAVY, skirt = false, short = fals
     k.ball(0.042, skin, s * 0.19, 0.285, 0);
   }
   k.ball(0.175, skin, 0, 0.74, 0);
-  for (const s of [-1, 1]) k.ball(0.022, '#16151C', s * 0.062, 0.75, 0.16);
+  // Le visage : de grands yeux, des sourcils et un sourire, lisibles même à petite taille.
+  for (const s of [-1, 1]) {
+    k.ball(0.036, '#FFFFFF', s * 0.066, 0.76, 0.142);
+    k.ball(0.022, '#16151C', s * 0.066, 0.76, 0.17);
+    k.box(0.06, 0.012, 0.012, hair ?? '#3A2A20', s * 0.066, 0.812, 0.16);
+  }
+  const smile = k.ball(0.042, '#8E2F2F', 0, 0.682, 0.15);
+  smile.scale.set(1, 0.32, 0.45);
   if (hair) {
     const h = k.dome(0.197, hair, 0, 0.75, -0.016);
     h.scale.y = 0.92;

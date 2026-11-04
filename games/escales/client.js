@@ -75,7 +75,8 @@ export function mount(root, api) {
         onTile: (pos) => openOverlay({ kind: 'city', pos }),
         topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
         rightInset: () => side.offsetWidth + 12,
-        onFit: ([cx, cy], [, fy]) => {
+        onFit: ([cx, cy], [, fy], [, oy]) => {
+          frame.style.setProperty('--oy', `${Math.round(oy)}px`);
           frame.style.setProperty('--cx', `${Math.round(cx)}px`);
           frame.style.setProperty('--cy', `${Math.round(cy)}px`);
           frame.style.setProperty('--fy', `${Math.round(fy)}px`);
@@ -265,20 +266,18 @@ export function mount(root, api) {
 
   function promptFor() {
     if (v.over) {
+      // Le podium est sur le plateau, en 3D : ici, le classement de tout le monde.
       const ranked = [...v.players].sort((a, b) => Number(a.out) - Number(b.out) || b.worth - a.worth);
       const breakdown = (p) => {
-        const owned = TILES.filter((t) => v.props[t.pos]?.owner === p.id);
-        return `${money(p.cash)} + ${owned.length} ville${owned.length > 1 ? 's' : ''}`;
+        const n = TILES.filter((t) => v.props[t.pos]?.owner === p.id).length;
+        return `${money(p.cash)} + ${n} ville${n > 1 ? 's' : ''}`;
       };
-      const STEP = [104, 76, 58]; // la hauteur des marches, réduite sur téléphone par --k
       return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : v.winners.length > 3 ? `${v.winners.length} joueurs à égalité !` : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
-        h('div.es-podium', ranked.slice(0, 3).map((p, i) => {
-          const bar = h('div.es-step', h('b', String(i + 1)));
-          bar.style.height = `calc(var(--k, 1) * ${STEP[i]}px)`;
-          bar.style.background = PAWN_COLORS[p.seat];
-          return h('div.es-place', picture(world?.portrait(p.seat), '.es-podium-face'), h('b.es-place-name', p.id === meId ? 'Toi' : p.pseudo), h('span', money(p.worth)), h('small', breakdown(p)), bar);
-        })),
-        ranked.length > 3 ? h('ol.es-rank', { start: 4 }, ranked.slice(3).map((p) => h('li', h('span', p.id === meId ? 'Toi' : p.pseudo), h('b', p.out ? 'sorti' : money(p.worth))))) : null];
+        h('ol.es-rank', ranked.map((p, i) => h('li', { style: `--p:${PAWN_COLORS[p.seat]}` },
+          h('b.es-rank-n', String(i + 1)),
+          picture(world?.portrait(p.seat), '.es-face'),
+          h('span.es-rank-name', h('b', p.id === meId ? 'Toi' : p.pseudo), h('small', p.out ? 'sorti' : breakdown(p))),
+          h('b.es-rank-worth', p.out ? '—' : money(p.worth)))))];
     }
     if (!myTurn()) return []; // ce n'est pas à toi : rien ne cache le plateau
     const p = v.players[v.cur];
@@ -677,13 +676,19 @@ export function mount(root, api) {
   function applyUI() {
     clearTimeout(uiTimer);
     uiTimer = 0;
-    playSounds();
     // Un joueur en paie un autre : on voit l'argent passer.
     const moved = v.players.map((p) => [p.id, p.cash - (before.cash.get(p.id) ?? p.cash)]).filter(([, d]) => d);
     if (moved.length === 2 && moved[0][1] + moved[1][1] === 0) {
       const [payer, payee] = moved[0][1] < 0 ? moved : [moved[1], moved[0]];
       world?.payCoins(payer[0], payee[0]);
+      world?.react(payer[0], 'sad');
+      world?.react(payee[0], 'joy');
     }
+    // Un achat : celui qui vient de s'offrir une ville est content.
+    for (const [pos, prop] of Object.entries(v.props)) {
+      if (before.owners.size && before.owners.get(pos) !== prop.owner && !(moved.length === 2 && moved[0][1] + moved[1][1] === 0)) world?.react(prop.owner, 'joy');
+    }
+    playSounds();
     renderPlayers();
     before.cash = new Map(v.players.map((p) => [p.id, p.cash]));
     renderAction();

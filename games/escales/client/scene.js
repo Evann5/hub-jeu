@@ -106,6 +106,16 @@ function flatMesh(pos, uv, canvas, opts = {}) {
   return mesh;
 }
 
+// L'étiquette d'une case : sa place et sa taille, à plat sur la case.
+function labelFrame(f) {
+  const topCorner = f.corner && !f.flip; // coins du haut : le nom se range côté centre, le monument de la case devant monte côté extérieur
+  const w = topCorner ? 1.55 : f.corner ? 2.5 : f.flat ? 1.68 : 1.42;
+  const h = w / 2;
+  const z = f.corner ? 0.82 : TILE_D / 2 - 0.2 - (f.flat ? h / 2 : w / 2 - 0.2);
+  const center = new THREE.Vector3(topCorner ? -Math.sign(f.x) * 0.62 : 0, PLATE_H + 0.012, f.flip ? -z : z).applyMatrix4(placed(f.x, f.z, f.rot));
+  return { w, h, center };
+}
+
 // Tous les textes des cases sur une seule image : le nom, le petit drapeau et le prix. Toujours lisibles depuis la caméra.
 function buildPrint() {
   const COLS = 6;
@@ -126,41 +136,44 @@ function buildPrint() {
     const cx = col * CW + CW / 2;
     const cy = row * CH + CH / 2;
     const name = t.short ?? t.name;
-    let size = 78;
+    // L'étiquette crème : le nom et le prix se lisent quelle que soit la couleur de la case.
+    const LW = CW - 8;
+    const LH = t.price ? CH - 10 : 100;
+    const lx = cx - LW / 2;
+    c.fillStyle = '#FFF8E8';
+    c.beginPath();
+    c.roundRect(lx, cy - LH / 2, LW, LH, 20);
+    c.fill();
+    c.strokeStyle = 'rgba(18,21,31,0.2)';
+    c.lineWidth = 2;
+    c.stroke();
+    let size = 76;
     do {
       c.font = `800 ${size}px "ES Barlow", system-ui, sans-serif`;
       size -= 2;
-    } while (c.measureText(name).width > CW - 16 && size > 28);
+    } while (c.measureText(name).width > CW - 34 && size > 28);
     c.fillStyle = INK;
-    c.fillText(name, cx, t.price ? cy - 34 : cy);
+    c.textAlign = 'center';
+    c.fillText(name, cx, t.price ? cy - 32 : cy + 3);
     if (t.price) {
+      // Le prix à gauche : à droite, la place est gardée pour le visage du propriétaire.
       const label = `${t.price.toLocaleString('fr-FR')} €`;
-      c.font = '700 56px "ES Barlow", system-ui, sans-serif';
-      const tw = c.measureText(label).width;
+      c.font = '700 54px "ES Barlow", system-ui, sans-serif';
+      c.textAlign = 'left';
+      let x = lx + 16;
       if (t.type === 'city') {
-        const fw = 66;
-        const fh = 44;
-        const x0 = cx - (fw + 14 + tw) / 2;
-        FLAGS[REGIONS[t.region].id](c, x0, cy + 14, fw, fh);
+        FLAGS[REGIONS[t.region].id](c, x, cy + 14, 66, 44);
         c.strokeStyle = 'rgba(18,21,31,0.55)';
         c.lineWidth = 2;
-        c.strokeRect(x0, cy + 14, fw, fh);
-        c.fillStyle = INK;
-        c.textAlign = 'left';
-        c.fillText(label, x0 + fw + 14, cy + 38);
-        c.textAlign = 'center';
-      } else {
-        c.fillStyle = INK;
-        c.fillText(label, cx, cy + 36);
+        c.strokeRect(x, cy + 14, 66, 44);
+        x += 78;
       }
+      c.fillStyle = INK;
+      c.fillText(label, x, cy + 38);
+      c.textAlign = 'center';
     }
     const f = tileFrame(t.pos);
-    // Coins du haut : le monument de la case juste devant monte sur le côté extérieur, le nom se range côté centre pour rester visible.
-    const topCorner = f.corner && !f.flip;
-    const w = topCorner ? 1.55 : f.corner ? 2.5 : f.flat ? 1.68 : 1.42;
-    const h = w / 2;
-    const z = f.corner ? 0.82 : TILE_D / 2 - 0.2 - (f.flat ? h / 2 : w / 2 - 0.2);
-    const center = new THREE.Vector3(topCorner ? -Math.sign(f.x) * 0.62 : 0, PLATE_H + 0.012, f.flip ? -z : z).applyMatrix4(placed(f.x, f.z, f.rot));
+    const { w, h, center } = labelFrame(f);
     pushQuad(pos, uv, center, new THREE.Vector3(w / 2, 0, 0), new THREE.Vector3(0, 0, -h / 2), [col / COLS, 1 - (row + 1) / ROWS, (col + 1) / COLS, 1 - row / ROWS]);
   }
   const m = flatMesh(pos, uv, canvas);
@@ -561,7 +574,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const w = f.corner ? TILE_D : TILE_W;
     const m = placed(f.x, f.z, f.rot);
     const base = paint(f.corner ? baseGeo.corner : baseGeo.side, WARM);
-    const color = t.type === 'city' ? `#${softened(REGIONS[t.region].color).getHexString()}` : SPECIAL_COLOR[t.type];
+    const color = t.type === 'city' ? `#${softened(REGIONS[t.region].color, 0.1).getHexString()}` : SPECIAL_COLOR[t.type];
     const plate = paint(plateGeometry(w - 0.34, TILE_D - 0.34, PLATE_H, 0.1), color);
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
@@ -647,7 +660,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     },
   };
   // Le visage du propriétaire, posé sur la case : la couleur n'est pas le seul signe (daltonisme, et on reconnaît son personnage).
-  const badgeGeo = new THREE.PlaneGeometry(0.74, 0.74);
+  const badgeGeo = new THREE.PlaneGeometry(0.4, 0.4);
   badgeGeo.rotateX(-Math.PI / 2);
   const badgeMats = new Map();
   const badgeMat = (seat) => {
@@ -691,10 +704,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     }
     if (!part.badge) {
       part.badge = new THREE.Mesh(badgeGeo);
-      // Juste au-dessus du texte, à droite : toujours visible, même devant un monument.
-      const f = part.f;
-      const inward = f.flat ? 0 : -Math.sign(f.x) * 0.62;
-      part.badge.position.set(f.x + (f.flat ? 0.62 : inward + 0.34), PLATE_H + 0.03, f.z + (f.flat ? 0.34 : -0.62));
+      // Dans le coin de l'étiquette, à droite du prix : il ne cache jamais le nom.
+      const { w, h, center } = labelFrame(part.f);
+      part.badge.position.set(center.x + w / 2 - 0.26, center.y + 0.012, center.z + h / 2 - 0.22);
       part.badge.renderOrder = 4;
       scene.add(part.badge);
     }
@@ -745,6 +757,14 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const pops = [];
   const coins = [];
   const fades = [];
+  const rising = [];
+  // Un personnage réagit : il saute de joie en tournant, ou il baisse la tête.
+  function react(id, kind, count = 1) {
+    const pawn = pawns.get(id);
+    if (reduced || !pawn || pawn.gone || pawn.to) return;
+    pawn.react = { kind, t: 0, count };
+    wake();
+  }
   const coinGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.07, 14);
   const coinMat = new THREE.MeshLambertMaterial({ color: '#F2B632', emissive: '#7A5200' });
   // Des pièces volent de celui qui paie vers celui qui reçoit.
@@ -783,10 +803,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     bursts.push({ pts, vel, t: 0 });
   }
 
-  // Les niveaux, sur le bord de la case et à côté de son nom : le monument ne les cache pas, et ils ne cachent pas le nom.
+  // Les niveaux, juste au-dessus de l'étiquette et devant le monument : ils se voient, et ils ne cachent pas le nom.
   const levelSpot = (f, i) => {
-    if (f.flat) return [(i - 1.5) * 0.34, f.flip ? -1.36 : 1.4];
-    return [f.rot > 0 ? -0.85 : 0.85, 1.25 - i * 0.31];
+    if (f.flat) return [(i - 1.5) * 0.34, f.flip ? -0.42 : 0.4];
+    return [f.rot > 0 ? 0.42 : -0.42, 0.35 + i * 0.3];
   };
   const setLevels = (part, level, color) => {
     if (part.level === level) return false;
@@ -902,6 +922,52 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     return new THREE.Vector3(f.x + ox * c + oz * s, 0, f.z - ox * s + oz * c);
   }
 
+  // ——— Le podium, à la fin de la partie : trois marches au milieu du plateau, et les trois premiers dessus ———
+  const PODIUM = [[0, 2.1, '#E8B93C'], [-3.3, 1.35, '#CBD0D9'], [3.3, 0.85, '#C98A4B']];
+  const PODIUM_Z = -3.6;
+  function showPodium(v, instant) {
+    const ranked = v.players.filter((p) => !p.out).sort((a, b) => b.worth - a.worth).slice(0, 3);
+    ranked.forEach((p, i) => {
+      const [x, h, color] = PODIUM[i];
+      const step = new THREE.Mesh(plateGeometry(2.9, 2.3, h, 0.18), new THREE.MeshLambertMaterial({ color }));
+      step.position.set(x, 0, PODIUM_Z);
+      step.castShadow = true;
+      step.receiveShadow = true;
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const g = c.getContext('2d');
+      g.font = '400 92px "ES Alfa", Georgia, serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillStyle = 'rgba(40,24,6,0.8)';
+      g.fillText(String(i + 1), 64, 70);
+      const size = Math.min(1.1, h * 0.8);
+      const number = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, toneMapped: false, depthWrite: false }));
+      number.position.set(0, h / 2, 1.16);
+      step.add(number);
+      scene.add(step);
+      const pawn = pawns.get(p.id);
+      if (!pawn) return;
+      pawn.queue = [];
+      pawn.to = null;
+      pawn.goal = p.pos;
+      pawn.react = null;
+      pawn.blob.visible = false;
+      pawn.mesh.scale.setScalar(PAWN_SCALE * 1.3);
+      pawn.mesh.rotation.set(0, FACING, 0);
+      pawn.mesh.position.set(x, instant ? h : 0, PODIUM_Z + 0.1);
+      pawn.standY = instant ? h : 0;
+      if (instant || reduced) {
+        pawn.standY = h;
+        pawn.mesh.position.y = h;
+      } else {
+        step.scale.y = 0.001;
+        rising.push({ step, pawn, h, id: p.id, first: i === 0, t: -(2 - i) * 0.3 });
+      }
+    });
+  }
+
   // ——— Les dés ———
   const dice = [makeDie(), makeDie()];
   const diceShadows = dice.map(() => {
@@ -966,7 +1032,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       v.set(0, 0, z).project(camera);
       return [((v.x + 1) / 2) * size.w, ((1 - v.y) / 2) * size.h];
     };
-    onFit?.(onScreen(0.4), onScreen(5.1));
+    onFit?.(onScreen(0.4), onScreen(5.1), onScreen(-1.1));
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
@@ -1081,6 +1147,41 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pops.splice(i, 1);
       }
     }
+    for (const pawn of pawns.values()) {
+      const r = pawn.react;
+      if (!r) continue;
+      busy = true;
+      r.t += dt / (r.kind === 'joy' ? 0.7 : 0.8);
+      const k = Math.min(1, r.t);
+      if (r.kind === 'joy') {
+        pawn.mesh.position.y = (pawn.standY ?? 0) + Math.abs(Math.sin(k * Math.PI * 2)) * 0.9;
+        pawn.mesh.rotation.y = FACING + k * Math.PI * 2;
+      } else {
+        pawn.mesh.rotation.x = Math.sin(k * Math.PI) * 0.5;
+      }
+      if (k >= 1) {
+        pawn.mesh.position.y = pawn.standY ?? 0;
+        pawn.mesh.rotation.x = 0;
+        pawn.mesh.rotation.y = FACING;
+        r.count -= 1;
+        r.t = 0;
+        if (r.count <= 0) pawn.react = null;
+      }
+    }
+    for (let i = rising.length - 1; i >= 0; i -= 1) { // les marches du podium montent, le personnage avec elles
+      const r = rising[i];
+      r.t += dt / 0.6;
+      const k = ease(Math.min(1, Math.max(0, r.t)));
+      r.step.scale.y = Math.max(0.001, k);
+      r.pawn.standY = r.h * k;
+      r.pawn.mesh.position.y = r.pawn.standY;
+      busy = true;
+      if (r.t >= 1) {
+        rising.splice(i, 1);
+        renderer.shadowMap.needsUpdate = true;
+        if (r.first) react(r.id, 'joy', 4);
+      }
+    }
     for (let i = fades.length - 1; i >= 0; i -= 1) { // la faillite : le pion rétrécit et tombe
       const f = fades[i];
       f.t += dt / 0.6;
@@ -1131,6 +1232,11 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       if (ring.visible) {
         const pulse = 1 + Math.sin(time * 3.4) * 0.07;
         ring.scale.set(pulse, pulse, 1);
+        if (view && !view.over) {
+          for (const pawn of pawns.values()) { // celui qui joue respire, les autres restent droits
+            if (!pawn.gone) pawn.mesh.scale.y = PAWN_SCALE * (pawn === curPawn && !pawn.to && !pawn.react ? 1 + Math.sin(time * 3.4) * 0.025 : 1);
+          }
+        }
       }
       if (marker.visible) {
         marker.position.y = markerBase + Math.abs(Math.sin(time * 3)) * 0.42;
@@ -1310,10 +1416,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     if (v.over && !wasOver) {
       wasOver = true;
       dice.forEach((d, i) => { d.visible = false; diceShadows[i].visible = false; });
-      for (const id of v.winners) { // le gagnant saute de joie
-        const pawn = pawns.get(id);
-        if (pawn && !reduced) for (let i = 0; i < 6; i += 1) pawn.queue.push({ pos: pawn.goal, jump: 0.9 });
-      }
+      showPodium(v, firstUpdate);
       if (!firstUpdate) for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [0, -7]]) celebrate(x, z, PAWN_COLORS[Math.floor(Math.random() * 10)]);
     }
     if (shadows || firstUpdate) renderer.shadowMap.needsUpdate = true;
@@ -1373,6 +1476,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     update,
     walking,
     payCoins,
+    react,
     // Le visage d'un voyageur, de près.
     portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT),
     // Le monument entier d'une ville.
