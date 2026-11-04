@@ -512,6 +512,14 @@ a.btn { text-decoration: none; }
 .game-logo { display: block; flex: none; width: var(--ls, 40px); height: var(--ls, 40px); background: var(--g-ink); -webkit-mask: var(--logo) center / contain no-repeat; mask: var(--logo) center / contain no-repeat; }
 .game-logo.is-emoji { background: none; -webkit-mask: none; mask: none; font-size: calc(var(--ls, 40px) * 0.85); line-height: 1; text-align: center; }
 
+/* Le jeu phare de la classe, en haut de la page Jouer */
+.game-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 20px; margin-bottom: 24px; padding: 24px; border-radius: var(--radius-l); background: var(--g); color: var(--g-ink); }
+.game-hero .game-logo { --ls: 72px; }
+.game-hero h2 { margin: 0; font: 800 2rem/1.05 var(--font-display); letter-spacing: -0.03em; }
+.game-hero-kicker { margin: 0 0 2px; font-size: 0.875rem; font-weight: 650; opacity: 0.7; }
+.game-hero .game-tagline { margin: 6px 0 0; font-size: 1rem; }
+.game-hero .game-meta { margin: 4px 0 0; padding: 0; background: none; font-size: 0.875rem; opacity: 0.7; }
+
 /* Jouer : les jeux en cartes de leur couleur, puis les tables */
 .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .game-card { display: grid; grid-template-rows: auto 1fr auto; gap: 14px; padding: 18px; border-radius: var(--radius-l); background: var(--g); color: var(--g-ink); }
@@ -1175,6 +1183,10 @@ body:has(.view-table) #toasts { top: max(12px, env(safe-area-inset-top)); bottom
 
   /* Jouer et tables : une colonne ; la table passe en plein écran avec deux onglets (Partie, Chat). */
   .tables-cols { grid-template-columns: minmax(0, 1fr); }
+  .game-hero { grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 16px; margin-bottom: 16px; }
+  .game-hero .game-logo { --ls: 48px; }
+  .game-hero h2 { font-size: 1.5rem; }
+  .game-hero .btn { grid-column: 1 / -1; }
   .games-head { display: grid; }
   .games-filters { display: grid; gap: 6px; }
   .filter-chips { flex-wrap: nowrap; justify-self: start; max-width: 100%; overflow-x: auto; scrollbar-width: none; }

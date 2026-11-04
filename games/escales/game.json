@@ -17,9 +17,10 @@
   "duration": "45 min",
   "emoji": "🗺️",
   "family": "plateau",
-  "color": "#0B1F5C",
-  "ink": "#FFD84D",
+  "color": "#F2F4F7",
+  "ink": "#12151F",
   "order": 1,
+  "featured": true,
   "options": [
     { "key": "rounds", "label": "Nombre de tours", "help": "À la fin, le plus gros patrimoine gagne.", "type": "choice", "default": 20,
       "choices": [{ "value": 12, "label": "12" }, { "value": 20, "label": "20" }, { "value": 30, "label": "30" }, { "value": 0, "label": "Sans fin" }] },

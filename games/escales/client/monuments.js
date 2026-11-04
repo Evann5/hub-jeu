@@ -1,20 +1,18 @@
-// Les monuments d'Escales, en 3D, façon maquette. Un monument tient sur une case de 2 × 3 (le bas à y = 0, l'avant vers +z).
+// Les monuments d'Escales, façon maquette d'architecte. Un monument tient sur une case de 2 × 3 (le bas à y = 0, l'avant vers +z).
 // Pour une nouvelle ville : écrire ici une fonction avec le petit kit (box, cyl, cone, dome, bars) et la nommer dans board.js.
+// Les couleurs écrites ici ne servent qu'à donner des nuances : bake() les change en tons de blanc, et le tout est fondu en une seule forme.
 import * as THREE from './three/three.module.js';
 
 const mats = new Map();
-export function mat(color, opts = {}) {
-  const key = `${color}|${JSON.stringify(opts)}`;
-  if (!mats.has(key)) mats.set(key, new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.72, metalness: 0.02, ...opts }));
-  return mats.get(key);
+function mat(color) {
+  if (!mats.has(color)) mats.set(color, new THREE.MeshBasicMaterial({ color }));
+  return mats.get(color);
 }
 
 function kit(g) {
-  const add = (geo, color, x, y, z, opts) => {
-    const m = new THREE.Mesh(geo, mat(color, opts));
+  const add = (geo, color, x, y, z) => {
+    const m = new THREE.Mesh(geo, mat(color));
     m.position.set(x, y, z);
-    m.castShadow = true;
-    m.receiveShadow = true;
     g.add(m);
     return m;
   };
@@ -22,16 +20,16 @@ function kit(g) {
     box: (w, h, d, color, x = 0, y = 0, z = 0) => add(new THREE.BoxGeometry(w, h, d), color, x, y + h / 2, z),
     cyl: (rt, rb, h, seg, color, x = 0, y = 0, z = 0) => add(new THREE.CylinderGeometry(rt, rb, h, seg), color, x, y + h / 2, z),
     cone: (r, h, seg, color, x = 0, y = 0, z = 0) => add(new THREE.ConeGeometry(r, h, seg), color, x, y + h / 2, z),
-    ball: (r, color, x = 0, y = 0, z = 0) => add(new THREE.SphereGeometry(r, 12, 9), color, x, y, z),
-    dome: (r, color, x = 0, y = 0, z = 0) => add(new THREE.SphereGeometry(r, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2), color, x, y, z),
+    ball: (r, color, x = 0, y = 0, z = 0) => add(new THREE.SphereGeometry(r, 10, 6), color, x, y, z),
+    dome: (r, color, x = 0, y = 0, z = 0) => add(new THREE.SphereGeometry(r, 10, 4, 0, Math.PI * 2, 0, Math.PI / 2), color, x, y, z),
     torus: (r, t, arc, color, x, y, z, rotY = 0) => {
-      const m = add(new THREE.TorusGeometry(r, t, 6, 18, arc), color, x, y, z);
+      const m = add(new THREE.TorusGeometry(r, t, 4, 14, arc), color, x, y, z);
       m.rotation.y = rotY;
       return m;
     },
     // Des barres entre deux points, regroupées en une seule forme : c'est ce qui donne la dentelle de la tour Eiffel.
     bars: (list, color) => {
-      const geo = new THREE.CylinderGeometry(1, 1, 1, 5);
+      const geo = new THREE.CylinderGeometry(1, 1, 1, 4, 1, true);
       const mesh = new THREE.InstancedMesh(geo, mat(color), list.length);
       const up = new THREE.Vector3(0, 1, 0);
       const m = new THREE.Matrix4();
@@ -45,7 +43,6 @@ function kit(g) {
         m.compose(A.add(B).multiplyScalar(0.5), q, new THREE.Vector3(r, len, r));
         mesh.setMatrixAt(i, m);
       });
-      mesh.castShadow = true;
       g.add(mesh);
       return mesh;
     },
@@ -445,6 +442,196 @@ export function buildMonument(name) {
   const g = new THREE.Group();
   (MONUMENTS[name] ?? MONUMENTS.maisonsColorees)(g);
   return g;
+}
+
+// Les personnages : 10 petits voyageurs, un par place. Même corps pour tous, en grosse tête ; la tenue prend la couleur du joueur.
+// Hauteur d'environ 1 avec le chapeau, les pieds à y = 0, le regard vers +z.
+const SKIN = ['#F2C9A5', '#8D5A3C', '#E8B48E', '#5F3B28', '#F6D7BC', '#C68B5E', '#7A4A30', '#EFC09A', '#FAD9C1', '#D9A77E'];
+const HAIR = { noir: '#23202A', brun: '#4F3325', blond: '#E5B84C', roux: '#C4562B', gris: '#C3C7CF' };
+const WHITE = '#FFFFFF';
+const NAVY = '#27304D';
+const JEAN = '#3F5C8A';
+const SAND = '#D9BF8C';
+const SHOE = '#23202A';
+
+function person(k, { skin, hair, top, bottom = NAVY, skirt = false, short = false }) {
+  for (const x of [-0.078, 0.078]) {
+    if (!skirt) k.cyl(0.056, 0.05, 0.24, 8, short ? skin : bottom, x, 0.03, 0);
+    if (short) k.cyl(0.066, 0.064, 0.11, 8, bottom, x, 0.17, 0);
+    if (skirt) k.cyl(0.04, 0.04, 0.2, 8, skin, x, 0.03, 0);
+    k.box(0.1, 0.05, 0.17, SHOE, x, 0, 0.025);
+  }
+  if (skirt) k.cyl(0.11, 0.19, 0.2, 12, bottom, 0, 0.17, 0);
+  k.cyl(0.125, 0.145, 0.27, 12, top, 0, 0.26, 0);
+  const shoulders = k.ball(0.135, top, 0, 0.53, 0);
+  shoulders.scale.y = 0.55;
+  for (const s of [-1, 1]) {
+    const arm = k.cyl(0.042, 0.036, 0.25, 8, top, 0, 0, 0);
+    arm.position.set(s * 0.17, 0.42, 0);
+    arm.rotation.z = s * 0.14;
+    k.ball(0.042, skin, s * 0.19, 0.285, 0);
+  }
+  k.ball(0.175, skin, 0, 0.74, 0);
+  for (const s of [-1, 1]) k.ball(0.022, '#16151C', s * 0.062, 0.75, 0.16);
+  if (hair) {
+    const h = k.dome(0.197, hair, 0, 0.75, -0.016);
+    h.scale.y = 0.92;
+  }
+}
+
+export const CAST = [
+  (k, c) => { // La pilote
+    person(k, { skin: SKIN[0], hair: HAIR.brun, top: c });
+    k.cyl(0.17, 0.18, 0.08, 14, WHITE, 0, 0.87, 0);
+    k.cyl(0.2, 0.17, 0.035, 14, NAVY, 0, 0.95, 0);
+    k.box(0.22, 0.02, 0.1, NAVY, 0, 0.86, 0.16);
+    k.box(0.05, 0.16, 0.012, NAVY, 0, 0.34, 0.14);
+  },
+  (k, c) => { // Le routard, et son gros sac
+    person(k, { skin: SKIN[1], hair: HAIR.noir, top: c, bottom: SAND, short: true });
+    k.box(0.27, 0.42, 0.19, '#5D7A52', 0, 0.26, -0.22);
+    k.box(0.22, 0.14, 0.04, '#46603E', 0, 0.3, -0.33);
+    const roll = k.cyl(0.075, 0.075, 0.32, 10, '#C4562B', 0, 0, 0);
+    roll.rotation.z = Math.PI / 2;
+    roll.position.set(0, 0.74, -0.22);
+    k.cyl(0.12, 0.2, 0.09, 12, c, 0, 0.87, 0);
+    k.cyl(0.105, 0.12, 0.06, 12, c, 0, 0.95, 0);
+  },
+  (k, c) => { // Le touriste : chapeau de paille et appareil photo
+    person(k, { skin: SKIN[2], hair: null, top: c, bottom: SAND, short: true });
+    k.cyl(0.29, 0.31, 0.022, 18, '#EBCF7E', 0, 0.86, 0);
+    k.cyl(0.14, 0.16, 0.1, 14, '#EBCF7E', 0, 0.88, 0);
+    k.cyl(0.165, 0.165, 0.02, 14, NAVY, 0, 0.88, 0);
+    k.box(0.15, 0.1, 0.07, '#23202A', 0, 0.33, 0.14);
+    const lens = k.cyl(0.033, 0.033, 0.04, 10, '#6C7690', 0, 0, 0);
+    lens.rotation.x = Math.PI / 2;
+    lens.position.set(0, 0.38, 0.195);
+    for (const s of [-1, 1]) k.box(0.1, 0.05, 0.02, '#16151C', s * 0.062, 0.725, 0.165);
+  },
+  (k, c) => { // Le marin : marinière, bonnet et barbe
+    person(k, { skin: SKIN[3], hair: null, top: WHITE, bottom: NAVY });
+    for (const y of [0.3, 0.38, 0.46]) k.cyl(0.14, 0.142, 0.035, 12, c, 0, y, 0);
+    k.dome(0.183, c, 0, 0.77, 0);
+    k.cyl(0.187, 0.187, 0.055, 14, WHITE, 0, 0.75, 0);
+    const beard = k.ball(0.125, HAIR.gris, 0, 0.64, 0.075);
+    beard.scale.set(1, 0.72, 0.8);
+  },
+  (k, c) => { // L'hôtesse : chignon, foulard, jupe et valise à roulettes
+    person(k, { skin: SKIN[4], hair: HAIR.roux, top: c, bottom: c, skirt: true });
+    k.ball(0.07, HAIR.roux, 0, 0.92, -0.05);
+    k.box(0.14, 0.05, 0.1, WHITE, 0, 0.53, 0.1);
+    k.box(0.2, 0.32, 0.12, NAVY, 0.34, 0.03, 0.02);
+    k.bars([[[0.3, 0.35, 0.02], [0.27, 0.5, 0.02], 0.009], [[0.38, 0.35, 0.02], [0.35, 0.5, 0.02], 0.009]], '#9AA5B8');
+    k.box(0.1, 0.018, 0.02, '#9AA5B8', 0.31, 0.5, 0.02);
+  },
+  (k, c) => { // La cycliste : casque et short
+    person(k, { skin: SKIN[5], hair: HAIR.noir, top: c, bottom: '#23202A', short: true });
+    const helmet = k.dome(0.2, WHITE, 0, 0.79, -0.01);
+    helmet.scale.set(1, 0.85, 1.12);
+    for (const x of [-0.07, 0, 0.07]) k.box(0.03, 0.03, 0.27, c, x, 0.935, -0.01);
+    k.box(0.15, 0.02, 0.04, '#16151C', 0, 0.8, 0.17);
+    k.ball(0.04, HAIR.noir, 0, 0.72, -0.19);
+  },
+  (k, c) => { // L'exploratrice : chapeau à large bord, tresse et sacoche
+    person(k, { skin: SKIN[6], hair: HAIR.noir, top: c, bottom: '#7A6240' });
+    k.cyl(0.26, 0.27, 0.025, 16, '#8A6A3F', 0, 0.87, 0);
+    k.cyl(0.13, 0.165, 0.12, 12, '#8A6A3F', 0, 0.89, 0);
+    k.cyl(0.167, 0.167, 0.025, 12, '#4F3325', 0, 0.89, 0);
+    k.cyl(0.035, 0.022, 0.26, 7, HAIR.noir, 0.12, 0.45, -0.13);
+    k.box(0.15, 0.13, 0.06, '#4F3325', -0.17, 0.2, 0.06);
+    k.bars([[[-0.17, 0.33, 0.06], [0.1, 0.56, 0.09], 0.012]], '#4F3325');
+  },
+  (k, c) => { // Le surfeur et sa planche
+    person(k, { skin: SKIN[7], hair: HAIR.blond, top: c, bottom: '#19A7C8', short: true });
+    const board = k.ball(0.17, WHITE, 0.36, 0.62, -0.04);
+    board.scale.set(0.72, 3.5, 0.14);
+    const stripe = k.box(0.04, 1.02, 0.05, c, 0.36, 0.12, -0.04);
+    stripe.scale.z = 1;
+    for (const s of [-1, 1]) k.box(0.1, 0.05, 0.02, '#16151C', s * 0.062, 0.725, 0.168);
+    const lock = k.ball(0.07, HAIR.blond, 0.1, 0.87, 0.06);
+    lock.scale.y = 0.6;
+  },
+  (k, c) => { // La cheffe : toque et tablier
+    person(k, { skin: SKIN[8], hair: HAIR.brun, top: c, bottom: NAVY });
+    k.cyl(0.165, 0.15, 0.13, 14, WHITE, 0, 0.87, 0);
+    const puff = k.ball(0.205, WHITE, 0, 1.08, 0);
+    puff.scale.y = 0.72;
+    k.box(0.21, 0.32, 0.03, WHITE, 0, 0.17, 0.13);
+    k.box(0.14, 0.13, 0.03, WHITE, 0, 0.45, 0.125);
+    const spoon = k.cyl(0.012, 0.012, 0.32, 6, '#8A6A3F', 0, 0, 0);
+    spoon.position.set(0.22, 0.4, 0.04);
+    k.ball(0.04, '#8A6A3F', 0.22, 0.57, 0.04);
+  },
+  (k, c) => { // Le grand-père : béret, lunettes, canne
+    person(k, { skin: SKIN[9], hair: HAIR.gris, top: c, bottom: '#5A5F6E' });
+    const beret = k.ball(0.195, NAVY, 0.015, 0.895, -0.015);
+    beret.scale.y = 0.34;
+    k.cyl(0.012, 0.012, 0.03, 5, NAVY, 0, 0.955, 0);
+    for (const s of [-1, 1]) {
+      const g = k.torus(0.036, 0.009, Math.PI * 2, '#16151C', s * 0.062, 0.75, 0.163);
+      g.scale.z = 0.5;
+    }
+    k.cyl(0.014, 0.014, 0.33, 6, '#6B4A2E', 0.24, 0, 0.05);
+    k.ball(0.028, '#6B4A2E', 0.24, 0.34, 0.05);
+    k.box(0.13, 0.09, 0.012, '#FFFFFF', 0, 0.45, 0.13);
+  },
+];
+
+export function buildCharacter(seat, color) {
+  const g = new THREE.Group();
+  CAST[seat % CAST.length](kit(g), color);
+  return g;
+}
+
+// Le ton de blanc d'une pièce selon sa couleur d'origine : les pièces sombres restent un peu plus foncées, pour garder le relief.
+function toneOf(material) {
+  const c = material.color;
+  const l = 0.3 * c.r + 0.59 * c.g + 0.11 * c.b;
+  return 0.62 + 0.38 * Math.min(1, Math.sqrt(l));
+}
+
+// Fond plusieurs objets en une seule forme (un seul appel de dessin), avec une face plate par triangle et un ton par pièce.
+// items : [{ object, matrix? }]. Renvoie une géométrie avec position, normal et color.
+// fullColor : garde les vraies couleurs (les personnages), au lieu des tons de blanc (la maquette).
+export function bake(items, { fullColor = false } = {}) {
+  const pos = [];
+  const col = [];
+  const v = new THREE.Vector3();
+  const m = new THREE.Matrix4();
+  const i2 = new THREE.Matrix4();
+  const push = (geometry, matrix, tone, material) => {
+    const g = geometry.index ? geometry.toNonIndexed() : geometry;
+    const p = g.attributes.position;
+    const c = material.color;
+    for (let i = 0; i < p.count; i += 1) {
+      v.fromBufferAttribute(p, i).applyMatrix4(matrix);
+      pos.push(v.x, v.y, v.z);
+      if (fullColor) col.push(c.r, c.g, c.b);
+      else col.push(tone, tone, tone);
+    }
+  };
+  for (const { object, matrix, tone } of items) {
+    object.updateMatrixWorld(true);
+    object.traverse((o) => {
+      if (o.isInstancedMesh) {
+        for (let i = 0; i < o.count; i += 1) {
+          o.getMatrixAt(i, i2);
+          m.multiplyMatrices(o.matrixWorld, i2);
+          if (matrix) m.premultiply(matrix);
+          push(o.geometry, m, toneOf(o.material), o.material);
+        }
+      } else if (o.isMesh) {
+        m.copy(o.matrixWorld);
+        if (matrix) m.premultiply(matrix);
+        push(o.geometry, m, tone ?? toneOf(o.material), o.material);
+      }
+    });
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  return geo;
 }
 
 // Les cases spéciales.

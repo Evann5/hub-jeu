@@ -54,6 +54,22 @@ function gameCard(g) {
     btn);
 }
 
+// Le jeu phare de la classe : une grande carte, avant la liste.
+function featuredCard(g) {
+  const live = state.tables.filter((t) => t.game === g.id && t.status !== 'over');
+  const waiting = live.filter((t) => t.status === 'lobby').length;
+  const playing = live.length - waiting;
+  const news = [waiting ? count(waiting, 'salon ouvert', 'salons ouverts') : null, playing ? count(playing, 'partie en cours', 'parties en cours') : null].filter(Boolean).join(', ');
+  return h('section.game-hero', { style: `--g:${g.color};--g-ink:${g.ink}` },
+    gameLogo(g),
+    h('div.game-hero-text',
+      h('p.game-hero-kicker', 'Le jeu de la classe'),
+      h('h2', g.name),
+      h('p.game-tagline', g.tagline),
+      h('p.game-meta', playersLabel(g), g.duration ? `, ${g.duration}` : '', news ? `. ${news}.` : '')),
+    h('button.btn.btn-dark', { type: 'button', onclick: (e) => openTable(g, e.currentTarget) }, icon('plus'), 'Ouvrir une table'));
+}
+
 function statusLabel(t, g) {
   if (t.status === 'lobby') return `Salon · ${t.seats.length}/${g.maxPlayers}`;
   if (t.status === 'playing') return t.turn.includes(state.me.id) ? 'À toi de jouer' : 'En cours';
@@ -94,7 +110,8 @@ export function render(el) {
     list.length ? h('ul.table-list', list.map(tableRow)) : h('p.section-empty', empty));
 
   const test = FILTERS.find((f) => f.key === filter).test;
-  const shown = state.games.filter((g) => test(g) && (family === 'tous' || g.family === family));
+  const hero = state.games.find((g) => g.featured);
+  const shown = state.games.filter((g) => g !== hero && test(g) && (family === 'tous' || g.family === family));
   const chips = (label, list, value, set) => h('div.filter-chips', { role: 'radiogroup', 'aria-label': label }, list.map((f) => h('button.chip', {
     type: 'button',
     role: 'radio',
@@ -112,6 +129,7 @@ export function render(el) {
     h('div.view-head.page-head',
       h('div', h('h1', 'Jouer'),
         h('p.view-sub', turns ? `C’est à toi de jouer sur ${count(turns, 'table', 'tables')}.` : 'Ouvre une table, invite la classe, joue en direct.'))),
+    hero ? featuredCard(hero) : null,
     open.length || playing.length ? h('div.tables-cols',
       section('Salons ouverts', open, 'Aucun salon ouvert pour l’instant.'),
       section('Parties en cours', playing, 'Aucune partie en cours.')) : null,

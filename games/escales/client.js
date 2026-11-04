@@ -36,31 +36,33 @@ export function mount(root, api) {
   const players = h('div.es-players', { role: 'list', 'aria-label': 'Joueurs' });
   const news = h('p.es-news');
   const round = h('p.es-round');
-  const dice = h('div.es-dice', { 'aria-live': 'polite' });
   const prompt = h('div.es-prompt');
   const trades = h('div.es-trades');
-  const viewBtn = h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => {
+  const viewBtn = h('button.es-link', { type: 'button', onclick: () => {
     if (!world) return;
     world.setOverview(!world.isOverview());
     viewBtn.textContent = world.isOverview() ? 'Suivre le jeu' : 'Tout voir';
   } }, 'Tout voir');
   const tools = h('div.es-tools',
-    h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, 'Villes'),
-    h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => openTrade() }, 'Échanger'),
+    h('button.es-link', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, 'Villes'),
+    h('button.es-link', { type: 'button', onclick: () => openTrade() }, 'Échanger'),
     viewBtn);
-  const logBox = h('ol.es-log', { 'aria-label': 'Derniers événements' });
+  const logBox = h('p.es-log', { 'aria-live': 'polite' });
   const timer = h('div.es-timer', h('i'));
-  const dock = h('section.es-dock', timer, h('div.es-head', round, dice), news, prompt, trades, tools, logBox);
+  const dock = h('section.es-dock', timer, round, news, prompt, trades, logBox);
   const layer = h('div.es-layer');
-  root.append(h('div.es', stage, players, dock, layer));
+  const loading = h('p.es-loading', 'Le plateau arrive…');
+  root.append(h('div.es', stage, loading, players, tools, dock, layer));
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
-  Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('700 30px "ES Figtree"')]).catch(() => {}).finally(() => {
+  Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"')]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
       world = createWorld(stage, { onTile: (pos) => openOverlay({ kind: 'city', pos }) });
       if (v) world.update(v);
+      loading.remove();
     } catch (err) {
+      loading.remove();
       console.error(err);
       stage.replaceChildren(h('p.es-no3d', 'Ton navigateur n’affiche pas la 3D. Tu peux quand même jouer avec la carte ci-dessous et le bouton Villes.'));
     }
@@ -72,8 +74,9 @@ export function mount(root, api) {
       dot.style.background = PAWN_COLORS[p.seat];
       const turn = !v.over && v.players[v.cur].id === p.id;
       return h(`div.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { role: 'listitem' },
-        api.token(api.user(p.id), { size: 's' }),
-        h('span.es-who', h('b', dot, p.id === meId ? 'Toi' : p.pseudo), h('span', p.out ? 'Sorti' : money(p.cash))));
+        dot,
+        h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo),
+        h('span.es-cash', p.out ? 'Sorti' : money(p.cash)));
     }));
   }
 
@@ -82,7 +85,7 @@ export function mount(root, api) {
     const t = TILES[pos];
     const el = h('button.es-mini', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos }) },
       h('b', t.name),
-      h('span', t.type === 'city' ? t.fact : 'Une escale : un vol pour une autre escale, quand tu tombes dessus.'));
+      h('span', t.type === 'city' ? `${REGIONS[t.region].name}. ${t.fact}` : 'Une escale : de là, un vol pour une autre escale.'));
     if (t.type === 'city') el.style.setProperty('--r', REGIONS[t.region].color);
     return el;
   };
@@ -96,10 +99,10 @@ export function mount(root, api) {
       return [say(mine !== null ? `Ta mise : ${mine ? money(mine) : 'tu passes'}. On attend les autres.` : `Enchères secrètes pour ${t.name}.`),
         cityCard(pos), say(`${hasBid.length} sur ${eligible.length} ont misé.`)];
     }
-    const input = h('input.es-input', { type: 'number', min: 0, max: me().cash, step: 10, inputmode: 'numeric', value: String(Math.min(t.price, me().cash)), 'aria-label': 'Ta mise en euros' });
+    const input = h('input.es-input', { type: 'number', min: 0, max: me().cash, step: 1, inputmode: 'numeric', value: String(Math.min(t.price, me().cash)), 'aria-label': 'Ta mise en euros' });
     const submit = (amount) => send({ type: 'bid', amount });
     return [say(`Enchères secrètes : combien pour ${t.name} ?`), cityCard(pos),
-      h('form.es-bid', { onsubmit: (e) => { e.preventDefault(); submit(Number(input.value) || 0); } },
+      h('form.es-bid', { noValidate: true, onsubmit: (e) => { e.preventDefault(); submit(Number(input.value) || 0); } },
         input, h('button.es-btn', { type: 'submit' }, 'Miser')),
       h('button.es-btn.is-ghost', { type: 'button', onclick: () => submit(0) }, 'Passer')];
   }
@@ -155,10 +158,9 @@ export function mount(root, api) {
   }
 
   function renderDock() {
-    round.textContent = v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)} sur ${v.maxRounds}` : `Tour ${v.round}`;
+    round.textContent = `${v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)} sur ${v.maxRounds}` : `Tour ${v.round}`}${v.dice ? `, dés ${v.dice[0]} et ${v.dice[1]}` : ''}`;
     news.textContent = v.event?.text ?? '';
     news.hidden = !v.event || v.over;
-    dice.replaceChildren(...(v.dice ? v.dice.map((n) => h('span.es-die', String(n))) : []));
 
     const key = JSON.stringify([v.phase, v.cur, v.rollN, v.over, v.auction?.pos, v.auction?.mine,
       v.phase === 'auction' && v.auction.mine !== null ? v.auction.hasBid.length : 0,
@@ -170,7 +172,7 @@ export function mount(root, api) {
 
     trades.replaceChildren(...v.trades.filter((t) => t.to === meId || t.from === meId).map(tradeCard));
     tools.hidden = v.over;
-    logBox.replaceChildren(...v.log.filter((l) => !l.text.startsWith('À la une')).slice(-3).reverse().map((l) => h('li', l.text)));
+    logBox.textContent = v.log.filter((l) => !l.text.startsWith('À la une')).at(-1)?.text ?? '';
   }
 
   function offerText(o) {
@@ -215,7 +217,7 @@ export function mount(root, api) {
     const prop = v.props[pos];
     const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
     const a = v.actions;
-    const head = h('header.es-poster', h('p', t.type === 'city' ? REGIONS[t.region].name : 'Escale'), h('h2', t.name));
+    const head = h('header.es-poster', h('h2', t.name), h('p', t.type === 'city' ? REGIONS[t.region].name : 'Escale'));
     if (t.type === 'city') head.style.setProperty('--r', REGIONS[t.region].color);
     const lines = t.type === 'city'
       ? [['Ville seule', t.rent], ['Majorité de la région', t.rent * 2], ['Région complète', t.rent * 3],
@@ -281,8 +283,8 @@ export function mount(root, api) {
         return el;
       })) : h('p.es-note', 'Aucune ville échangeable.');
     };
-    const giveCash = h('input.es-input', { type: 'number', min: 0, step: 10, value: '0', inputmode: 'numeric', 'aria-label': 'Argent que tu donnes' });
-    const getCash = h('input.es-input', { type: 'number', min: 0, step: 10, value: '0', inputmode: 'numeric', 'aria-label': 'Argent que tu demandes' });
+    const giveCash = h('input.es-input', { type: 'number', min: 0, step: 1, value: '0', inputmode: 'numeric', 'aria-label': 'Argent que tu donnes' });
+    const getCash = h('input.es-input', { type: 'number', min: 0, step: 1, value: '0', inputmode: 'numeric', 'aria-label': 'Argent que tu demandes' });
     return shell('Proposer un échange', h('h2', 'Proposer un échange'),
       h('div.es-picks', others.map((p) => h(`button.es-pick${p.id === draft.to ? '.is-on' : ''}`, {
         type: 'button',

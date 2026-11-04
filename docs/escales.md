@@ -1,6 +1,6 @@
 # Escales : le raisonnement du jeu
 
-Le grand jeu de plateau de Hubuno, de 2 à 10 joueurs : un jeu d'achat de villes, du même genre que Monopoly ou Rich Up, avec son propre nom, son plateau et ses règles. Le plateau est une maquette en 3D : chaque ville a son monument.
+Le jeu phare de Hubuno, de 2 à 10 joueurs : un jeu d'achat de villes, du même genre que Monopoly ou Rich Up, avec son propre nom, son plateau et ses règles. Le plateau est une maquette blanche en 3D : chaque ville a son monument, et une ville achetée prend la couleur de son propriétaire.
 
 ## Le constat de départ
 
@@ -51,9 +51,20 @@ Moyennes sur 40 parties par nombre de joueurs, en 20 tours, avec des robots qui 
 
 À 10 joueurs, la moitié de la table est éliminée à la fin de la partie, et l'écart est grand. C'est le point à surveiller lors des premières vraies parties.
 
+## Les personnages
+
+Chaque place a son voyageur, dans `CAST` (`client/monuments.js`) : pilote, routard, touriste, marin, hôtesse, cycliste, exploratrice, surfeur, cheffe, grand-père. Même corps pour tous ; la tenue prend la couleur du joueur. Ils marchent sur le sol, le long du bord intérieur du plateau, pour ne jamais cacher le texte des cases.
+
 ## Ce qui reste à faire
 
 - Les villes définitives de Minh.
 - Valider le style de la maquette 3D, puis soigner monument par monument.
 - Sons, confettis de victoire, animations d'achat.
-- Three.js pèse 2 Mo : à compresser au moment de la mise en ligne.
+- Three.js pèse 2 Mo : à compresser au moment de la mise en ligne (gzip sur le VPS).
+
+## Pour que ça reste fluide
+
+- Une seule forme par case : les pièces d'un monument sont fondues ensemble (`bake()` dans `client/monuments.js`). Ne jamais ajouter d'objets 3D séparés sur le plateau.
+- Les ombres sont calculées une fois, puis seulement quand une construction change. Les pions ont une simple tache d'ombre.
+- Rien n'est redessiné quand rien ne bouge : pas de décor animé en continu.
+- Si une machine n'arrive pas à suivre, la qualité baisse toute seule (résolution, puis ombres).
