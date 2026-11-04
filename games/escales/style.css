@@ -1,11 +1,11 @@
-/* Escales : un tour du monde en fin de journée. La carte entière sur une mer qui s'assombrit vers les bords ; l'action tient sur une
-   carte d'embarquement, posée au centre du plateau. Titres en Unbounded, texte en Figtree. Tout est sous .g-escales. */
+/* Escales : un tour du monde sur un vrai plateau, une dalle mate posée sur un fond uni, en lumière de fin de journée. L'action tient
+   sur une carte d'embarquement, au centre du plateau. Titres en Unbounded, texte en Figtree. Tout est sous .g-escales. */
 
 @font-face { font-family: 'ES Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
 @font-face { font-family: 'ES Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
 
 .g-escales {
-  --field: #1B6E8C;
+  --field: #0F1016;
   --es-display: 'ES Unbounded', system-ui, sans-serif;
   --ink: #12151F;
   --soft: #4D5566;
@@ -21,7 +21,7 @@
 }
 .g-escales * { box-sizing: border-box; }
 .g-escales .es { position: relative; flex: 1; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
-.g-escales .es-world { position: absolute; inset: 0; background: radial-gradient(ellipse 72% 68% at 50% 50%, #62D5D3 0%, #38ABC0 48%, #186A8B 78%, #0E4663 100%); }
+.g-escales .es-world { position: absolute; inset: 0; background: var(--field); }
 .g-escales .es-world canvas { display: block; touch-action: none; cursor: grab; }
 .g-escales .es-world canvas:active { cursor: grabbing; }
 .g-escales .es-no3d, .g-escales .es-loading { position: absolute; inset: 40% 16px auto; margin: 0; color: #fff; font-weight: 600; text-align: center; }
@@ -30,11 +30,12 @@
 /* La table centrale : les joueurs au-dessus de la carte d'embarquement, au milieu de l'anneau */
 .g-escales .es-table { position: absolute; top: 52%; left: 50%; display: grid; gap: 8px; width: min(430px, 50%); max-height: 62%; transform: translate(-50%, -50%); pointer-events: none; }
 .g-escales .es-table > * { pointer-events: auto; }
-.g-escales .es-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; padding: 5px; border-radius: 12px; background: rgb(255 253 248 / 0.95); box-shadow: 0 10px 26px rgb(6 50 74 / 0.32); }
-.g-escales .es-chip { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 24px; padding: 0 8px; border-radius: 6px; color: var(--soft); font-size: 0.875rem; font-weight: 600; }
-.g-escales .es-chip.is-turn { background: var(--ink); color: #fff; }
+.g-escales .es-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; padding: 5px; border-radius: 12px; background: rgb(255 253 248 / 0.95); box-shadow: 0 8px 22px rgb(0 0 0 / 0.4); }
+.g-escales .es-chip { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 28px; padding: 0 8px 0 6px; border-radius: 7px; background: color-mix(in srgb, var(--p) 22%, #FFFDF8); color: var(--ink); font-size: 0.9375rem; font-weight: 700; }
+.g-escales button.es-chip { width: 100%; border: 0; font-family: var(--es-text); text-align: left; cursor: pointer; }
+.g-escales .es-chip.is-turn { background: var(--ink); color: #fff; box-shadow: inset 0 0 0 2px var(--p); }
 .g-escales .es-chip.is-out { opacity: 0.45; text-decoration: line-through; }
-.g-escales .es-dot { width: 11px; height: 11px; border-radius: 50%; }
+.g-escales .es-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--p); box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.8); }
 .g-escales .es-pseudo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .g-escales .es-pseudo small { font-size: 0.6875rem; font-weight: 600; opacity: 0.7; }
 .g-escales .es-cash { position: relative; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
@@ -42,12 +43,12 @@
 .g-escales .es-delta.is-up { color: #067A42; }
 .g-escales .es-delta.is-down { color: #B3202F; }
 @keyframes es-delta { 0% { opacity: 0; transform: translateY(6px); } 15% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }
-.g-escales .es-chip:not(.is-turn) .es-cash { color: var(--ink); }
+
 
 /* Les trois liens en haut à droite */
 .g-escales .es-tools { position: absolute; top: 10px; right: 12px; display: flex; gap: 2px; }
 .g-escales .es-tools[hidden] { display: none; }
-.g-escales .es-link { min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: #fff; font: 650 0.875rem var(--es-text); text-shadow: 0 1px 3px rgb(6 50 74 / 0.6); cursor: pointer; }
+.g-escales .es-link { min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: #fff; font: 650 0.875rem var(--es-text); cursor: pointer; }
 .g-escales .es-link:hover { background: rgb(255 255 255 / 0.16); }
 
 /* La carte du bas : une seule chose à faire à la fois */
@@ -59,12 +60,27 @@
   overflow-y: auto;
   border-radius: 14px;
   background: #FFFDF8;
-  box-shadow: 0 2px 0 #D9D2C2, 0 18px 40px rgb(6 50 74 / 0.42);
+  box-shadow: 0 2px 0 #D9D2C2, 0 16px 36px rgb(0 0 0 / 0.5);
   transition: box-shadow 0.25s;
 }
-.g-escales .es-dock.is-mine { box-shadow: 0 0 0 3px #FFC93C, 0 18px 44px rgb(6 50 74 / 0.5); }
+.g-escales .es-dock.is-mine { box-shadow: 0 0 0 3px #FFC93C, 0 16px 40px rgb(0 0 0 / 0.55); }
 .g-escales .es-pass-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 -14px; padding: 9px 14px; border-bottom: 2px dashed #D9D2C2; }
 .g-escales .es-brand { font: 800 0.75rem var(--es-display); letter-spacing: -0.02em; }
+.g-escales .es-clock { margin-right: auto; color: var(--danger); font-size: 0.875rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.g-escales .es-tip { position: absolute; top: 0; left: 0; z-index: 3; display: grid; max-width: 220px; padding: 7px 10px; border: 2px solid transparent; border-radius: 9px; background: #FFFDF8; color: var(--ink); font-size: 0.8125rem; box-shadow: 0 8px 20px rgb(0 0 0 / 0.45); pointer-events: none; }
+.g-escales .es-tip[hidden] { display: none; }
+.g-escales .es-tip b { font-size: 0.9375rem; }
+.g-escales .es-standing { display: grid; gap: 4px; margin-top: 3px; color: var(--ink); font-size: 0.8125rem; font-weight: 600; }
+.g-escales .es-pips-line { display: flex; gap: 3px; }
+.g-escales .es-pips-line i { width: 22px; height: 8px; border-radius: 2px; background: #E4DFD3; }
+.g-escales .es-pips-line i.is-this { box-shadow: 0 0 0 1.5px var(--ink); }
+.g-escales .es-buildrow { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line); }
+.g-escales .es-buildrow > span { color: var(--soft); font-size: 0.8125rem; font-weight: 700; }
+.g-escales .es-who-head { display: flex; align-items: center; gap: 10px; padding-right: 36px; }
+.g-escales .es-who-head .es-dot { flex: none; width: 22px; height: 22px; }
+.g-escales .es-rules { display: grid; gap: 6px; margin: 0; padding-left: 18px; font-size: 0.875rem; }
+.g-escales .es-history { display: grid; gap: 5px; margin: 0; padding: 0; color: var(--soft); font-size: 0.875rem; list-style: none; }
+.g-escales .es-history li:first-child { color: var(--ink); font-weight: 650; }
 .g-escales .es-round { margin: 0; color: var(--soft); font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .g-escales .es-news { margin: 0; font-size: 0.8125rem; font-weight: 600; }
 .g-escales .es-news[hidden] { display: none; }
@@ -96,7 +112,7 @@
 .g-escales .es-btn.is-ghost:hover { background: #E4E8EE; }
 .g-escales .es-btn.is-danger { background: none; color: var(--danger); box-shadow: inset 0 0 0 1.5px var(--danger); }
 .g-escales .es-btn.is-small { min-height: 38px; padding: 0 12px; font-size: 0.875rem; }
-.g-escales .es-btn:focus-visible, .g-escales .es-link:focus-visible, .g-escales .es-mini:focus-visible, .g-escales .es-line:focus-visible, .g-escales .es-pick:focus-visible, .g-escales .es-close:focus-visible, .g-escales .es-input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.g-escales .es-chip:focus-visible, .g-escales .es-btn:focus-visible, .g-escales .es-link:focus-visible, .g-escales .es-mini:focus-visible, .g-escales .es-line:focus-visible, .g-escales .es-pick:focus-visible, .g-escales .es-close:focus-visible, .g-escales .es-input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .g-escales .es-bid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .g-escales .es-input { width: 100%; min-width: 0; min-height: 46px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--quiet); color: var(--ink); font: 700 1.0625rem var(--es-text); font-variant-numeric: tabular-nums; }
@@ -133,12 +149,17 @@
 
 @media (max-width: 760px) {
   .g-escales .es-table { inset: 0; display: block; width: auto; max-height: none; transform: none; }
-  .g-escales .es-players { position: absolute; top: 6px; right: 6px; left: 6px; display: flex; gap: 2px; padding: 3px; overflow-x: auto; scrollbar-width: none; }
-  .g-escales .es-chip { flex: none; grid-template-columns: 10px auto auto; gap: 5px; padding: 0 8px; }
-  .g-escales .es-pseudo { max-width: 68px; }
-  .g-escales .es-tools { inset: auto 0 auto auto; top: 40px; right: 4px; }
+  .g-escales .es-players { position: absolute; top: 6px; right: 6px; left: 6px; gap: 2px; padding: 3px; }
+  .g-escales .es-chip { min-height: 28px; gap: 5px; padding: 0 6px 0 5px; font-size: 0.8125rem; }
+  .g-escales .es-pseudo small { display: none; }
+  .g-escales .es-tools { inset: auto 0 auto auto; top: calc(14px + var(--rows, 2) * 30px); right: 4px; }
   .g-escales .es-delta { display: none; }
-  .g-escales .es-code { font-size: 2rem; }
+  .g-escales .es-mini { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; }
+  .g-escales .es-code { font-size: 1.5rem; }
+  .g-escales .es-standing { grid-column: 1 / -1; }
+  .g-escales .es-news { font-size: 0.75rem; }
+  .g-escales .es-prompt { gap: 6px; }
+  .g-escales .es-btn { min-height: 44px; }
   .g-escales .es-factline { display: none; }
   .g-escales .es-dock { position: absolute; bottom: 0; left: 0; width: 100%; max-height: 50%; padding: 0 14px calc(12px + env(safe-area-inset-bottom)); gap: 8px; border-radius: 14px 14px 0 0; transform: none; }
   .g-escales .es-sheet-wrap { padding: 8px; }

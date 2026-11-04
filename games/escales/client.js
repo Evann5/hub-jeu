@@ -1,6 +1,6 @@
 // Escales côté navigateur : le monde en 3D (client/scene.js), et par-dessus l'interface : les joueurs, la carte du bas
 // qui dit quoi faire, et les fenêtres (une ville, toutes les villes, proposer un échange). Les règles restent côté serveur (rules.js).
-import { REGIONS, TILES, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS, FLY_COST } from './client/board.js';
+import { REGIONS, TILES, RULES, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS, FLY_COST } from './client/board.js';
 import { createWorld, PAWN_COLORS } from './client/scene.js';
 import { FLAGS } from './client/countries.js';
 import { createSound } from './client/sound.js';
@@ -29,7 +29,9 @@ export function mount(root, api) {
 
   const meId = api.me.id;
   const sound = createSound();
-  const before = { cash: new Map(), rollN: null, cur: null, owners: new Map(), levels: 0, over: false };
+  const before = { cash: new Map(), rollN: null, cur: null, owners: new Map(), levels: 0, over: false, logN: 0 };
+  const pageTitle = document.title;
+  let confirmBankrupt = false;
   const send = (action) => api.sendMove(action).catch(() => {});
   const nameOf = (id) => (id === meId ? 'Toi' : v.players.find((p) => p.id === id)?.pseudo ?? '?');
   const me = () => v.players.find((p) => p.id === meId);
@@ -40,26 +42,32 @@ export function mount(root, api) {
   const players = h('div.es-players', { role: 'list', 'aria-label': 'Joueurs' });
   const news = h('p.es-news');
   const round = h('p.es-round');
-  const passTop = h('div.es-pass-top', h('span.es-brand', 'Escales'), round);
+  const clock = h('span.es-clock', { 'aria-live': 'off' });
+  const passTop = h('div.es-pass-top', h('span.es-brand', 'Escales'), clock, round);
+  const tip = h('div.es-tip', { hidden: true, 'aria-hidden': 'true' });
   const prompt = h('div.es-prompt');
   const trades = h('div.es-trades');
   const tools = h('div.es-tools',
     h('button.es-link', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, 'Villes'),
     h('button.es-link', { type: 'button', onclick: () => openTrade() }, 'Échanger'),
-    h('button.es-link', { type: 'button', onclick: () => world?.recenter() }, 'Recentrer'),
-    h('button.es-link', { type: 'button', onclick: (e) => { e.currentTarget.textContent = sound.toggle() ? 'Son coupé' : 'Son'; } }, sound.isMuted() ? 'Son coupé' : 'Son'));
+    h('button.es-link', { type: 'button', onclick: () => openOverlay({ kind: 'more' }) }, 'Plus'));
   const logBox = h('p.es-log', { 'aria-live': 'polite' });
   const timer = h('div.es-timer', h('i'));
   const dock = h('section.es-dock', passTop, timer, news, prompt, trades, logBox);
   const layer = h('div.es-layer');
   const loading = h('p.es-loading', 'Le plateau arrive…');
-  root.append(h('div.es', stage, loading, tools, h('div.es-table', players, dock), layer));
+  root.append(h('div.es', stage, loading, tip, tools, h('div.es-table', players, dock), layer));
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
   Promise.all([document.fonts.load('800 40px "ES Figtree"'), document.fonts.load('600 30px "ES Figtree"')]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
-      world = createWorld(stage, { meId, onStep: sound.step, onTile: (pos) => openOverlay({ kind: 'city', pos }) });
+      world = createWorld(stage, {
+        onStep: sound.step,
+        onHover: showTip,
+        onTile: (pos) => openOverlay({ kind: 'city', pos }),
+        topInset: () => tools.getBoundingClientRect().bottom - stage.getBoundingClientRect().top + 6,
+      });
       if (v) world.update(v);
       loading.remove();
     } catch (err) {
@@ -68,6 +76,28 @@ export function mount(root, api) {
       stage.replaceChildren(h('p.es-no3d', 'Ton navigateur n’affiche pas la 3D. Tu peux quand même jouer avec la carte ci-dessous et le bouton Villes.'));
     }
   });
+
+  // Au survol d'une case : qui la possède et ce qu'elle coûte.
+  function showTip(pos, x, y) {
+    if (pos === null || !v) {
+      tip.hidden = true;
+      return;
+    }
+    const t = TILES[pos];
+    const prop = v.props[pos];
+    const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
+    const lines = [h('b', t.name)];
+    if (t.price) {
+      lines.push(h('span', owner
+        ? `${owner.id === meId ? 'À toi' : `À ${owner.pseudo}`}${prop.mortgaged ? ', en gage' : `, loyer ${money(v.rents[pos] ?? 0)}`}`
+        : `Libre, ${money(t.price)}`));
+      if (prop?.level) lines.push(h('span', LEVEL_NAMES[prop.level]));
+    }
+    tip.replaceChildren(...lines);
+    tip.style.borderColor = owner ? PAWN_COLORS[owner.seat] : 'transparent';
+    tip.style.transform = `translate(${Math.round(x + 14)}px, ${Math.round(y + 14)}px)`;
+    tip.hidden = false;
+  }
 
   // L'argent qui bouge se voit : un petit montant s'envole à côté du joueur.
   function deltaOf(p) {
@@ -90,7 +120,17 @@ export function mount(root, api) {
     }
     if (before.owners.size && levels > before.levels) sound.build();
     before.levels = levels;
-    if (before.cur !== null && before.cur !== v.cur && v.players[v.cur].id === meId && !v.over) sound.turn();
+    if (before.cur !== null && before.cur !== v.cur && v.players[v.cur].id === meId && !v.over) {
+      sound.turn();
+      navigator.vibrate?.(70); // sur téléphone, on sent que c'est à soi
+    }
+    document.title = !v.over && document.hidden && myTurn() ? `À toi ! ${pageTitle}` : pageTitle;
+    // La réponse d'un robot à ton échange ne doit pas passer inaperçue.
+    const myName = me()?.pseudo;
+    if (myName) for (const l of v.log) {
+      if (l.n > before.logN && before.logN && l.text.endsWith(`l'échange de ${myName}.`)) api.toast(l.text);
+    }
+    before.logN = v.log.at(-1)?.n ?? 0;
     if (v.over && !before.over) sound.win();
     before.over = v.over;
     before.rollN = v.rollN;
@@ -104,11 +144,13 @@ export function mount(root, api) {
       const dot = h('i.es-dot');
       dot.style.background = PAWN_COLORS[p.seat];
       const turn = !v.over && v.players[v.cur].id === p.id;
-      return h(`div.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { role: 'listitem' },
+      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}`, { type: 'button', role: 'listitem', style: `--p:${PAWN_COLORS[p.seat]}`, onclick: () => openOverlay({ kind: 'player', id: p.id }) },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, p.bot ? h('small', ' robot') : null),
         h('span.es-cash', p.out ? 'Sorti' : money(p.cash), deltaOf(p)));
+      return chip;
     }));
+    root.style.setProperty('--rows', String(Math.ceil(v.players.length / 2)));
   }
 
   // ——— La carte du bas ———
@@ -124,10 +166,40 @@ export function mount(root, api) {
     const el = h('button.es-mini', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos }) },
       h('span.es-code', code),
       h('span.es-where', t.type === 'city' ? flagOf(t.region) : null, h('b', t.name), h('small', t.type === 'city' ? REGIONS[t.region].name : 'Escale')),
-      t.fact ? h('span.es-factline', t.fact) : null);
+      t.fact ? h('span.es-factline', t.fact) : null,
+      standing(t));
     if (t.type === 'city') el.style.setProperty('--r', REGIONS[t.region].color);
     return el;
   };
+
+  // Où en est le pays : à qui sont ses villes, et ce qu'il te manque pour y construire.
+  function standing(t) {
+    if (t.type !== 'city') {
+      const n = TILES.filter((x) => x.type === 'escale' && v.props[x.pos]?.owner === meId).length;
+      return h('span.es-standing', `Loyer de base 25 €. Tu as ${n} escale${n > 1 ? 's' : ''} sur 4.`);
+    }
+    const group = TILES.filter((x) => x.region === t.region);
+    const mine = group.filter((x) => v.props[x.pos]?.owner === meId).length;
+    const pips = group.map((x) => {
+      const owner = v.props[x.pos] ? v.players.find((p) => p.id === v.props[x.pos].owner) : null;
+      const pip = h(`i${x.pos === t.pos ? '.is-this' : ''}`);
+      if (owner) pip.style.background = PAWN_COLORS[owner.seat];
+      return pip;
+    });
+    const missing = v.majority - mine;
+    const note = v.props[t.pos] ? `Tu as ${mine} ville${mine > 1 ? 's' : ''} sur 4` : missing <= 1 ? 'Celle-ci te donne la majorité' : `Il te faudrait ${missing} villes pour construire`;
+    return h('span.es-standing', h('span.es-pips-line', { 'aria-hidden': 'true' }, pips), `Loyer ${money(t.rent)}. ${note}.`);
+  }
+
+  // Construire sans ouvrir de fenêtre : les villes possibles, directement sur la carte d'action.
+  function buildRow() {
+    const list = v.actions.build;
+    if (!list.length) return null;
+    return h('div.es-buildrow',
+      h('span', 'Construire'),
+      h('div.es-row', list.slice(0, 4).map((pos) => btn(`${TILES[pos].short ?? TILES[pos].name} ${money(v.costs[pos])}`, { type: 'build', pos }, '.is-ghost.is-small')),
+        list.length > 4 ? h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, `+ ${list.length - 4}`) : null));
+  }
   const btn = (text, action, cls = '') => h(`button.es-btn${cls}`, { type: 'button', onclick: (e) => { e.currentTarget.disabled = true; send(action); } }, text);
   const say = (text) => h('p.es-say', text);
 
@@ -140,7 +212,11 @@ export function mount(root, api) {
     }
     const input = h('input.es-input', { type: 'number', min: 0, max: me().cash, step: 1, inputmode: 'numeric', value: String(Math.min(t.price, me().cash)), 'aria-label': 'Ta mise en euros' });
     const submit = (amount) => send({ type: 'bid', amount });
+    const cash = me().cash;
+    const quick = [['Moitié du prix', Math.floor(t.price / 2)], ['Le prix', t.price], ['+ 25 %', Math.round(t.price * 1.25)]].filter(([, n]) => n <= cash);
     return [say(`Enchères secrètes : combien pour ${t.name} ?`), cityCard(pos),
+      h('div.es-row', quick.map(([label, n]) => h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => { input.value = String(n); input.focus(); } }, label)),
+        h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => { input.value = String(cash); input.focus(); } }, 'Tout')),
       h('form.es-bid', { noValidate: true, onsubmit: (e) => { e.preventDefault(); submit(Number(input.value) || 0); } },
         input, h('button.es-btn', { type: 'submit' }, 'Miser')),
       h('button.es-btn.is-ghost', { type: 'button', onclick: () => submit(0) }, 'Passer')];
@@ -168,7 +244,7 @@ export function mount(root, api) {
             p.cash >= 50 ? btn('Payer 50 €', { type: 'payFine' }, '.is-ghost') : null,
             p.passes ? btn('Utiliser un passe-douane', { type: 'usePass' }, '.is-ghost') : null];
         }
-        return [say(v.again ? 'Un double : tu rejoues !' : 'À toi de jouer.'), btn('Lancer les dés', { type: 'roll' })];
+        return [say(v.again ? 'Un double : tu rejoues !' : 'À toi de jouer.'), btn('Lancer les dés', { type: 'roll' }), buildRow()];
       case 'buy':
         return [cityCard(p.pos),
           p.cash >= t.price ? btn(`Acheter ${t.name} : ${money(t.price)}`, { type: 'buy' }) : say(`Il te manque ${money(t.price - p.cash)} pour ${t.name}.`),
@@ -186,11 +262,14 @@ export function mount(root, api) {
           h('div.es-row', ...a.chantier.map((pos) => btn(`${TILES[pos].name} (${money(Math.floor(v.costs[pos] / 2))})`, { type: 'chantier', pos }, '.is-ghost.is-small'))),
           btn('Passer', { type: 'skip' }, '.is-ghost')];
       case 'debt':
-        return [say(`Tu dois ${money(v.debt.amount)} ${v.debt.why}. Vends ou mets en gage depuis « Villes », ou négocie avec un joueur.`),
-          p.cash >= v.debt.amount ? btn(`Payer ${money(v.debt.amount)}`, { type: 'pay' }) : null,
-          btn('Déclarer faillite', { type: 'bankrupt' }, '.is-danger')];
+        return [say(`Tu dois ${money(v.debt.amount)} ${v.debt.why}.`),
+          h('p.es-note', p.cash >= v.debt.amount ? `Tu as de quoi payer.` : v.raisable >= v.debt.amount ? `Tu as ${money(p.cash)} et tu peux réunir ${money(v.raisable)} en vendant. Tu peux aussi choisir quoi vendre dans « Villes », ou négocier.` : `Même en vendant tout, tu n'aurais que ${money(v.raisable ?? p.cash)}. Il reste à négocier avec un joueur, ou la faillite.`),
+          p.cash >= v.debt.amount ? btn(`Payer ${money(v.debt.amount)}`, { type: 'pay' })
+            : v.raisable >= v.debt.amount ? btn('Vendre ce qu’il faut et payer', { type: 'raise' }) : null,
+          confirmBankrupt ? btn('Oui, je déclare faillite', { type: 'bankrupt' }, '.is-danger')
+            : h('button.es-btn.is-danger', { type: 'button', onclick: () => { confirmBankrupt = true; promptKey = null; renderDock(); } }, 'Déclarer faillite')];
       case 'end':
-        return [say('Construis si tu veux, puis termine ton tour.'), btn('Terminer mon tour', { type: 'endTurn' })];
+        return [btn('Terminer mon tour', { type: 'endTurn' }), buildRow()];
       default:
         return [];
     }
@@ -205,6 +284,7 @@ export function mount(root, api) {
     const key = JSON.stringify([v.phase, v.cur, v.rollN, v.over, v.auction?.pos, v.auction?.mine,
       v.phase === 'auction' && v.auction.mine !== null ? v.auction.hasBid.length : 0,
       v.phase === 'auction' ? 0 : me()?.cash, v.actions, v.debt?.amount]);
+    if (v.phase !== 'debt') confirmBankrupt = false;
     if (key !== promptKey) {
       promptKey = key;
       prompt.replaceChildren(...promptFor().filter(Boolean));
@@ -295,6 +375,46 @@ export function mount(root, api) {
       h('h3', 'Escales'), h('ul.es-list', TILES.filter((t) => t.type === 'escale').map((t) => row(t.pos))));
   }
 
+  // Un joueur : son argent, son patrimoine, ses villes, et de quoi lui proposer un échange.
+  function playerSheet(id) {
+    const p = v.players.find((x) => x.id === id);
+    if (!p) return shell('Joueur', h('p', 'Ce joueur n’est plus là.'));
+    const owned = TILES.filter((t) => v.props[t.pos]?.owner === id);
+    const head = h('header.es-who-head', h('i.es-dot'), h('h2', p.id === meId ? 'Toi' : p.pseudo));
+    head.style.setProperty('--p', PAWN_COLORS[p.seat]);
+    return shell(p.pseudo, head,
+      h('dl.es-rents', h('dt', 'Argent'), h('dd', money(p.cash)), h('dt', 'Patrimoine'), h('dd', money(p.worth)), h('dt', 'Villes et escales'), h('dd', String(owned.length)), p.passes ? [h('dt', 'Passe-douane'), h('dd', String(p.passes))] : null),
+      owned.length ? h('ul.es-list', owned.map((t) => {
+        const el = h('button.es-line', { type: 'button', onclick: () => openOverlay({ kind: 'city', pos: t.pos }) },
+          h('b', t.name),
+          h('span', v.props[t.pos].mortgaged ? 'en gage' : `loyer ${money(v.rents[t.pos] ?? 0)}`));
+        if (t.type === 'city') el.style.setProperty('--r', REGIONS[t.region].color);
+        return h('li', el);
+      })) : h('p.es-note', 'Pas encore de ville.'),
+      p.id !== meId && !p.out && !v.over && me() && !me().out ? h('div.es-row', h('button.es-btn', { type: 'button', onclick: () => {
+        openTrade();
+        draft.to = p.id;
+        renderOverlay();
+      } }, `Proposer un échange à ${p.pseudo}`)) : null);
+  }
+
+  function moreSheet() {
+    const soundBtn = h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: (e) => { e.currentTarget.textContent = sound.toggle() ? 'Remettre le son' : 'Couper le son'; } }, sound.isMuted() ? 'Remettre le son' : 'Couper le son');
+    return shell('Plus', h('h2', 'Plus'),
+      h('div.es-row', soundBtn,
+        h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => { world?.recenter(); closeOverlay(); } }, 'Recentrer la carte'),
+        h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => openOverlay({ kind: 'log' }) }, 'Historique')),
+      h('h3', 'Réglages de cette partie'),
+      h('dl.es-rents', h('dt', 'Nombre de tours'), h('dd', v.maxRounds ? String(v.maxRounds) : 'Sans fin'), h('dt', 'Temps par action'), h('dd', v.timer ? `${v.timer} s` : 'Sans limite'), h('dt', 'Joueurs'), h('dd', String(v.players.length)), h('dt', 'Villes pour construire'), h('dd', `${v.majority} sur 4`)),
+      h('h3', 'Les règles en bref'),
+      h('ul.es-rules', RULES.map((r) => h('li', r))),
+      h('p.es-note', 'À l’ordinateur : la barre d’espace lance l’action principale. Glisse pour tourner la carte, molette pour zoomer.'));
+  }
+
+  function logSheet() {
+    return shell('Historique', h('h2', 'Historique'), h('ol.es-history', [...v.log].reverse().map((l) => h('li', l.text))));
+  }
+
   // L'échange a des champs de saisie : on ne le redessine pas à chaque changement d'état.
   function openTrade() {
     const others = v.players.filter((p) => !p.out && p.id !== meId);
@@ -344,7 +464,12 @@ export function mount(root, api) {
   function renderOverlay() {
     if (!overlay || !v) return;
     const scroll = layer.querySelector('.es-sheet')?.scrollTop ?? 0;
-    const el = overlay.kind === 'city' ? citySheet(overlay.pos) : overlay.kind === 'cities' ? citiesSheet() : tradeSheet();
+    const el = overlay.kind === 'city' ? citySheet(overlay.pos)
+      : overlay.kind === 'cities' ? citiesSheet()
+        : overlay.kind === 'player' ? playerSheet(overlay.id)
+          : overlay.kind === 'more' ? moreSheet()
+            : overlay.kind === 'log' ? logSheet()
+              : tradeSheet();
     layer.replaceChildren(el);
     const sheet = el.querySelector('.es-sheet');
     if (sheet) sheet.scrollTop = scroll;
@@ -353,6 +478,14 @@ export function mount(root, api) {
 
   const onKey = (e) => {
     if (e.key === 'Escape' && overlay) closeOverlay();
+    // La barre d'espace lance l'action principale, sauf si on écrit quelque part ou qu'une fenêtre est ouverte.
+    if (e.code === 'Space' && !overlay && !e.repeat && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(e.target.tagName) && root.isConnected && root.offsetParent) {
+      const main = prompt.querySelector('.es-btn:not(.is-ghost):not(.is-danger):not(:disabled)');
+      if (main) {
+        e.preventDefault();
+        main.click();
+      }
+    }
   };
   document.addEventListener('keydown', onKey);
 
@@ -367,6 +500,8 @@ export function mount(root, api) {
     timer.hidden = false;
     timer.firstChild.style.width = `${Math.min(100, (left / total) * 100)}%`;
     timer.classList.toggle('is-low', left < 8000);
+    const urgent = left < 10500 && (myTurn() || (v?.phase === 'auction' && v.auction.mine === null));
+    clock.textContent = urgent ? `${Math.ceil(left / 1000)} s` : '';
   }, 250);
 
   api.onState((view, st) => {
@@ -384,6 +519,7 @@ export function mount(root, api) {
     gone = true;
     clearInterval(tick);
     document.removeEventListener('keydown', onKey);
+    document.title = pageTitle;
     sound.destroy();
     world?.destroy();
   };

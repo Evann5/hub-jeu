@@ -94,3 +94,15 @@ function buildTiles() {
 }
 
 export const TILES = buildTiles();
+
+// Les règles en bref, consultables pendant la partie.
+export const RULES = [
+  'Lance les dés et avance. Un double fait rejouer ; au troisième de suite, c’est la Douane.',
+  'Ville libre : achète-la, ou elle part aux enchères secrètes de 20 secondes. Le plus offrant l’emporte.',
+  'Avec la majorité d’un pays (3 villes sur 4, ou 2 à 2 ou 3 joueurs), le loyer double et tu peux construire. Avec les 4, il triple.',
+  'Escales : le loyer monte avec leur nombre, et de là tu peux t’envoler vers une autre pour 50 €.',
+  'À chaque tour, l’actualité frappe un pays : haute saison, grève ou subventions.',
+  'Échange à tout moment, même hors de ton tour : villes contre argent.',
+  'Plus d’argent ? Vends des constructions, mets des villes en gage ou négocie. Sinon, c’est la faillite.',
+  'Au dernier tour, le plus gros patrimoine gagne (argent, villes, constructions).',
+];

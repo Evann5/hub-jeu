@@ -1,4 +1,4 @@
-// Le monde d'Escales : toute la carte d'un seul coup d'œil, vue du dessus. Chaque pays a sa couleur, son drapeau, son motif
+// Le monde d'Escales : un plateau posé sur un fond uni, entier d'un seul coup d'œil. Chaque pays a sa couleur, son drapeau, son motif
 // au sol et ses éléments ; un cadre de la couleur du joueur montre à qui appartient une ville.
 // Pour rester fluide : le décor est fondu en une seule forme, les ombres sont calculées une fois, et rien n'est redessiné tant que rien ne bouge.
 // Ce fichier ne connaît pas les règles : il reçoit l'état avec update(view) et signale les cases touchées avec onTile(pos).
@@ -11,6 +11,7 @@ import { FLAGS, PATTERNS, PROPS_OF } from './countries.js';
 export const PAWN_COLORS = ['#E5213C', '#FF8A00', '#F5D000', '#16A34A', '#0891B2', '#2563EB', '#7C3AED', '#DB2777', '#92602F', '#475569'];
 
 const WARM = '#FFF6E8';
+const SLAB = '#2A2D38';
 const INK = '#12151F';
 const TILE_W = 2; // largeur d'une case le long du côté
 const TILE_D = 3; // profondeur
@@ -269,84 +270,71 @@ function buildFlags() {
   return mesh;
 }
 
-// La rose des vents, gravée dans le lagon, au centre du plateau.
-function buildCompass() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 720;
-  canvas.height = 720;
-  const c = canvas.getContext('2d');
-  c.translate(360, 360);
-  c.strokeStyle = 'rgba(255,255,255,0.28)';
-  c.fillStyle = 'rgba(255,255,255,0.22)';
-  for (const [r, w] of [[340, 5], [316, 2], [150, 2]]) {
-    c.lineWidth = w;
-    c.beginPath();
-    c.arc(0, 0, r, 0, Math.PI * 2);
-    c.stroke();
+// Un cube aux arêtes bien arrondies : chaque sommet est ramené sur une sphère aux coins.
+function roundedCube(size, radius, seg = 7) {
+  const geo = new THREE.BoxGeometry(size, size, size, seg, seg, seg);
+  const p = geo.attributes.position;
+  const n = geo.attributes.normal;
+  const inner = size / 2 - radius;
+  const v = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  for (let i = 0; i < p.count; i += 1) {
+    v.fromBufferAttribute(p, i);
+    c.set(Math.max(-inner, Math.min(inner, v.x)), Math.max(-inner, Math.min(inner, v.y)), Math.max(-inner, Math.min(inner, v.z)));
+    v.sub(c).normalize();
+    n.setXYZ(i, v.x, v.y, v.z);
+    v.multiplyScalar(radius).add(c);
+    p.setXYZ(i, v.x, v.y, v.z);
   }
-  for (let i = 0; i < 72; i += 1) {
-    c.save();
-    c.rotate((i / 72) * Math.PI * 2);
-    c.fillRect(-1.5, -340, 3, i % 9 ? 12 : 24);
-    c.restore();
-  }
-  for (let i = 0; i < 8; i += 1) {
-    c.save();
-    c.rotate((i / 8) * Math.PI * 2);
-    const big = i % 2 === 0;
-    const L = big ? 300 : 190;
-    c.beginPath();
-    c.moveTo(0, -L);
-    c.lineTo(big ? 40 : 24, 0);
-    c.lineTo(0, 0);
-    c.closePath();
-    c.fillStyle = 'rgba(255,255,255,0.32)';
-    c.fill();
-    c.beginPath();
-    c.moveTo(0, -L);
-    c.lineTo(big ? -40 : -24, 0);
-    c.lineTo(0, 0);
-    c.closePath();
-    c.fillStyle = 'rgba(255,255,255,0.14)';
-    c.fill();
-    c.restore();
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(17, 17), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }));
-  m.rotation.x = -Math.PI / 2;
-  m.position.y = 0.008;
-  return m;
+  return geo;
 }
 
-// Un dé : chaque face est une petite image avec ses points.
+// Un dé en ivoire, aux points creusés : chaque face est dessinée avec un petit relief.
 function makeDie() {
   const faces = [3, 4, 1, 6, 2, 5]; // +x, -x, +y, -y, +z, -z
   const dots = { 1: [[1, 1]], 2: [[0, 0], [2, 2]], 3: [[0, 0], [1, 1], [2, 2]], 4: [[0, 0], [2, 0], [0, 2], [2, 2]], 5: [[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]], 6: [[0, 0], [2, 0], [0, 1], [2, 1], [0, 2], [2, 2]] };
   const materials = faces.map((n) => {
+    const S = 256;
     const canvas = document.createElement('canvas');
-    canvas.width = 96;
-    canvas.height = 96;
+    canvas.width = S;
+    canvas.height = S;
     const c = canvas.getContext('2d');
-    c.fillStyle = '#FFFFFF';
-    c.fillRect(0, 0, 96, 96);
-    c.fillStyle = n === 1 ? '#E5213C' : INK;
+    c.fillStyle = '#F7F2E7';
+    c.fillRect(0, 0, S, S);
+    const R = n === 1 ? 40 : 24;
     for (const [x, y] of dots[n]) {
+      const cx = S * 0.24 + x * S * 0.26;
+      const cy = S * 0.24 + y * S * 0.26;
+      // Le bord clair du creux, puis le fond sombre, éclairé d'un côté.
+      c.fillStyle = 'rgba(255,255,255,0.9)';
       c.beginPath();
-      c.arc(22 + x * 26, 22 + y * 26, n === 1 ? 14 : 8.5, 0, Math.PI * 2);
+      c.arc(cx + 1.5, cy + 2.5, R + 3, 0, Math.PI * 2);
+      c.fill();
+      const g = c.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R);
+      if (n === 1) {
+        g.addColorStop(0, '#8F0F24');
+        g.addColorStop(1, '#D42642');
+      } else {
+        g.addColorStop(0, '#06070C');
+        g.addColorStop(1, '#2A2D3A');
+      }
+      c.fillStyle = g;
+      c.beginPath();
+      c.arc(cx, cy, R, 0, Math.PI * 2);
       c.fill();
     }
     const t = new THREE.CanvasTexture(canvas);
     t.colorSpace = THREE.SRGBColorSpace;
-    return new THREE.MeshLambertMaterial({ map: t });
+    t.anisotropy = 4;
+    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.32, metalness: 0 });
   });
-  return new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.5), materials);
+  return new THREE.Mesh(roundedCube(1.5, 0.3), materials);
 }
 // Rotation qui met la face voulue sur le dessus.
 const DIE_TOP = { 1: [0, 0, 0], 2: [Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [-Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
 const DIE_Y = 0.75;
 
-export function createWorld(host, { onTile, onStep, meId }) {
+export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70 }) {
   const startDpr = Math.min(window.devicePixelRatio || 1, 2);
   const renderer = new THREE.WebGLRenderer({ antialias: startDpr < 2, alpha: true });
   renderer.setClearColor(0x000000, 0);
@@ -381,11 +369,11 @@ export function createWorld(host, { onTile, onStep, meId }) {
   sun.shadow.radius = 3;
   scene.add(sun);
 
-  // La mer : la couleur du fond, qui ne reçoit que les ombres.
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.ShadowMaterial({ color: '#06324A', opacity: 0.42 }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  // Le plateau : une grande dalle mate et épaisse, un objet posé là, sur un fond uni.
+  const slab = new THREE.Mesh(plateGeometry(HALF * 2 + 1.5, HALF * 2 + 1.5, 0.7, 1.1), new THREE.MeshLambertMaterial({ color: SLAB }));
+  slab.position.y = -0.7;
+  slab.receiveShadow = true;
+  scene.add(slab);
 
   // ——— Tout le décor en une seule forme : cases, monuments, éléments des pays, mâts ———
   const items = [];
@@ -401,6 +389,7 @@ export function createWorld(host, { onTile, onStep, meId }) {
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
     fitModel(model, w, front, HEROES[t.model] ?? 1);
+    const top = new THREE.Box3().setFromObject(model).max.y;
     items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m, ao: PLATE_H });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
     hit.position.set(f.x, 1.2, f.z);
@@ -412,7 +401,7 @@ export function createWorld(host, { onTile, onStep, meId }) {
     levels.position.set(f.x, 0, f.z);
     levels.rotation.y = f.rot;
     scene.add(levels);
-    return { f, w, levels, level: 0, rim: null, shade: null, color: null };
+    return { f, w, top, levels, level: 0, rim: null, fill: null, shade: null, color: null };
   });
 
   REGIONS.forEach((reg, r) => {
@@ -438,26 +427,7 @@ export function createWorld(host, { onTile, onStep, meId }) {
   world.receiveShadow = true;
   world.frustumCulled = false;
   const flags = buildFlags();
-  scene.add(world, buildCompass(), buildBanners(), flags, buildPrint());
-
-  // Deux petits voiliers traversent le lagon.
-  const boats = [0, 1].map((i) => {
-    const g = new THREE.Group();
-    const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.2, 0.2, 8), new THREE.MeshBasicMaterial({ color: i ? '#E5213C' : WARM }));
-    hull.scale.set(0.6, 1, 1.5);
-    hull.position.y = 0.1;
-    const sail = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.2, 3), new THREE.MeshBasicMaterial({ color: i ? WARM : '#FFC93C' }));
-    sail.scale.z = 0.12;
-    sail.rotation.y = Math.PI / 2;
-    sail.position.y = 0.8;
-    g.add(hull, sail);
-    const blob = new THREE.Mesh(new THREE.CircleGeometry(0.62, 12), new THREE.MeshBasicMaterial({ color: '#06324A', transparent: true, opacity: 0.25, depthWrite: false }));
-    blob.rotation.x = -Math.PI / 2;
-    blob.position.set(0.35, 0.012, -0.12);
-    g.add(blob);
-    scene.add(g);
-    return g;
-  });
+  scene.add(world, buildBanners(), flags, buildPrint());
 
   // ——— À qui sont les villes ———
   const tints = new Map();
@@ -468,6 +438,9 @@ export function createWorld(host, { onTile, onStep, meId }) {
   const shadeMat = new THREE.MeshBasicMaterial({ color: '#39414F', transparent: true, opacity: 0.55, depthWrite: false });
   const rimGeo = { side: plateGeometry(TILE_W - 0.04, TILE_D - 0.04, BASE_H + 0.02, 0.16), corner: plateGeometry(TILE_D - 0.04, TILE_D - 0.04, BASE_H + 0.02, 0.16) };
   const shadeGeo = plateGeometry(TILE_W - 0.34, TILE_D - 0.34, 0.01, 0.1);
+  const fillGeo = plateGeometry(TILE_W - 0.34, TILE_D - 0.34, 0.006, 0.1);
+  // La case prend la couleur de son propriétaire, assez claire pour que le texte imprimé reste lisible.
+  const ownedColor = (hex) => `#${new THREE.Color(hex).lerp(new THREE.Color('#FFFFFF'), 0.34).getHexString()}`;
   const levelGeo = new THREE.BoxGeometry(0.26, 1, 0.26);
 
   const setOwner = (part, color, mortgaged) => {
@@ -484,6 +457,18 @@ export function createWorld(host, { onTile, onStep, meId }) {
       } else if (part.rim) {
         scene.remove(part.rim);
         part.rim = null;
+      }
+      if (color && !part.fill) {
+        part.fill = new THREE.Mesh(fillGeo, tint(ownedColor(color)));
+        part.fill.position.set(part.f.x, PLATE_H + 0.001, part.f.z);
+        part.fill.rotation.y = part.f.rot;
+        part.fill.receiveShadow = true;
+        scene.add(part.fill);
+      } else if (color) {
+        part.fill.material = tint(ownedColor(color));
+      } else if (part.fill) {
+        scene.remove(part.fill);
+        part.fill = null;
       }
       part.levels.children.forEach((m) => { if (color) m.material = tint(color); });
     }
@@ -537,6 +522,13 @@ export function createWorld(host, { onTile, onStep, meId }) {
     return true;
   };
 
+  // ——— Le repère de la ville en jeu ———
+  const marker = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.95, 4), new THREE.MeshBasicMaterial({ color: '#FFC93C', toneMapped: false }));
+  marker.rotation.x = Math.PI;
+  marker.visible = false;
+  scene.add(marker);
+  let markerBase = 4;
+
   // ——— Le festival : un repère au-dessus de la ville ———
   const festivalMark = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.9, 4), new THREE.MeshLambertMaterial({ color: '#FF2E93' }));
   festivalMark.rotation.x = Math.PI;
@@ -547,7 +539,7 @@ export function createWorld(host, { onTile, onStep, meId }) {
   const personMat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const blobGeo = new THREE.CircleGeometry(0.4, 16);
   blobGeo.rotateX(-Math.PI / 2);
-  const blobMat = new THREE.MeshBasicMaterial({ color: '#06324A', transparent: true, opacity: 0.34, depthWrite: false });
+  const blobMat = new THREE.MeshBasicMaterial({ color: '#05060A', transparent: true, opacity: 0.42, depthWrite: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.76, 32), new THREE.MeshBasicMaterial({ color: INK, depthWrite: false, transparent: true }));
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.03;
@@ -573,11 +565,19 @@ export function createWorld(host, { onTile, onStep, meId }) {
 
   // ——— Les dés ———
   const dice = [makeDie(), makeDie()];
-  // Au-dessus de la table centrale sur ordinateur ; au milieu du lagon sur téléphone, où la carte d'action est en bas.
+  const diceShadows = dice.map(() => {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(1.05, 20), blobMat);
+    m.rotation.x = -Math.PI / 2;
+    m.visible = false;
+    scene.add(m);
+    return m;
+  });
+  // Au-dessus de la table centrale sur ordinateur ; au milieu du plateau sur téléphone, où la carte d'action est en bas.
   const placeDice = () => {
     const narrow = size.w < size.h;
     dice[0].position.set(-1.2, DIE_Y, narrow ? -2.2 : -7);
     dice[1].position.set(1.2, DIE_Y, narrow ? -1.9 : -6.7);
+    dice.forEach((d, i) => diceShadows[i].position.set(d.position.x + 0.28, 0.015, d.position.z - 0.12));
   };
   dice.forEach((d) => { d.visible = false; scene.add(d); });
   let diceAnim = null;
@@ -626,8 +626,9 @@ export function createWorld(host, { onTile, onStep, meId }) {
       const ys = pts.map((p) => v.copy(p).project(camera).y);
       const py = ((1 - Math.max(...ys)) / 2) * size.h;
       const tall = ((Math.max(...ys) - Math.min(...ys)) / 2) * size.h;
-      const free = size.h * 0.74 - 70; // entre les liens du haut et la carte d'action
-      const wanted = 70 + Math.max(0, (free - tall) / 2);
+      const inset = topInset();
+      const free = size.h * 0.6 - inset; // entre les joueurs en haut et la carte d'action
+      const wanted = inset + Math.max(0, (free - tall) / 2);
       camera.setViewOffset(size.w, size.h, 0, py - wanted, size.w, size.h);
       camera.updateProjectionMatrix();
     }
@@ -641,23 +642,7 @@ export function createWorld(host, { onTile, onStep, meId }) {
     cam.wantPitch = HOME.pitch;
     cam.wantDist = fitDist;
     cam.wantTarget.set(0, 0, 0);
-    focused = null;
     userUntil = 0;
-  }
-
-  // Quand c'est à toi de décider pour une ville, la caméra s'en approche ; le reste du temps, toute la carte.
-  let focused = null;
-  function setFocus(pos) {
-    if (pos === focused) return;
-    focused = pos;
-    if (pos === null) {
-      cam.wantTarget.set(0, 0, 0);
-      cam.wantDist = fitDist;
-      return;
-    }
-    const f = tileFrame(pos);
-    cam.wantTarget.set(f.x * 0.92, 0, f.z * 0.92 + (size.w < size.h ? 0.5 : 4.6));
-    cam.wantDist = fitDist * 0.56;
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
@@ -673,7 +658,6 @@ export function createWorld(host, { onTile, onStep, meId }) {
       renderer.setSize(size.w, size.h, false);
     } else if (quality.step === 2) {
       sun.castShadow = false;
-      ground.visible = false;
       scene.traverse((o) => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; });
     } else if (quality.step === 3 && dpr > 0.75) {
       dpr = 0.75;
@@ -784,16 +768,14 @@ export function createWorld(host, { onTile, onStep, meId }) {
       }
     }
 
-    // Le monde vit doucement : les drapeaux flottent, les bateaux avancent.
+    // Le monde vit doucement : les drapeaux flottent, les bateaux avancent, le repère rebondit.
     if (lifeOn()) {
       const time = now / 1000;
+      if (marker.visible) {
+        marker.position.y = markerBase + Math.abs(Math.sin(time * 3)) * 0.42;
+        marker.rotation.y = time * 1.2;
+      }
       flags.userData.time.value = time;
-      boats.forEach((g, i) => {
-        const a = time * 0.05 + i * 2.6;
-        const r = i ? 6.6 : 5;
-        g.position.set(Math.cos(a) * r * 1.05, 0.02 + Math.sin(time * 1.1 + i) * 0.015, Math.sin(a) * r + 1.2);
-        g.rotation.y = -a;
-      });
     }
 
     const k = snap || reduced ? 1 : 1 - Math.exp(-dt * 3.2);
@@ -850,9 +832,30 @@ export function createWorld(host, { onTile, onStep, meId }) {
     moved = 0;
     pinch = 0;
   };
+  // À la souris, le survol d'une case affiche ses informations. On regarde au plus toutes les 70 ms.
+  let hoverAt = 0;
+  let hovered = null;
+  const hover = (e) => {
+    if (!onHover || e.pointerType !== 'mouse' || pointers.size) return;
+    const now = performance.now();
+    if (now - hoverAt < 70) return;
+    hoverAt = now;
+    const r = canvas.getBoundingClientRect();
+    raycaster.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    const pos = raycaster.intersectObjects(hitBoxes, false)[0]?.object.userData.pos ?? null;
+    if (pos !== hovered || pos !== null) onHover(pos, e.clientX - r.left, e.clientY - r.top);
+    hovered = pos;
+  };
+  const onLeave = () => {
+    hovered = null;
+    onHover?.(null);
+  };
   const onMove = (e) => {
     const p = pointers.get(e.pointerId);
-    if (!p) return;
+    if (!p) {
+      hover(e);
+      return;
+    }
     const dx = e.clientX - p.x;
     const dy = e.clientY - p.y;
     p.x = e.clientX;
@@ -898,6 +901,7 @@ export function createWorld(host, { onTile, onStep, meId }) {
   };
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerleave', onLeave);
   canvas.addEventListener('pointerup', onUp);
   canvas.addEventListener('pointercancel', onUp);
   canvas.addEventListener('wheel', onWheel, { passive: false });
@@ -984,19 +988,24 @@ export function createWorld(host, { onTile, onStep, meId }) {
       lastRollN = v.rollN;
       dice.forEach((d, i) => {
         d.visible = true;
+        diceShadows[i].visible = true;
         d.rotation.set(...DIE_TOP[v.dice[i]]);
         d.position.y = DIE_Y;
       });
       if (!initial && !reduced) diceAnim = { t: 0, values: v.dice.slice() };
     }
 
+    if (firstUpdate && size.w < size.h && size.w) computeFit(); // la place prise par les joueurs est connue maintenant
     if (userUntil && performance.now() > userUntil) recenter();
-    if (!userUntil) {
-      const cur = v.players[v.cur];
-      let focus = null;
-      if (!v.over && cur?.id === meId && v.phase === 'buy') focus = cur.pos;
-      else if (v.phase === 'auction' && v.auction.mine === null && v.auction.eligible.includes(meId)) focus = v.auction.pos;
-      setFocus(focus);
+    // Le repère montre la ville dont il est question : un achat ou une enchère.
+    const at = v.over ? null : v.phase === 'buy' ? v.players[v.cur]?.pos : v.phase === 'auction' ? v.auction.pos : null;
+    if (at === null || at === undefined) marker.visible = false;
+    else {
+      const f = tileFrame(at);
+      marker.position.set(f.x, 0, f.z);
+      markerBase = parts[at].top + 0.75;
+      marker.position.y = markerBase;
+      marker.visible = true;
     }
     if (v.over && !wasOver) {
       wasOver = true;
@@ -1008,6 +1017,10 @@ export function createWorld(host, { onTile, onStep, meId }) {
   }
   renderer.shadowMap.needsUpdate = true;
   ro.observe(host);
+  // Tout préparer dès le chargement : le premier lancer de dés ne doit pas faire saccader le jeu.
+  dice.forEach((d) => { d.visible = true; });
+  renderer.compile(scene, camera);
+  dice.forEach((d) => { d.visible = false; });
 
   return {
     update,
@@ -1021,6 +1034,7 @@ export function createWorld(host, { onTile, onStep, meId }) {
       ro.disconnect();
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointermove', onMove);
+      canvas.removeEventListener('pointerleave', onLeave);
       canvas.removeEventListener('pointerup', onUp);
       canvas.removeEventListener('pointercancel', onUp);
       canvas.removeEventListener('wheel', onWheel);

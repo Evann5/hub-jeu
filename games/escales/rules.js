@@ -666,7 +666,7 @@ function transfer(s, from, to, offer) {
 
 // ——— Les coups ———
 
-const TURN_ONLY = new Set(['roll', 'payFine', 'usePass', 'buy', 'decline', 'fly', 'skip', 'festival', 'chantier', 'endTurn', 'pay', 'bankrupt', 'build', 'sell', 'mortgage', 'unmortgage']);
+const TURN_ONLY = new Set(['roll', 'payFine', 'usePass', 'buy', 'decline', 'fly', 'skip', 'festival', 'chantier', 'endTurn', 'pay', 'raise', 'bankrupt', 'build', 'sell', 'mortgage', 'unmortgage']);
 const MANAGE_PHASES = new Set(['roll', 'buy', 'end']);
 
 function needPhase(s, ...phases) {
@@ -817,6 +817,12 @@ export function move(state, playerId, action = {}, ctx) {
       if (p.cash < s.debt.amount) throw new Error(`Il te manque ${money(s.debt.amount - p.cash)}.`);
       settleDebt(s, ctx);
       break;
+    case 'raise': // vendre juste ce qu'il faut pour payer
+      needPhase(s, 'debt');
+      liquidate(s, p, s.debt.amount);
+      log(s, `${p.pseudo} vend ce qu'il faut pour payer.`);
+      if (p.cash >= s.debt.amount) settleDebt(s, ctx);
+      break;
     case 'bankrupt':
       needPhase(s, 'debt');
       goBankrupt(s, ctx);
@@ -948,6 +954,12 @@ export function view(state, playerId) {
       chantier: state.phase === 'chantier' ? mine.filter((pos) => canBuildAt(state, me.id, pos) && me.cash >= Math.floor(buildCost(state, pos) / 2)) : [],
       festival: state.phase === 'festival' ? mine.filter((pos) => TILES[pos].type === 'city' && !state.props[pos].mortgaged) : [],
     },
+    // Tout ce que le joueur en dette peut réunir en vendant.
+    raisable: inDebt && mine.length ? me.cash + mine.reduce((sum, pos) => {
+      const prop = state.props[pos];
+      const t = TILES[pos];
+      return sum + Math.floor((prop.level * (t.build || 0)) / 2) + (prop.mortgaged ? 0 : mortgageValue(t));
+    }, 0) : null,
     costs: Object.fromEntries(mine.filter((pos) => TILES[pos].type === 'city').map((pos) => [pos, buildCost(state, pos)])),
   };
 }

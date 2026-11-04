@@ -316,6 +316,24 @@ test('dette : il faut trouver l’argent, puis payer', () => {
   assert.equal(s.players.find((p) => p.id === b).cash, 1500 + TILES[4].rent);
 });
 
+test('dette : vendre ce qu’il faut en un clic, et on voit ce qu’on peut réunir', () => {
+  let s = start();
+  const [a, b] = s.players.map((p) => p.id);
+  own(s, b, 'Marrakech');
+  own(s, a, 'Casablanca', 'Fès');
+  s.players[0].cash = 1;
+  s = roll(s, 1, 3);
+  assert.equal(s.phase, 'debt');
+  assert.equal(view(s, a).raisable, 1 + 40 + 30);
+  assert.equal(view(s, b).raisable, null);
+  assert.throws(() => move(s, b, { type: 'raise' }, ctxOf()), /pas ton tour/);
+  s = move(s, a, { type: 'raise' }, ctxOf()).state;
+  assert.equal(s.debt, null);
+  assert.equal(s.props[posOf('Fès')].mortgaged, true, 'une seule ville suffit');
+  assert.equal(s.props[posOf('Casablanca')].mortgaged, false, 'on ne vend pas plus qu’il ne faut');
+  assert.equal(s.players.find((p) => p.id === b).cash, 1500 + TILES[4].rent);
+});
+
 test('faillite : le créancier récupère tout, la partie continue', () => {
   let s = start();
   const [a, b] = s.players.map((p) => p.id);
