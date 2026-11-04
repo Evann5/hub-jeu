@@ -9,7 +9,7 @@ import { loadSculpted } from './client/monuments.js';
 const money = (n) => `${Number(n).toLocaleString('fr-FR')} €`;
 
 const ABOUT = {
-  start: 'Tu touches 200 € à chaque passage, 100 € de plus si ton patrimoine fait moins de la moitié de celui du premier.',
+  start: 'Tu touches 200 € à chaque passage.',
   customs: 'Simple visite si tu tombes dessus. Retenu ici : fais un double ou paie 50 €. Au troisième échec, tu paies et tu avances.',
   festival: 'Tu gagnes 100 €.',
   control: 'Direction la Douane, sans passer par le Départ.',
@@ -224,6 +224,7 @@ export function mount(root, api) {
     return h('button.es-offer', { type: 'button', 'aria-label': `Voir la fiche de ${t.name}`, onclick: () => openOverlay({ kind: 'city', pos }) },
       picture(world?.monument(pos), '.es-offer-pic'),
       h('span.es-offer-text',
+        h('span.es-stamp', { 'aria-hidden': 'true' }, 'À vendre'),
         h('b', t.name),
         h('small', isCity ? flagOf(t.region) : null, isCity ? REGIONS[t.region].name : 'Escale'),
         h('span', `Loyer ${money(isCity ? t.rent : ESCALE_RENTS[1])}`),

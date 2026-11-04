@@ -1,7 +1,7 @@
 // Tests d'Escales : node --test games/escales/rules.test.js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setup, move, view, status, timeout, leave, rentOf, worthOf, SALARY, CATCH_UP, FINE, FESTIVAL_GAIN, WORKS_FEE } from './rules.js';
+import { setup, move, view, status, timeout, leave, rentOf, worthOf, SALARY, FINE, FESTIVAL_GAIN, WORKS_FEE } from './rules.js';
 import { TILES, REGIONS, SIZE, CUSTOMS_POS, MAX_LEVEL } from './client/board.js';
 
 const seeded = (seed) => () => {
@@ -169,18 +169,13 @@ test('escale : le propriétaire encaisse selon ses escales, et le tour passe', (
   assert.equal(status(s).turn, b);
 });
 
-test('passer au Départ : salaire, et prime pour qui est loin derrière', () => {
+test('passer au Départ : salaire, le même pour tout le monde', () => {
   let s = start();
-  const [a, b] = s.players.map((p) => p.id);
+  const a = s.players[0].id;
+  s.players[1].cash = 100000;
   put(s, 46);
   s = roll(s, 1, 2); // 46 + 3 = 1
   assert.equal(s.players.find((p) => p.id === a).cash, 1500 + SALARY);
-  s = start();
-  s.players[1].cash = 100000;
-  put(s, 46);
-  s = roll(s, 1, 2);
-  assert.equal(s.players.find((p) => p.id === a).cash, 1500 + SALARY + CATCH_UP);
-  assert.equal(b, s.players[1].id);
 });
 
 test('douane : un double pour sortir, l’amende, et 3 essais au plus', () => {

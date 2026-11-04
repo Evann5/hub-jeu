@@ -3,9 +3,9 @@ import math
 from lib import Mesh
 from lib_special import *
 
-PAL = {'yel': '#F0B922', 'yel2': '#C68F14', 'glass': '#2F4558', 'dark': '#2E3036', 'conc': '#B9B3A6', 'conc2': '#9E998D', 'slab': '#A9A497',
+PAL = {'yel': '#F0B922', 'yel2': '#C68F14', 'glass': '#2F4558', 'dark': '#2E3036', 'conc': '#B9B3A6', 'conc2': '#9E998D', 'slab': '#D3CEBF',
        'brick': '#B4553A', 'brick2': '#9B4730', 'win': '#2F3E4F', 'net': '#4E9A5B', 'net2': '#3C7F49', 'weight': '#8D8C88', 'cable': '#3A3C42',
-       'beam': '#D35B2E', 'rebar': '#5C4A3A', 'sand': '#D9C08A', 'wood': '#B8915A', 'wood2': '#9C7544'}
+       'beam': '#D35B2E', 'rebar': '#5C4A3A', 'sand': '#D9C08A', 'wood': '#B8915A', 'wood2': '#9C7544', 'col': '#5E5A52', 'void': '#2B2F3A'}
 
 MX, MZ = -0.5, -0.2        # axe du mât
 MW = 0.08                  # demi-largeur du mât
@@ -85,44 +85,28 @@ def build():
         rod(m, (hx, 1.34, MZ), (hx+sx*0.19, 1.23, MZ), 0.005, 'cable', 3)
     m.box(hx-0.22, hx+0.22, 1.17, 1.23, MZ-0.035, MZ+0.035, 'beam')
     m.box(hx-0.22, hx+0.22, 1.23, 1.245, MZ-0.012, MZ+0.012, 'beam')
-    # ---------- immeuble en construction ----------
-    bx0, bx1, bz0, bz1 = 0.0, 0.84, -0.5, 0.18
-    fl = [0.0, 0.3, 0.6]
-    # rez-de-chaussée en briques, fenêtres
-    m.box(bx0, bx1, 0, fl[1], bz0, bz1, 'brick', skip=('bot', 'top'))
+    # ---------- immeuble en construction : rez en briques, deux étages à poteaux et dalles, fers en attente ----------
+    bx0, bx1, bz0, bz1 = 0.02, 0.86, -0.5, 0.2
+    H0, H1, H2, H3 = 0.34, 0.8, 1.26, 1.3
+    SL = 0.06
+    m.box(bx0, bx1, 0, H0, bz0, bz1, 'brick', skip=('bot', 'top'))
     for k in range(3):
-        xc = bx0+0.16+0.26*k
-        quad_xy(m, xc-0.07, xc+0.07, 0.1, 0.22, bz1+0.003, 'win')
-    m.box(bx0-0.01, bx1+0.01, fl[1], fl[1]+0.035, bz0-0.01, bz1+0.01, 'slab', skip=('bot',))
-    # étage 1 : allège en briques derrière les poteaux
-    m.box(bx0+0.01, bx1-0.01, fl[1]+0.035, fl[1]+0.15, bz1-0.05, bz1-0.01, 'brick2', skip=('bot',))
-    m.box(bx0-0.01, bx1+0.01, fl[2], fl[2]+0.035, bz0-0.01, bz1+0.01, 'slab', skip=('bot',))
-    # poteaux de l'étage 1 (entre dalle 1 et dalle 2) et de l'étage 2 (sans dalle, avec fers en attente)
-    cols_xz = [(bx0+0.04, bz1-0.04), (bx1-0.04, bz1-0.04), (bx0+0.04, bz0+0.04), (bx1-0.04, bz0+0.04), ((bx0+bx1)/2, bz1-0.04), ((bx0+bx1)/2, bz0+0.04)]
+        xc = bx0+0.15+0.27*k
+        quad_xy(m, xc-0.08, xc+0.08, 0.1, 0.24, bz1+0.003, 'win')
+    # dalles en béton clair, plus larges que les poteaux
+    for yy in (H0, H1):
+        m.box(bx0-0.03, bx1+0.03, yy, yy+SL, bz0-0.03, bz1+0.03, 'slab', skip=('bot',))
+    # poteaux : 4 aux coins, un étage entre dalles, puis fers en attente au-dessus de la dernière dalle
+    cols_xz = [(bx0+0.06, bz1-0.06), (bx1-0.06, bz1-0.06), (bx0+0.06, bz0+0.06), (bx1-0.06, bz0+0.06)]
     for (px, pz) in cols_xz:
-        m.box(px-0.03, px+0.03, fl[1]+0.035, fl[2], pz-0.03, pz+0.03, 'conc', skip=('bot', 'top'))
-        m.box(px-0.03, px+0.03, fl[2]+0.035, fl[2]+0.3, pz-0.03, pz+0.03, 'conc', skip=('bot',))
-        for dx in (-0.012, 0.012):
-            rod(m, (px+dx, fl[2]+0.3, pz), (px+dx, fl[2]+0.4, pz), 0.005, 'rebar', 3)
-    # murs en briques montés à moitié sur l'étage 2 : fond et côté gauche en escalier
-    m.box(bx0+0.06, bx1-0.3, fl[2]+0.035, fl[2]+0.27, bz0+0.01, bz0+0.07, 'brick', skip=('bot',))
-    m.box(bx0+0.06, bx0+0.22, fl[2]+0.035, fl[2]+0.2, bz0+0.07, bz1-0.2, 'brick2', skip=('bot',))
-    m.box(bx0+0.06, bx0+0.14, fl[2]+0.2, fl[2]+0.26, bz0+0.07, bz0+0.3, 'brick2', skip=('bot',))
-    # filet de sécurité vert devant l'étage 2
-    quad_xy(m, bx0+0.02, bx1-0.02, fl[2]+0.05, fl[2]+0.29, bz1+0.004, 'net')
-    for k in range(1, 7):
-        xx = bx0+0.02+(bx1-bx0-0.04)*k/7
-        quad_xy(m, xx-0.006, xx+0.006, fl[2]+0.05, fl[2]+0.29, bz1+0.007, 'net2')
-    # cage d'ascenseur en béton, plus haute
-    m.box(0.58, 0.84, 0, 1.08, bz0+0.0, bz0+0.26, 'conc2', skip=('bot',))
-    quad_xy(m, 0.66, 0.76, 0.2, 0.52, bz0+0.26+0.003, 'win')
-    # ---------- au sol : tas de sable, palette de briques, planches ----------
-    lathe(m, -0.18, 0.5, [(0.24, 0.0), (0.12, 0.09), (0.0, 0.19)], 8, 'sand')
-    m.box(0.08, 0.4, 0, 0.1, 0.34, 0.56, 'wood', skip=('bot',))
-    m.box(0.08, 0.4, 0.1, 0.2, 0.34, 0.56, 'brick', skip=('bot',))
-    for k in range(1, 4):
-        xx = 0.08+0.08*k
-        quad_xy(m, xx-0.003, xx+0.003, 0.1, 0.2, 0.56+0.002, 'brick2')
-    m.box(0.52, 0.84, 0, 0.05, 0.36, 0.5, 'wood2', skip=('bot',))
-    m.box(0.52, 0.84, 0.05, 0.1, 0.36, 0.5, 'wood', skip=('bot',))
+        m.box(px-0.06, px+0.06, H0+SL, H1, pz-0.06, pz+0.06, 'col', skip=('bot', 'top'))
+        m.box(px-0.06, px+0.06, H1+SL, H2, pz-0.06, pz+0.06, 'col', skip=('bot',))
+        rod(m, (px, H2, pz), (px, H2+0.16, pz), 0.016, 'rebar', 3)
+    # fond sombre derrière les poteaux : on voit à travers
+    for (y0, y1) in ((H0+SL, H1), (H1+SL, H2)):
+        quad_xy(m, bx0+0.05, bx1-0.05, y0, y1, bz0+0.1, 'void')
+    # ---------- au sol : tas de sable et palette de briques ----------
+    lathe(m, -0.2, 0.5, [(0.26, 0.0), (0.13, 0.1), (0.0, 0.2)], 8, 'sand')
+    m.box(0.2, 0.62, 0, 0.1, 0.38, 0.6, 'wood', skip=('bot',))
+    m.box(0.2, 0.62, 0.1, 0.22, 0.38, 0.6, 'brick', skip=('bot',))
     return m

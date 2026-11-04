@@ -19,10 +19,13 @@ const BASE_H = 0.1; // le socle blanc, ou le cadre du propriétaire
 const PLATE_H = 0.16;
 const HALF = (11 * TILE_W + 2 * TILE_D) / 2;
 const BANNER_D = 1.8;
+const BANNER_H = 0.1; // les bandeaux sont des plaques en relief
 const DICE_Z = -7.15; // la piste des dés, en haut de la zone centrale
 const BOTTOM_LIFT = 1.2; // les bandeaux du bas remontent : les monuments de la rangée du bas, debout devant eux, ne cachent plus leur nom
 const PAWN_SCALE = 2.25;
 
+const SIDE_H = 2.3; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
+const SIDE_HEROES = { eiffel: 3.7, empire: 3.1, gratteCiel2: 3 }; // sauf ceux qu'on doit reconnaître de loin
 const BOTTOM_CORNER_H = 1.7; // au-delà, ce qui est posé sur un coin du bas cacherait le nom de la ville juste derrière
 const SPECIAL_COLOR = { start: '#7FD9A4', customs: '#9DB6F0', festival: '#F59BC4', control: '#F4A58E', escale: '#E3EAF3', telex: '#F6DE7E', tax: '#F3C66E', chantier: '#C9CED9' };
 // Les monuments qui doivent impressionner sont un peu plus grands que les autres.
@@ -226,7 +229,7 @@ function buildBanners() {
     c.restore();
     const { center, U, V } = bannerFrame(r);
     const n = REGIONS.length;
-    pushQuad(pos, uv, center.clone().setY(0.012), U.clone().multiplyScalar(3.98), V.clone().multiplyScalar(BANNER_D / 2), [0, 1 - (r + 1) / n, 1, 1 - r / n]);
+    pushQuad(pos, uv, center.clone().setY(BANNER_H + 0.006), U.clone().multiplyScalar(3.98), V.clone().multiplyScalar(BANNER_D / 2), [0, 1 - (r + 1) / n, 1, 1 - r / n]);
   });
   const m = flatMesh(pos, uv, canvas, { transparent: false });
   m.renderOrder = 0;
@@ -301,6 +304,14 @@ function buildEngraving() {
   const c = canvas.getContext('2d');
   const at = (u) => SIZE / 2 + u * px;
   const gold = '#C9A45C';
+  // Le pourtour plus sombre, comme une table sous une lampe.
+  const edgeShade = c.createRadialGradient(SIZE / 2, SIZE / 2, SIZE * 0.3, SIZE / 2, SIZE / 2, SIZE * 0.72);
+  edgeShade.addColorStop(0, 'rgba(0,0,0,0)');
+  edgeShade.addColorStop(1, 'rgba(0,0,0,0.34)');
+  c.fillStyle = edgeShade;
+  c.beginPath();
+  c.roundRect(0, 0, SIZE, SIZE, 1.1 * px); // comme la dalle : rien ne doit dépasser de ses coins arrondis
+  c.fill();
   // Le liseré autour du plateau, et un filet plus fin autour de la zone centrale.
   c.strokeStyle = gold;
   c.lineWidth = 5;
@@ -308,12 +319,46 @@ function buildEngraving() {
   c.roundRect(at(-WORLD / 2 + 0.26), at(-WORLD / 2 + 0.26), (WORLD - 0.52) * px, (WORLD - 0.52) * px, 0.85 * px);
   c.stroke();
   const inner = HALF - TILE_D - BANNER_D - 0.32;
-  c.globalAlpha = 0.55;
-  c.lineWidth = 3;
+  // Un second filet, plus fin, et un losange à chaque coin : le plateau a l'air gravé à la main.
+  c.lineWidth = 1.5;
   c.beginPath();
-  c.roundRect(at(-inner), at(-inner), inner * 2 * px, (inner * 2 - BOTTOM_LIFT) * px, 0.7 * px);
+  c.roundRect(at(-WORLD / 2 + 0.42), at(-WORLD / 2 + 0.42), (WORLD - 0.84) * px, (WORLD - 0.84) * px, 0.72 * px);
+  c.stroke();
+  // La zone centrale, un peu creusée.
+  const zone = [at(-inner), at(-inner), inner * 2 * px, (inner * 2 - BOTTOM_LIFT) * px, 0.7 * px];
+  c.fillStyle = 'rgba(0,0,0,0.14)';
+  c.beginPath();
+  c.roundRect(...zone);
+  c.fill();
+  c.save();
+  c.beginPath();
+  c.roundRect(...zone);
+  c.clip();
+  c.shadowColor = 'rgba(0,0,0,0.55)';
+  c.shadowBlur = 26;
+  c.strokeStyle = 'rgba(0,0,0,0.6)';
+  c.lineWidth = 8;
+  c.beginPath();
+  c.roundRect(...zone);
+  c.stroke();
+  c.restore();
+  c.strokeStyle = gold;
+  c.globalAlpha = 0.6;
+  c.lineWidth = 2.5;
+  c.beginPath();
+  c.roundRect(...zone);
   c.stroke();
   c.globalAlpha = 1;
+  c.fillStyle = gold;
+  for (const [cx, cy] of [[at(0), at(-inner)], [at(0), at(-inner + inner * 2 - BOTTOM_LIFT)], [at(-inner), at(-BOTTOM_LIFT / 2)], [at(inner), at(-BOTTOM_LIFT / 2)]]) {
+    c.beginPath();
+    c.moveTo(cx, cy - 9);
+    c.lineTo(cx + 9, cy);
+    c.lineTo(cx, cy + 9);
+    c.lineTo(cx - 9, cy);
+    c.closePath();
+    c.fill();
+  }
   // Une rose des vents, gravée ton sur ton au milieu de la zone centrale
   const [rx, rz] = [at(0), at(-0.6)];
   const R = 5.6 * px;
@@ -345,10 +390,18 @@ function buildEngraving() {
   }
   // La piste des dés
   const [dx, dz] = [at(0), at(DICE_Z)];
-  c.fillStyle = '#143C35';
+  const felt = c.createRadialGradient(dx, dz - 0.2 * px, 0.2 * px, dx, dz, 3 * px);
+  felt.addColorStop(0, '#1A4A41');
+  felt.addColorStop(1, '#0B2A25');
+  c.fillStyle = felt;
   c.beginPath();
   c.ellipse(dx, dz, 3 * px, 1.5 * px, 0, 0, Math.PI * 2);
   c.fill();
+  c.lineWidth = 1.5;
+  c.strokeStyle = gold;
+  c.beginPath();
+  c.ellipse(dx, dz, 3.14 * px, 1.62 * px, 0, 0, Math.PI * 2);
+  c.stroke();
   c.strokeStyle = gold;
   c.lineWidth = 3;
   c.beginPath();
@@ -369,6 +422,27 @@ function buildEngraving() {
   m.rotation.x = -Math.PI / 2;
   m.position.y = 0.006;
   m.renderOrder = 0;
+  return m;
+}
+
+// Une ombre douce sous la dalle : le plateau est posé sur la carte, il ne flotte pas.
+function groundShadow() {
+  const SIZE = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const c = canvas.getContext('2d');
+  c.shadowColor = 'rgba(0,0,0,0.75)'; // shadowBlur plutôt que filter : Safari ne connaît pas toujours filter sur un canvas
+  c.shadowBlur = 24;
+  c.fillStyle = 'rgba(0,0,0,0.6)';
+  c.beginPath();
+  c.roundRect(28, 30, SIZE - 56, SIZE - 52, 18);
+  c.fill();
+  const WORLD = HALF * 2 + 7;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(WORLD, WORLD), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthWrite: false, toneMapped: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = -0.75;
+  m.renderOrder = -1;
   return m;
 }
 
@@ -459,8 +533,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 400);
 
   // Une fin de journée : un soleil bas et chaud, des ombres longues et bleutées.
-  scene.add(new THREE.HemisphereLight('#CFE6FF', '#7A8FA8', 1.75));
-  const sun = new THREE.DirectionalLight('#FFDDB0', 2.9);
+  scene.add(new THREE.HemisphereLight('#FFF3E0', '#2F5A50', 1.85));
+  const sun = new THREE.DirectionalLight('#FFD9A8', 3.1);
   sun.position.set(-14, 30, 12); // assez haut : la lumière reste chaude, et les ombres ne salissent plus les noms
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -492,7 +566,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
     model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
-    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : Infinity);
+    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : SIDE_HEROES[t.model] ?? SIDE_H);
     const top = new THREE.Box3().setFromObject(model).max.y;
     items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m, ao: PLATE_H });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
@@ -510,10 +584,12 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
 
   REGIONS.forEach((reg, r) => {
     const { center, U } = bannerFrame(r);
+    const edge = new THREE.Color(reg.color).multiplyScalar(0.55);
+    items.push({ object: paint(plateGeometry(8.06, BANNER_D + 0.1, BANNER_H, 0.17), `#${edge.getHexString()}`), matrix: placed(center.x, center.z, Math.abs(U.z) > 0.5 ? Math.PI / 2 : 0) });
     const spots = [-3.4, 3.5];
     PROPS_OF[reg.id].forEach((name, i) => {
       const p = center.clone().addScaledVector(U, spots[i]);
-      items.push({ object: buildProp(name), matrix: placed(p.x, p.z, Math.atan2(U.x, U.z) + 1.1, 1.05), ao: 0 });
+      items.push({ object: buildProp(name), matrix: placed(p.x, p.z, Math.atan2(U.x, U.z) + 1.1, 1.05).setPosition(p.x, BANNER_H, p.z), ao: BANNER_H });
     });
     const pole = new THREE.Group();
     const steel = new THREE.MeshBasicMaterial({ color: '#E7EBF0' });
@@ -531,7 +607,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   world.receiveShadow = true;
   world.frustumCulled = false;
   const flags = buildFlags();
-  scene.add(world, buildEngraving(), buildBanners(), flags, buildPrint());
+  scene.add(groundShadow(), world, buildEngraving(), buildBanners(), flags, buildPrint());
 
   // ——— À qui sont les villes ———
   const tints = new Map();

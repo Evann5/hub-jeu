@@ -5,7 +5,6 @@
 import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE } from './client/board.js';
 
 export const SALARY = 200;
-export const CATCH_UP = 100; // en plus au Départ pour qui a moins de la moitié du patrimoine du premier
 export const FINE = 50; // pour sortir de la Douane
 export const FESTIVAL_GAIN = 100; // en tombant sur le Festival
 export const WORKS_FEE = 50; // en tombant sur un Chantier
@@ -215,10 +214,8 @@ function eliminate(s, p, to) {
 // ——— Se déplacer et tomber sur une case ———
 
 function collect(s, p) {
-  const leader = Math.max(...active(s).map((o) => worthOf(s, o)));
-  const bonus = worthOf(s, p) * 2 < leader ? CATCH_UP : 0;
-  p.cash += SALARY + bonus;
-  log(s, `${p.pseudo} passe au Départ : +${money(SALARY + bonus)}${bonus ? ' (avec la prime de rattrapage)' : ''}.`);
+  p.cash += SALARY;
+  log(s, `${p.pseudo} passe au Départ : +${money(SALARY)}.`);
 }
 
 function advance(s, steps, ctx) {

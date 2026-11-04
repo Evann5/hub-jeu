@@ -11,7 +11,7 @@ Ce qu'on reproche le plus au genre, et ce qu'Escales fait à la place :
 | Les parties durent des heures | Un nombre de tours fixé (20 par défaut) : à la fin, le plus gros patrimoine gagne |
 | On passe son temps à regarder les autres | Échanges à tout moment, temps limité par action, tour passé tout seul quand il n'y a rien à faire |
 | Les premiers éliminés s'ennuient | Le décompte final arrive avant que tout le monde soit ruiné |
-| Un joueur prend de l'avance et c'est plié | Prime de 100 € au Départ pour qui a moins de la moitié du patrimoine du premier ; l'actualité change les loyers à chaque tour |
+| Un joueur prend de l'avance et c'est plié | Un nombre de tours limité : la partie s'arrête avant que tout soit joué d'avance |
 | Personne n'obtient une série complète, et la partie stagne | On construit dès la majorité d'une région (3 villes sur 4) |
 
 Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: The Game That Board Gamers Love to Hate](https://brandonthegamedev.com/?p=161), [What's Wrong With Monopoly?](https://danq.me/2013/04/03).

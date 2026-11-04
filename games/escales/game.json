@@ -10,7 +10,7 @@
     "Festival : tu gagnes 100 €. Chantier : tu paies 50 €.",
     "Propose un échange à tout moment, même hors de ton tour : villes contre argent, tout se négocie.",
     "Plus d'argent ? Vends des constructions, mets des villes en gage, ou négocie. Sinon, c'est la faillite : ton créancier récupère tout.",
-    "La partie s'arrête au dernier tour : le plus gros patrimoine gagne (argent, villes, constructions). Ou avant, s'il ne reste qu'un joueur. Si tu passes au Départ avec moins de la moitié du patrimoine du premier, tu touches 100 € de plus."
+    "La partie s'arrête au dernier tour : le plus gros patrimoine gagne (argent, villes, constructions). Ou avant, s'il ne reste qu'un joueur."
   ],
   "minPlayers": 1,
   "maxPlayers": 10,
