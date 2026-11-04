@@ -4,8 +4,9 @@ Hub privé de jeux de société en ligne pour la classe de Minh (études sup, 20
 
 ## Où on en est (02/11/2026)
 - Étape 1 (comptes, messagerie, présence, admin) et étape 2 (tables de jeu) construites.
-- 29 jeux dans `games/`, chacun avec son univers visuel (registre : `docs/da/univers.md`) et ses tests de règles (`node --test games/*/rules.test.js`).
-- Pas encore en ligne : il faut la version de Node et l'adresse sur O2Switch, et le code de classe (`docs/questions-ouvertes.md`, guide `docs/mise-en-ligne.md`).
+- 30 jeux dans `games/`, chacun avec son univers visuel (registre : `docs/da/univers.md`) et ses tests de règles (`node --test games/*/rules.test.js`).
+- Escales (`games/escales`, raisonnement dans `docs/escales.md`) : le grand jeu de plateau, en 3D, fait sur le Mac de Minh ; ses villes définitives et la validation du style sont en attente.
+- Pas encore en ligne : Minh parle maintenant d'un VPS plutôt que d'O2Switch, à confirmer avant la mise en ligne (`docs/questions-ouvertes.md`, guide O2Switch `docs/mise-en-ligne.md`).
 
 ## Règles de chaque session
 - **Pas d'agents** pour le hub : l'assistant principal le code lui-même, en utilisant les skills et les fiches des agents (design, développement, pièges connus) (demande de Minh, 23/10/2026). Exception du 29/10/2026 : des agents peuvent écrire de nouveaux jeux, chacun ne touchant qu'à son dossier de `games/`.

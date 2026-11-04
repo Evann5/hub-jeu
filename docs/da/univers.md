@@ -17,6 +17,7 @@ Précision de Minh (29/10/2026) : **« un style différent à chaque jeu, pas vi
 
 | Jeu | Dossier | Univers pop |
 |---|---|---|
+| Escales | `games/escales` | Maquette de monde en 3D, en plein jour : une île-plateau dans un lagon turquoise, un monument par ville, interface blanche et gros boutons qu'on enfonce |
 | Morpion | `games/morpion` | Le hub (Néon), jeu d'exemple |
 | Undercover | `games/undercover` | « Code » : cartes modernes, une couleur plein écran par phase (validé par Minh le 23/10) |
 | Quiz | `games/quiz` | Plateau de jeu télé d'aujourd'hui : violet électrique, spots, tuiles bonbon, gros chiffres |

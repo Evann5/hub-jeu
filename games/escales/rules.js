@@ -1,0 +1,792 @@
+// Escales : on achète des villes, on y construit, on fait payer le passage. Les règles sont pures : ni réseau, ni base, ni affichage.
+// L'heure vient de ctx.now, le hasard de ctx.random. Tout le raisonnement est expliqué dans docs/escales.md.
+//
+// Un tour : « roll » (lancer) → la case décide de la suite (buy, auction, fly, festival, chantier, debt) → « end » → joueur suivant.
+import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, FLY_COST, CUSTOMS_POS, SIZE } from './client/board.js';
+
+export const SALARY = 200;
+export const CATCH_UP = 100; // en plus au Départ pour qui a moins de la moitié du patrimoine du premier
+export const FINE = 50; // pour sortir de la Douane
+export const AUCTION_MS = 20_000;
+export const MAX_TRADES = 3; // propositions en attente par joueur
+
+const clone = (s) => structuredClone(s);
+const d6 = (ctx) => 1 + Math.floor(ctx.random() * 6);
+const money = (n) => `${n.toLocaleString('fr-FR')} €`;
+
+const cur = (s) => s.players[s.cur];
+const byId = (s, id) => s.players.find((p) => p.id === id);
+const active = (s) => s.players.filter((p) => !p.out);
+
+function log(s, text) {
+  s.logN += 1;
+  s.log.push({ n: s.logN, text });
+  if (s.log.length > 40) s.log.shift();
+}
+
+function shuffle(list, ctx) {
+  const out = list.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(ctx.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+// ——— Ce que valent les choses ———
+
+const ownedInRegion = (s, id, region) => TILES.filter((t) => t.region === region && s.props[t.pos]?.owner === id).length;
+const escalesOf = (s, id) => TILES.filter((t) => t.type === 'escale' && s.props[t.pos]?.owner === id).length;
+
+// Le loyer dû en tombant sur cette case, tout compris (majorité, niveau, festival, événement du tour).
+export function rentOf(s, pos) {
+  const t = TILES[pos];
+  const prop = s.props[pos];
+  if (!prop || prop.mortgaged) return 0;
+  if (t.type === 'escale') return ESCALE_RENTS[escalesOf(s, prop.owner)];
+  const count = ownedInRegion(s, prop.owner, t.region);
+  let rent = t.rent * LEVEL_MULT[prop.level];
+  if (prop.level === 0) rent *= count === 4 ? 3 : count >= s.majority ? 2 : 1;
+  else if (count === 4) rent *= 1.25;
+  if (s.festival?.pos === pos) rent *= 2;
+  if (s.event?.region === t.region) {
+    if (s.event.kind === 'boom') rent *= 1.5;
+    if (s.event.kind === 'crise') rent /= 2;
+  }
+  return Math.round(rent);
+}
+
+export function buildCost(s, pos) {
+  const t = TILES[pos];
+  return s.event?.kind === 'chantiers' && s.event.region === t.region ? Math.floor(t.build / 2) : t.build;
+}
+
+export function worthOf(s, p) {
+  let total = p.cash;
+  for (const [pos, prop] of Object.entries(s.props)) {
+    if (prop.owner !== p.id) continue;
+    const t = TILES[pos];
+    total += prop.mortgaged ? Math.floor(t.price / 2) : t.price;
+    total += prop.level * (t.build || 0);
+  }
+  return total;
+}
+
+function canBuildAt(s, id, pos) {
+  const t = TILES[pos];
+  const prop = s.props[pos];
+  return t.type === 'city' && prop?.owner === id && !prop.mortgaged && prop.level < MAX_LEVEL && ownedInRegion(s, id, t.region) >= s.majority;
+}
+
+const mortgageValue = (t) => Math.floor(t.price / 2);
+const unmortgageCost = (t) => Math.ceil((t.price / 2) * 1.1);
+const positionsOf = (s, id) => Object.keys(s.props).map(Number).filter((pos) => s.props[pos].owner === id);
+
+function canManage(s, p) {
+  return positionsOf(s, p.id).some((pos) => (canBuildAt(s, p.id, pos) && p.cash >= buildCost(s, pos))
+    || (s.props[pos].mortgaged && p.cash >= unmortgageCost(TILES[pos])));
+}
+
+// ——— Mise en place ———
+
+// options : cash (argent de départ), rounds (tours avant le décompte, 0 = jusqu'au dernier), timer (secondes par action, 0 = sans).
+export function setup(players, options = {}, ctx) {
+  const s = {
+    players: shuffle(players, ctx).map((p, seat) => ({
+      id: p.id, pseudo: p.pseudo, seat, cash: Number(options.cash) || 1500, pos: 0, out: false, blocked: 0, doubles: 0, passes: 0,
+    })),
+    cur: 0,
+    phase: 'roll',
+    props: {}, // position -> { owner, level, mortgaged }
+    round: 1,
+    majority: players.length <= 3 ? 2 : 3, // villes d'une région à posséder pour y construire
+    maxRounds: Number(options.rounds ?? 20) || 0,
+    timer: Number(options.timer ?? 60) || 0,
+    dice: null,
+    rollN: 0,
+    again: false,
+    after: null,
+    debt: null,
+    auction: null,
+    lastAuction: null,
+    trades: [],
+    tradeSeq: 0,
+    festival: null,
+    event: null,
+    lastCard: null,
+    deck: [],
+    log: [],
+    logN: 0,
+    over: false,
+    winners: [],
+    reason: null,
+    deadline: null,
+    armedFor: null,
+  };
+  log(s, `Partie lancée. ${cur(s).pseudo} commence.`);
+  return arm(s, ctx);
+}
+
+// Le minuteur repart à chaque nouvelle action attendue, mais pas pour un échange pendant le tour d'un autre.
+function arm(s, ctx) {
+  if (s.over) {
+    s.deadline = null;
+    return s;
+  }
+  const key = `${s.phase}:${s.cur}:${s.rollN}:${s.logN > 0 && s.phase === 'auction' ? s.auction.pos : ''}`;
+  if (key === s.armedFor) return s;
+  s.armedFor = key;
+  if (s.phase === 'auction') s.deadline = ctx.now + AUCTION_MS;
+  else s.deadline = s.timer ? ctx.now + s.timer * 1000 : null;
+  return s;
+}
+
+// ——— Enchaînement du tour ———
+
+function settle(s, ctx) {
+  const p = cur(s);
+  if (p.out) return nextTurn(s, ctx);
+  if (s.again && !p.blocked) {
+    s.phase = 'roll';
+    return undefined;
+  }
+  s.again = false;
+  if (canManage(s, p)) s.phase = 'end';
+  else nextTurn(s, ctx);
+  return undefined;
+}
+
+function resume(s, after, ctx) {
+  s.after = null;
+  if (after?.move) return advance(s, after.move, ctx);
+  if (after === 'fly' && cur(s).cash >= FLY_COST) {
+    s.phase = 'fly';
+    return undefined;
+  }
+  return settle(s, ctx);
+}
+
+function makeEvent(s, ctx) {
+  const region = Math.floor(ctx.random() * REGIONS.length);
+  const name = REGIONS[region].name;
+  const kind = ['boom', 'crise', 'chantiers'][Math.floor(ctx.random() * 3)];
+  const text = kind === 'boom' ? `Haute saison : ${name}, loyers × 1,5 ce tour.`
+    : kind === 'crise' ? `Grève des transports : ${name}, loyers divisés par 2 ce tour.`
+      : `Subventions : ${name}, constructions à moitié prix ce tour.`;
+  s.event = { kind, region, text };
+  log(s, `À la une : ${text}`);
+}
+
+function nextTurn(s, ctx) {
+  if (s.over) return;
+  s.again = false;
+  const from = s.cur;
+  let i = from;
+  do {
+    i = (i + 1) % s.players.length;
+  } while (s.players[i].out && i !== from);
+  if (i <= from) {
+    s.round += 1;
+    if (s.maxRounds && s.round > s.maxRounds) {
+      finish(s, 'rounds');
+      return;
+    }
+    makeEvent(s, ctx);
+  }
+  s.cur = i;
+  const p = cur(s);
+  p.doubles = 0;
+  if (s.festival?.owner === p.id) {
+    log(s, `Le festival de ${TILES[s.festival.pos].name} est terminé.`);
+    s.festival = null;
+  }
+  s.phase = 'roll';
+}
+
+function finish(s, reason) {
+  s.over = true;
+  s.phase = 'over';
+  s.reason = reason;
+  s.auction = null;
+  const left = active(s);
+  const best = Math.max(...left.map((p) => worthOf(s, p)));
+  s.winners = left.filter((p) => worthOf(s, p) === best).map((p) => p.id);
+  const names = s.winners.map((id) => byId(s, id).pseudo).join(' et ');
+  log(s, reason === 'rounds' ? `Fin des tours : ${names} a le plus gros patrimoine (${money(best)}).` : `${names} est le dernier en jeu.`);
+}
+
+// Le joueur quitte la partie. to : id du créancier, ou null pour la banque.
+function eliminate(s, p, to) {
+  const heir = to ? byId(s, to) : null;
+  let liquidated = 0;
+  for (const pos of positionsOf(s, p.id)) {
+    const prop = s.props[pos];
+    liquidated += Math.floor((prop.level * (TILES[pos].build || 0)) / 2);
+    if (heir) s.props[pos] = { owner: heir.id, level: 0, mortgaged: prop.mortgaged };
+    else delete s.props[pos];
+    if (s.festival?.pos === pos) s.festival = null;
+  }
+  if (heir) {
+    heir.cash += p.cash + liquidated;
+    heir.passes += p.passes;
+  }
+  p.cash = 0;
+  p.passes = 0;
+  p.out = true;
+  p.blocked = 0;
+  s.trades = s.trades.filter((t) => t.from !== p.id && t.to !== p.id);
+  if (s.festival?.owner === p.id) s.festival = null;
+  if (active(s).length <= 1) finish(s, 'last');
+}
+
+// ——— Se déplacer et tomber sur une case ———
+
+function collect(s, p) {
+  const leader = Math.max(...active(s).map((o) => worthOf(s, o)));
+  const bonus = worthOf(s, p) * 2 < leader ? CATCH_UP : 0;
+  p.cash += SALARY + bonus;
+  log(s, `${p.pseudo} passe au Départ : +${money(SALARY + bonus)}${bonus ? ' (avec la prime de rattrapage)' : ''}.`);
+}
+
+function advance(s, steps, ctx) {
+  const p = cur(s);
+  const to = p.pos + steps;
+  if (to >= SIZE) collect(s, p);
+  p.pos = to % SIZE;
+  return land(s, ctx);
+}
+
+function goForwardTo(s, pos, ctx) {
+  const p = cur(s);
+  return advance(s, ((pos - p.pos + SIZE) % SIZE) || SIZE, ctx);
+}
+
+function sendToCustoms(s, ctx) {
+  const p = cur(s);
+  p.pos = CUSTOMS_POS;
+  p.blocked = 1;
+  p.doubles = 0;
+  s.again = false;
+  log(s, `${p.pseudo} est retenu à la Douane.`);
+  return settle(s, ctx);
+}
+
+// Le joueur en cours doit payer. S'il n'a pas assez, il passe en « debt » et la suite attend.
+function charge(s, amount, to, why, ctx, after = null) {
+  const p = cur(s);
+  if (p.cash >= amount) {
+    p.cash -= amount;
+    if (to) byId(s, to).cash += amount;
+    log(s, `${p.pseudo} paie ${money(amount)} ${why}.`);
+    return resume(s, after, ctx);
+  }
+  s.debt = { amount, to, why };
+  s.after = after;
+  s.phase = 'debt';
+  log(s, `${p.pseudo} doit trouver ${money(amount)} ${why}.`);
+  return undefined;
+}
+
+function land(s, ctx) {
+  const p = cur(s);
+  const t = TILES[p.pos];
+  switch (t.type) {
+    case 'city':
+    case 'escale': {
+      const next = t.type === 'escale' ? 'fly' : null;
+      const prop = s.props[p.pos];
+      if (!prop) {
+        s.phase = 'buy';
+        return undefined;
+      }
+      if (prop.owner === p.id || prop.mortgaged) return resume(s, next, ctx);
+      return charge(s, rentOf(s, p.pos), prop.owner, `à ${byId(s, prop.owner).pseudo} (${t.name})`, ctx, next);
+    }
+    case 'telex':
+      return drawCard(s, ctx);
+    case 'tax': {
+      const amount = t.tax === 'percent' ? Math.max(50, Math.floor(p.cash / 10)) : t.amount;
+      return charge(s, amount, null, `(${t.name})`, ctx);
+    }
+    case 'chantier':
+      if (positionsOf(s, p.id).some((pos) => canBuildAt(s, p.id, pos) && p.cash >= Math.floor(buildCost(s, pos) / 2))) {
+        s.phase = 'chantier';
+        return undefined;
+      }
+      return settle(s, ctx);
+    case 'festival':
+      if (positionsOf(s, p.id).some((pos) => TILES[pos].type === 'city' && !s.props[pos].mortgaged)) {
+        s.phase = 'festival';
+        return undefined;
+      }
+      return settle(s, ctx);
+    case 'control':
+      return sendToCustoms(s, ctx);
+    default:
+      return settle(s, ctx); // Départ, Douane en visite
+  }
+}
+
+// ——— Le Télex ———
+
+const CARDS = [
+  { text: 'Surclassement : file à la prochaine escale.', play: (s, ctx) => goForwardTo(s, TILES.find((t) => t.type === 'escale' && t.pos > cur(s).pos)?.pos ?? 6, ctx) },
+  { text: 'Billet retour : retour au Départ.', play: (s, ctx) => goForwardTo(s, 0, ctx) },
+  { text: 'Tes bagages sont perdus : paie 50 €.', play: (s, ctx) => charge(s, 50, null, '(bagages perdus)', ctx) },
+  { text: 'Tu revends ton carnet de voyage : +100 €.', play: (s, ctx) => gain(s, 100, ctx) },
+  { text: 'Visa accordé : tu gardes un passe-douane.', play: (s, ctx) => { cur(s).passes += 1; return settle(s, ctx); } },
+  { text: 'Contrôle surprise : direction la Douane.', play: (s, ctx) => sendToCustoms(s, ctx) },
+  { text: 'Ta photo gagne un concours : +150 €.', play: (s, ctx) => gain(s, 150, ctx) },
+  { text: 'Amende de stationnement : paie 40 €.', play: (s, ctx) => charge(s, 40, null, '(amende)', ctx) },
+  { text: 'Mauvaise route : recule de 3 cases.', play: (s, ctx) => { const p = cur(s); p.pos = (p.pos - 3 + SIZE) % SIZE; return land(s, ctx); } },
+  { text: 'Travaux de voirie : paie 25 € par niveau construit.', play: (s, ctx) => {
+    const levels = positionsOf(s, cur(s).id).reduce((sum, pos) => sum + s.props[pos].level, 0);
+    return levels ? charge(s, levels * 25, null, '(travaux de voirie)', ctx) : settle(s, ctx);
+  } },
+  { text: 'Une tante globe-trotteuse te lègue 200 €.', play: (s, ctx) => gain(s, 200, ctx) },
+  { text: 'Mauvais taux de change : perds 10 % de ton argent.', play: (s, ctx) => {
+    const amount = Math.floor(cur(s).cash / 10);
+    return amount ? charge(s, amount, null, '(taux de change)', ctx) : settle(s, ctx);
+  } },
+  { text: 'Coup de cœur : file à la prochaine ville libre.', play: (s, ctx) => {
+    const from = cur(s).pos;
+    for (let i = 1; i < SIZE; i += 1) {
+      const t = TILES[(from + i) % SIZE];
+      if (t.type === 'city' && !s.props[t.pos]) return goForwardTo(s, t.pos, ctx);
+    }
+    return settle(s, ctx);
+  } },
+  { text: 'Prime de fidélité : +50 € par escale que tu possèdes.', play: (s, ctx) => {
+    const n = escalesOf(s, cur(s).id);
+    return n ? gain(s, n * 50, ctx) : settle(s, ctx);
+  } },
+];
+
+function gain(s, amount, ctx) {
+  cur(s).cash += amount;
+  return settle(s, ctx);
+}
+
+function drawCard(s, ctx) {
+  if (!s.deck.length) s.deck = shuffle(CARDS.map((_, i) => i), ctx);
+  const card = CARDS[s.deck.pop()];
+  s.lastCard = { text: card.text, by: cur(s).id, n: s.logN + 1 };
+  log(s, `Télex pour ${cur(s).pseudo} : ${card.text}`);
+  return card.play(s, ctx);
+}
+
+// ——— Enchères secrètes ———
+
+function startAuction(s, pos, ctx, after) {
+  const eligible = active(s).filter((p) => p.cash > 0).map((p) => p.id);
+  if (!eligible.length) return resume(s, after, ctx);
+  s.auction = { pos, eligible, bids: {}, order: [] };
+  s.after = after;
+  s.phase = 'auction';
+  log(s, `Enchères secrètes pour ${TILES[pos].name}.`);
+  return undefined;
+}
+
+function resolveAuction(s, ctx) {
+  const { pos, bids, order } = s.auction;
+  const ranked = order.map((id) => [id, bids[id]]).filter(([, amount]) => amount > 0).sort((a, b) => b[1] - a[1]);
+  const winner = ranked.find(([id, amount]) => !byId(s, id).out && byId(s, id).cash >= amount);
+  if (winner) {
+    const p = byId(s, winner[0]);
+    p.cash -= winner[1];
+    s.props[pos] = { owner: p.id, level: 0, mortgaged: false };
+    log(s, `${p.pseudo} remporte ${TILES[pos].name} pour ${money(winner[1])}.`);
+  } else {
+    log(s, `Personne n'achète ${TILES[pos].name}.`);
+  }
+  s.lastAuction = { pos, bids: ranked, winner: winner?.[0] ?? null, n: s.logN };
+  s.auction = null;
+  const after = s.after;
+  return resume(s, after, ctx);
+}
+
+const auctionDone = (s) => s.auction.eligible.every((id) => id in s.auction.bids);
+
+// ——— Le lancer ———
+
+function doRoll(s, ctx) {
+  const p = cur(s);
+  const a = d6(ctx);
+  const b = d6(ctx);
+  s.dice = [a, b];
+  s.rollN += 1;
+  log(s, `${p.pseudo} lance ${a} et ${b}.`);
+  if (p.blocked) {
+    if (a === b) {
+      p.blocked = 0;
+      s.again = false;
+      log(s, `Un double : ${p.pseudo} passe la Douane.`);
+      return advance(s, a + b, ctx);
+    }
+    p.blocked += 1;
+    if (p.blocked > 3) {
+      p.blocked = 0;
+      s.again = false;
+      return charge(s, FINE, null, 'pour sortir de la Douane', ctx, { move: a + b });
+    }
+    s.again = false;
+    return settle(s, ctx);
+  }
+  if (a === b) {
+    p.doubles += 1;
+    if (p.doubles >= 3) return sendToCustoms(s, ctx);
+    s.again = true;
+  } else {
+    s.again = false;
+  }
+  return advance(s, a + b, ctx);
+}
+
+function liquidate(s, p, needed) {
+  const owned = positionsOf(s, p.id);
+  for (const pos of owned) {
+    while (s.props[pos].level > 0 && p.cash < needed) {
+      s.props[pos].level -= 1;
+      p.cash += Math.floor(TILES[pos].build / 2);
+    }
+  }
+  for (const pos of owned) {
+    if (p.cash >= needed) break;
+    if (!s.props[pos].mortgaged && s.props[pos].level === 0) {
+      s.props[pos].mortgaged = true;
+      p.cash += mortgageValue(TILES[pos]);
+    }
+  }
+}
+
+function settleDebt(s, ctx) {
+  const p = cur(s);
+  const { amount, to, why } = s.debt;
+  p.cash -= amount;
+  if (to) byId(s, to).cash += amount;
+  log(s, `${p.pseudo} paie ${money(amount)} ${why}.`);
+  s.debt = null;
+  const after = s.after;
+  return resume(s, after, ctx);
+}
+
+function goBankrupt(s, ctx) {
+  const p = cur(s);
+  const to = s.debt?.to ?? null;
+  s.debt = null;
+  s.after = null;
+  log(s, `${p.pseudo} fait faillite.`);
+  eliminate(s, p, to);
+  if (!s.over) nextTurn(s, ctx);
+}
+
+// ——— Échanges ———
+
+function cleanOffer(o = {}) {
+  return {
+    cash: Math.max(0, Math.floor(Number(o.cash) || 0)),
+    cities: [...new Set((Array.isArray(o.cities) ? o.cities : []).map(Number))].filter((n) => Number.isInteger(n) && TILES[n]),
+    passes: Math.max(0, Math.floor(Number(o.passes) || 0)),
+  };
+}
+
+function checkOffer(s, p, offer) {
+  if (p.cash < offer.cash) throw new Error(`${p.pseudo} n'a pas ${money(offer.cash)}.`);
+  if (p.passes < offer.passes) throw new Error(`${p.pseudo} n'a pas assez de passe-douane.`);
+  for (const pos of offer.cities) {
+    const prop = s.props[pos];
+    if (prop?.owner !== p.id) throw new Error(`${TILES[pos].name} n'appartient pas à ${p.pseudo}.`);
+    if (prop.level > 0) throw new Error(`${TILES[pos].name} a des constructions : il faut les vendre avant.`);
+  }
+}
+
+function transfer(s, from, to, offer) {
+  from.cash -= offer.cash;
+  to.cash += offer.cash;
+  from.passes -= offer.passes;
+  to.passes += offer.passes;
+  for (const pos of offer.cities) {
+    s.props[pos].owner = to.id;
+    if (s.festival?.pos === pos) s.festival = null;
+  }
+}
+
+// ——— Les coups ———
+
+const TURN_ONLY = new Set(['roll', 'payFine', 'usePass', 'buy', 'decline', 'fly', 'skip', 'festival', 'chantier', 'endTurn', 'pay', 'bankrupt', 'build', 'sell', 'mortgage', 'unmortgage']);
+const MANAGE_PHASES = new Set(['roll', 'buy', 'end']);
+
+function needPhase(s, ...phases) {
+  if (!phases.includes(s.phase)) throw new Error('Ce n’est pas le moment.');
+}
+
+function ownedProp(s, id, pos) {
+  const prop = s.props[pos];
+  if (!TILES[pos] || prop?.owner !== id) throw new Error('Cette ville ne t’appartient pas.');
+  return prop;
+}
+
+export function move(state, playerId, action = {}, ctx) {
+  if (state.over) throw new Error('La partie est terminée.');
+  const s = clone(state);
+  const p = byId(s, playerId);
+  if (!p || p.out) throw new Error('Tu n’es plus dans cette partie.');
+  const { type } = action;
+  const pos = Number(action.pos);
+  if (TURN_ONLY.has(type) && cur(s).id !== playerId) throw new Error('Ce n’est pas ton tour.');
+
+  switch (type) {
+    case 'roll':
+      needPhase(s, 'roll');
+      doRoll(s, ctx);
+      break;
+    case 'payFine':
+      needPhase(s, 'roll');
+      if (!p.blocked) throw new Error('Tu n’es pas retenu à la Douane.');
+      if (p.cash < FINE) throw new Error(`Il te faut ${money(FINE)}.`);
+      p.cash -= FINE;
+      p.blocked = 0;
+      log(s, `${p.pseudo} paie ${money(FINE)} et passe la Douane.`);
+      break;
+    case 'usePass':
+      needPhase(s, 'roll');
+      if (!p.blocked || !p.passes) throw new Error('Tu n’as pas de passe-douane à utiliser.');
+      p.passes -= 1;
+      p.blocked = 0;
+      log(s, `${p.pseudo} présente un passe-douane.`);
+      break;
+    case 'buy': {
+      needPhase(s, 'buy');
+      const t = TILES[p.pos];
+      if (p.cash < t.price) throw new Error(`Il te manque ${money(t.price - p.cash)}.`);
+      p.cash -= t.price;
+      s.props[p.pos] = { owner: p.id, level: 0, mortgaged: false };
+      log(s, `${p.pseudo} achète ${t.name} pour ${money(t.price)}.`);
+      resume(s, t.type === 'escale' ? 'fly' : null, ctx);
+      break;
+    }
+    case 'decline': {
+      needPhase(s, 'buy');
+      const t = TILES[p.pos];
+      startAuction(s, p.pos, ctx, t.type === 'escale' ? 'fly' : null);
+      break;
+    }
+    case 'bid': {
+      needPhase(s, 'auction');
+      if (!s.auction.eligible.includes(p.id)) throw new Error('Tu ne participes pas à cette enchère.');
+      if (p.id in s.auction.bids) throw new Error('Ta mise est déjà posée.');
+      const amount = Math.floor(Number(action.amount) || 0);
+      if (amount < 0 || amount > p.cash) throw new Error('Tu ne peux pas miser plus que ton argent.');
+      s.auction.bids[p.id] = amount;
+      s.auction.order.push(p.id);
+      if (auctionDone(s)) resolveAuction(s, ctx);
+      break;
+    }
+    case 'fly': {
+      needPhase(s, 'fly');
+      const t = TILES[pos];
+      if (t?.type !== 'escale' || pos === p.pos) throw new Error('Choisis une autre escale.');
+      if (p.cash < FLY_COST) throw new Error(`Il te faut ${money(FLY_COST)}.`);
+      p.cash -= FLY_COST;
+      p.pos = pos;
+      log(s, `${p.pseudo} s'envole pour ${t.name}.`);
+      settle(s, ctx);
+      break;
+    }
+    case 'festival':
+      needPhase(s, 'festival');
+      if (ownedProp(s, p.id, pos).mortgaged || TILES[pos].type !== 'city') throw new Error('Choisis une de tes villes actives.');
+      s.festival = { pos, owner: p.id };
+      log(s, `Festival à ${TILES[pos].name} : loyer doublé jusqu'au prochain tour de ${p.pseudo}.`);
+      settle(s, ctx);
+      break;
+    case 'chantier': {
+      needPhase(s, 'chantier');
+      if (!canBuildAt(s, p.id, pos)) throw new Error('Tu ne peux pas construire ici.');
+      const cost = Math.floor(buildCost(s, pos) / 2);
+      if (p.cash < cost) throw new Error(`Il te faut ${money(cost)}.`);
+      p.cash -= cost;
+      s.props[pos].level += 1;
+      log(s, `${p.pseudo} construit à ${TILES[pos].name} à moitié prix.`);
+      settle(s, ctx);
+      break;
+    }
+    case 'skip':
+      needPhase(s, 'fly', 'festival', 'chantier');
+      settle(s, ctx);
+      break;
+    case 'endTurn':
+      needPhase(s, 'end');
+      nextTurn(s, ctx);
+      break;
+    case 'build': {
+      needPhase(s, ...MANAGE_PHASES);
+      if (!canBuildAt(s, p.id, pos)) throw new Error(`Il te faut ${s.majority} villes de cette région, et un niveau libre.`);
+      const cost = buildCost(s, pos);
+      if (p.cash < cost) throw new Error(`Il te faut ${money(cost)}.`);
+      p.cash -= cost;
+      s.props[pos].level += 1;
+      log(s, `${p.pseudo} construit à ${TILES[pos].name}.`);
+      break;
+    }
+    case 'sell': {
+      needPhase(s, ...MANAGE_PHASES, 'debt');
+      const prop = ownedProp(s, p.id, pos);
+      if (!prop.level) throw new Error('Rien à vendre ici.');
+      prop.level -= 1;
+      p.cash += Math.floor(TILES[pos].build / 2);
+      log(s, `${p.pseudo} vend une construction à ${TILES[pos].name}.`);
+      break;
+    }
+    case 'mortgage': {
+      needPhase(s, ...MANAGE_PHASES, 'debt');
+      const prop = ownedProp(s, p.id, pos);
+      if (prop.mortgaged) throw new Error('Cette ville est déjà en gage.');
+      if (prop.level) throw new Error('Vends d’abord les constructions.');
+      prop.mortgaged = true;
+      p.cash += mortgageValue(TILES[pos]);
+      log(s, `${p.pseudo} met ${TILES[pos].name} en gage.`);
+      break;
+    }
+    case 'unmortgage': {
+      needPhase(s, ...MANAGE_PHASES);
+      const prop = ownedProp(s, p.id, pos);
+      if (!prop.mortgaged) throw new Error('Cette ville n’est pas en gage.');
+      const cost = unmortgageCost(TILES[pos]);
+      if (p.cash < cost) throw new Error(`Il te faut ${money(cost)}.`);
+      p.cash -= cost;
+      prop.mortgaged = false;
+      log(s, `${p.pseudo} récupère ${TILES[pos].name}.`);
+      break;
+    }
+    case 'pay':
+      needPhase(s, 'debt');
+      if (p.cash < s.debt.amount) throw new Error(`Il te manque ${money(s.debt.amount - p.cash)}.`);
+      settleDebt(s, ctx);
+      break;
+    case 'bankrupt':
+      needPhase(s, 'debt');
+      goBankrupt(s, ctx);
+      break;
+    case 'trade': {
+      const other = byId(s, action.to);
+      if (!other || other.out || other.id === p.id) throw new Error('Choisis un joueur encore en jeu.');
+      if (s.trades.filter((t) => t.from === p.id).length >= MAX_TRADES) throw new Error(`Pas plus de ${MAX_TRADES} propositions en attente.`);
+      const give = cleanOffer(action.give);
+      const get = cleanOffer(action.get);
+      if (!give.cash && !give.cities.length && !give.passes && !get.cash && !get.cities.length && !get.passes) throw new Error('Cette proposition est vide.');
+      checkOffer(s, p, give);
+      checkOffer(s, other, get);
+      s.tradeSeq += 1;
+      s.trades.push({ id: s.tradeSeq, from: p.id, to: other.id, give, get });
+      log(s, `${p.pseudo} propose un échange à ${other.pseudo}.`);
+      break;
+    }
+    case 'tradeAccept': {
+      const t = s.trades.find((x) => x.id === Number(action.id) && x.to === p.id);
+      if (!t) throw new Error('Cette proposition n’existe plus.');
+      s.trades = s.trades.filter((x) => x.id !== t.id);
+      const from = byId(s, t.from);
+      checkOffer(s, from, t.give);
+      checkOffer(s, p, t.get);
+      transfer(s, from, p, t.give);
+      transfer(s, p, from, t.get);
+      log(s, `${from.pseudo} et ${p.pseudo} concluent un échange.`);
+      break;
+    }
+    case 'tradeReject': {
+      const t = s.trades.find((x) => x.id === Number(action.id) && (x.to === p.id || x.from === p.id));
+      if (!t) throw new Error('Cette proposition n’existe plus.');
+      s.trades = s.trades.filter((x) => x.id !== t.id);
+      log(s, t.from === p.id ? `${p.pseudo} retire sa proposition.` : `${p.pseudo} refuse l'échange.`);
+      break;
+    }
+    default:
+      throw new Error('Action inconnue.');
+  }
+  return { state: arm(s, ctx) };
+}
+
+// À l'échéance : le jeu joue à la place de l'absent, au plus prudent.
+export function timeout(state, ctx) {
+  if (state.over) return { state };
+  const s = clone(state);
+  const p = cur(s);
+  switch (s.phase) {
+    case 'roll': doRoll(s, ctx); break;
+    case 'buy': startAuction(s, p.pos, ctx, TILES[p.pos].type === 'escale' ? 'fly' : null); break;
+    case 'auction': resolveAuction(s, ctx); break;
+    case 'fly':
+    case 'festival':
+    case 'chantier': settle(s, ctx); break;
+    case 'end': nextTurn(s, ctx); break;
+    case 'debt':
+      liquidate(s, p, s.debt.amount);
+      if (p.cash >= s.debt.amount) settleDebt(s, ctx);
+      else goBankrupt(s, ctx);
+      break;
+    default: break;
+  }
+  s.armedFor = null; // même phase possible (double, joueur suivant identique) : le minuteur doit repartir
+  return { state: arm(s, ctx) };
+}
+
+// Abandon : ses villes retournent à la banque, la partie continue.
+export function leave(state, playerId, ctx) {
+  if (state.over) return { state };
+  const s = clone(state);
+  const p = byId(s, playerId);
+  if (!p || p.out) return { state: s };
+  log(s, `${p.pseudo} quitte la partie.`);
+  const wasCurrent = cur(s).id === p.id;
+  eliminate(s, p, null);
+  if (s.over) return { state: arm(s, ctx) };
+  if (s.phase === 'auction') {
+    s.auction.eligible = s.auction.eligible.filter((id) => id !== p.id);
+    if (auctionDone(s)) resolveAuction(s, ctx);
+  } else if (wasCurrent) {
+    s.debt = null;
+    s.after = null;
+    nextTurn(s, ctx);
+  }
+  return { state: arm(s, ctx) };
+}
+
+// Tout est public sauf les mises en cours et l'ordre du paquet.
+export function view(state, playerId) {
+  const { deck, armedFor, after, ...rest } = state;
+  const me = playerId ? byId(state, playerId) : null;
+  const mine = me && !me.out && !state.over && cur(state).id === me.id ? positionsOf(state, me.id) : [];
+  const manage = MANAGE_PHASES.has(state.phase);
+  const inDebt = state.phase === 'debt';
+  const rents = {};
+  for (const pos of Object.keys(state.props)) rents[pos] = rentOf(state, Number(pos));
+  return {
+    ...rest,
+    players: state.players.map((p) => ({ ...p, worth: worthOf(state, p) })),
+    auction: state.auction && {
+      pos: state.auction.pos,
+      eligible: state.auction.eligible,
+      hasBid: Object.keys(state.auction.bids).map(Number),
+      mine: playerId && playerId in state.auction.bids ? state.auction.bids[playerId] : null,
+    },
+    rents,
+    actions: {
+      build: manage ? mine.filter((pos) => canBuildAt(state, me.id, pos) && me.cash >= buildCost(state, pos)) : [],
+      sell: manage || inDebt ? mine.filter((pos) => state.props[pos].level > 0) : [],
+      mortgage: manage || inDebt ? mine.filter((pos) => !state.props[pos].mortgaged && !state.props[pos].level) : [],
+      unmortgage: manage ? mine.filter((pos) => state.props[pos].mortgaged && me.cash >= unmortgageCost(TILES[pos])) : [],
+      chantier: state.phase === 'chantier' ? mine.filter((pos) => canBuildAt(state, me.id, pos) && me.cash >= Math.floor(buildCost(state, pos) / 2)) : [],
+      festival: state.phase === 'festival' ? mine.filter((pos) => TILES[pos].type === 'city' && !state.props[pos].mortgaged) : [],
+    },
+    costs: Object.fromEntries(mine.filter((pos) => TILES[pos].type === 'city').map((pos) => [pos, buildCost(state, pos)])),
+  };
+}
+
+export function status(state) {
+  if (state.over) return { turn: null, over: true, winners: state.winners, deadline: null };
+  const turn = state.phase === 'auction'
+    ? state.auction.eligible.filter((id) => !(id in state.auction.bids))
+    : cur(state).id;
+  return { turn, may: active(state).map((p) => p.id), over: false, winners: [], deadline: state.deadline };
+}
