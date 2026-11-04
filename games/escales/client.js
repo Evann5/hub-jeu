@@ -273,7 +273,7 @@ export function mount(root, api) {
         return `${money(p.cash)} + ${n} ville${n > 1 ? 's' : ''}`;
       };
       return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : v.winners.length > 3 ? `${v.winners.length} joueurs à égalité !` : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
-        h('ol.es-rank', ranked.map((p, i) => h('li', { style: `--p:${PAWN_COLORS[p.seat]}` },
+        h(`ol.es-rank${ranked.length > 6 ? '.is-long' : ''}`, ranked.map((p, i) => h('li', { style: `--p:${PAWN_COLORS[p.seat]}` },
           h('b.es-rank-n', String(i + 1)),
           picture(world?.portrait(p.seat), '.es-face'),
           h('span.es-rank-name', h('b', p.id === meId ? 'Toi' : p.pseudo), h('small', p.out ? 'sorti' : breakdown(p))),
@@ -336,7 +336,16 @@ export function mount(root, api) {
   // Ce qui vient de se passer : une ligne, quelques secondes, puis plus rien.
   let flashN = null;
   let flashTimer = 0;
+  let hinted = false;
   function renderFlash(busy) {
+    if (!hinted && !busy && !v.over && window.matchMedia('(hover: none)').matches) { // sur écran tactile, une fois : les noms sont petits, la fiche est à un toucher
+      hinted = true;
+      flash.textContent = 'Touche une case pour voir sa fiche.';
+      flash.classList.add('is-on');
+      flashTimer = setTimeout(() => flash.classList.remove('is-on'), 3500);
+      flashN = v.log.at(-1)?.n ?? 0;
+      return;
+    }
     const last = v.log.at(-1);
     const fresh = flashN !== null && last && last.n > flashN;
     flashN = last?.n ?? 0;

@@ -73,7 +73,7 @@
 .g-escales .es-sheet { animation: es-sheet-in 0.18s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: inset 0 0 0 1px #E2CC95, 0 24px 60px rgb(0 0 0 / 0.5); }
 .g-escales .es-chip.is-turn { transition: background-color 0.2s; }
 .g-escales .es-say { margin: 0; font-size: 1.125rem; font-weight: 700; text-wrap: balance; }
-.g-escales .es-big { margin: 0; font: 400 1.75rem/1.05 var(--es-display); letter-spacing: 0; text-wrap: balance; }
+.g-escales .es-big { margin: 0; font: 400 1.5rem/1.05 var(--es-display); letter-spacing: 0; text-wrap: balance; }
 .g-escales .es-flag { grid-row: span 2; width: 39px; height: 26px; border-radius: 3px; box-shadow: 0 0 0 1px rgb(18 21 31 / 0.2); }
 
 .g-escales .es-btn { min-height: 46px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--vermilion); color: #FFF7E6; font: 700 1.0625rem var(--es-text); letter-spacing: 0.01em; cursor: pointer; box-shadow: 0 4px 0 #8A2A14, inset 0 1px 0 rgb(255 255 255 / 0.22); transition: background-color 0.12s, transform 0.08s, box-shadow 0.08s; }
@@ -129,6 +129,11 @@
 .g-escales .es-rank-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .g-escales .es-rank-name small { color: var(--soft); font-size: 0.75rem; font-weight: 600; }
 .g-escales .es-rank-worth { font-weight: 800; }
+.g-escales .es-rank li { min-height: 36px; }
+.g-escales .es-rank.is-long { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 6px; font-size: 0.875rem; }
+.g-escales .es-rank.is-long li { grid-template-columns: 14px auto minmax(0, 1fr) auto; gap: 5px; min-height: 32px; }
+.g-escales .es-rank.is-long .es-rank-name small { display: none; }
+.g-escales .es-action.is-over:has(.is-long) { width: min(540px, 90%); }
 .g-escales .es-action.is-plain { width: min(280px, 70%); padding: 0; overflow: visible; background: none; box-shadow: none; }
 .g-escales .es-action.is-plain .es-btn { min-height: 60px; font: 400 1.25rem var(--es-display); box-shadow: 0 6px 0 #8A2A14, 0 18px 30px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.22); }
 .g-escales .es-action.is-plain .es-btn:active:not(:disabled) { box-shadow: 0 2px 0 #8A2A14, 0 8px 16px rgb(0 0 0 / 0.45); transform: translateY(4px); }
@@ -266,8 +271,11 @@
   .g-escales .es-face { width: 22px; height: 22px; }
 }
 
-/* Un petit téléphone : la carte d'action reste assez basse pour laisser voir tout le plateau. Le journal reste dans « Plus ». */
+/* Un petit téléphone : la carte d'action reste assez basse pour laisser voir tout le plateau. L'argent est déjà dans le panneau, le journal dans « Plus ». */
 @media (max-width: 760px) and (max-height: 760px) {
+  .g-escales .es-offer-pic { width: 58px; height: 58px; }
+  .g-escales .es-offer-text small:not(.es-offer-goal) { display: none; }
+  .g-escales .es-offer-text .es-offer-goal:last-child:not(:first-child) { display: none; }
   .g-escales .es-prompt { gap: 5px; }
 }
 
@@ -276,6 +284,8 @@
   .g-escales .es-prompt.is-in, .g-escales .es-sheet { animation: none; }
 }
 
+/* Le hub entier s'efface pendant la partie : barre de gauche et fond passent aux couleurs du jeu. */
+body:has(.table-view[data-game='escales'].is-wide) { --bg-0: #061A17; --bg-1: #0A221E; --bg-2: #0E2B27; --bg-3: #1C4A42; --bg-4: #2A5F54; --ink: #FBF3E0; --ink-2: #C3CFBF; --ink-3: #93A796; --accent: #F2B632; --on-color: #14302B; --glow: rgb(242 182 50 / 0.3); background: #061A17; }
 /* L'en-tête et le panneau de la table, le temps d'une partie : ils passent aux couleurs du jeu. */
 .table-view[data-game='escales'].is-wide { --bg-1: #0A221E; --bg-2: #123630; --bg-3: #1C4A42; --bg-4: #2A5F54; --ink: #FBF3E0; --ink-2: #C3CFBF; --ink-3: #93A796; --accent: #F2B632; --on-color: #14302B; --glow: rgb(242 182 50 / 0.3); background: #0E2B27; color: #FBF3E0; }
 .table-view[data-game='escales'].is-wide .table-title h1 { font: 400 1.25rem/1.1 'ES Alfa', Georgia, serif; letter-spacing: 0; }

@@ -520,17 +520,17 @@ function person(k, { skin, hair, top, bottom = NAVY, skirt = false, short = fals
     arm.rotation.z = s * 0.14;
     k.ball(0.042, skin, s * 0.19, 0.285, 0);
   }
-  k.ball(0.175, skin, 0, 0.74, 0);
+  k.ball(0.205, skin, 0, 0.74, 0);
   // Le visage : de grands yeux, des sourcils et un sourire, lisibles même à petite taille.
   for (const s of [-1, 1]) {
-    k.ball(0.036, '#FFFFFF', s * 0.066, 0.76, 0.142);
-    k.ball(0.022, '#16151C', s * 0.066, 0.76, 0.17);
-    k.box(0.06, 0.012, 0.012, hair ?? '#3A2A20', s * 0.066, 0.812, 0.16);
+    k.ball(0.044, '#FFFFFF', s * 0.076, 0.765, 0.158);
+    k.ball(0.027, '#16151C', s * 0.076, 0.765, 0.192);
+    k.box(0.07, 0.014, 0.012, hair ?? '#3A2A20', s * 0.076, 0.83, 0.18);
   }
-  const smile = k.ball(0.042, '#8E2F2F', 0, 0.682, 0.15);
+  const smile = k.ball(0.05, '#8E2F2F', 0, 0.672, 0.176);
   smile.scale.set(1, 0.32, 0.45);
   if (hair) {
-    const h = k.dome(0.197, hair, 0, 0.75, -0.016);
+    const h = k.dome(0.226, hair, 0, 0.75, -0.016);
     h.scale.y = 0.92;
   }
 }
@@ -555,7 +555,7 @@ export const CAST = [
   },
   (k, c) => { // Le touriste : chapeau de paille et appareil photo
     person(k, { skin: SKIN[2], hair: null, top: c, bottom: SAND, short: true });
-    k.cyl(0.29, 0.31, 0.022, 18, '#EBCF7E', 0, 0.86, 0);
+    k.cyl(0.23, 0.25, 0.022, 18, '#EBCF7E', 0, 0.9, 0);
     k.cyl(0.14, 0.16, 0.1, 14, '#EBCF7E', 0, 0.88, 0);
     k.cyl(0.165, 0.165, 0.02, 14, NAVY, 0, 0.88, 0);
     k.box(0.15, 0.1, 0.07, '#23202A', 0, 0.33, 0.14);
@@ -590,7 +590,7 @@ export const CAST = [
   },
   (k, c) => { // L'exploratrice : chapeau à large bord, tresse et sacoche
     person(k, { skin: SKIN[6], hair: HAIR.noir, top: c, bottom: '#7A6240' });
-    k.cyl(0.26, 0.27, 0.025, 16, '#8A6A3F', 0, 0.87, 0);
+    k.cyl(0.22, 0.235, 0.025, 16, '#8A6A3F', 0, 0.9, 0);
     k.cyl(0.13, 0.165, 0.12, 12, '#8A6A3F', 0, 0.89, 0);
     k.cyl(0.167, 0.167, 0.025, 12, '#4F3325', 0, 0.89, 0);
     k.cyl(0.035, 0.022, 0.26, 7, HAIR.noir, 0.12, 0.45, -0.13);

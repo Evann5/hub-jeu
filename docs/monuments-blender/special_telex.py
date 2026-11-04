@@ -4,8 +4,8 @@ from lib import Mesh
 from lib_special import *
 
 PAL = {'blue': '#3A6DA8', 'blue2': '#2A4F80', 'blue3': '#4F85C2', 'dark': '#262A33', 'key': '#F1EBD8', 'keyf': '#2F3138',
-       'paper': '#FBF7EA', 'ink': '#2E3640', 'red': '#D23B32', 'amber': '#EDAA2C', 'green': '#4FA05A', 'brass': '#C79A3E',
-       'roll': '#E6DDC0'}
+       'paper': '#FFFAEA', 'ink': '#2E3640', 'red': '#D23B32', 'amber': '#EDAA2C', 'green': '#4FA05A', 'brass': '#C79A3E',
+       'roll': '#E6DDC0', 'grey': '#8E949E'}
 
 MX0, MX1 = -0.9, 0.9      # largeur de la machine
 MZ0, MZ1 = -0.5, 0.2      # profondeur de la machine
@@ -61,22 +61,27 @@ def build():
     prof = [(RZ, RY+0.22), (RZ+0.02, 1.2), (0.0, 1.45), (0.35, 1.42), (0.62, 1.1), (0.7, 0.72), (0.74, 0.34), (0.9, 0.06), (1.12, 0.03)]
     pts = spline(prof, 3)
     n = len(pts)
+    XC = (RX0+RX1)/2
+    def hw(k):      # demi-largeur : celle de la bobine, qui s'évase un peu vers le sol
+        t = min(max((k-6)/(n-7), 0.0), 1.0)
+        return 0.28+0.07*t
+    LINES = {8: 'red', 12: 'grey', 15: 'grey', 18: 'grey'}
     for k in range(n-1):
         (za_, ya_), (zb_, yb_) = pts[k], pts[k+1]
-        q = [(RX0, ya_, za_), (RX1, ya_, za_), (RX1, yb_, zb_), (RX0, yb_, zb_)]
-        cen = ((RX0+RX1)/2, (ya_+yb_)/2, (za_+zb_)/2)
+        xa, xb = hw(k), hw(k+1)
+        q = [(XC-xa, ya_, za_), (XC+xa, ya_, za_), (XC+xb, yb_, zb_), (XC-xb, yb_, zb_)]
+        cen = (XC, (ya_+yb_)/2, (za_+zb_)/2)
         flat2(m, q, 'paper', (cen[0], cen[1]+4, cen[2]+4))
         dz, dy = zb_-za_, yb_-ya_
         L = math.hypot(dz, dy)
-        if L < 1e-6 or k < 2 or k == n-2:
+        if k not in LINES or L < 1e-6:
             continue
         nz, ny = -dy/L, dz/L
         if ny+nz < 0:
             nz, ny = -nz, -ny
-        tcol = 'red' if k == 3 else 'ink'
-        x1 = RX1-0.07-(0.14 if k % 3 == 0 else 0.0)
+        x0, x1 = XC-xa+0.07, XC+xa-0.07-(0.1 if k == 15 else 0.0)
         cz, cy = cen[2]+nz*0.006, cen[1]+ny*0.006
-        hz, hy = dz/L*0.035, dy/L*0.035
-        quad = [(RX0+0.07, cy-hy, cz-hz), (x1, cy-hy, cz-hz), (x1, cy+hy, cz+hz), (RX0+0.07, cy+hy, cz+hz)]
-        m.poly(quad, tcol, (cen[0], cy-ny, cz-nz))
+        hz, hy = dz/L*0.02, dy/L*0.02
+        quad = [(x0, cy-hy, cz-hz), (x1, cy-hy, cz-hz), (x1, cy+hy, cz+hz), (x0, cy+hy, cz+hz)]
+        m.poly(quad, LINES[k], (XC, cy-ny, cz-nz))
     return m

@@ -137,8 +137,8 @@ function buildPrint() {
     const cy = row * CH + CH / 2;
     const name = t.short ?? t.name;
     // L'étiquette crème : le nom et le prix se lisent quelle que soit la couleur de la case.
-    const LW = CW - 8;
-    const LH = t.price ? CH - 10 : 100;
+    const LW = CW - 26;
+    const LH = t.price ? CH - 24 : 92;
     const lx = cx - LW / 2;
     c.fillStyle = '#FFF8E8';
     c.beginPath();
@@ -147,20 +147,20 @@ function buildPrint() {
     c.strokeStyle = 'rgba(18,21,31,0.2)';
     c.lineWidth = 2;
     c.stroke();
-    let size = 76;
+    let size = 72;
     do {
       c.font = `800 ${size}px "ES Barlow", system-ui, sans-serif`;
       size -= 2;
-    } while (c.measureText(name).width > CW - 34 && size > 28);
+    } while (c.measureText(name).width > CW - 48 && size > 28);
     c.fillStyle = INK;
     c.textAlign = 'center';
     c.fillText(name, cx, t.price ? cy - 32 : cy + 3);
     if (t.price) {
       // Le prix à gauche : à droite, la place est gardée pour le visage du propriétaire.
       const label = `${t.price.toLocaleString('fr-FR')} €`;
-      c.font = '700 54px "ES Barlow", system-ui, sans-serif';
+      c.font = '700 50px "ES Barlow", system-ui, sans-serif';
       c.textAlign = 'left';
-      let x = lx + 16;
+      let x = lx + 14;
       if (t.type === 'city') {
         FLAGS[REGIONS[t.region].id](c, x, cy + 14, 66, 44);
         c.strokeStyle = 'rgba(18,21,31,0.55)';
@@ -573,8 +573,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const f = tileFrame(t.pos);
     const w = f.corner ? TILE_D : TILE_W;
     const m = placed(f.x, f.z, f.rot);
-    const base = paint(f.corner ? baseGeo.corner : baseGeo.side, WARM);
     const color = t.type === 'city' ? `#${softened(REGIONS[t.region].color, 0.1).getHexString()}` : SPECIAL_COLOR[t.type];
+    const base = paint(f.corner ? baseGeo.corner : baseGeo.side, `#${new THREE.Color(color).multiplyScalar(0.62).getHexString()}`); // le socle, d'un ton plus foncé : la case a de l'épaisseur
     const plate = paint(plateGeometry(w - 0.34, TILE_D - 0.34, PLATE_H, 0.1), color);
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
@@ -706,7 +706,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       part.badge = new THREE.Mesh(badgeGeo);
       // Dans le coin de l'étiquette, à droite du prix : il ne cache jamais le nom.
       const { w, h, center } = labelFrame(part.f);
-      part.badge.position.set(center.x + w / 2 - 0.26, center.y + 0.012, center.z + h / 2 - 0.22);
+      part.badge.position.set(center.x + w / 2 - 0.3, center.y + 0.012, center.z + h / 2 - 0.26);
       part.badge.renderOrder = 4;
       scene.add(part.badge);
     }
@@ -901,6 +901,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   };
   const pawns = new Map();
   const FACING = 0.3; // vue de trois quarts, face à la caméra
+  const LEAN = -0.3; // un peu penché en arrière : vu d'en haut, le visage reste visible sous le chapeau
 
   function pawnSpot(p, pos) {
     const f = tileFrame(pos);
@@ -937,12 +938,16 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       c.width = 128;
       c.height = 128;
       const g = c.getContext('2d');
-      g.font = '400 92px "ES Alfa", Georgia, serif';
+      g.fillStyle = '#FFF8E8';
+      g.beginPath();
+      g.arc(64, 64, 60, 0, Math.PI * 2);
+      g.fill();
+      g.font = '400 84px "ES Alfa", Georgia, serif';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.fillStyle = 'rgba(40,24,6,0.8)';
-      g.fillText(String(i + 1), 64, 70);
-      const size = Math.min(1.1, h * 0.8);
+      g.fillStyle = '#14302B';
+      g.fillText(String(i + 1), 64, 68);
+      const size = Math.min(1.25, h * 0.84);
       const number = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, toneMapped: false, depthWrite: false }));
       number.position.set(0, h / 2, 1.16);
       step.add(number);
@@ -955,7 +960,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       pawn.react = null;
       pawn.blob.visible = false;
       pawn.mesh.scale.setScalar(PAWN_SCALE * 1.3);
-      pawn.mesh.rotation.set(0, FACING, 0);
+      pawn.mesh.rotation.set(LEAN, FACING, 0);
       pawn.mesh.position.set(x, instant ? h : 0, PODIUM_Z + 0.1);
       pawn.standY = instant ? h : 0;
       if (instant || reduced) {
@@ -1157,11 +1162,11 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pawn.mesh.position.y = (pawn.standY ?? 0) + Math.abs(Math.sin(k * Math.PI * 2)) * 0.9;
         pawn.mesh.rotation.y = FACING + k * Math.PI * 2;
       } else {
-        pawn.mesh.rotation.x = Math.sin(k * Math.PI) * 0.5;
+        pawn.mesh.rotation.x = LEAN + Math.sin(k * Math.PI) * 0.8;
       }
       if (k >= 1) {
         pawn.mesh.position.y = pawn.standY ?? 0;
-        pawn.mesh.rotation.x = 0;
+        pawn.mesh.rotation.x = LEAN;
         pawn.mesh.rotation.y = FACING;
         r.count -= 1;
         r.t = 0;
@@ -1355,7 +1360,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         // Chaque personnage est fondu en une seule forme, sa tenue à la couleur du joueur.
         const mesh = new THREE.Mesh(bake([{ object: buildCharacter(p.seat, PAWN_COLORS[p.seat]) }], { fullColor: true }), personMat);
         mesh.scale.setScalar(PAWN_SCALE);
-        mesh.rotation.y = FACING;
+        mesh.rotation.set(LEAN, FACING, 0);
         const blob = new THREE.Mesh(blobGeo, blobMat);
         blob.scale.setScalar(PAWN_SCALE * 0.8);
         scene.add(mesh, blob);
