@@ -472,13 +472,12 @@ export function mount(root, api) {
     const soundBtn = h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: (e) => { e.currentTarget.textContent = sound.toggle() ? 'Remettre le son' : 'Couper le son'; } }, sound.isMuted() ? 'Remettre le son' : 'Couper le son');
     return shell('Plus', h('h2', 'Plus'),
       h('div.es-row', soundBtn,
-        h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => { world?.recenter(); closeOverlay(); } }, 'Recentrer la carte'),
         h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => openOverlay({ kind: 'log' }) }, 'Historique')),
       h('h3', 'Réglages de cette partie'),
       h('dl.es-rents', h('dt', 'Nombre de tours'), h('dd', v.maxRounds ? String(v.maxRounds) : 'Sans fin'), h('dt', 'Temps par action'), h('dd', v.timer ? `${v.timer} s` : 'Sans limite'), h('dt', 'Joueurs'), h('dd', String(v.players.length)), h('dt', 'Villes pour construire'), h('dd', `${v.majority} sur 4`)),
       h('h3', 'Les règles en bref'),
       h('ul.es-rules', RULES.map((r) => h('li', r))),
-      h('p.es-note', 'À l’ordinateur : la barre d’espace lance les dés et termine ton tour. Glisse pour tourner la carte, molette pour zoomer. Pour abandonner : le bouton est à côté de la liste des joueurs (onglet Chat sur téléphone).'));
+      h('p.es-note', 'À l’ordinateur : la barre d’espace lance les dés et termine ton tour. Touche une case pour voir sa fiche. Pour abandonner : le bouton est à côté de la liste des joueurs (onglet Chat sur téléphone).'));
   }
 
   function logSheet() {

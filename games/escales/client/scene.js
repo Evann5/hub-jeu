@@ -18,7 +18,6 @@ const TILE_D = 3; // profondeur
 const BASE_H = 0.1; // le socle blanc, ou le cadre du propriétaire
 const PLATE_H = 0.16;
 const HALF = (11 * TILE_W + 2 * TILE_D) / 2;
-const FOV = 22; // un angle serré : presque une vue de carte, sans déformation
 const BANNER_D = 1.8;
 const PAWN_SCALE = 1.95;
 
@@ -39,9 +38,10 @@ function tileFrame(pos) {
   if (pos < 12) return { x: along(pos), z: -corner, rot: 0, flat: true };
   if (pos === 12) return { x: corner, z: -corner, rot: 0, corner: true, flat: true };
   if (pos < 24) return { x: corner, z: along(pos - 12), rot: -Math.PI / 2 };
-  if (pos === 24) return { x: corner, z: corner, rot: Math.PI, corner: true, flat: true };
-  if (pos < 36) return { x: -along(pos - 24), z: corner, rot: Math.PI, flat: true };
-  if (pos === 36) return { x: -corner, z: corner, rot: Math.PI, corner: true, flat: true };
+  // Rangée du bas (flip) : le texte reste côté caméra et le monument derrière, pour qu'il ne le cache jamais.
+  if (pos === 24) return { x: corner, z: corner, rot: Math.PI, corner: true, flat: true, flip: true };
+  if (pos < 36) return { x: -along(pos - 24), z: corner, rot: Math.PI, flat: true, flip: true };
+  if (pos === 36) return { x: -corner, z: corner, rot: Math.PI, corner: true, flat: true, flip: true };
   return { x: -corner, z: -along(pos - 36), rot: Math.PI / 2 };
 }
 
@@ -65,14 +65,14 @@ function plateGeometry(w, d, h, r) {
 }
 
 // Le monument est mis à l'échelle de sa case, aligné sur une ligne avant ; devant, le texte imprimé reste libre.
-function fitModel(model, w, front, hero = 1) {
+function fitModel(model, w, front, hero = 1, flip = false) {
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const room = TILE_D / 2 + front + 0.35; // le monument peut déborder vers l'extérieur du plateau
   const scale = hero * Math.min(1.2, room / Math.max(size.z, 0.01), (w - 0.2) / Math.max(size.x, 0.01));
   model.scale.setScalar(scale);
-  model.position.set(-((box.min.x + box.max.x) / 2) * scale, PLATE_H - box.min.y * scale, front - box.max.z * scale);
+  model.position.set(-((box.min.x + box.max.x) / 2) * scale, PLATE_H - box.min.y * scale, flip ? -front - box.min.z * scale : front - box.max.z * scale);
 }
 
 const paint = (geometry, color) => new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color }));
@@ -152,7 +152,7 @@ function buildPrint() {
     const w = f.corner ? 2.5 : f.flat ? 1.68 : 1.42;
     const h = w / 2;
     const z = f.corner ? 0.82 : TILE_D / 2 - 0.2 - (f.flat ? h / 2 : w / 2 - 0.2);
-    const center = new THREE.Vector3(0, PLATE_H + 0.012, z).applyMatrix4(placed(f.x, f.z, f.rot));
+    const center = new THREE.Vector3(0, PLATE_H + 0.012, f.flip ? -z : z).applyMatrix4(placed(f.x, f.z, f.rot));
     pushQuad(pos, uv, center, new THREE.Vector3(w / 2, 0, 0), new THREE.Vector3(0, 0, -h / 2), [col / COLS, 1 - (row + 1) / ROWS, (col + 1) / COLS, 1 - row / ROWS]);
   }
   const m = flatMesh(pos, uv, canvas);
@@ -354,7 +354,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let firstUpdate = true;
   const reduced = reducedMotion();
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(FOV, 1, 5, 800);
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 400);
 
   // Une fin de journée : un soleil bas et chaud, des ombres longues et bleutées.
   scene.add(new THREE.HemisphereLight('#CFE6FF', '#7A8FA8', 1.75));
@@ -388,7 +388,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const plate = paint(plateGeometry(w - 0.34, TILE_D - 0.34, PLATE_H, 0.1), color);
     const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
-    fitModel(model, w, front, HEROES[t.model] ?? 1);
+    model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
+    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip);
     const top = new THREE.Box3().setFromObject(model).max.y;
     items.push({ object: base, matrix: m }, { object: plate, matrix: m }, { object: model, matrix: m, ao: PLATE_H });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
@@ -452,7 +453,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     },
   };
   // Le visage du propriétaire, posé sur la case : la couleur n'est pas le seul signe (daltonisme, et on reconnaît son personnage).
-  const badgeGeo = new THREE.PlaneGeometry(0.86, 0.86);
+  const badgeGeo = new THREE.PlaneGeometry(0.74, 0.74);
   badgeGeo.rotateX(-Math.PI / 2);
   const badgeMats = new Map();
   const badgeMat = (seat) => {
@@ -484,7 +485,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
       t.anisotropy = 4;
-      badgeMats.set(seat, new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }));
+      badgeMats.set(seat, new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, depthTest: false, toneMapped: false }));
     }
     return badgeMats.get(seat);
   };
@@ -496,11 +497,11 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     }
     if (!part.badge) {
       part.badge = new THREE.Mesh(badgeGeo);
-      // Dans le coin de la case côté caméra, à l'écart du texte.
+      // Juste au-dessus du texte, à droite : toujours visible, même devant un monument.
       const f = part.f;
-      const local = new THREE.Vector3(f.flat ? -0.56 : 0.56, PLATE_H + 0.03, f.flat ? 0.1 : 0.0).applyMatrix4(placed(f.x, f.z, f.rot));
-      part.badge.position.copy(local);
-      part.badge.renderOrder = 3;
+      const inward = f.flat ? 0 : -Math.sign(f.x) * 0.62;
+      part.badge.position.set(f.x + (f.flat ? 0.62 : inward + 0.34), PLATE_H + 0.03, f.z + (f.flat ? 0.34 : -0.62));
+      part.badge.renderOrder = 4;
       scene.add(part.badge);
     }
     part.badge.material = badgeMat(seat);
@@ -578,7 +579,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       const h = 0.42 + i * 0.16;
       const m = new THREE.Mesh(levelGeo, tint(color ?? '#FFFFFF'));
       m.scale.y = h;
-      m.position.set(LEVEL_SPOTS[i][0], PLATE_H + h / 2, LEVEL_SPOTS[i][1]);
+      m.position.set(LEVEL_SPOTS[i][0], PLATE_H + h / 2, LEVEL_SPOTS[i][1] * (part.f.flip ? -1 : 1));
       m.castShadow = true;
       part.levels.add(m);
     }
@@ -647,72 +648,42 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let diceAnim = null;
   let lastRollN = -1;
 
-  // ——— La caméra : toute la carte, tout le temps. On peut tourner ou zoomer, elle revient d'elle-même ———
-  const HOME = { yaw: 0, pitch: 1.0 };
-  const cam = { yaw: HOME.yaw, pitch: HOME.pitch, dist: 120, target: new THREE.Vector3(), wantTarget: new THREE.Vector3(), wantYaw: HOME.yaw, wantPitch: HOME.pitch, wantDist: 120 };
-  let snap = true;
-  let userUntil = 0;
+  // ——— La caméra : une vue fixe, sans perspective. Le plateau reste un rectangle, toutes les cases ont la même taille ———
+  const PITCH = 1.0; // l'inclinaison : assez plongeante pour tout lire, assez basse pour voir les monuments debout
   let size = { w: 0, h: 0 };
-  let fitDist = 120;
+  camera.position.set(0, Math.sin(PITCH) * 150, Math.cos(PITCH) * 150);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld(true);
 
-  const placeCamera = (yaw, pitch, dist) => {
-    camera.position.set(cam.target.x + Math.sin(yaw) * Math.cos(pitch) * dist, cam.target.y + Math.sin(pitch) * dist, cam.target.z + Math.cos(yaw) * Math.cos(pitch) * dist);
-    camera.lookAt(cam.target);
-    camera.updateMatrixWorld(true);
-  };
-
-  // La plus petite distance qui montre toute la carte, quel que soit l'écran.
+  // Cadre tout le plateau dans la place libre de l'écran : sous les joueurs et au-dessus de la carte d'action sur téléphone.
   function computeFit() {
-    const keep = cam.target.clone();
-    cam.target.set(0, 0, 0);
-    const pts = [];
-    for (const x of [-HALF, HALF]) for (const z of [-HALF, HALF]) pts.push(new THREE.Vector3(x, 0, z));
-    for (const x of [-HALF, HALF]) pts.push(new THREE.Vector3(x, 4.2, -HALF));
-    camera.clearViewOffset();
-    camera.updateProjectionMatrix();
-    let lo = 30;
-    let hi = 500;
     const v = new THREE.Vector3();
-    for (let i = 0; i < 22; i += 1) {
-      const mid = (lo + hi) / 2;
-      placeCamera(HOME.yaw, HOME.pitch, mid);
-      const inside = pts.every((p) => {
-        v.copy(p).project(camera);
-        return Math.abs(v.x) <= 0.97 && Math.abs(v.y) <= 0.97;
-      });
-      if (inside) hi = mid;
-      else lo = mid;
-    }
-    fitDist = hi;
-    // Sur téléphone, la carte se place en haut : le bas de l'écran est pour la carte d'action.
-    if (size.w < size.h) {
-      placeCamera(HOME.yaw, HOME.pitch, fitDist);
-      const inset = topInset();
-      const measure = () => pts.map((p) => v.copy(p).project(camera).y);
-      let ys = measure();
-      // Sur un écran court (Safari et sa barre d'adresse), le plateau rapetisse pour tenir au-dessus de la carte d'action.
-      const free = size.h - inset - 150;
-      const tall = ((Math.max(...ys) - Math.min(...ys)) / 2) * size.h;
-      if (free > 80 && tall > free) {
-        fitDist *= tall / free;
-        placeCamera(HOME.yaw, HOME.pitch, fitDist);
-        ys = measure();
+    let [x0, x1, y0, y1] = [Infinity, -Infinity, Infinity, -Infinity];
+    const edge = HALF + 0.75;
+    for (const x of [-edge, edge]) {
+      for (const z of [-edge, edge]) {
+        for (const y of [-0.7, z < 0 ? 4 : 1.5]) { // le haut des grands monuments du fond doit rester visible
+          v.set(x, y, z).applyMatrix4(camera.matrixWorldInverse);
+          x0 = Math.min(x0, v.x);
+          x1 = Math.max(x1, v.x);
+          y0 = Math.min(y0, v.y);
+          y1 = Math.max(y1, v.y);
+        }
       }
-      const py = ((1 - Math.max(...ys)) / 2) * size.h;
-      camera.setViewOffset(size.w, size.h, 0, py - inset, size.w, size.h); // le plateau juste sous les joueurs
-      camera.updateProjectionMatrix();
     }
-    cam.target.copy(keep);
-  }
-
-  function recenter() {
-    cam.wantYaw = HOME.yaw;
-    // Revenir par le chemin le plus court si on a beaucoup tourné.
-    cam.yaw = ((cam.yaw + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
-    cam.wantPitch = HOME.pitch;
-    cam.wantDist = fitDist;
-    cam.wantTarget.set(0, 0, 0);
-    userUntil = 0;
+    const narrow = size.w < size.h;
+    const top = narrow ? topInset() : 10;
+    const bottom = narrow ? 150 : 10;
+    const side = narrow ? 4 : 10;
+    const scale = Math.min((size.w - side * 2) / (x1 - x0), Math.max(60, size.h - top - bottom) / (y1 - y0));
+    const midX = (x0 + x1) / 2;
+    const midY = (y0 + y1) / 2;
+    const screenY = (top + size.h - bottom) / 2; // le milieu de la place libre, en pixels depuis le haut
+    camera.left = midX - size.w / 2 / scale;
+    camera.right = midX + size.w / 2 / scale;
+    camera.top = midY + screenY / scale;
+    camera.bottom = midY - (size.h - screenY) / scale;
+    camera.updateProjectionMatrix();
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
@@ -848,21 +819,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       flags.userData.time.value = time;
     }
 
-    const k = snap || reduced ? 1 : 1 - Math.exp(-dt * 3.2);
-    snap = false;
-    cam.target.lerp(cam.wantTarget, k);
-    if (cam.target.distanceTo(cam.wantTarget) > 0.006) busy = true;
-    else cam.target.copy(cam.wantTarget);
-    cam.yaw += (cam.wantYaw - cam.yaw) * k;
-    cam.pitch += (cam.wantPitch - cam.pitch) * k;
-    cam.dist += (cam.wantDist - cam.dist) * k;
-    if (Math.abs(cam.wantYaw - cam.yaw) > 0.0006 || Math.abs(cam.wantPitch - cam.pitch) > 0.0006 || Math.abs(cam.wantDist - cam.dist) > 0.03) busy = true;
-    else {
-      cam.yaw = cam.wantYaw;
-      cam.pitch = cam.wantPitch;
-      cam.dist = cam.wantDist;
-    }
-    placeCamera(cam.yaw, cam.pitch, cam.dist);
     renderer.render(scene, camera);
 
     // Si la machine n'arrive pas à suivre, on baisse la qualité plutôt que de saccader.
@@ -875,7 +831,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         quality.total = 0;
       }
     }
-    if (busy || pointers.size) wake();
+    if (busy) wake();
     else if (lifeOn() && !lifeTimer) { // au repos, une image de temps en temps suffit : la machine reste tranquille
       lifeTimer = setTimeout(() => {
         lifeTimer = 0;
@@ -889,76 +845,33 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     raf = requestAnimationFrame(tick);
   }
 
-  // ——— Toucher, glisser, zoomer ———
-  const pointers = new Map();
-  let moved = 0;
-  let pinch = 0;
+  // ——— Toucher une case, la survoler à la souris ———
   const raycaster = new THREE.Raycaster();
-  const limitDist = (d) => Math.min(fitDist * 1.25, Math.max(fitDist * 0.3, d));
-  const hold = () => { userUntil = performance.now() + 15000; };
-  const onDown = (e) => {
-    canvas.setPointerCapture?.(e.pointerId);
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    moved = 0;
-    pinch = 0;
+  const tileAt = (e) => {
+    const r = canvas.getBoundingClientRect();
+    raycaster.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    return raycaster.intersectObjects(hitBoxes, false)[0]?.object.userData.pos ?? null;
   };
-  // À la souris, le survol d'une case affiche ses informations. On regarde au plus toutes les 70 ms.
+  let downAt = null;
+  const onDown = (e) => { downAt = { x: e.clientX, y: e.clientY }; };
+  const onUp = (e) => {
+    const start = downAt;
+    downAt = null;
+    if (!start || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 12) return;
+    const pos = tileAt(e);
+    if (pos !== null) onTile(pos);
+  };
+  // On regarde au plus toutes les 70 ms.
   let hoverAt = 0;
-  let hovered = null;
-  const hover = (e) => {
-    if (!onHover || e.pointerType !== 'mouse' || pointers.size) return;
+  const onMove = (e) => {
+    if (!onHover || e.pointerType !== 'mouse') return;
     const now = performance.now();
     if (now - hoverAt < 70) return;
     hoverAt = now;
     const r = canvas.getBoundingClientRect();
-    raycaster.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-    const pos = raycaster.intersectObjects(hitBoxes, false)[0]?.object.userData.pos ?? null;
-    if (pos !== hovered || pos !== null) onHover(pos, e.clientX - r.left, e.clientY - r.top);
-    hovered = pos;
+    onHover(tileAt(e), e.clientX - r.left, e.clientY - r.top);
   };
-  const onLeave = () => {
-    hovered = null;
-    onHover?.(null);
-  };
-  const onMove = (e) => {
-    const p = pointers.get(e.pointerId);
-    if (!p) {
-      hover(e);
-      return;
-    }
-    const dx = e.clientX - p.x;
-    const dy = e.clientY - p.y;
-    p.x = e.clientX;
-    p.y = e.clientY;
-    moved += Math.abs(dx) + Math.abs(dy);
-    if (pointers.size === 2) {
-      const [a, c] = [...pointers.values()];
-      const gap = Math.hypot(a.x - c.x, a.y - c.y);
-      if (pinch) cam.wantDist = limitDist(cam.wantDist * (pinch / gap));
-      pinch = gap;
-      hold();
-      wake();
-    } else if (moved > 6) {
-      cam.wantYaw -= dx * 0.006;
-      cam.wantPitch = Math.min(1.4, Math.max(0.55, cam.wantPitch + dy * 0.003));
-      hold();
-      wake();
-    }
-  };
-  const onUp = (e) => {
-    const wasDown = pointers.delete(e.pointerId);
-    if (!wasDown || moved > 6 || e.type === 'pointercancel') return;
-    const r = canvas.getBoundingClientRect();
-    raycaster.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-    const hit = raycaster.intersectObjects(hitBoxes, false)[0];
-    if (hit) onTile(hit.object.userData.pos);
-  };
-  const onWheel = (e) => {
-    e.preventDefault();
-    cam.wantDist = limitDist(cam.wantDist * (1 + Math.sign(e.deltaY) * 0.08));
-    hold();
-    wake();
-  };
+  const onLeave = () => onHover?.(null);
   // Si le navigateur retire la 3D (mise en veille, manque de mémoire), on reprend proprement quand elle revient.
   const onLost = (e) => {
     e.preventDefault();
@@ -973,8 +886,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   canvas.addEventListener('pointermove', onMove);
   canvas.addEventListener('pointerleave', onLeave);
   canvas.addEventListener('pointerup', onUp);
-  canvas.addEventListener('pointercancel', onUp);
-  canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('webglcontextlost', onLost);
   canvas.addEventListener('webglcontextrestored', onRestored);
 
@@ -987,12 +898,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     renderer.setSize(w, h, false);
     canvas.style.width = '100%';
     canvas.style.height = '100%';
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
     computeFit();
     placeDice();
-    recenter();
-    cam.dist = cam.wantDist;
     wake();
   });
 
@@ -1066,14 +973,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     }
 
     if (firstUpdate && size.w < size.h && size.w) computeFit(); // la place prise par les joueurs est connue maintenant
-    if (firstUpdate && !reduced && !v.over && v.rollN === 0 && v.round === 1) {
-      // Le début de partie : la caméra part de près, à ras du plateau, et se relève jusqu'à toute la carte.
-      cam.yaw = 0.55;
-      cam.pitch = 0.42;
-      cam.dist = fitDist * 0.62;
-      snap = false;
-    }
-    if (userUntil && performance.now() > userUntil) recenter();
     // Le repère montre la ville dont il est question : un achat ou une enchère.
     const at = v.over ? null : v.phase === 'buy' ? v.players[v.cur]?.pos : v.phase === 'auction' ? v.auction.pos : null;
     if (at === null || at === undefined) marker.visible = false;
@@ -1164,10 +1063,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         lens.lookAt(c);
       },
     }),
-    recenter() {
-      recenter();
-      wake();
-    },
     destroy() {
       cancelAnimationFrame(raf);
       clearTimeout(lifeTimer);
@@ -1176,8 +1071,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerleave', onLeave);
       canvas.removeEventListener('pointerup', onUp);
-      canvas.removeEventListener('pointercancel', onUp);
-      canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);
       scene.traverse((o) => {
