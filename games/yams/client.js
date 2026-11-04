@@ -95,11 +95,11 @@ export function mount(root, api) {
   function statusText() {
     if (v.over) return 'Partie terminée.';
     if (v.turn === me) {
-      if (v.rolls === 0) return 'À toi : lance les dés.';
-      if (v.rolls < 3) return `Lancer ${v.rolls}/3 : touche les dés à garder, puis relance, ou choisis une case.`;
-      return '3 lancers faits : choisis une case de ta feuille.';
+      if (v.rolls === 0) return 'À toi : lance les dés';
+      if (v.rolls < 3) return `Lancer ${v.rolls}/3 · touche les dés à garder`;
+      return 'Choisis une case';
     }
-    return `${nm(v.turn)} joue${v.rolls ? ` (lancer ${v.rolls}/3)` : ' : il va lancer les dés'}.`;
+    return `${nm(v.turn)} joue${v.rolls ? ` · lancer ${v.rolls}/3` : ''}`;
   }
 
   function lastText() {
@@ -150,18 +150,31 @@ export function mount(root, api) {
         title: keepAll ? 'Tu gardes les 5 dés : relâches-en un pour relancer.' : null,
       }, rollLabel));
     }
-    if (!kids.length) kids.push(h('p.ym-hint', 'Choisis une case dans ta colonne.'));
+    if (!kids.length) kids.push(h('p.ym-hint', 'Choisis une case dans ta colonne'));
     return h('div.ym-actions', kids);
   }
 
+  // Les joueurs et leur total, toujours sous les yeux (la feuille, elle, défile).
+  function scoreChips() {
+    return h(`div.ym-scores.n${v.players.length}`, { role: 'list', 'aria-label': 'Scores' }, v.players.map((id) => h(`div.ym-chip${v.turn === id && !v.over ? '.is-turn' : ''}${v.over && v.winners.includes(id) ? '.is-winner' : ''}${v.left.includes(id) ? '.is-left' : ''}`, { role: 'listitem' },
+      api.token(api.user(id), { size: 's' }),
+      h('span.ym-chipname', id === me ? 'Toi' : nm(id)),
+      h('b', String(v.totals[id].total)))));
+  }
+
   function renderTray() {
-    tray.className = `ym-tray${isMyTurn() ? ' is-mine' : ''}`;
+    tray.className = `ym-tray${isMyTurn() ? ' is-mine' : ''}${v.over ? ' is-over' : ''}`;
+    if (v.over) {
+      tray.replaceChildren(h('p.ym-status.sr-only', { 'aria-live': 'polite' }, statusText()), trayActions(), scoreChips());
+      return;
+    }
     tray.replaceChildren(
       h('div.ym-trayhead',
         h('p.ym-status', { 'aria-live': 'polite' }, statusText()),
         h('span.ym-timer', { dataset: { k: 'timer' } })),
+      scoreChips(),
       trayDice(),
-      ...[trayActions(), v.last && !v.over ? h('p.ym-last', lastText()) : null].filter(Boolean));
+      ...[trayActions(), v.last ? h('p.ym-last', lastText()) : null].filter(Boolean));
     updateTimer();
   }
 

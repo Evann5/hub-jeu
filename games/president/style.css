@@ -158,14 +158,16 @@
 .g-president button:focus-visible { outline: 3px solid var(--pr-ivory); outline-offset: 3px; }
 
 /* ——— Main : un éventail sur une seule rangée ——— */
-.g-president .pr-hand { display: flex; flex-wrap: nowrap; justify-content: center; padding: 26px 8px 12px; }
+.g-president .pr-hand { padding: 26px 8px 12px; }
+.g-president .pr-fan { display: flex; justify-content: center; }
+.g-president .pr-fan + .pr-fan { margin-top: calc(var(--ch) * -0.58); }
 .g-president .pr-h {
   margin: 0 calc(var(--step) - var(--cw)) 0 0;
   cursor: pointer;
   transition: transform 0.14s var(--ease-out, ease-out), filter 0.14s;
   touch-action: manipulation;
 }
-.g-president .pr-hand .pr-h:last-child { margin-right: 0; }
+.g-president .pr-fan .pr-h:last-child { margin-right: 0; }
 .g-president .pr-h.is-ok { transform: translateY(-8px); }
 .g-president .pr-h.is-no { filter: brightness(0.6) saturate(0.6); cursor: not-allowed; }
 .g-president .pr-h.is-received { box-shadow: 0 0 0 3px var(--pr-gold), 0 0 16px rgb(255 62 165 / 0.7); }

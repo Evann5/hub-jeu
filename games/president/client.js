@@ -299,7 +299,7 @@ export function mount(root, api) {
     const giving = view.phase === 'exchange' && api.seat >= 0 && you(view.exchange.president) && !view.exchange.done;
     selected = selected.filter((c) => view.hand.includes(c));
     const received = giving ? view.exchange.received : [];
-    els.hand.replaceChildren(...view.hand.map((code, i) => {
+    const cards = view.hand.map((code, i) => {
       const r = rankText(code);
       const ok = giving || (myTurn && view.playable.includes(r));
       const el = face(code, 'button', {
@@ -315,20 +315,26 @@ export function mount(root, api) {
       if (received.includes(code)) el.classList.add('is-received');
       el.style.zIndex = String(i + 1);
       return el;
-    }));
+    });
     els.hand.hidden = api.seat < 0 || !view.hand.length;
-    fitHand();
+    layoutHand(cards);
   }
 
-  // Les cartes se chevauchent juste assez pour tenir sur une seule rangée.
-  function fitHand() {
-    const n = els.hand.children.length;
-    const first = els.hand.firstElementChild;
-    if (!first || els.hand.hidden) return;
-    const cw = first.getBoundingClientRect().width;
-    const avail = els.hand.clientWidth - 16;
-    const step = n > 1 ? Math.min(cw * 0.62, Math.max(22, (avail - cw) / (n - 1))) : 0;
-    els.hand.style.setProperty('--step', `${step.toFixed(1)}px`);
+  // Les cartes se chevauchent juste assez pour tenir sur une rangée ; si elles deviendraient trop étroites
+  // pour le doigt (17 cartes à trois joueurs sur téléphone), on les range sur deux rangées.
+  function layoutHand(cards) {
+    const n = cards.length;
+    const cw = parseFloat(getComputedStyle(els.hand).getPropertyValue('--cw')) || 64;
+    const avail = Math.max(0, els.hand.clientWidth - 16);
+    const stepFor = (len) => (len > 1 ? Math.min(cw * 0.62, (avail - cw) / (len - 1)) : 0);
+    const two = n > 9 && stepFor(n) < 26;
+    const rows = two ? [cards.slice(0, Math.ceil(n / 2)), cards.slice(Math.ceil(n / 2))] : [cards];
+    els.hand.classList.toggle('is-two', two);
+    els.hand.replaceChildren(...rows.map((row) => {
+      const fan = h('div.pr-fan', ...row);
+      fan.style.setProperty('--step', `${Math.max(14, stepFor(row.length)).toFixed(1)}px`);
+      return fan;
+    }));
   }
 
   function renderOverlay() {
@@ -451,7 +457,8 @@ export function mount(root, api) {
     render();
   });
   const tick = setInterval(updateClock, 250);
-  const resize = new ResizeObserver(() => { if (view) fitHand(); });
+  let lastW = 0;
+  const resize = new ResizeObserver(() => { const w = els.hand.clientWidth; if (view && w !== lastW) { lastW = w; renderHand(); } });
   resize.observe(els.hand);
 
   return () => {

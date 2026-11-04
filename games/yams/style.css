@@ -12,7 +12,7 @@
   --sky: #38c8ff;
   --sans: 'Yams Sans', 'Rubik', ui-rounded, system-ui, sans-serif;
   --display: 'Yams Display', 'Unbounded', ui-rounded, system-ui, sans-serif;
-  position: relative; overflow: hidden; isolation: isolate;
+  position: relative; overflow: hidden; isolation: isolate; container-type: inline-size;
   color: var(--grape); font-family: var(--sans); font-weight: 600;
   background:
     radial-gradient(40% 28% at 8% 30%, rgb(255 227 77 / 0.5), transparent 70%),
@@ -20,7 +20,7 @@
     radial-gradient(40% 25% at 20% 95%, rgb(255 61 139 / 0.35), transparent 70%),
     linear-gradient(170deg, #ffd9ec 0%, #f0dcff 55%, #d6e6ff 100%);
 }
-.g-yams .ym { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; container-type: inline-size; scroll-padding-top: 240px; }
+.g-yams .ym { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-top: 240px; }
 .g-yams :focus-visible { outline: 4px solid var(--grape); outline-offset: 2px; box-shadow: 0 0 0 7px #fff; }
 .g-yams .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -43,7 +43,7 @@
 .g-yams .ym-timer.is-low { background: var(--pink); color: #fff; animation: ym-wiggle 0.5s ease-in-out infinite; }
 @keyframes ym-wiggle { 25% { transform: rotate(-5deg) scale(1.08); } 75% { transform: rotate(5deg) scale(1.08); } }
 
-.g-yams .ym-dice { display: flex; justify-content: center; gap: 9px; padding-top: 16px; }
+.g-yams .ym-dice { display: flex; justify-content: center; gap: 9px; padding-top: 14px; }
 .g-yams .ym-slot { display: grid; justify-items: center; gap: 6px; }
 .g-yams .ym-keep:not(:empty) { padding: 0 9px; border-radius: 999px; background: #fff; border: 2px solid var(--grape); font: 900 0.62rem/1.6 var(--display); text-transform: uppercase; }
 .g-yams .ym-keep:empty { min-height: 1.1rem; }
@@ -98,6 +98,17 @@
 .g-yams .ym-last { margin: 0; max-width: 640px; padding: 2px 12px; border-radius: 999px; background: rgb(59 26 122 / 0.85); color: #fff; font-size: 0.8rem; font-weight: 600; text-align: center; }
 @keyframes ym-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
+.g-yams .ym-scores { width: 100%; max-width: 640px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.g-yams .ym-chip { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 2px 10px 2px 3px; border: 2px solid var(--grape); border-radius: 999px; background: #fff; box-shadow: 0 2px 0 var(--grape); font-size: 0.78rem; font-weight: 800; transition: background-color 0.2s; }
+.g-yams .ym-chip.is-turn { background: var(--lemon); }
+.g-yams .ym-chip.is-winner { background: var(--lemon); }
+.g-yams .ym-chip.is-left { opacity: 0.55; }
+.g-yams .ym-chipname { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-yams .ym-chip b { font: 900 1rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.g-yams .ym-scores.n5 .ym-chipname, .g-yams .ym-scores.n6 .ym-chipname { display: none; }
+.g-yams .ym-tray.is-over { position: static; padding-block: 10px 14px; }
+.g-yams .ym-tray.is-over .ym-actions { max-width: 640px; }
+
 /* ——— Feuille de score : une carte par case ——— */
 .g-yams .ym-sheetbox { padding: 16px 8px 30px; max-width: 760px; margin-inline: auto; }
 .g-yams .ym-title { margin: 0 0 6px 8px; width: fit-content; font: 900 1.15rem/1.3 var(--display); background: linear-gradient(transparent 58%, #ff9bd0 58% 90%, transparent 90%); }
@@ -140,15 +151,28 @@
 .g-yams .ym-cell:disabled { cursor: default; }
 
 /* ——— Grands écrans (la zone de jeu, pas la fenêtre) ——— */
-@container (min-width: 700px) {
+@container (min-width: 700px) and (max-width: 819px) {
   .g-yams .ym-die { --s: 92px; }
   .g-yams .ym-dice { gap: 16px; }
+}
+/* Large : le plateau à gauche, la feuille entière à droite, sans défilement à deux mains */
+@container (min-width: 820px) {
+  .g-yams .ym { display: grid; grid-template-columns: 350px minmax(0, 1fr); align-items: start; }
+  .g-yams .ym-tray { grid-column: 1; margin: 14px 0 20px 14px; top: 14px; border: 4px solid var(--grape); border-radius: 30px; box-shadow: 0 6px 0 var(--grape); }
+  .g-yams .ym-tray.is-over { top: 14px; }
+  .g-yams .ym-sheetbox { grid-column: 2; max-width: none; margin: 0; width: 100%; box-sizing: border-box; padding-inline: 16px 14px; }
+  .g-yams .ym-die { --s: 54px; }
+  .g-yams .ym-dice { gap: 9px; }
+  .g-yams .ym-btn { flex-basis: 100%; }
+}
+@container (min-width: 700px) {
   .g-yams .ym-sheet th, .g-yams .ym-sheet td { height: 44px; }
   .g-yams .ym-cell { height: 44px; }
   .g-yams .ym-sheet th.ym-rowhead { width: 29%; }
   .g-yams .ym-label { font-size: 0.95rem; }
   .g-yams .ym-rowhead small { font-size: 0.74rem; }
   .g-yams .ym-status { font-size: 1rem; }
+}
 }
 @container (max-width: 420px) {
   .g-yams .ym-btn { font-size: 0.82rem; padding-inline: 8px; }
