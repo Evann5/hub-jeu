@@ -322,6 +322,7 @@ export function mount(root, api) {
     diceLine.textContent = v.dice ? `Dés ${v.dice[0]} et ${v.dice[1]}` : '';
     const about = v.phase === 'auction' ? TILES[v.auction.pos] : v.phase === 'buy' ? TILES[v.players[v.cur].pos] : null;
     dock.classList.toggle('has-city', about?.type === 'city');
+    dock.classList.toggle('is-bidding', v.phase === 'auction' && v.auction.mine === null && v.auction.eligible.includes(meId));
     if (about?.type === 'city') dock.style.setProperty('--r', REGIONS[about.region].color);
     dock.classList.toggle('is-mine', myTurn() || (v.phase === 'auction' && v.auction.mine === null && v.auction.eligible.includes(meId)));
     news.textContent = v.event?.text ?? '';

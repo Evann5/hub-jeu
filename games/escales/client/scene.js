@@ -401,7 +401,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     levels.position.set(f.x, 0, f.z);
     levels.rotation.y = f.rot;
     scene.add(levels);
-    return { f, w, top, levels, level: 0, rim: null, fill: null, shade: null, color: null };
+    return { f, w, top, levels, level: 0, rim: null, fill: null, shade: null, badge: null, color: null };
   });
 
   REGIONS.forEach((reg, r) => {
@@ -443,7 +443,70 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const ownedColor = (hex) => `#${new THREE.Color(hex).lerp(new THREE.Color('#FFFFFF'), 0.34).getHexString()}`;
   const levelGeo = new THREE.BoxGeometry(0.26, 1, 0.26);
 
-  const setOwner = (part, color, mortgaged) => {
+  const shots = new Map();
+  const PORTRAIT = {
+    turn: 0.3,
+    place(lens) {
+      lens.position.set(0, 0.92, 1.95);
+      lens.lookAt(0, 0.74, 0);
+    },
+  };
+  // Le visage du propriétaire, posé sur la case : la couleur n'est pas le seul signe (daltonisme, et on reconnaît son personnage).
+  const badgeGeo = new THREE.PlaneGeometry(0.86, 0.86);
+  badgeGeo.rotateX(-Math.PI / 2);
+  const badgeMats = new Map();
+  const badgeMat = (seat) => {
+    if (!badgeMats.has(seat)) {
+      const image = snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT);
+      const c = document.createElement('canvas');
+      c.width = image.width;
+      c.height = image.height;
+      const g = c.getContext('2d');
+      g.fillStyle = PAWN_COLORS[seat];
+      g.beginPath();
+      g.arc(c.width / 2, c.height / 2, c.width / 2 - 2, 0, Math.PI * 2);
+      g.fill();
+      const face = document.createElement('canvas');
+      face.width = image.width;
+      face.height = image.height;
+      face.getContext('2d').putImageData(image, 0, 0);
+      g.save();
+      g.beginPath();
+      g.arc(c.width / 2, c.height / 2, c.width / 2 - 2, 0, Math.PI * 2);
+      g.clip();
+      g.drawImage(face, 0, 0);
+      g.restore();
+      g.lineWidth = 8;
+      g.strokeStyle = '#FFFFFF';
+      g.beginPath();
+      g.arc(c.width / 2, c.height / 2, c.width / 2 - 5, 0, Math.PI * 2);
+      g.stroke();
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      badgeMats.set(seat, new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }));
+    }
+    return badgeMats.get(seat);
+  };
+  const setBadge = (part, seat) => {
+    if (seat === null) {
+      if (part.badge) scene.remove(part.badge);
+      part.badge = null;
+      return;
+    }
+    if (!part.badge) {
+      part.badge = new THREE.Mesh(badgeGeo);
+      // Dans le coin de la case côté caméra, à l'écart du texte.
+      const f = part.f;
+      const local = new THREE.Vector3(f.flat ? -0.56 : 0.56, PLATE_H + 0.03, f.flat ? 0.1 : 0.0).applyMatrix4(placed(f.x, f.z, f.rot));
+      part.badge.position.copy(local);
+      part.badge.renderOrder = 3;
+      scene.add(part.badge);
+    }
+    part.badge.material = badgeMat(seat);
+  };
+
+  const setOwner = (part, color, mortgaged, seat = null) => {
     if (part.color !== color) {
       part.color = color;
       if (color && !part.rim) {
@@ -472,6 +535,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       }
       part.levels.children.forEach((m) => { if (color) m.material = tint(color); });
     }
+    setBadge(part, seat);
     if (mortgaged && !part.shade) {
       part.shade = new THREE.Mesh(shadeGeo, shadeMat);
       part.shade.position.set(part.f.x, PLATE_H + 0.02, part.f.z);
@@ -623,11 +687,19 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     // Sur téléphone, la carte se place en haut : le bas de l'écran est pour la carte d'action.
     if (size.w < size.h) {
       placeCamera(HOME.yaw, HOME.pitch, fitDist);
-      const ys = pts.map((p) => v.copy(p).project(camera).y);
-      const py = ((1 - Math.max(...ys)) / 2) * size.h;
       const inset = topInset();
-      const wanted = inset; // le plateau juste sous les joueurs : tout le bas de l'écran reste à la carte d'action
-      camera.setViewOffset(size.w, size.h, 0, py - wanted, size.w, size.h);
+      const measure = () => pts.map((p) => v.copy(p).project(camera).y);
+      let ys = measure();
+      // Sur un écran court (Safari et sa barre d'adresse), le plateau rapetisse pour tenir au-dessus de la carte d'action.
+      const free = size.h - inset - 150;
+      const tall = ((Math.max(...ys) - Math.min(...ys)) / 2) * size.h;
+      if (free > 80 && tall > free) {
+        fitDist *= tall / free;
+        placeCamera(HOME.yaw, HOME.pitch, fitDist);
+        ys = measure();
+      }
+      const py = ((1 - Math.max(...ys)) / 2) * size.h;
+      camera.setViewOffset(size.w, size.h, 0, py - inset, size.w, size.h); // le plateau juste sous les joueurs
       camera.updateProjectionMatrix();
     }
     cam.target.copy(keep);
@@ -935,7 +1007,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       const prop = v.props[t.pos];
       const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
       const color = owner ? PAWN_COLORS[owner.seat] : null;
-      setOwner(part, color, Boolean(prop?.mortgaged));
+      setOwner(part, color, Boolean(prop?.mortgaged), owner ? owner.seat : null);
       if (setLevels(part, prop?.level ?? 0, color)) shadows = true;
     });
 
@@ -1033,7 +1105,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   dice.forEach((d) => { d.visible = false; });
 
   // ——— De petites images rendues une seule fois : le portrait d'un voyageur, le monument d'une ville ———
-  const shots = new Map();
   function snapshot(key, build, frame) {
     if (shots.has(key)) return shots.get(key);
     const S = 192;
@@ -1080,13 +1151,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   return {
     update,
     // Le visage d'un voyageur, de près.
-    portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), {
-      turn: 0.3,
-      place(lens) {
-        lens.position.set(0, 0.92, 1.95);
-        lens.lookAt(0, 0.74, 0);
-      },
-    }),
+    portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT),
     // Le monument entier d'une ville.
     monument: (pos) => snapshot(`m${pos}`, () => (TILES[pos].type === 'city' ? buildMonument(TILES[pos].model) : buildSpecial(TILES[pos].type)), {
       turn: 0.55,

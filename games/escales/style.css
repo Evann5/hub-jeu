@@ -192,6 +192,9 @@
   .g-escales .es-code { font-size: 1.5rem; }
   .g-escales .es-standing { grid-column: 1 / -1; }
   .g-escales .es-news { font-size: 0.75rem; }
+  .g-escales .es-dock.is-bidding .es-news, .g-escales .es-dock.is-bidding .es-say { display: none; }
+  .g-escales .es-dock.is-bidding .es-standing { margin-top: 0; font-size: 0.75rem; }
+  .g-escales .es-dock.is-bidding .es-btn.is-small { min-height: 36px; }
   .g-escales .es-prompt { gap: 6px; }
   .g-escales .es-btn { min-height: 44px; }
   .g-escales .es-factline { display: none; }
