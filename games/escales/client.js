@@ -69,7 +69,7 @@ export function mount(root, api) {
   continentsImage.src = api.asset('continents.png');
   const tileText = TILES.map((t) => t.short ?? t.name).join('');
   const titleText = `${REGIONS.map((r) => r.name).join('')}Escales`;
-  Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('400 60px "ES Alfa"', titleText), loadSculpted(api.asset), continentsImage.decode().catch(() => {})]).catch(() => {}).finally(() => {
+  Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('800 60px "ES Titres"', titleText), loadSculpted(api.asset), continentsImage.decode().catch(() => {})]).catch(() => {}).finally(() => {
     if (gone) return;
     try {
       world = createWorld(stage, {
@@ -83,7 +83,7 @@ export function mount(root, api) {
           if (t.type === 'city') world.focus({ tiles: TILES.filter((x) => x.region === t.region).map((x) => x.pos), color: REGIONS[t.region].color });
           else if (t.type === 'escale') world.focus({ tiles: TILES.filter((x) => x.type === 'escale').map((x) => x.pos), color: '#CBD5E1' });
         },
-        topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
+        topInset: () => Math.max(players.getBoundingClientRect().bottom, tools.hidden || getComputedStyle(tools).position === 'fixed' ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6,
         rightInset: () => side.offsetWidth + 12,
         continents: continentsImage,
         onFit: ([cx, cy], [, fy], [, oy], [, by]) => {
@@ -96,7 +96,11 @@ export function mount(root, api) {
       });
       if (v) {
         world.update(v);
-        renderPlayers(); // les portraits se préparent ici, au chargement, plutôt qu'en pleine partie
+        renderPlayers(true); // les portraits se préparent ici, au chargement, plutôt qu'en pleine partie
+        promptKey = null;
+        shownTrades = null;
+        renderAction();
+        renderFocus();
       }
       loading.remove();
     } catch (err) {
@@ -201,11 +205,15 @@ export function mount(root, api) {
     return n ? `${n} ville${n > 1 ? 's' : ''}` : '';
   };
 
-  function renderPlayers() {
+  let playersKey = null;
+  function renderPlayers(force = false) {
+    const key = JSON.stringify([v.players.map((p) => [p.id, p.cash, p.worth, p.out]), v.cur, v.over, focusId, Boolean(world), Object.values(v.props).map((x) => x.owner)]);
+    if (!force && key === playersKey) return;
+    playersKey = key;
     players.replaceChildren(...v.players.map((p) => {
       const dot = picture(world?.portrait(p.seat), '.es-face') ?? h('i.es-dot');
       const turn = !v.over && v.players[v.cur].id === p.id;
-      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}${focusId === p.id ? '.is-focus' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]}`, 'aria-pressed': String(focusId === p.id), 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir ses villes sur le plateau`, onclick: () => setFocus(focusId === p.id ? null : p.id),
+      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}${focusId === p.id ? '.is-focus' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]};--pi:${[1, 2].includes(p.seat) ? '#16142E' : '#FFFFFF'}`, 'aria-pressed': String(focusId === p.id), 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir ses villes sur le plateau`, onclick: () => setFocus(focusId === p.id ? null : p.id),
         // À la souris, survoler un joueur suffit pour voir ses villes ; le clic garde la sélection.
         onmouseenter: () => { if (focusId === null && !overlay) world?.focus({ player: p.id }); },
         onmouseleave: () => { if (!overlay) restoreFocus(); } },
@@ -307,7 +315,7 @@ export function mount(root, api) {
             btn('Tenter un double', { type: 'roll' }),
             p.cash >= 50 ? btn('Payer 50 €', { type: 'payFine' }, '.is-ghost') : null];
         }
-        return [v.again ? say('Un double : tu rejoues !') : null, btn('Lancer les dés', { type: 'roll' }), buildLink()];
+        return [btn(v.again ? 'Un double ! Relance les dés' : 'Lancer les dés', { type: 'roll' }), buildLink()];
       case 'buy':
         return [offer(p.pos),
           h('div.es-choice',
@@ -328,7 +336,7 @@ export function mount(root, api) {
   }
 
   // Le journal parle des joueurs par leur pseudo : quand c'est de toi, il te dit « tu ».
-  const VERBS = { gagne: 'gagnes', paie: 'paies', achète: 'achètes', laisse: 'laisses', construit: 'construis', vend: 'vends', passe: 'passes', quitte: 'quittes', fait: 'fais', doit: 'dois', rachète: 'rachètes', propose: 'proposes', récupère: 'récupères', met: 'mets', présente: 'présentes', accepte: 'acceptes', refuse: 'refuses', retire: 'retires' };
+  const VERBS = { gagne: 'gagnes', paie: 'paies', achète: 'achètes', laisse: 'laisses', construit: 'construis', vend: 'vends', passe: 'passes', quitte: 'quittes', fait: 'fais', doit: 'dois', rachète: 'rachètes', propose: 'proposes', récupère: 'récupères', met: 'mets', accepte: 'acceptes', refuse: 'refuses', retire: 'retires' };
   // full : dans l'historique, la carte du Télex reste en entier, entre guillemets puisqu'elle s'adresse à celui qui la tire.
   function spoken(text, full = false) {
     const name = me()?.pseudo;
@@ -345,7 +353,6 @@ export function mount(root, api) {
     }
     if (text.endsWith(`l'échange de ${name}.`)) return text.replace(`l'échange de ${name}`, 'ton échange');
     if (text.startsWith(`${name} est retenu`)) return text.replace(`${name} est retenu`, 'Tu es retenu');
-    if (text.startsWith(`${name} s'envole`)) return text.replace(`${name} s'envole`, 'Tu t’envoles');
     const [verb] = text.slice(name.length + 1).split(' ');
     if (text.startsWith(`${name} `) && VERBS[verb]) return `Tu ${VERBS[verb]}${text.slice(name.length + 1 + verb.length)}`;
     return text.replaceAll(` à ${name} `, ' à toi ').replaceAll(` à ${name}.`, ' à toi.');
@@ -379,6 +386,7 @@ export function mount(root, api) {
     flashTimer = setTimeout(() => flash.classList.remove('is-on'), 3000);
   }
 
+  let shownTrades = null;
   function renderAction() {
     round.textContent = v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)}/${v.maxRounds}` : `Tour ${v.round}`;
     const plain = myTurn() && ((v.phase === 'roll' && !v.players[v.cur].blocked) || v.phase === 'end'); // un simple bouton, sans carte autour
@@ -402,7 +410,12 @@ export function mount(root, api) {
 
     action.hidden = !prompt.childElementCount;
 
-    trades.replaceChildren(...v.trades.filter((t) => t.to === meId || t.from === meId).map(tradeCard));
+    const mineTrades = v.trades.filter((t) => t.to === meId || t.from === meId);
+    const tradesKey = JSON.stringify(mineTrades);
+    if (tradesKey !== shownTrades) { // recréer les boutons pendant un clic le ferait échouer
+      shownTrades = tradesKey;
+      trades.replaceChildren(...mineTrades.map(tradeCard));
+    }
     tools.hidden = v.over;
     tradeLink.hidden = !me() || me().out; // un spectateur regarde, il n'échange pas
     renderFlash(!action.hidden && !plain);
@@ -652,7 +665,7 @@ export function mount(root, api) {
       h('div.es-tcols',
         column(me(), 'Tu donnes', draft.give, draft.giveCash, (n) => { draft.giveCash = n; }),
         column(target(), `${target().pseudo} donne`, draft.get, draft.getCash, (n) => { draft.getCash = n; })),
-      recap, send);
+      h('footer.es-tfoot', recap, send));
     el.firstChild.classList.add('is-trade');
     return el;
   }

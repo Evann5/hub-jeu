@@ -391,7 +391,7 @@ function renderEndBar() {
   if (t.status !== 'over') return;
   const names = t.winners.map((id) => userOf(id).pseudo);
   endbar.replaceChildren(h('div.endbar',
-    h('p', h('b', 'Partie terminée'), t.label ? ` · ${t.label}` : names.length ? ` · ${names.length > 1 ? 'Gagnants' : 'Gagnant'} : ${names.join(', ')}` : ' · Personne ne gagne'),
+    h('p', h('b', 'Partie terminée'), t.label ? ` · ${t.label.replace(new RegExp(`^${state.me.pseudo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} gagne$`), 'Tu gagnes')}` : names.length ? ` · ${names.length > 1 ? 'Gagnants' : 'Gagnant'} : ${names.join(', ')}` : ' · Personne ne gagne'),
     h('div.endbar-actions',
       isHost() ? h('button.btn.btn-sm', { type: 'button', onclick: (e) => act(e, 'table:restart') }, 'Revanche') : seated() ? h('span.endbar-note', `${userOf(t.hostId).pseudo} peut lancer la revanche.`) : null,
       h('a.btn.btn-ghost.btn-sm', { href: '#/jouer' }, 'Retour aux jeux'))));

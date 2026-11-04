@@ -228,7 +228,7 @@ function buildBanners() {
     c.lineWidth = 3;
     PATTERNS[reg.id](c, W, H);
     // Le nom s'écrit à même la couleur du pays : le motif s'efface doucement derrière lui.
-    c.font = '400 92px "ES Alfa", Georgia, serif';
+    c.font = '800 98px "ES Titres", system-ui, sans-serif';
     c.textBaseline = 'middle';
     const fw = 120;
     const fh = 80;
@@ -355,7 +355,7 @@ const CITY_COORDS = {
   Naples: [14.3, 40.9], Florence: [11.3, 43.8], Venise: [12.3, 45.4], Rome: [12.5, 41.9],
   Nara: [135.8, 34.7], Kyoto: [135.8, 35], Osaka: [135.5, 34.7], Tokyo: [139.7, 35.7],
   Marseille: [5.4, 43.3], Bordeaux: [-0.6, 44.8], Lyon: [4.8, 45.8], Paris: [2.3, 48.9],
-  'Nouvelle-Orléans': [-90.1, 30], Chicago: [-87.6, 41.9], 'San Francisco': [-122.4, 37.8], 'New York': [-74, 40.7],
+  'La Nouvelle-Orléans': [-90.1, 30], Chicago: [-87.6, 41.9], 'San Francisco': [-122.4, 37.8], 'New York': [-74, 40.7],
 };
 
 // La Terre, au milieu du plateau : océans et continents pleins, qui tournent lentement. Un petit avion en fait le tour.
@@ -580,7 +580,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H);
     const top = new THREE.Box3().setFromObject(model).max.y;
     items.push({ object: base, matrix: m, tile: t.pos, lift: true }, { object: plate, matrix: m, tile: t.pos, lift: true }, { object: model, matrix: m, ao: PLATE_H, tile: t.pos, lift: true });
-    const mid = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()).applyMatrix4(m);
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
     hit.position.set(f.x, 1.2, f.z);
     hit.rotation.y = f.rot;
@@ -591,7 +590,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     levels.position.set(f.x, 0, f.z);
     levels.rotation.y = f.rot;
     scene.add(levels);
-    return { f, w, top, mid, levels, level: 0, rim: null, fill: null, shade: null, badge: null, color: null };
+    return { f, w, top, levels, level: 0, rim: null, fill: null, shade: null, badge: null, color: null };
   });
 
   REGIONS.forEach((reg, r) => {
@@ -786,7 +785,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     parts.forEach((part, pos) => {
       const mine = chosen.has(pos);
       focusTo.lift[pos] = mine ? 1.25 : 0;
-      focusTo.dim[pos] = active && !mine ? 0.34 : 1;
+      focusTo.dim[pos] = active && !mine ? 0.34 : view?.over ? 0.5 : 1;
       const show = !active || mine || !player;
       for (const key of ['rim', 'fill', 'shade', 'badge']) if (part[key]) part[key].visible = show;
       part.levels.visible = show;
@@ -978,6 +977,11 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const PODIUM_Z = -3.6;
   function showPodium(v, instant) {
     const ranked = v.players.filter((p) => !p.out).sort((a, b) => b.worth - a.worth).slice(0, 3);
+    const spot = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 3.1, 11, 28, 1, true), new THREE.MeshBasicMaterial({ color: '#FFF4CC', transparent: true, opacity: 0.09, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+    spot.position.set(0, 5.5, PODIUM_Z);
+    scene.add(spot);
+    focusTo.dim.fill(0.5);
+    focusTo.dim[48] = 1;
     ranked.forEach((p, i) => {
       const [x, h, color] = PODIUM[i];
       const step = new THREE.Mesh(plateGeometry(2.9, 2.3, h, 0.18), new THREE.MeshLambertMaterial({ color }));
@@ -992,7 +996,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       g.beginPath();
       g.arc(64, 64, 60, 0, Math.PI * 2);
       g.fill();
-      g.font = '400 84px "ES Alfa", Georgia, serif';
+      g.font = '800 88px "ES Titres", system-ui, sans-serif';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
       g.fillStyle = '#14302B';
@@ -1087,7 +1091,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       v.set(0, 0, z).project(camera);
       return [((v.x + 1) / 2) * size.w, ((1 - v.y) / 2) * size.h];
     };
-    onFit?.(onScreen(0.4), onScreen(3.25), onScreen(-1.1), onScreen(5.35));
+    onFit?.(onScreen(0.4), onScreen(2.75), onScreen(-1.1), onScreen(5.35));
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
@@ -1115,6 +1119,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let lifeTimer = 0;
   const lifeOn = () => !reduced && quality.step < 2;
 
+  let ringId = null;
   const walking = () => [...pawns.values()].some((pawn) => pawn.to || pawn.queue.length);
   let wasWalking = false;
 
@@ -1167,7 +1172,11 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         }
       }
     }
-    const curPawn = view && pawns.get(view.players[view.cur]?.id);
+    // L'anneau et la bulle restent sur celui qui marche, jusqu'à son arrivée.
+    if (view && (ringId === null || !walking())) ringId = view.players[view.cur]?.id ?? null;
+    const curPawn = view && pawns.get(ringId);
+    const ringPlayer = view?.players.find((p) => p.id === ringId);
+    if (ringPlayer && !view.over) drawBubble(ringPlayer.pseudo, PAWN_COLORS[ringPlayer.seat]);
     if (curPawn) {
       ring.position.x = curPawn.mesh.position.x;
       ring.position.z = curPawn.mesh.position.z;
@@ -1202,12 +1211,12 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pops.splice(i, 1);
       }
     }
-    // Les cases sélectionnées montent, puis flottent doucement ; tout ce qui est posé dessus suit.
+    // Les cases sélectionnées montent ; tout ce qui est posé dessus suit.
     {
-      let moving = Boolean(focusSpec);
+      let moving = false;
       const k = reduced ? 1 : 1 - Math.exp(-dt * 9);
       for (let i = 0; i < 48; i += 1) {
-        const target = focusTo.lift[i] && !reduced ? focusTo.lift[i] + Math.sin(now / 480 + i) * 0.07 : focusTo.lift[i];
+        const target = focusTo.lift[i];
         focusU.lift.value[i] += (target - focusU.lift.value[i]) * k;
         focusU.dim.value[i] += (focusTo.dim[i] - focusU.dim.value[i]) * k;
         if (Math.abs(target - focusU.lift.value[i]) > 0.003 || Math.abs(focusTo.dim[i] - focusU.dim.value[i]) > 0.003) moving = true;
@@ -1356,7 +1365,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       lifeTimer = setTimeout(() => {
         lifeTimer = 0;
         wake();
-      }, 45);
+      }, 100); // 10 images par seconde au repos : la Terre tourne, les drapeaux flottent, et la batterie tient
     }
   }
   function wake() {
@@ -1473,22 +1482,21 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       }
       if (p.out || pawn.goal === p.pos) continue;
       pawn.goal = p.pos;
-      const forward = (p.pos - pawn.shown + 48) % 48;
+      const base = pawn.to ? pawn.toPos : pawn.shown; // relancé en pleine marche : on repart de la case qu'il est en train d'atteindre
+      const forward = (p.pos - base + 48) % 48;
       pawn.queue = [];
-      if (reduced || forward === 0) {
+      if (reduced || (forward === 0 && !pawn.to)) {
         pawn.shown = p.pos;
         pawn.to = null;
         pawn.mesh.position.copy(pawnSpot(p, p.pos));
         pawn.blob.position.set(pawn.mesh.position.x, 0.02, pawn.mesh.position.z);
       } else if (forward <= 14) {
-        for (let i = 1; i <= forward; i += 1) pawn.queue.push({ pos: (pawn.shown + i) % 48, jump: 0.42 });
+        for (let i = 1; i <= forward; i += 1) pawn.queue.push({ pos: (base + i) % 48, jump: 0.42 });
       } else {
-        pawn.queue.push({ pos: p.pos, jump: 5 }); // un vol ou un renvoi à la Douane : un grand saut
+        pawn.queue.push({ pos: p.pos, jump: 5 }); // un renvoi à la Douane ou une carte : un grand saut
       }
     }
 
-    const playing = v.players[v.cur];
-    if (playing && !v.over) drawBubble(playing.pseudo, PAWN_COLORS[playing.seat]);
 
     if (v.dice && v.rollN !== lastRollN) {
       const initial = lastRollN === -1;

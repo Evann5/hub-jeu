@@ -499,7 +499,6 @@ const SKIN = ['#F2C9A5', '#8D5A3C', '#E8B48E', '#5F3B28', '#F6D7BC', '#C68B5E', 
 const HAIR = { noir: '#23202A', brun: '#4F3325', blond: '#E5B84C', roux: '#C4562B', gris: '#C3C7CF' };
 const WHITE = '#FFFFFF';
 const NAVY = '#27304D';
-const JEAN = '#3F5C8A';
 const SAND = '#D9BF8C';
 const SHOE = '#23202A';
 

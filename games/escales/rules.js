@@ -90,7 +90,8 @@ function canManage(s, p) {
 export function setup(players, options = {}, ctx) {
   const wanted = Math.max(0, Math.floor(Number(options.bots) || 0));
   const count = Math.min(wanted || (players.length === 1 ? 3 : 0), 10 - players.length);
-  const bots = shuffle(BOT_NAMES, ctx).slice(0, count).map((pseudo, i) => ({ id: -(i + 1), pseudo, bot: true }));
+  const taken = new Set(players.map((p) => p.pseudo.toLowerCase())); // un robot ne porte jamais le nom d'un joueur de la table
+  const bots = shuffle(BOT_NAMES.filter((n) => !taken.has(n.toLowerCase())), ctx).slice(0, count).map((pseudo, i) => ({ id: -(i + 1), pseudo, bot: true }));
   const everyone = [...players, ...bots];
   const s = {
     players: shuffle(everyone, ctx).map((p, seat) => ({
@@ -110,7 +111,6 @@ export function setup(players, options = {}, ctx) {
     debt: null,
     trades: [],
     tradeSeq: 0,
-    lastCard: null,
     deck: [],
     log: [],
     logN: 0,
@@ -184,6 +184,9 @@ function finish(s, reason) {
   s.over = true;
   s.phase = 'over';
   s.reason = reason;
+  s.trades = [];
+  s.debt = null;
+  s.after = null;
   const left = active(s);
   const best = Math.max(...left.map((p) => worthOf(s, p)));
   s.winners = left.filter((p) => worthOf(s, p) === best).map((p) => p.id);
@@ -333,7 +336,6 @@ function gain(s, amount, ctx) {
 function drawCard(s, ctx) {
   if (!s.deck.length) s.deck = shuffle(CARDS.map((_, i) => i), ctx);
   const card = CARDS[s.deck.pop()];
-  s.lastCard = { text: card.text, by: cur(s).id, n: s.logN + 1 };
   log(s, `Télex pour ${cur(s).pseudo} : ${card.text}`);
   return card.play(s, ctx);
 }
