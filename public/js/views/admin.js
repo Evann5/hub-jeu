@@ -14,7 +14,7 @@ export function render(container) {
   const codeBox = h('div.code-box', h('span', '…'));
   const codeInput = h('input.input', { name: 'class_code', autocomplete: 'off', spellcheck: false, minlength: 10, maxlength: 40, required: true });
   const codeForm = asyncForm(h('form.stack',
-    h('label.field', h('span', 'Nouveau code'), codeInput, h('small', 'Les comptes existants ne sont pas touchés : le code sert seulement à s’inscrire. Au moins 10 caractères.')),
+    h('label.field', h('span', 'Nouveau code'), codeInput, h('small', 'Au moins 10 caractères. Les comptes existants ne sont pas touchés : le code sert seulement à s’inscrire.')),
     h('div.card-actions', h('button.btn.btn-ghost', { type: 'submit' }, 'Changer le code'))),
   async () => {
     const { classCode } = await call(state.socket, 'admin:setClassCode', { code: codeInput.value });

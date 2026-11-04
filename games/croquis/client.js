@@ -35,7 +35,8 @@ export function mount(root, api) {
   const g = canvas.getContext('2d');
   const overlay = h('div.cr-overlay', { hidden: true });
   const reveal = h('div.cr-reveal', { hidden: true, 'aria-live': 'polite' });
-  const sheet = h('div.cr-sheet', canvas, overlay, reveal);
+  const sheet = h('div.cr-sheet', canvas, overlay);
+  const sheetBox = h('div.cr-sheetbox', sheet, reveal);
 
   const roundLabel = h('p.cr-round');
   const wordBox = h('div.cr-word');
@@ -57,7 +58,7 @@ export function mount(root, api) {
   const feed = h('ul.cr-feed', { role: 'log', 'aria-label': 'Propositions' });
   const feedBox = h('div.cr-feed-box', h('h3.cr-feed-title', 'Propositions'), feed);
   const side = h('aside.cr-side', players, feedBox);
-  const stage = h('section.cr-stage', sheet, tools, guessBox);
+  const stage = h('section.cr-stage', sheetBox, tools, guessBox);
   const final = h('section.cr-final', { hidden: true });
   const main = h('div.cr-main', stage, final, side);
   const live = h('p.cr-sr', { 'aria-live': 'polite' });
@@ -257,7 +258,7 @@ export function mount(root, api) {
       wordBox.replaceChildren(h('span.cr-word-label', 'Dessine'), h('strong.cr-word-plain', v.word));
     } else if (v.phase === 'drawing') {
       wordBox.replaceChildren(
-        h('span.cr-word-label', `Mot à deviner (${v.length})`),
+        h('span.cr-word-label', 'Mot à deviner'),
         h('span.cr-mask', { role: 'img', 'aria-label': `Mot de ${v.length} caractères : ${v.mask.map((c) => (c === '_' ? 'lettre cachée' : c)).join(' ')}` },
           maskWords(v.mask).map((word) => h('span.cr-w', { 'aria-hidden': 'true' },
             word.map((c) => h(`span.cr-cell${c === '_' ? '' : '.is-shown'}`, c === '_' ? '' : c.toUpperCase()))))));
@@ -348,14 +349,13 @@ export function mount(root, api) {
     const playing = v.phase === 'drawing';
     const canGuess = playing && !isDrawer && !found && !spectator;
     guessBox.hidden = isDrawer || v.phase === 'over';
-    guessForm.hidden = spectator;
+    guessForm.hidden = !canGuess;
     guessInput.disabled = !canGuess;
     guessBtn.disabled = !canGuess;
     let msg = '';
     const mine = (v.feed || []).filter((e) => e.id === api.me.id);
     if (spectator) msg = 'Tu regardes la partie.';
     else if (v.phase === 'choosing') msg = isDrawer ? '' : 'Le dessin commence bientôt.';
-    else if (v.phase === 'reveal') msg = 'Dessin suivant dans un instant.';
     else if (found) msg = 'Bien joué, tu as trouvé ! Attends les autres.';
     else if (mine.length && mine[mine.length - 1].kind === 'close') msg = 'Presque ! Tu y es presque…';
     guessMsg.textContent = msg;
@@ -383,7 +383,8 @@ export function mount(root, api) {
 
   function renderAll() {
     const v = view;
-    roundLabel.textContent = v.phase === 'over' ? 'Fin de partie' : `Tour ${v.round} / ${v.rounds} · dessin ${Math.min(v.turn, v.totalTurns)} / ${v.totalTurns}`;
+    roundLabel.textContent = `Dessin ${Math.min(v.turn, v.totalTurns)} sur ${v.totalTurns}`;
+    bar.hidden = v.phase === 'over';
     renderWord();
     renderOverlay();
     renderPlayers();
