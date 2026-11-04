@@ -434,14 +434,16 @@ function botAccepts(s, bot, trade) {
 
 // Un robot à qui il manque une ville pour sa majorité essaie de la racheter : à un autre robot, ou en proposant à un joueur.
 function botTrade(s, p, ctx) {
-  if (ctx.random() > 0.35) return false;
+  const urge = ctx.random();
+  if (urge > 0.7) return false;
   for (let r = 0; r < REGIONS.length; r += 1) {
     if (ownedInRegion(s, p.id, r) !== s.majority - 1) continue;
     const t = TILES.find((x) => x.region === r && s.props[x.pos] && s.props[x.pos].owner !== p.id && !s.props[x.pos].level);
     if (!t) continue;
     const offer = Math.floor(t.price * 1.7 / 5) * 5;
     const owner = byId(s, s.props[t.pos].owner);
-    if (p.cash < offer + 250) continue;
+    if (p.cash < offer + 150) continue;
+    if (!owner.bot && urge > 0.35) continue; // un joueur n'est pas sollicité à chaque tour
     const trade = { from: p.id, to: owner.id, give: { cash: offer, cities: [] }, get: { cash: 0, cities: [t.pos] } };
     if (owner.bot) {
       if (ownedInRegion(s, owner.id, r) >= s.majority || !botAccepts(s, owner, trade)) continue;

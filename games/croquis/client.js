@@ -401,6 +401,7 @@ export function mount(root, api) {
     sheet.hidden = !showMain;
     stage.hidden = !showMain;
     final.hidden = showMain;
+    side.hidden = !showMain;
     if (!showMain) renderFinal();
     const k = `${v.phase}:${v.turn}`;
     if (k !== phaseKey) {

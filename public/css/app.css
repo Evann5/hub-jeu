@@ -244,6 +244,7 @@ textarea.input { resize: vertical; min-height: 80px; border-radius: var(--radius
   margin: 0;
   font-size: clamp(3.2rem, 1.5rem + 7vw, 8rem);
   font-weight: 800;
+  letter-spacing: -0.015em;
   line-height: 0.9;
 }
 .tile .auth-tagline {
@@ -514,7 +515,7 @@ a.btn { text-decoration: none; }
 .big-num { font: 800 2.6rem/1 var(--font-display); letter-spacing: -0.04em; }
 .online-tokens { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .token-btn { padding: 0; border: 0; border-radius: 32%; background: none; }
-.card-link { margin-top: auto; color: var(--on-color); font-weight: 700; text-underline-offset: 3px; }
+.card-link { display: inline-flex; align-items: center; align-self: flex-start; min-height: 44px; margin-top: auto; color: var(--on-color); font-weight: 700; text-underline-offset: 3px; }
 .card-inbox { grid-area: inbox; background: var(--bg-1); box-shadow: inset 0 0 0 1px var(--bg-3); }
 .inbox { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .inbox-empty { display: grid; gap: 10px; color: var(--ink-2); }
@@ -532,11 +533,11 @@ a.btn { text-decoration: none; }
 :root { --es-globe-sea: #2F7BEA; --es-globe-land: #5EDC8A; --es-field: #15132E; --es-slab: #25224F; --es-zone: #1C1A40; --es-tray: #15132E; --es-nav: #0E0C22; --es-nav2: #1B1940; --es-nav3: #2C2963; --es-nav4: #3D3A80; --es-panel: #FFFFFF; --es-quiet: #EEEEF6; --es-rule: #DCDCEA; --es-edge: #C4C4D8; --es-ink: #16142E; --es-soft: #5A5874; --es-primary: #FFC53D; --es-primary-edge: #C4890C; --es-on-primary: #16142E; --es-accent: #FFC53D; --es-inv: #C9C8E6; }
 :root[data-es-theme='ardoise'] { --es-field: #111418; --es-slab: #1F2430; --es-zone: #171B24; --es-tray: #111418; --es-nav: #0B0D11; --es-nav2: #171B22; --es-nav3: #262C38; --es-nav4: #363E4E; --es-panel: #FFFFFF; --es-quiet: #EEF1F5; --es-rule: #DDE2EA; --es-edge: #C5CCD8; --es-ink: #12161E; --es-soft: #566073; --es-primary: #22C58B; --es-primary-edge: #128A5F; --es-on-primary: #06281C; --es-accent: #FFD13D; --es-inv: #C2C9D6; }
 :root[data-es-theme='prune'] { --es-field: #1F0F2E; --es-slab: #321A48; --es-zone: #27133A; --es-tray: #1F0F2E; --es-nav: #150A20; --es-nav2: #27133A; --es-nav3: #3D2258; --es-nav4: #52307A; --es-panel: #FFFFFF; --es-quiet: #F3EEF8; --es-rule: #E3DBEC; --es-edge: #CFC3DC; --es-ink: #1C0F2A; --es-soft: #66587A; --es-primary: #FF8A1F; --es-primary-edge: #C45F05; --es-on-primary: #2A1200; --es-accent: #FFD13D; --es-inv: #D4C8E2; }
-:root .game-hero[data-game='escales'] { background: url('../games/escales/assets/globe-nuit.svg') right 4% center / auto 230% no-repeat, var(--es-slab); }
+:root .game-hero[data-game='escales'] { background: url('../games/escales/assets/globe-nuit.svg') var(--es-hero-globe, right 4% center / auto 230%) no-repeat, var(--es-slab); }
 :root .table-view[data-game='escales'] .lobby-card { background: linear-gradient(90deg, var(--es-slab) 45%, transparent 90%), url('../games/escales/assets/globe-nuit.svg') right -130px top -110px / 460px auto no-repeat, var(--es-slab); }
-:root[data-es-theme='ardoise'] .game-hero[data-game='escales'] { background: url('../games/escales/assets/globe-ardoise.svg') right 4% center / auto 230% no-repeat, var(--es-slab); }
+:root[data-es-theme='ardoise'] .game-hero[data-game='escales'] { background: url('../games/escales/assets/globe-ardoise.svg') var(--es-hero-globe, right 4% center / auto 230%) no-repeat, var(--es-slab); }
 :root[data-es-theme='ardoise'] .table-view[data-game='escales'] .lobby-card { background: linear-gradient(90deg, var(--es-slab) 45%, transparent 90%), url('../games/escales/assets/globe-ardoise.svg') right -130px top -110px / 460px auto no-repeat, var(--es-slab); }
-:root[data-es-theme='prune'] .game-hero[data-game='escales'] { background: url('../games/escales/assets/globe-prune.svg') right 4% center / auto 230% no-repeat, var(--es-slab); }
+:root[data-es-theme='prune'] .game-hero[data-game='escales'] { background: url('../games/escales/assets/globe-prune.svg') var(--es-hero-globe, right 4% center / auto 230%) no-repeat, var(--es-slab); }
 :root[data-es-theme='prune'] .table-view[data-game='escales'] .lobby-card { background: linear-gradient(90deg, var(--es-slab) 45%, transparent 90%), url('../games/escales/assets/globe-prune.svg') right -130px top -110px / 460px auto no-repeat, var(--es-slab); }
 @font-face { font-family: 'ES Titres'; src: url('../games/escales/assets/fonts/baloo-800-latin.woff2') format('woff2'); font-weight: 800; font-display: swap; }
 .game-hero[data-game='escales'] h2 { font: 800 2.125rem/1.05 'ES Titres', system-ui, sans-serif; letter-spacing: 0; font-synthesis: none; }
@@ -953,6 +954,7 @@ body:has(.table-view[data-game='escales']) { --bg-0: var(--es-nav); --bg-1: var(
 .msg-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 /* Chaque pseudo prend la couleur de son avatar. */
 .msg-author {
+  min-height: 24px;
   padding: 0;
   border: 0;
   background: none;
@@ -1255,6 +1257,7 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .game-hero .game-logo { --ls: 48px; }
   .game-hero h2 { font-size: 1.5rem; }
   .game-hero .btn { grid-column: 1 / -1; }
+  .game-hero[data-game='escales'] { --es-hero-globe: right -172px top -30px / auto 175%; }
   .games-head { display: grid; }
   .games-filters { display: grid; gap: 6px; }
   .filter-chips { flex-wrap: nowrap; justify-self: start; max-width: 100%; overflow-x: auto; scrollbar-width: none; }

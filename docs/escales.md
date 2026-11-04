@@ -1,6 +1,6 @@
 # Escales : le raisonnement du jeu
 
-Le jeu phare de Hubuno, de 2 à 10 joueurs : un jeu d'achat de villes, du même genre que Monopoly ou Rich Up, avec son propre nom, son plateau et ses règles. Toute la carte se voit d'un coup d'œil, en 3D : chaque pays a sa couleur, son drapeau et ses éléments, chaque ville son monument. Un cadre de la couleur du joueur montre à qui elle appartient. On peut jouer seul : des robots complètent la table.
+Le jeu phare de Hubuno, de 2 à 10 joueurs : un jeu d'achat de villes, du même genre que Monopoly ou Rich Up, avec son propre nom, son plateau et ses règles. Toute la carte se voit d'un coup d'œil, en 3D : chaque pays a sa couleur, son drapeau et ses éléments, chaque ville son monument. L'étiquette de la ville porte la pastille de son propriétaire ; cliquer sur un joueur soulève ses villes dans sa couleur. On peut jouer seul : des robots complètent la table.
 
 ## Le constat de départ
 
@@ -38,20 +38,22 @@ Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: Th
 
 ## Ce qu'ont montré les parties de robots
 
-Moyennes sur 40 parties par nombre de joueurs, en 20 tours, avec des robots qui achètent, échangent et construisent. Ce sont des robots : à confirmer par de vraies parties, surtout pour la durée.
+Moyennes sur 200 parties par nombre de joueurs, en 20 tours, avec les règles actuelles (mesure du 05/11/2026, script d'essai non conservé dans le projet). Ce sont des robots : à confirmer par de vraies parties, surtout pour la durée.
 
-| Joueurs | 1re construction | 1re faillite | Faillites | Écart entre le 1er et le 2e |
-|---|---|---|---|---|
-| 2 | tour 4 | tour 18 (rare) | 0,1 | × 1,5 |
-| 4 | tour 6 | tour 16 | 0,3 | × 1,5 |
-| 6 | tour 4 | tour 15 | 1,4 | × 2 |
-| 10 | tour 3 | tour 12 | 5,3 | × 2,6 |
+| Joueurs | 1re construction | Parties sans construction | Parties avec une faillite | Écart entre le 1er et le 2e | Lancers de dés |
+|---|---|---|---|---|---|
+| 2 | tour 4 | 1 % | 3,5 % | × 1,6 | 47 |
+| 3 | tour 2,5 | 0 % | 24,5 % | × 1,7 | 67 |
+| 4 | tour 9 | 6,5 % | 4 % | × 1,3 | 94 |
+| 6 | tour 9 | 2 % | 8 % | × 1,4 | 140 |
+| 8 | tour 8 | 4 % | 14 % | × 1,7 | 185 |
+| 10 | tour 7 | 11 % | 22,5 % | × 1,7 | 226 |
 
-À 10 joueurs, la moitié de la table est éliminée à la fin de la partie, et l'écart est grand. C'est le point à surveiller lors des premières vraies parties.
+À partir de 4 joueurs, construire arrive tard, vers le milieu de la partie, et les faillites sont rares : on gagne surtout au décompte du dernier tour. À 2 ou 3 joueurs, 2 villes suffisent et on construit très tôt. À regarder lors des premières vraies parties : des joueurs négocient sans doute plus que des robots.
 
 ## Les monuments sculptés
 
-La tour Eiffel, le Colisée et le Golden Gate sont sculptés dans Blender (`assets/monuments/*.glb`, sources dans `docs/monuments-blender/`, à relancer avec `run.sh`). Chaque fichier : une seule forme, des couleurs de sommets, moins de 6 000 triangles et 200 Ko. Les autres monuments sont encore écrits en code (`client/monuments.js`) ; si un fichier ne charge pas, le monument en code reprend sa place.
+Les monuments et les cases spéciales sont sculptés dans Blender (`assets/monuments/*.glb`, sources dans `docs/monuments-blender/`, à relancer avec `run.sh`). Chaque fichier : une seule forme, des couleurs de sommets, moins de 6 000 triangles et 200 Ko. Si un fichier ne charge pas, le monument écrit en code (`client/monuments.js`) reprend sa place.
 
 ## Les personnages
 
@@ -60,13 +62,14 @@ Chaque place a son voyageur, dans `CAST` (`client/monuments.js`) : pilote, routa
 ## Ce qui reste à faire
 
 - Les villes définitives de Minh.
-- Valider le style de la maquette 3D, puis soigner monument par monument.
-- Sons, confettis de victoire, animations d'achat.
-- Three.js pèse 2 Mo : à compresser au moment de la mise en ligne (gzip sur le VPS).
+- Le choix de la palette (nuit, ardoise, prune), puis le retrait des deux autres et de l'essai `?theme=`.
+- Écouter les sons : ils n'ont jamais été entendus par personne d'autre que le programme qui les fabrique.
+- Une vraie partie, en ligne, sur de vrais téléphones.
 
 ## Pour que ça reste fluide
 
 - Une seule forme par case : les pièces d'un monument sont fondues ensemble (`bake()` dans `client/monuments.js`). Ne jamais ajouter d'objets 3D séparés sur le plateau.
 - Les ombres sont calculées une fois, puis seulement quand une construction change. Les pions ont une simple tache d'ombre.
-- Rien n'est redessiné quand rien ne bouge : pas de décor animé en continu.
+- Au repos, seule la Terre du centre tourne, à 10 images par seconde au lieu de 60.
+- Three.js est minifié (le jeu pèse environ 2,3 Mo sans compression). Si on le met à jour, repasser la version neuve par esbuild.
 - Si une machine n'arrive pas à suivre, la qualité baisse toute seule (résolution, puis ombres).

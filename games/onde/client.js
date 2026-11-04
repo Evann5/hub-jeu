@@ -24,6 +24,13 @@ const wedge = (a, b, r) => {
   return `M${CX} ${CY} L${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
 };
 
+const ICONS = {
+  lock: 'M7 10V8a5 5 0 0 1 10 0v2h1.5A1.5 1.5 0 0 1 20 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5v-8A1.5 1.5 0 0 1 5.5 10Zm2.5 0h5V8a2.5 2.5 0 0 0-5 0Z',
+  left: 'M14.5 5 7 12l7.5 7 1.8-1.9L10.8 12l5.5-5.1Z',
+  right: 'M9.5 5 17 12l-7.5 7-1.8-1.9 5.5-5.1-5.5-5.1Z',
+};
+const icon = (name) => svg('svg', { viewBox: '0 0 24 24', class: `on-ico is-${name}`, 'aria-hidden': 'true', focusable: 'false' }, svg('path', { d: ICONS[name] }));
+
 function confetti(h, host, palette) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const layer = h('div.on-confetti', { 'aria-hidden': 'true' }, Array.from({ length: 36 }, (_, i) => h(`i.c${i % palette}`, {
@@ -46,6 +53,7 @@ export function mount(root, api) {
   let sendTimer = null;
   let pending = null;
   let lastSent = 0;
+  let lastStamp = '';
 
   const name = (id) => api.user(id).pseudo;
   const isMe = (id) => id === api.me.id;
@@ -166,9 +174,10 @@ export function mount(root, api) {
   const live = h('p.on-sr', { role: 'status', 'aria-live': 'polite' });
   const top = h('div.on-top');
   const bottom = h('div.on-bottom');
+  const act = h('div.on-act');
   const clueInput = h('input', { type: 'text', maxlength: 60, autocomplete: 'off', spellcheck: false, 'aria-label': 'Ton indice', placeholder: 'Ton indice, sans chiffre…' });
   const stage = h('div.on-stage', dial, h('div.on-ends', endL, endR));
-  const el = h('div.on', h('div.on-board', top, stage, bottom));
+  const el = h('div.on', h('div.on-board', top, stage, bottom, act));
   root.append(el, live);
 
   function tick() {
@@ -191,28 +200,34 @@ export function mount(root, api) {
     }
     const members = (t) => v.players.filter((id) => v.teams[id] === t && !v.left.includes(id));
     return h('div.on-teams', [0, 1].map((t) => h(`div.on-team.t${t}${v.playing === t && v.phase !== 'over' ? '.is-playing' : ''}${myTeam() === t ? '.is-mine' : ''}`,
-      h('span.on-team-name', teamName(t), myTeam() === t ? h('small', ' (ton équipe)') : null),
+      h('span.on-team-name', teamName(t), myTeam() === t ? h('small', 'ton équipe') : null),
       h('b.on-team-score', { 'aria-label': `${v.scores[t]} points` }, String(v.scores[t])),
       h('span.on-team-members', members(t).map((id) => `${isMe(id) ? 'toi' : name(id)}`).join(', ')))));
   }
 
   function topRegion() {
-    const who = v.mode === 'teams' ? ` · équipe ${teamName(v.playing)}` : '';
+    const who = v.mode === 'teams' ? ` · ${teamName(v.playing)}` : '';
     const lead = isMe(v.leader) ? 'toi' : name(v.leader);
     const bits = [h('div.on-bar-top', h('span.on-chip', v.phase === 'over' ? 'Fin de partie' : `Manche ${v.round + 1}${who}`),
       v.phase === 'over' ? null : h('span.on-chip.is-live', 'En direct'), h('span.on-time', { 'aria-label': 'Temps restant' })), scoreboard()];
-    if (v.mode === 'coop' && v.wantedTeams) bits.push(h('p.on-hint', 'Moins de 4 joueurs : on joue tous ensemble, en coopératif.'));
-    if (v.phase !== 'over') bits.push(h('p.on-lead', h('span', 'Meneur'), ' ', h('b', lead)));
-    if (v.clue && v.phase !== 'over') bits.push(h('blockquote.on-clue', h('span.on-clue-label', 'Indice'), v.clue));
+    if (v.mode === 'coop' && v.wantedTeams) bits.push(h('p.on-hint', 'Moins de 4 joueurs : on joue tous ensemble.'));
+    if (v.phase !== 'over') {
+      if (v.clue) bits.push(h('blockquote.on-clue', h('span.on-clue-label', isMe(v.leader) ? 'Ton indice' : `Indice de ${lead}`), v.clue));
+      else bits.push(h('p.on-lead', h('span', 'Meneur'), ' ', h('b', lead)));
+    }
     return bits;
   }
 
   function lockRow() {
-    return h('ul.on-locks', { 'aria-label': 'Verrous' }, v.guessers.map((id) => h(`li${v.locks.includes(id) ? '.is-on' : ''}`, h('span', { 'aria-hidden': 'true' }, v.locks.includes(id) ? '🔒' : '…'), ' ', isMe(id) ? 'toi' : name(id))));
+    return h('ul.on-locks', { 'aria-label': 'Verrous' }, v.guessers.map((id) => h(`li${v.locks.includes(id) ? '.is-on' : ''}`,
+      v.locks.includes(id) ? icon('lock') : h('i.on-wait', { 'aria-hidden': 'true' }), isMe(id) ? 'toi' : name(id), h('span.on-sr', v.locks.includes(id) ? ' a verrouillé' : ' n’a pas verrouillé'))));
   }
 
+  // Le texte court va dans `say`, ce qui se touche dans `ctl` (collé en bas de l'écran).
   function bottomRegion() {
     const me = api.me.id;
+    const say = [];
+    const ctl = [];
     if (v.phase === 'clue') {
       if (isMe(v.leader) && seated()) {
         const form = h('form.on-form', h('label.on-sr', { for: 'on-clue' }, 'Ton indice'), clueInput, h('button.on-btn', { type: 'submit' }, 'Envoyer l’indice'));
@@ -221,54 +236,51 @@ export function mount(root, api) {
           e.preventDefault();
           try { await api.sendMove({ type: 'clue', text: clueInput.value }); clueInput.value = ''; } catch { /* message déjà affiché */ }
         });
-        return [h('p.on-say', 'Tu es le meneur : la zone secrète est affichée sur le cadran, pour toi seul. Donne un indice qui y mène, sans chiffre.'), form,
-          h('ul.on-legend', { 'aria-label': 'Points' }, [4, 3, 2].map((p) => h(`li.p${p}`, h('i'), `${p} points`)))];
-      }
-      return [h('p.on-say', `${isMe(v.leader) ? 'Tu es' : `${name(v.leader)} est`} le meneur et cherche un indice. Ton équipe placera ensuite l’aiguille.`)];
-    }
-    if (v.phase === 'guess') {
+        say.push(h('p.on-say', 'Seul toi vois la zone. Indice sans chiffre.'),
+          h('ul.on-legend', { 'aria-label': 'Points' }, [4, 3, 2].map((p) => h(`li.p${p}`, h('i'), `${p} points`))));
+        ctl.push(form);
+      } else say.push(h('p.on-say', `${isMe(v.leader) ? 'Tu es' : `${name(v.leader)} est`} le meneur et cherche un indice.`));
+    } else if (v.phase === 'guess') {
       const locked = v.locks.includes(me);
       if (canAim()) {
-        return [h('p.on-say', 'Glisse l’aiguille sur le cadran (ou avec les flèches ← →), puis verrouille quand vous êtes d’accord. Bouger l’aiguille efface les verrous.'),
-          h('button.on-btn', { type: 'button', dataset: { k: 'lock' }, 'aria-pressed': String(locked), onclick: () => send({ type: 'lock', on: !locked }) }, locked ? 'Déverrouiller' : 'Verrouiller l’aiguille'),
-          lockRow()];
+        say.push(h('p.on-say', v.locks.length ? 'Bouger l’aiguille efface les verrous.' : 'Glisse l’aiguille (ou ← →), puis verrouille.'), lockRow());
+        ctl.push(h('button.on-btn', { type: 'button', dataset: { k: 'lock' }, 'aria-pressed': String(locked), onclick: () => send({ type: 'lock', on: !locked }) }, locked ? 'Déverrouiller' : 'Verrouiller l’aiguille'));
+      } else {
+        const mineTeam = v.mode === 'coop' || myTeam() === v.playing;
+        say.push(h('p.on-say', seated() ? (isMe(v.leader) ? 'Ton équipe place l’aiguille. Ne dis rien !' : mineTeam ? 'Tu es le meneur de ton côté…' : 'L’autre équipe place l’aiguille. Tu parieras ensuite.') : 'Les joueurs placent l’aiguille.'), lockRow());
       }
-      const mineTeam = v.mode === 'coop' || myTeam() === v.playing;
-      return [h('p.on-say', seated() ? (isMe(v.leader) ? 'Ton équipe place l’aiguille. Ne dis rien !' : mineTeam ? 'Tu es le meneur de ton côté…' : 'L’autre équipe place l’aiguille. Tu parieras ensuite.') : 'Les joueurs placent l’aiguille.'), lockRow()];
-    }
-    if (v.phase === 'bet') {
+    } else if (v.phase === 'bet') {
       if (seated() && v.bettors.includes(me)) {
-        if (v.myBet) return [h('p.on-say', `Pari enregistré : ${v.myBet === 'L' ? 'plus à gauche' : 'plus à droite'}. On attend les autres…`)];
-        return [h('p.on-say', 'Tu as vu l’indice et l’aiguille. La zone secrète est-elle plus à gauche ou plus à droite de l’aiguille ? 1 point si ton équipe a raison.'),
-          h('div.on-row',
-            h('button.on-btn.is-left', { type: 'button', dataset: { k: 'betL' }, onclick: () => send({ type: 'bet', side: 'L' }) }, '◀ Plus à gauche'),
-            h('button.on-btn.is-right', { type: 'button', dataset: { k: 'betR' }, onclick: () => send({ type: 'bet', side: 'R' }) }, 'Plus à droite ▶'))];
-      }
-      return [h('p.on-say', `L’aiguille est verrouillée. L’équipe ${teamName(1 - v.playing)} parie… (${v.voted.length} / ${v.bettors.length})`)];
-    }
-    if (v.phase === 'reveal') {
+        if (v.myBet) say.push(h('p.on-say', `Pari enregistré : ${v.myBet === 'L' ? 'plus à gauche' : 'plus à droite'}. On attend les autres…`));
+        else {
+          say.push(h('p.on-say', 'La zone est-elle plus à gauche ou plus à droite de l’aiguille ?'));
+          ctl.push(h('div.on-row',
+            h('button.on-btn.is-left', { type: 'button', dataset: { k: 'betL' }, onclick: () => send({ type: 'bet', side: 'L' }) }, icon('left'), 'À gauche'),
+            h('button.on-btn.is-right', { type: 'button', dataset: { k: 'betR' }, onclick: () => send({ type: 'bet', side: 'R' }) }, 'À droite', icon('right'))));
+        }
+      } else say.push(h('p.on-say', `Aiguille verrouillée. L’équipe ${teamName(1 - v.playing)} parie… (${v.voted.length} / ${v.bettors.length})`));
+    } else if (v.phase === 'reveal') {
       const r = v.result;
-      const bits = [];
-      if (r.voided) bits.push(h('p.on-pts.is-zero', 'Manche annulée'), h('p.on-say', 'Le meneur n’a pas pu donner d’indice : aucun point.'));
+      if (r.voided) say.push(h('p.on-pts.is-zero', 'Manche annulée'), h('p.on-say', 'Pas d’indice du meneur : aucun point.'));
       else {
-        bits.push(h(`p.on-pts.is-p${r.points}`, r.points ? `+${r.points} point${r.points > 1 ? 's' : ''}` : 'Raté'));
-        bits.push(h('p.on-say', r.points === 4 ? 'En plein dans le mille !' : r.points ? 'Pas mal, tu y étais presque.' : 'Loin de la zone.'));
+        say.push(h(`p.on-pts.is-p${r.points}`, r.points ? `+${r.points} point${r.points > 1 ? 's' : ''}` : 'Raté'));
         if (v.mode === 'teams') {
           const side = r.betSide === 'L' ? 'à gauche' : r.betSide === 'R' ? 'à droite' : null;
-          bits.push(h('p.on-say', side ? `L’équipe ${teamName(1 - r.team)} avait parié ${side} : ${r.betPoints ? '+1 point, bien vu !' : r.points === 4 ? 'mais l’aiguille était pile sur la zone.' : 'raté.'}` : `L’équipe ${teamName(1 - r.team)} n’a pas tranché : pas de point.`));
+          const other = teamName(1 - r.team);
+          say.push(h('p.on-say', side ? `${other} a parié ${side} : ${r.betPoints ? '+1 point, bien vu !' : r.points === 4 ? 'inutile, plein centre.' : 'raté.'}` : `${other} n’a pas parié : pas de point.`));
         }
       }
       if (v.bets && Object.keys(v.bets).length) {
-        bits.push(h('ul.on-bets', Object.entries(v.bets).map(([id, b]) => h('li', `${isMe(Number(id)) ? 'Toi' : name(Number(id))} : ${b === 'L' ? '◀ gauche' : 'droite ▶'}`))));
+        say.push(h('ul.on-bets', Object.entries(v.bets).map(([id, b]) => h('li', `${isMe(Number(id)) ? 'Toi' : name(Number(id))} : ${b === 'L' ? 'gauche' : 'droite'}`))));
       }
-      if (seated()) bits.push(h('button.on-btn', { type: 'button', dataset: { k: 'next' }, onclick: () => send({ type: 'next' }) }, 'Manche suivante'));
-      return bits;
+      if (seated()) ctl.push(h('button.on-btn', { type: 'button', dataset: { k: 'next' }, onclick: () => send({ type: 'next' }) }, 'Manche suivante'));
+    } else {
+      const winners = v.mode === 'coop' ? (v.scores[0] >= v.target ? 'Mission réussie !' : 'Pas assez de points cette fois…')
+        : v.scores[0] === v.scores[1] ? 'Égalité parfaite !' : `${teamName(v.scores[0] > v.scores[1] ? 0 : 1)} gagne !`;
+      say.push(h('p.on-pts.is-p4', winners),
+        h('ol.on-recap', v.history.map((e, i) => h('li', h('b', `${i + 1}.`), ` ${e.pair[0]} ↔ ${e.pair[1]} `, h('small', e.voided ? 'annulée' : `« ${e.clue} » : ${e.points} pt${e.points > 1 ? 's' : ''}`)))));
     }
-    // over
-    const winners = v.mode === 'coop' ? (v.scores[0] >= v.target ? 'Mission réussie !' : 'Pas assez de points cette fois…')
-      : v.scores[0] === v.scores[1] ? 'Égalité parfaite !' : `L’équipe ${teamName(v.scores[0] > v.scores[1] ? 0 : 1)} gagne !`;
-    return [h('p.on-pts.is-p4', winners),
-      h('ol.on-recap', v.history.map((e, i) => h('li', h('b', `${i + 1}.`), ` ${e.pair[0]} ↔ ${e.pair[1]} `, h('small', e.voided ? 'annulée' : `« ${e.clue} » : ${e.points} pt${e.points > 1 ? 's' : ''}`))))];
+    return { say, ctl };
   }
 
   function render() {
@@ -276,7 +288,11 @@ export function mount(root, api) {
     const focus = document.activeElement;
     const focusKey = el.contains(focus) ? (focus === dial ? '#dial' : focus === clueInput ? '#clue' : focus.dataset?.k || null) : null;
     top.replaceChildren(...topRegion());
-    bottom.replaceChildren(...bottomRegion());
+    const { say, ctl } = bottomRegion();
+    bottom.replaceChildren(...say);
+    act.replaceChildren(...ctl);
+    const stamp = `${v.round}-${v.phase}`;
+    if (stamp !== lastStamp) { lastStamp = stamp; el.scrollTop = 0; }
     stage.hidden = v.phase === 'over'; // le récapitulatif prend la place du cadran
     drawDial();
     if (focusKey) {
