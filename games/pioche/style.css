@@ -235,9 +235,6 @@
 @media (max-width: 899px) {
   .g-pioche { --cw: 62px; --ch: 93px; --step: 33px; --tw: 92px; --th: 138px; }
   .g-pioche .pi { gap: 6px; padding-top: 6px; padding-bottom: 8px; }
-  .g-pioche .pi-opps { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
-  .g-pioche .pi-opps::-webkit-scrollbar { display: none; }
-  .g-pioche .pi-opp { flex: none; }
   .g-pioche .pi-table { padding: 2px 12px 14px; }
   .g-pioche .pi-old { display: none; }
   .g-pioche .pi-say { font-size: 0.95rem; }

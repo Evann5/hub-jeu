@@ -183,18 +183,24 @@
 
 /* ——— Téléphone : les rangées restent visibles, la main tient sur une seule ligne qu'on fait défiler ——— */
 @container (max-width: 599px) {
-  .g-six .sx { gap: 10px; padding-top: 10px; --cw-hand: 52px; }
-  .g-six .sx-score { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 12px 6px; }
-  .g-six .sx-pl { grid-template-columns: auto minmax(0, 1fr); gap: 2px 6px; padding: 4px 8px 8px 5px; border-radius: 14px; }
-  .g-six .sx-pl-heads { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; font-size: 1.05rem; }
-  .g-six .sx-pl-heads .sx-horn { width: 18px; height: 18px; }
-  .g-six .sx-pl-bar { grid-row: 3; }
-  .g-six .sx-pl-name { font-size: 0.8125rem; }
-  .g-six .sx-handbox { gap: 4px; padding-top: 4px; padding-bottom: 8px; border-radius: 20px 20px 0 0; }
-  .g-six .sx-hand { flex-wrap: nowrap; justify-content: safe center; overflow-x: auto; overscroll-behavior-x: contain; gap: 8px; padding: 16px 6px 6px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .g-six .sx { gap: 8px; padding-top: 8px; --cw-hand: 46px; --cw-lane: min(40px, calc((100cqw - 104px) / 5)); }
+  .g-six .sx-top { gap: 6px 10px; }
+  .g-six .sx-status { flex-basis: 100%; font-size: 0.8125rem; }
+  .g-six .sx-chip, .g-six .sx-timer { padding: 3px 10px; font-size: 0.75rem; }
+  .g-six .sx-score { grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px 5px; }
+  .g-six .sx-pl { grid-template-columns: auto minmax(0, 1fr); gap: 0 5px; padding: 3px 6px 6px 4px; border-radius: 12px; box-shadow: 0 3px 0 var(--sx-ink); }
+  .g-six .sx-pl .sx-token, .g-six .sx-pl > :first-child { width: 22px; height: 22px; }
+  .g-six .sx-pl-heads { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; font-size: 0.95rem; }
+  .g-six .sx-pl-heads .sx-horn { width: 16px; height: 16px; }
+  .g-six .sx-pl-bar { grid-row: 3; height: 6px; }
+  .g-six .sx-pl-name { font-size: 0.75rem; }
+  .g-six .sx-lanes { gap: 12px; }
+  .g-six .sx-lane { padding: 10px 8px 8px; border-radius: 20px; }
+  .g-six .sx-handbox { gap: 4px; padding-top: 2px; padding-bottom: 6px; border-radius: 20px 20px 0 0; }
+  .g-six .sx-hand { flex-wrap: nowrap; justify-content: safe center; overflow-x: auto; overscroll-behavior-x: contain; gap: 7px; padding: 14px 6px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
   .g-six .sx-hand::-webkit-scrollbar { display: none; }
   .g-six .sx-pick { flex: none; scroll-snap-align: center; }
-  .g-six .sx-go { min-height: 46px; font-size: 1rem; }
+  .g-six .sx-go { min-height: 42px; font-size: 0.95rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

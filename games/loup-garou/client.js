@@ -287,7 +287,7 @@ export function mount(root, api) {
     const wolves = (view.players.filter((id) => view.roles[id] === 'wolf' && isAlive(id)));
     return h('section.lg-panel.is-god',
       h('h3', 'Tu es mort'),
-      h('p', `${CAUSE[d?.cause] ?? 'Tu as quitté le jeu'}. Tu vois tous les rôles : ne dis rien aux vivants.`),
+      h('p', `${d ? `Tu es ${CAUSE[d.cause] ?? 'mort'}`.replace('Tu es mort dans', 'Tu es mort dans').replace('Tu es a quitté la partie', 'Tu as quitté la partie') : 'Tu as quitté la partie'}. Tu vois tous les rôles : ne dis rien aux vivants.`),
       wolves.length ? h('p.lg-muted', `Loups encore en vie : ${join(wolves.map(name))}.`) : null,
       view.phase === 'debate' ? h('div.lg-actions', btn('Ouvrir le chat', () => api.openChat(), { kind: 'ghost', key: 'chat' })) : null,
       view.phase === 'debate'
