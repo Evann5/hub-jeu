@@ -116,7 +116,7 @@ export function getUser(id) {
 // Élodie, élodie et Elodie sont le même pseudo pour un lecteur : un seul compte. Un sosie du pseudo d'un admin est pris même si cet admin n'est pas encore inscrit.
 export function pseudoTaken(pseudo) {
   const wanted = lookalike(pseudo);
-  if (config.admins.some((a) => lookalike(a) === wanted && a !== plainPseudo(pseudo))) return true;
+  if (config.admins.some((a) => lookalike(a) === wanted && a !== plainPseudo(pseudo) && a !== pseudo.toLowerCase())) return true;
   return db.prepare('SELECT pseudo FROM users').all().some((u) => lookalike(u.pseudo) === wanted);
 }
 

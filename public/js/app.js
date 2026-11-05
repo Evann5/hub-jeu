@@ -54,7 +54,7 @@ let muteTimer = null;
 function armMuteEnd() {
   clearTimeout(muteTimer);
   const left = state.mutedUntil - Date.now();
-  if (left > 0) muteTimer = setTimeout(() => { messages.renderComposer(); table.onMuted(); }, Math.min(left + 500, 2 ** 31 - 1));
+  if (left > 0) muteTimer = setTimeout(() => { messages.renderComposer(); table.onMuted(); armMuteEnd(); }, Math.min(left + 500, 2 ** 31 - 1));
 }
 
 function afterLogin({ mustChangePassword }) {

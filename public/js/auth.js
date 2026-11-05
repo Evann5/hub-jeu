@@ -86,15 +86,17 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
 
   function draw(next) {
     mode = next;
-    tabs.replaceChildren(
-      h('button', { type: 'button', role: 'tab', 'aria-selected': String(mode === 'login'), onclick: () => draw('login') }, 'Se connecter'),
-      h('button', { type: 'button', role: 'tab', 'aria-selected': String(mode === 'register'), onclick: () => draw('register') }, 'Créer un compte'),
-    );
-    keepFocus(panel, () => panel.replaceChildren(
-      h('h2', mode === 'login' ? 'Bon retour sur Hubuno' : 'Rejoindre la classe'),
-      tabs,
-      mode === 'login' ? loginForm() : registerForm(),
-    ));
+    keepFocus(panel, () => {
+      tabs.replaceChildren(
+        h('button', { type: 'button', role: 'tab', 'aria-selected': String(mode === 'login'), onclick: () => draw('login') }, 'Se connecter'),
+        h('button', { type: 'button', role: 'tab', 'aria-selected': String(mode === 'register'), onclick: () => draw('register') }, 'Créer un compte'),
+      );
+      panel.replaceChildren(
+        h('h2', mode === 'login' ? 'Bon retour sur Hubuno' : 'Rejoindre la classe'),
+        tabs,
+        mode === 'login' ? loginForm() : registerForm(),
+      );
+    });
     arrowKeys(tabs);
     document.title = `${mode === 'login' ? 'Connexion' : 'Inscription'} · Hubuno`;
   }

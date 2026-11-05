@@ -9,7 +9,7 @@ import { createLimiter, createEventLimiter, sameOrigin, safeEqual, passwordProbl
 
 const dataDir = mkdtempSync(join(tmpdir(), 'hubuno-secu-'));
 process.env.DATA_DIR = dataDir;
-process.env.ADMINS = 'chef,second';
+process.env.ADMINS = 'chef,second,trần';
 after(() => rmSync(dataDir, { recursive: true, force: true }));
 
 const MIN = 60_000;
@@ -253,4 +253,6 @@ test('pseudos : un sosie d’un membre ou d’un admin est considéré comme pri
   for (const taken of ['olivia', 'OLIVIA', 'Ólivia', '0livia', 'O1ivia', 'Oiivia']) assert.equal(auth.pseudoTaken(taken), true, taken);
   assert.equal(auth.pseudoTaken('Olivier'), false);
   assert.equal(auth.pseudoTaken('sec0nd'), true); // le sosie d'un admin (ADMINS), même pas encore inscrit
+  assert.equal(auth.pseudoTaken('Trần'), false); // un admin au pseudo accentué peut s'inscrire
+  assert.equal(auth.pseudoTaken('Tràn'), true); // pas son sosie
 });

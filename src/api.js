@@ -65,7 +65,7 @@ api.get('/me', (req, res) => {
 });
 
 api.post('/register', async (req, res) => {
-  const pseudo = str(req.body.pseudo).trim();
+  const pseudo = str(req.body.pseudo).trim().normalize('NFC'); // même écriture quel que soit le clavier
   const password = str(req.body.password);
   const code = str(req.body.classCode).trim();
 
@@ -106,7 +106,7 @@ api.post('/register', async (req, res) => {
 });
 
 api.post('/login', async (req, res) => {
-  const pseudo = str(req.body.pseudo).trim();
+  const pseudo = str(req.body.pseudo).trim().normalize('NFC'); // même écriture quel que soit le clavier
   const password = str(req.body.password);
   if (auth.tooManyFailures(req.ip, pseudo)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans 15 minutes, ou demande à un admin.');
 
