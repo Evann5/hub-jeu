@@ -790,7 +790,7 @@ export function view(state, playerId) {
       return sum + Math.floor((prop.level * (t.build || 0)) / 2) + (prop.mortgaged ? 0 : mortgageValue(t));
     }, 0) : null,
     costs: Object.fromEntries(mine.filter((pos) => TILES[pos].type === 'city').map((pos) => [pos, buildCost(state, pos)])),
-    ...(inDebt && cur(state).id === me.id && me.cash < state.debt.amount ? { debtPlan: debtPlan(state, me) } : {}),
+    ...(inDebt && me && cur(state).id === me.id && me.cash < state.debt.amount ? { debtPlan: debtPlan(state, me) } : {}),
   };
 }
 

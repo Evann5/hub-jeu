@@ -626,6 +626,7 @@ test('dette : la vue annonce ce que « Réunir l’argent » vendra, et le coup 
   const plan = view(s, me.id).debtPlan;
   assert.ok(plan.length >= 1);
   assert.equal(view(s, other.id).debtPlan, undefined, 'seul le joueur en dette le voit');
+  assert.equal(view(s, null).debtPlan, undefined, 'un spectateur regarde sans erreur');
   const after = move(s, me.id, { type: 'raise' }, ctxOf()).state;
   for (const pos of [lyon, paris, bordeaux]) {
     const x = plan.find((l) => l.pos === pos) ?? { levels: 0, mortgage: false };

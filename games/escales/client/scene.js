@@ -151,14 +151,35 @@ function buildPrint(focusU) {
     c.strokeStyle = 'rgba(18,21,31,0.2)';
     c.lineWidth = 2;
     c.stroke();
+    const fontAt = (px) => `800 ${px}px "ES Barlow", system-ui, sans-serif`;
+    const fits = (text, px) => {
+      c.font = fontAt(px);
+      return c.measureText(text).width <= CW - (NAMES_ONLY ? 40 : 48);
+    };
     let size = t.price && NAMES_ONLY ? 124 : 72;
-    do {
-      c.font = `800 ${size}px "ES Barlow", system-ui, sans-serif`;
-      size -= 2;
-    } while (c.measureText(name).width > CW - (NAMES_ONLY ? 40 : 48) && size > 28);
+    while (!fits(name, size) && size > 28) size -= 2;
+    // Sur téléphone, un nom en deux mots passe sur deux lignes s'il y gagne en taille : « San / Francisco ».
+    let lines = [name];
+    if (t.price && NAMES_ONLY) {
+      for (const at of [...name.matchAll(/[ -]/g)].map((m) => m.index)) {
+        const pair = [name.slice(0, at + (name[at] === '-' ? 1 : 0)), name.slice(at + 1)];
+        let px = 72;
+        while (!(fits(pair[0], px) && fits(pair[1], px)) && px > 28) px -= 2;
+        if (px > size) {
+          size = px;
+          lines = pair;
+        }
+      }
+    }
+    c.font = fontAt(size);
     c.fillStyle = INK;
     c.textAlign = 'center';
-    c.fillText(name, cx, nameOnly ? cy + 3 : cy - 32);
+    if (lines.length === 2) {
+      c.fillText(lines[0], cx, cy + 3 - size * 0.5);
+      c.fillText(lines[1], cx, cy + 3 + size * 0.5);
+    } else {
+      c.fillText(name, cx, nameOnly ? cy + 3 : cy - 32);
+    }
     if (!nameOnly) {
       // Le prix à gauche : à droite, la place est gardée pour le visage du propriétaire.
       const label = `${t.price.toLocaleString('fr-FR')} €`;
@@ -794,8 +815,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
 
   // ——— Les personnages : ils marchent sur le sol, le long du bord intérieur, pour ne jamais cacher le texte ———
   const personMat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  const blobGeo = new THREE.CircleGeometry(0.4, 16);
-  blobGeo.rotateX(-Math.PI / 2);
   const blobMat = new THREE.MeshBasicMaterial({ color: '#05060A', transparent: true, opacity: 0.42, depthWrite: false });
   // Chaque personnage a son socle, à sa couleur : on voit d'un coup sur quelle case il se tient.
   const SOCLE_Y = PLATE_H + 0.02;

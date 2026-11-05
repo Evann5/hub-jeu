@@ -171,6 +171,16 @@
   /* Adversaire sur une seule ligne (pseudo, pièces, deux petites cartes) : avec 5 adversaires, ils tiennent sous le panneau d'action sur un écran de 844 px.
      Les influences perdues restent lisibles : la carte retournée devient un bandeau large et bas avec le nom du personnage. */
   .g-complot .cp-seats { gap: 6px; }
+  /* À partir de 4 adversaires, ta main passerait sous le pli : elle reste collée en bas de l'écran, en plus petit. C'est avec elle qu'on décide. */
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine { position: sticky; bottom: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-radius: 14px; background: #1E1045; box-shadow: 0 -8px 20px rgb(0 0 0 / 0.45); }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine-top { margin: 0; display: grid; gap: 2px; }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine h3 { font-size: 0.8rem; }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine-cards { gap: 8px; }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine-cards .cp-card { width: 70px; border-radius: 10px; }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine-cards .cp-card svg { height: 100%; }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine-cards .cp-card-power { display: none; }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine-cards .cp-card-name { bottom: 0; padding: 2px 1px; overflow: hidden; font: 800 0.625rem/1.1 var(--font-body, system-ui), system-ui, sans-serif; text-align: center; white-space: nowrap; }
+  .g-complot .cp-in:has(.cp-seats > :nth-child(4)) .cp-mine-cards .cp-card-lost { top: 6px; font-size: 0.5625rem; }
   .g-complot .cp-seat { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; row-gap: 3px; padding: 5px 10px; border-radius: 14px; }
   .g-complot .cp-seat-cards { min-height: 0; gap: 5px; }
   .g-complot .cp-tags { grid-column: 1 / -1; }

@@ -25,6 +25,10 @@ Hubuno a besoin d'un serveur Node.js allumé en permanence, du temps réel et d'
 
 Rien à régler pour l'adresse d'écoute : Hubuno écoute déjà sur `::` et le port donné par `PORT`, comme le demande alwaysdata. `BASE_PATH` reste vide, l'appli est à la racine.
 
+## Répétition faite en local (05/11/2026)
+
+Sur le Mac, pas sur alwaysdata. Avec uniquement les fichiers de l'étape 3, dans un dossier à part et sous `BASE_PATH=/hubuno` : `npm install --omit=dev` passe (18 Mo en tout, aucun module natif) ; inscription, WebSocket et lancement d'Escales marchent, sans fichier manquant ; le compte survit à un redémarrage ; un mauvais code de classe est refusé. Sur un téléphone moyen simulé (processeur 4 fois plus lent, 4G à 9 Mb/s, 170 ms) : première page en 1,4 s, plateau d'Escales en 4,2 s. Le processeur graphique reste celui du Mac : la fluidité sur un vrai téléphone n'est pas mesurée.
+
 ## L'essai avant d'inviter la classe
 
 1. Une partie à plusieurs, depuis des connexions différentes (Wi-Fi et 4G). Dans **Administration > Connexion en direct**, on doit lire « WebSocket ».

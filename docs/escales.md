@@ -51,6 +51,8 @@ Moyennes sur 200 parties par nombre de joueurs, en 20 tours, avec les règles ac
 
 À partir de 4 joueurs, on construit vers le tour 8, car réunir 3 villes sur 4 d'un pays prend du temps (règle gardée à la demande de Minh). Les faillites deviennent courantes à partir de 6 joueurs. À 3 joueurs, 2 villes suffisent : on construit très tôt et une partie sur deux connaît une faillite, c'est le réglage à regarder en premier si de vraies parties semblent trop brutales.
 
+Niveau des robots (200 parties par style, 4 joueurs, 20 tours) : un joueur simulé qui ne négocie pas contre 3 robots gagne 15 à 16 % des parties, qu'il achète tout ou joue prudent. Les robots ne sont donc pas trop faibles. Trois réglages plus agressifs n'y changent presque rien (14 à 15 %) : ils ne sont pas retenus. À revoir avec de vraies parties, où les joueurs négocient.
+
 ## Les monuments sculptés
 
 Les monuments et les cases spéciales sont sculptés dans Blender (`assets/monuments/*.glb`, sources dans `docs/monuments-blender/`, à relancer avec `run.sh`). Chaque fichier : une seule forme, des couleurs de sommets, moins de 6 000 triangles et 200 Ko. Si un fichier ne charge pas, le monument écrit en code (`client/monuments.js`) reprend sa place.
