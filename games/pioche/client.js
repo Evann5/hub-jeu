@@ -105,6 +105,7 @@ export function mount(root, api) {
       h('span.pi-idx', { 'aria-hidden': 'true' }, label('pi-idx-v'), wild ? null : shape(c, 'pi-idx-s')),
       h('span.pi-spot', { 'aria-hidden': 'true' }, wild && v === 'F' ? jokerMark('pi-big pi-joker small') : null),
       wild && v === 'F' ? h('span.pi-big.pi-big-f', { 'aria-hidden': 'true' }, '+4') : label('pi-big'),
+      wild ? h('span.pi-wild-tag', { 'aria-hidden': 'true' }, 'JOKER') : null,
       wild ? null : shape(c, 'pi-mark'));
   }
 

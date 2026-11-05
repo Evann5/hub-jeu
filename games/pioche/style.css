@@ -92,6 +92,14 @@
 .g-pioche .c-W .pi-big { color: #fff; }
 .g-pioche .pi-big-f { font-size: 40cqw; letter-spacing: -0.08em; }
 .g-pioche .pi-big.pi-joker.small { width: 56cqw; height: 56cqw; opacity: 0.35; }
+/* Joker : un disque arc-en-ciel (les quatre couleurs du jeu, les quatre formes en encre) et l'étiquette « JOKER ». Rien à voir avec le dos rayé : on le reconnaît comme une carte à jouer. */
+.g-pioche .c-W .pi-spot { background: conic-gradient(from 270deg, var(--pi-R) 0 25%, var(--pi-J) 0 50%, var(--pi-B) 0 75%, var(--pi-V) 0); box-shadow: 0 0 0 2.5cqw #fff, 0 0 0 4.5cqw rgb(255 255 255 / 0.25); }
+.g-pioche .c-W .pi-big.pi-joker g { color: var(--pi-night); }
+.g-pioche .c-W .pi-big.pi-joker.small { display: none; }
+.g-pioche .c-W .pi-big-f { color: #fff; -webkit-text-stroke: 3cqw var(--pi-night); paint-order: stroke fill; }
+.g-pioche .pi-wild-tag { position: absolute; bottom: 6cqw; left: 50%; translate: -50% 0; z-index: 2; padding: 2cqw 7cqw; border-radius: 99px; background: var(--pi-J); color: var(--pi-night); font-size: 13cqw; letter-spacing: 0.02em; box-shadow: 0 1cqw 0 rgb(0 0 0 / 0.3); }
+/* Sur la table, la pastille de la couleur demandée couvre le bas de la carte : l'étiquette n'y est pas dessinée. */
+.g-pioche .pi-top .pi-wild-tag { display: none; }
 .g-pioche .pi-mark { position: absolute; right: 8cqw; bottom: 7cqw; width: 18cqw; height: 18cqw; rotate: 180deg; color: var(--pi-night); opacity: 0.85; }
 
 /* Dos de carte. */

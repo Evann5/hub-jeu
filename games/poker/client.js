@@ -136,8 +136,10 @@ export function mount(root, api) {
       seatEl.style.left = `${pos.x}%`;
       seatEl.style.top = `${pos.y}%`;
       const betEl = h('div.pk-bet', { hidden: true });
-      betEl.style.left = `calc(${pos.x}% + ${ux.toFixed(3)} * (var(--sw) / 2 + var(--bo)))`;
-      betEl.style.top = `calc(${pos.y}% + ${uy.toFixed(3)} * ${uy > 0 ? 'var(--bvd)' : 'var(--bvu)'})`;
+      // À 7 joueurs ou plus sur téléphone, les sièges de côté posent leur mise au-dessus d'eux : vers le centre, elle mordrait sur les cartes du tableau.
+      const lateral = many && narrow && Math.abs(ux) > 0.8;
+      betEl.style.left = lateral ? `calc(${pos.x}% + ${ux.toFixed(3)} * var(--sw) * 0.42)` : `calc(${pos.x}% + ${ux.toFixed(3)} * (var(--sw) / 2 + var(--bo)))`;
+      betEl.style.top = lateral ? `calc(${pos.y}% - var(--bvu) * 1.35)` : `calc(${pos.y}% + ${uy.toFixed(3)} * ${uy > 0 ? 'var(--bvd)' : i === myIdx && many && narrow ? 'var(--bvu) * 1.25' : 'var(--bvu)'})`;
       felt.append(seatEl, betEl);
       seats.push({ el: seatEl, pos, betEl, betPos, hole, av, nm, stack, tag, disc, blind, clock, isMe: i === myIdx });
     });

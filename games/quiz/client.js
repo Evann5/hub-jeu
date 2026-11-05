@@ -35,7 +35,8 @@ export function mount(root, api) {
   const clock = setInterval(tick, 100);
 
   function scoreboard({ big = false } = {}) {
-    const rows = v.ranking.filter((id) => !v.left.includes(id)).slice(0, big ? 20 : 6);
+    // Tout le monde sur téléphone, où la rangée défile ; sur ordinateur, la colonne garde les 6 premiers.
+    const rows = v.ranking.filter((id) => !v.left.includes(id)).slice(0, big || window.matchMedia('(max-width: 900px)').matches ? 20 : 6);
     return scrollHint(h(`ol.qz-board${big ? '.is-big' : ''}`, rows.map((id, i) => h(`li${id === api.me.id ? '.is-me' : ''}`,
       h('span.qz-rank', String(i + 1)),
       api.token(api.user(id), { size: 's' }),
@@ -111,7 +112,10 @@ export function mount(root, api) {
     if (v.phase === 'ready') main = [screenReady()];
     else if (v.phase === 'over') main = [screenOver()];
     else main = screenQuestion();
+    const scrolled = el.querySelector('.qz-side .qz-board')?.scrollLeft ?? 0; // le classement est recréé à chaque état : la rangée garde sa position
     el.replaceChildren(h('div.qz-stage', h('div.qz-main', main), v.phase === 'over' ? null : h('aside.qz-side', h('h3', 'Classement'), scoreboard())));
+    const board = el.querySelector('.qz-side .qz-board');
+    if (board) board.scrollLeft = scrolled;
     tick();
   }
 
