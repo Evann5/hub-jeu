@@ -26,7 +26,7 @@ def build():
         for z in (-0.1, 0.1):
             m.box(x-0.012, x+0.012, 0.16, 0.56, z-0.012, z+0.012, 'wood_d', skip=('bot',))
     hip(m, -0.2, 0.3, -0.15, 0.15, 0.54, 0.07, 'canopy', top=(0.18, 0.04))
-    m.box(-0.2, 0.3, 0.52, 0.55, -0.15, 0.15, 'pink', skip=('bot', 'top', 'px', 'nx'))
+    m.box(-0.2, 0.3, 0.52, 0.55, -0.15, 0.15, 'pink', skip=('bot',))
     # moteur et long arbre d'hélice
     m.box(-0.56, -0.42, 0.17, 0.3, -0.05, 0.05, 'metal', skip=('bot',))
     m.beam((-0.5, 0.26, 0), (-0.98, 0.1, 0), 0.035, 'metal', caps=True)
@@ -36,5 +36,5 @@ def build():
     for k, c in enumerate(('pink', 'blue', 'white', 'canopy')):
         z = -0.045+0.03*k
         m.beam((0.54, 0.4, z), (0.5, 0.25, z), 0.026, c, caps=True)
-    xform(m, lambda p: move(0.2, 0, 0.5)(rot_y(-12)(p)), s)
+    xform(m, lambda p: move(0.2, 0, 0.5)(rot_y(-14)((p[0]*1.15, p[1]*1.15, p[2]*1.15))), s)
     return m

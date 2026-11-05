@@ -22,7 +22,6 @@ def build():
         m.box(x-0.07, x+0.07, 0.54, 0.6, H, H+0.11, 'cream', skip=('bot',))
     for x in (-0.15, 0.15):
         window(m, H+0.001, x, 0.12, 0.38, 0.045, 'win', 'cream', True, 1)
-    for x in (-0.3, 0.0, 0.3):
     sides4(m, s0)
     # demi-dômes avant et arrière
     for sz in (-1, 1):

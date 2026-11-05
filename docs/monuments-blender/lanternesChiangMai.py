@@ -45,7 +45,7 @@ def build():
         tube(m, pts, 0.012, 'string')
         for i in range(nl):
             p = pts[1+int((i+0.5)*(len(pts)-2)/nl)]
-            blob(m, p[0], p[1]-0.07, p[2], 0.05, 0.065, 0.05, cols[(i+off) % 4], n=6, lats=(-65, 0, 65))
+            blob(m, p[0], p[1]-0.08, p[2], 0.065, 0.085, 0.065, cols[(i+off) % 4], n=6, lats=(-65, 0, 65))
             m.beam((p[0], p[1], p[2]), (p[0], p[1]-0.03, p[2]), 0.008, 'string', caps=True)
     string(pa, pb, 0.16, 7)
     string(pa, (-0.5, 0.78, 0.42), 0.12, 3, 1)
