@@ -328,11 +328,11 @@ function buildEngraving() {
   const c = canvas.getContext('2d');
   const at = (u) => SIZE / 2 + u * px;
   const inner = HALF - TILE_D - BANNER_D - 0.32;
-  c.fillStyle = cssColor('--es-zone', '#1C1A40');
+  c.fillStyle = cssColor('--es-zone', '#171B24');
   c.beginPath();
   c.roundRect(at(-inner), at(-inner), inner * 2 * px, (inner * 2 - BOTTOM_LIFT) * px, 0.7 * px);
   c.fill();
-  c.fillStyle = cssColor('--es-tray', '#15132E');
+  c.fillStyle = cssColor('--es-tray', '#111418');
   c.beginPath();
   c.roundRect(at(-3.1), at(DICE_Z - 1.45), 6.2 * px, 2.9 * px, 1.45 * px);
   c.fill();
@@ -344,96 +344,6 @@ function buildEngraving() {
   m.position.y = 0.006;
   m.renderOrder = 0;
   return m;
-}
-
-// Où sont les villes du jeu, en degrés : de petits points sur le globe, à la couleur de leur pays.
-const CITY_COORDS = {
-  Chefchaouen: [-5.3, 35.2], Fès: [-5, 34], Marrakech: [-8, 31.6], Casablanca: [-7.6, 33.6],
-  'Hội An': [108.3, 15.9], Huế: [107.6, 16.5], Hanoï: [105.8, 21], 'Hô Chi Minh-Ville': [106.7, 10.8],
-  Faro: [-7.9, 37], Coimbra: [-8.4, 40.2], Porto: [-8.6, 41.2], Lisbonne: [-9.1, 38.7],
-  Oaxaca: [-96.7, 17.1], Guanajuato: [-101.3, 21], Guadalajara: [-103.3, 20.7], Mexico: [-99.1, 19.4],
-  Naples: [14.3, 40.9], Florence: [11.3, 43.8], Venise: [12.3, 45.4], Rome: [12.5, 41.9],
-  Nara: [135.8, 34.7], Kyoto: [135.8, 35], Osaka: [135.5, 34.7], Tokyo: [139.7, 35.7],
-  Marseille: [5.4, 43.3], Bordeaux: [-0.6, 44.8], Lyon: [4.8, 45.8], Paris: [2.3, 48.9],
-  'La Nouvelle-Orléans': [-90.1, 30], Chicago: [-87.6, 41.9], 'San Francisco': [-122.4, 37.8], 'New York': [-74, 40.7],
-};
-
-// La Terre, au milieu du plateau : océans et continents pleins, qui tournent lentement. Un petit avion en fait le tour.
-const GLOBE_R = 2.9;
-function buildGlobe(continents) {
-  const W = 2048;
-  const H = 1024;
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const c = canvas.getContext('2d');
-  c.fillStyle = cssColor('--es-globe-sea', '#2F7BEA');
-  c.fillRect(0, 0, W, H);
-  if (continents) {
-    const layer = document.createElement('canvas');
-    layer.width = W;
-    layer.height = H;
-    const g = layer.getContext('2d');
-    g.fillStyle = cssColor('--es-globe-land', '#5EDC8A');
-    g.fillRect(0, 0, W, H);
-    g.globalCompositeOperation = 'destination-in';
-    g.drawImage(continents, 0, 0, W, H);
-    c.drawImage(layer, 0, 0);
-  }
-  const mark = (lon, lat, color) => {
-    const x = ((lon + 180) / 360) * W;
-    const y = ((90 - lat) / 180) * H;
-    c.fillStyle = color;
-    c.beginPath();
-    c.arc(x, y, 9, 0, Math.PI * 2);
-    c.fill();
-    c.strokeStyle = '#FFFFFF';
-    c.lineWidth = 3;
-    c.stroke();
-  };
-  for (const t of TILES) {
-    const at = t.type === 'city' ? CITY_COORDS[t.name] : null;
-    if (at) mark(at[0], at[1], REGIONS[t.region].color);
-  }
-  const map = new THREE.CanvasTexture(canvas);
-  map.colorSpace = THREE.SRGBColorSpace;
-  map.anisotropy = 4;
-  const earth = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_R, 48, 32), new THREE.MeshLambertMaterial({ map }));
-  const tilt = new THREE.Group(); // l'axe penché de la Terre
-  tilt.rotation.x = -0.85 + 0.3; // la caméra plonge : on redresse la Terre pour voir ses continents de face, le pôle Nord vers le haut
-  tilt.rotation.z = -0.3;
-  tilt.add(earth);
-  // L'atmosphère : un halo à peine visible derrière la sphère.
-  const glowCanvas = document.createElement('canvas');
-  glowCanvas.width = 256;
-  glowCanvas.height = 256;
-  const gg = glowCanvas.getContext('2d');
-  const grad = gg.createRadialGradient(128, 128, 88, 128, 128, 128);
-  grad.addColorStop(0, 'rgba(150,200,255,0.42)');
-  grad.addColorStop(1, 'rgba(150,200,255,0)');
-  gg.fillStyle = grad;
-  gg.fillRect(0, 0, 256, 256);
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(glowCanvas), transparent: true, depthWrite: false, toneMapped: false }));
-  glow.scale.setScalar(GLOBE_R * 2.9);
-  const plane = new THREE.Group();
-  const white = new THREE.MeshLambertMaterial({ color: '#FFFFFF' });
-  const red = new THREE.MeshLambertMaterial({ color: '#FF4D6D' });
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.42, 4, 8), white);
-  body.rotation.z = Math.PI / 2;
-  const wing = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.022, 0.62), white);
-  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.15, 0.02), red);
-  fin.position.set(-0.24, 0.09, 0);
-  plane.add(body, wing, fin);
-  const orbit = new THREE.Group(); // le tour de l'avion, un peu incliné
-  orbit.rotation.x = -0.55;
-  orbit.rotation.z = 0.22;
-  plane.position.set(GLOBE_R + 0.42, 0, 0);
-  plane.rotation.y = Math.PI / 2;
-  orbit.add(plane);
-  const group = new THREE.Group();
-  group.add(glow, tilt, orbit);
-  group.position.set(0, GLOBE_R + 0.5, 2.1);
-  return { group, earth, orbit };
 }
 
 // Une ombre douce sous la dalle : le plateau est posé sur la carte, il ne flotte pas.
@@ -521,7 +431,7 @@ function makeDie() {
 const DIE_TOP = { 1: [0, 0, 0], 2: [-Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
 const DIE_Y = 0.75;
 
-export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70, rightInset = () => 0, onFit, onStill, continents = null }) {
+export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70, rightInset = () => 0, onFit, onStill }) {
   const startDpr = Math.min(window.devicePixelRatio || 1, 2);
   const renderer = new THREE.WebGLRenderer({ antialias: startDpr < 2, alpha: true });
   renderer.setClearColor(0x000000, 0);
@@ -558,7 +468,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   scene.add(sun);
 
   // Le plateau : une grande dalle mate et épaisse, un objet posé là, sur un fond uni.
-  const slab = new THREE.Mesh(plateGeometry(HALF * 2 + 1.5, HALF * 2 + 1.5, 0.7, 1.1), new THREE.MeshLambertMaterial({ color: cssColor('--es-slab', '#25224F') }));
+  const slab = new THREE.Mesh(plateGeometry(HALF * 2 + 1.5, HALF * 2 + 1.5, 0.7, 1.1), new THREE.MeshLambertMaterial({ color: cssColor('--es-slab', '#1F2430') }));
   slab.position.y = -0.7;
   slab.receiveShadow = true;
   scene.add(slab);
@@ -632,11 +542,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   world.receiveShadow = true;
   world.frustumCulled = false;
   const flags = buildFlags();
-  const globe = buildGlobe(continents);
-  const globeShadow = new THREE.Mesh(new THREE.CircleGeometry(GLOBE_R * 0.86, 40), new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.32, depthWrite: false }));
-  globeShadow.rotation.x = -Math.PI / 2;
-  globeShadow.position.set(0.3, 0.012, 2.2);
-  scene.add(globe.group, globeShadow);
   scene.add(groundShadow(), world, buildEngraving(), buildBanners(), flags, buildPrint(focusU));
 
   // ——— À qui sont les villes ———
@@ -1341,8 +1246,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         marker.rotation.y = time * 1.2;
       }
       flags.userData.time.value = time;
-      globe.earth.rotation.y = time * 0.09;
-      globe.orbit.rotation.y = -time * 0.35;
     }
 
     renderer.render(scene, camera);
@@ -1366,7 +1269,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       lifeTimer = setTimeout(() => {
         lifeTimer = 0;
         wake();
-      }, 100); // 10 images par seconde au repos : la Terre tourne, les drapeaux flottent, et la batterie tient
+      }, 100); // 10 images par seconde au repos : les drapeaux flottent, et la batterie tient
     }
   }
   function wake() {
@@ -1526,8 +1429,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     if (v.over && !wasOver) {
       wasOver = true;
       dice.forEach((d, i) => { d.visible = false; diceShadows[i].visible = false; });
-      globe.group.visible = false; // le podium prend sa place
-      globeShadow.visible = false;
       showPodium(v, firstUpdate);
       if (!firstUpdate) for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [0, -7]]) celebrate(x, z, PAWN_COLORS[Math.floor(Math.random() * 10)]);
     }

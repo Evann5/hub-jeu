@@ -75,7 +75,7 @@
 .g-escales .es-flag { grid-row: span 2; width: 39px; height: 26px; border-radius: 3px; box-shadow: 0 0 0 1px rgb(18 21 31 / 0.2); }
 
 .g-escales .es-btn { min-height: 46px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--vermilion); color: var(--es-on-primary); font: 700 1.0625rem var(--es-text); letter-spacing: 0.01em; cursor: pointer; box-shadow: 0 4px 0 var(--es-primary-edge), inset 0 1px 0 rgb(255 255 255 / 0.22); transition: background-color 0.12s, transform 0.08s, box-shadow 0.08s; }
-.g-escales .es-btn:hover { background: color-mix(in srgb, var(--es-primary) 88%, #000); }
+@media (hover: hover) { .g-escales .es-btn:hover { background: color-mix(in srgb, var(--es-primary) 88%, #000); } } /* au doigt, le survol resterait collé après le toucher */
 .g-escales .es-btn:active:not(:disabled) { box-shadow: 0 1px 0 var(--es-primary-edge), inset 0 1px 0 rgb(255 255 255 / 0.22); transform: translateY(3px); }
 .g-escales .es-btn:disabled { opacity: 0.55; cursor: progress; }
 .g-escales .es-btn.is-ghost { background: var(--quiet); color: var(--ink); box-shadow: 0 4px 0 var(--es-edge); }
@@ -174,6 +174,7 @@
 .g-escales .es-offer-text em { color: #4ADE9A; font-size: 0.875rem; font-style: normal; font-weight: 700; }
 .g-escales .es-choice { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .g-escales .es-flash { position: absolute; top: var(--fy, 70%); left: var(--cx, 50%); z-index: 1; max-width: min(460px, 80%); margin: 0; padding: 5px 14px; border-radius: 999px; background: color-mix(in srgb, var(--es-nav) 90%, transparent); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); color: var(--cream); font-size: 0.9375rem; font-weight: 700; text-align: center; opacity: 0; transform: translate(-50%, -50%); transition: opacity 0.25s; pointer-events: none; }
+.g-escales .es-flash { text-wrap: balance; } /* sur deux lignes, jamais un « € » tout seul */
 .g-escales .es-flash.is-on { opacity: 1; }
 
 /* Fenêtres */
@@ -249,7 +250,7 @@
 .g-escales .es-list { display: grid; margin: 0; padding: 0; list-style: none; }
 
 @media (max-width: 760px) {
-  .g-escales .es-world { background-size: auto, auto; background-size: 150vw auto, auto; }
+  .g-escales .es-world { background-position: right -55vw bottom -30vw, 0 0; background-size: 175vw auto, auto; }
   .g-escales .es-focus { position: fixed; right: 6px; bottom: 8px; left: 6px; z-index: 4; max-height: 42%; overflow-y: auto; }
   .g-escales .es-side { top: 6px; right: 6px; left: 6px; width: auto; }
   .g-escales .es-panel { position: relative; padding: 3px; border-radius: 12px; }

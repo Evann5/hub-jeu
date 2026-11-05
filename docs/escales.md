@@ -62,7 +62,6 @@ Chaque place a son voyageur, dans `CAST` (`client/monuments.js`) : pilote, routa
 ## Ce qui reste à faire
 
 - Les villes définitives de Minh.
-- Le choix de la palette (nuit, ardoise, prune), puis le retrait des deux autres et de l'essai `?theme=`.
 - Écouter les sons : ils n'ont jamais été entendus par personne d'autre que le programme qui les fabrique.
 - Une vraie partie, en ligne, sur de vrais téléphones.
 
@@ -70,6 +69,6 @@ Chaque place a son voyageur, dans `CAST` (`client/monuments.js`) : pilote, routa
 
 - Une seule forme par case : les pièces d'un monument sont fondues ensemble (`bake()` dans `client/monuments.js`). Ne jamais ajouter d'objets 3D séparés sur le plateau.
 - Les ombres sont calculées une fois, puis seulement quand une construction change. Les pions ont une simple tache d'ombre.
-- Au repos, seule la Terre du centre tourne, à 10 images par seconde au lieu de 60.
+- Au repos, seuls les drapeaux bougent, à 10 images par seconde au lieu de 60.
 - Three.js est minifié (le jeu pèse environ 2,3 Mo sans compression). Si on le met à jour, repasser la version neuve par esbuild.
 - Si une machine n'arrive pas à suivre, la qualité baisse toute seule (résolution, puis ombres).
