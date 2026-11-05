@@ -1370,6 +1370,6 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
 .multi-item { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px 0 9px; border: 0; border-radius: 999px; background: var(--bg-1); color: var(--ink-2); font: 650 0.875rem var(--font-body, inherit); cursor: pointer; }
 .multi-item.is-on { background: var(--accent); color: var(--on-color); }
 .multi-item:disabled:not(.is-on) { opacity: 0.45; cursor: default; }
-.multi-icon { font-size: 1.05rem; line-height: 1; }
+.multi-flag { width: 24px; height: 16px; border-radius: 3px; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25); }
 .table-view[data-game='escales'] .multi-item:not(.is-on) { background: var(--es-nav); color: var(--es-inv); }
 @media (pointer: coarse) { .multi-item { min-height: 40px; } }

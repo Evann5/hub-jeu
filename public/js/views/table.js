@@ -186,7 +186,7 @@ function optionControl(def, value, editable) {
           'aria-pressed': String(on),
           disabled: !editable || (!on && full),
           onclick: () => send(on ? picked.filter((x) => x !== c.value) : [...picked, c.value]),
-        }, c.icon ? h('span.multi-icon', { 'aria-hidden': 'true' }, c.icon) : null, c.label);
+        }, c.image ? h('img.multi-flag', { src: `games/${cur.game.id}/${c.image}`, alt: '', width: 24, height: 16 }) : null, c.label);
       })));
     return row;
   }

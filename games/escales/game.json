@@ -130,135 +130,131 @@
       "type": "multi",
       "max": 8,
       "default": [
-        "maroc",
-        "vietnam",
-        "portugal",
-        "mexique",
-        "italie",
-        "japon",
         "france",
+        "japon",
+        "maroc",
         "usa"
       ],
       "choices": [
         {
           "value": "maroc",
           "label": "Maroc",
-          "icon": "🇲🇦"
+          "image": "assets/flags/maroc.png"
         },
         {
           "value": "vietnam",
           "label": "Vietnam",
-          "icon": "🇻🇳"
+          "image": "assets/flags/vietnam.png"
         },
         {
           "value": "portugal",
           "label": "Portugal",
-          "icon": "🇵🇹"
+          "image": "assets/flags/portugal.png"
         },
         {
           "value": "mexique",
           "label": "Mexique",
-          "icon": "🇲🇽"
+          "image": "assets/flags/mexique.png"
         },
         {
           "value": "italie",
           "label": "Italie",
-          "icon": "🇮🇹"
+          "image": "assets/flags/italie.png"
         },
         {
           "value": "japon",
           "label": "Japon",
-          "icon": "🇯🇵"
+          "image": "assets/flags/japon.png"
         },
         {
           "value": "france",
           "label": "France",
-          "icon": "🇫🇷"
+          "image": "assets/flags/france.png"
         },
         {
           "value": "usa",
           "label": "États-Unis",
-          "icon": "🇺🇸"
+          "image": "assets/flags/usa.png"
         },
         {
           "value": "israel",
           "label": "Israël",
-          "icon": "🇮🇱"
+          "image": "assets/flags/israel.png"
         },
         {
           "value": "coreeNord",
           "label": "Corée du Nord",
-          "icon": "🇰🇵"
+          "image": "assets/flags/coreeNord.png"
         },
         {
           "value": "congo",
           "label": "RD Congo",
-          "icon": "🇨🇩"
+          "image": "assets/flags/congo.png"
         },
         {
           "value": "coreeSud",
           "label": "Corée du Sud",
-          "icon": "🇰🇷"
+          "image": "assets/flags/coreeSud.png"
         },
         {
           "value": "chine",
           "label": "Chine",
-          "icon": "🇨🇳"
+          "image": "assets/flags/chine.png"
         },
         {
           "value": "inde",
           "label": "Inde",
-          "icon": "🇮🇳"
+          "image": "assets/flags/inde.png"
         },
         {
           "value": "thailande",
           "label": "Thaïlande",
-          "icon": "🇹🇭"
+          "image": "assets/flags/thailande.png"
         },
         {
           "value": "turquie",
           "label": "Turquie",
-          "icon": "🇹🇷"
+          "image": "assets/flags/turquie.png"
         },
         {
           "value": "egypte",
           "label": "Égypte",
-          "icon": "🇪🇬"
+          "image": "assets/flags/egypte.png"
         },
         {
           "value": "algerie",
           "label": "Algérie",
-          "icon": "🇩🇿"
+          "image": "assets/flags/algerie.png"
         },
         {
           "value": "senegal",
           "label": "Sénégal",
-          "icon": "🇸🇳"
+          "image": "assets/flags/senegal.png"
         },
         {
           "value": "bresil",
           "label": "Brésil",
-          "icon": "🇧🇷"
+          "image": "assets/flags/bresil.png"
         },
         {
           "value": "argentine",
           "label": "Argentine",
-          "icon": "🇦🇷"
+          "image": "assets/flags/argentine.png"
         },
         {
           "value": "espagne",
           "label": "Espagne",
-          "icon": "🇪🇸"
+          "image": "assets/flags/espagne.png"
         },
         {
           "value": "royaumeUni",
           "label": "Royaume-Uni",
-          "icon": "🇬🇧"
+          "image": "assets/flags/royaumeUni.png"
         },
         {
           "value": "australie",
           "label": "Australie",
-          "icon": "🇦🇺"
+          "image": "assets/flags/australie.png"
         }
       ],
       "minByPlayers": 4
