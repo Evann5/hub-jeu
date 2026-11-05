@@ -252,7 +252,12 @@ function buildBanners() {
     c.lineWidth = 3;
     PATTERNS[reg.id](c, W, H);
     // Le nom s'écrit à même la couleur du pays : le motif s'efface doucement derrière lui.
-    c.font = '800 98px "ES Titres", system-ui, sans-serif';
+    // Les noms longs rétrécissent : le drapeau et les décors posés aux deux bouts du bandeau restent libres.
+    let titlePx = 98;
+    do {
+      c.font = `800 ${titlePx}px "ES Titres", system-ui, sans-serif`;
+      titlePx -= 2;
+    } while (c.measureText(reg.name).width > W * 0.42 && titlePx > 50);
     c.textBaseline = 'middle';
     const fw = 120;
     const fh = 80;

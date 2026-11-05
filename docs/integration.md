@@ -192,6 +192,7 @@ Le navigateur ne reçoit que `client.js`, `style.css`, `client/` et `assets/`. `
   "options": [
     { "key": "rounds", "label": "Manches", "type": "number", "min": 1, "max": 10, "default": 3 },
     { "key": "jokers", "label": "Jokers", "help": "Petite explication", "type": "bool", "default": true },
+    // type "multi" : plusieurs valeurs parmi choices (max, minByPlayers). rules.js peut exporter checkStart(players, options), qui renvoie un message si la partie ne peut pas commencer.
     { "key": "speed", "label": "Rythme", "type": "choice", "default": 60,
       "choices": [{ "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }] }
   ]

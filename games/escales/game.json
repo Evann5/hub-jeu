@@ -3,6 +3,7 @@
   "tagline": "Achète les villes du monde, fais payer le passage.",
   "description": "Le grand jeu de plateau de la classe, jusqu'à 10 joueurs, avec des robots si vous êtes moins nombreux : achète des villes, réunis 3 villes d'un pays pour y construire, négocie, et fais payer tout le monde. Au dernier tour, le plus gros patrimoine gagne.",
   "how": [
+    "Dans le salon, choisissez les pays du plateau : au moins autant que de joueurs, de 4 à 8. Le hasard complète, et l’ordre change à chaque partie.",
     "À ton tour, lance les dés et avance sur le plateau de 48 cases. Chaque passage au Départ rapporte 200 €. Un double te fait rejouer ; au troisième de suite, c'est la Douane.",
     "Tombe sur une ville libre : achète-la ou passe. Si tu passes, elle reste libre pour le suivant.",
     "Chaque ville rapporte un loyer. Avec 3 villes d'une région sur 4, le loyer double et tu peux construire (2 villes suffisent à 2 ou 3 joueurs). Avec les 4, il triple. Chaque ville monte jusqu'au niveau Skyline.",
@@ -23,13 +24,244 @@
   "featured": true,
   "wide": true,
   "options": [
-    { "key": "bots", "label": "Robots", "help": "Ils complètent la table, 10 joueurs au plus. Seul à la table, 3 robots s'ajoutent d'office.", "type": "choice", "default": 0,
-      "choices": [{ "value": 0, "label": "Aucun" }, { "value": 1, "label": "1" }, { "value": 3, "label": "3" }, { "value": 5, "label": "5" }, { "value": 9, "label": "9" }] },
-    { "key": "rounds", "label": "Nombre de tours", "help": "À la fin, le plus gros patrimoine gagne.", "type": "choice", "default": 20,
-      "choices": [{ "value": 12, "label": "12" }, { "value": 20, "label": "20" }, { "value": 30, "label": "30" }, { "value": 0, "label": "Sans fin" }] },
-    { "key": "timer", "label": "Temps par action", "help": "Si le temps est écoulé, le jeu joue à ta place, au plus prudent.", "type": "choice", "default": 45,
-      "choices": [{ "value": 0, "label": "Sans" }, { "value": 30, "label": "30 s" }, { "value": 45, "label": "45 s" }, { "value": 90, "label": "90 s" }] },
-    { "key": "cash", "label": "Argent de départ", "type": "choice", "default": 1500,
-      "choices": [{ "value": 1000, "label": "1 000 €" }, { "value": 1500, "label": "1 500 €" }, { "value": 2000, "label": "2 000 €" }] }
+    {
+      "key": "bots",
+      "label": "Robots",
+      "help": "Ils complètent la table, 10 joueurs au plus. Seul à la table, 3 robots s'ajoutent d'office.",
+      "type": "choice",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Aucun"
+        },
+        {
+          "value": 1,
+          "label": "1"
+        },
+        {
+          "value": 3,
+          "label": "3"
+        },
+        {
+          "value": 5,
+          "label": "5"
+        },
+        {
+          "value": 9,
+          "label": "9"
+        }
+      ]
+    },
+    {
+      "key": "rounds",
+      "label": "Nombre de tours",
+      "help": "À la fin, le plus gros patrimoine gagne.",
+      "type": "choice",
+      "default": 20,
+      "choices": [
+        {
+          "value": 12,
+          "label": "12"
+        },
+        {
+          "value": 20,
+          "label": "20"
+        },
+        {
+          "value": 30,
+          "label": "30"
+        },
+        {
+          "value": 0,
+          "label": "Sans fin"
+        }
+      ]
+    },
+    {
+      "key": "timer",
+      "label": "Temps par action",
+      "help": "Si le temps est écoulé, le jeu joue à ta place, au plus prudent.",
+      "type": "choice",
+      "default": 45,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Sans"
+        },
+        {
+          "value": 30,
+          "label": "30 s"
+        },
+        {
+          "value": 45,
+          "label": "45 s"
+        },
+        {
+          "value": 90,
+          "label": "90 s"
+        }
+      ]
+    },
+    {
+      "key": "cash",
+      "label": "Argent de départ",
+      "type": "choice",
+      "default": 1500,
+      "choices": [
+        {
+          "value": 1000,
+          "label": "1 000 €"
+        },
+        {
+          "value": 1500,
+          "label": "1 500 €"
+        },
+        {
+          "value": 2000,
+          "label": "2 000 €"
+        }
+      ]
+    },
+    {
+      "key": "countries",
+      "label": "Pays du plateau",
+      "help": "Au moins autant de pays que de joueurs, de 4 à 8. Les places restantes sont tirées au hasard.",
+      "type": "multi",
+      "max": 8,
+      "default": [
+        "maroc",
+        "vietnam",
+        "portugal",
+        "mexique",
+        "italie",
+        "japon",
+        "france",
+        "usa"
+      ],
+      "choices": [
+        {
+          "value": "maroc",
+          "label": "Maroc",
+          "icon": "🇲🇦"
+        },
+        {
+          "value": "vietnam",
+          "label": "Vietnam",
+          "icon": "🇻🇳"
+        },
+        {
+          "value": "portugal",
+          "label": "Portugal",
+          "icon": "🇵🇹"
+        },
+        {
+          "value": "mexique",
+          "label": "Mexique",
+          "icon": "🇲🇽"
+        },
+        {
+          "value": "italie",
+          "label": "Italie",
+          "icon": "🇮🇹"
+        },
+        {
+          "value": "japon",
+          "label": "Japon",
+          "icon": "🇯🇵"
+        },
+        {
+          "value": "france",
+          "label": "France",
+          "icon": "🇫🇷"
+        },
+        {
+          "value": "usa",
+          "label": "États-Unis",
+          "icon": "🇺🇸"
+        },
+        {
+          "value": "israel",
+          "label": "Israël",
+          "icon": "🇮🇱"
+        },
+        {
+          "value": "coreeNord",
+          "label": "Corée du Nord",
+          "icon": "🇰🇵"
+        },
+        {
+          "value": "congo",
+          "label": "RD Congo",
+          "icon": "🇨🇩"
+        },
+        {
+          "value": "coreeSud",
+          "label": "Corée du Sud",
+          "icon": "🇰🇷"
+        },
+        {
+          "value": "chine",
+          "label": "Chine",
+          "icon": "🇨🇳"
+        },
+        {
+          "value": "inde",
+          "label": "Inde",
+          "icon": "🇮🇳"
+        },
+        {
+          "value": "thailande",
+          "label": "Thaïlande",
+          "icon": "🇹🇭"
+        },
+        {
+          "value": "turquie",
+          "label": "Turquie",
+          "icon": "🇹🇷"
+        },
+        {
+          "value": "egypte",
+          "label": "Égypte",
+          "icon": "🇪🇬"
+        },
+        {
+          "value": "algerie",
+          "label": "Algérie",
+          "icon": "🇩🇿"
+        },
+        {
+          "value": "senegal",
+          "label": "Sénégal",
+          "icon": "🇸🇳"
+        },
+        {
+          "value": "bresil",
+          "label": "Brésil",
+          "icon": "🇧🇷"
+        },
+        {
+          "value": "argentine",
+          "label": "Argentine",
+          "icon": "🇦🇷"
+        },
+        {
+          "value": "espagne",
+          "label": "Espagne",
+          "icon": "🇪🇸"
+        },
+        {
+          "value": "royaumeUni",
+          "label": "Royaume-Uni",
+          "icon": "🇬🇧"
+        },
+        {
+          "value": "australie",
+          "label": "Australie",
+          "icon": "🇦🇺"
+        }
+      ],
+      "minByPlayers": 4
+    }
   ]
 }

@@ -14,7 +14,7 @@ const FAMILIES = ['plateau', 'cartes', 'bluff', 'ambiance'];
 // Réglages proposés à l'hôte d'une table, déclarés dans game.json :
 // { key, label, type: 'number' | 'bool' | 'choice', default, min?, max?, choices?: [{ value, label }] }
 function cleanOptionDefs(defs = []) {
-  return defs.filter((d) => d && /^[a-zA-Z]\w{0,30}$/.test(d.key) && ['number', 'bool', 'choice'].includes(d.type));
+  return defs.filter((d) => d && /^[a-zA-Z]\w{0,30}$/.test(d.key) && ['number', 'bool', 'choice', 'multi'].includes(d.type));
 }
 
 export async function loadGames() {
@@ -72,6 +72,9 @@ export function cleanOptions(game, input = {}) {
     if (d.type === 'number') {
       const n = Math.round(Number(v));
       out[d.key] = Number.isFinite(n) ? Math.min(d.max ?? n, Math.max(d.min ?? n, n)) : d.default;
+    } else if (d.type === 'multi') {
+      const valid = new Set(d.choices.map((c) => c.value));
+      out[d.key] = Array.isArray(v) ? [...new Set(v)].filter((x) => valid.has(x)).slice(0, d.max ?? d.choices.length) : d.default;
     } else if (d.type === 'bool') {
       out[d.key] = typeof v === 'boolean' ? v : Boolean(d.default);
     } else {

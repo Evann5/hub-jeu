@@ -1360,3 +1360,16 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
 /* L'onglet Partie, vu depuis le chat : un point quand c'est à toi, et le temps qu'il reste. */
 .tab-turn { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
 .tab-time { font-size: 0.8125rem; font-variant-numeric: tabular-nums; opacity: 0.85; }
+
+/* Une liste à choix multiples dans le salon (les pays d'Escales). */
+.opt-row.is-multi { grid-template-columns: minmax(0, 1fr); display: grid; gap: 8px; }
+.multi-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.multi-count { font-weight: 750; font-variant-numeric: tabular-nums; }
+.multi-count.is-short { color: var(--accent); }
+.multi { display: flex; flex-wrap: wrap; gap: 6px; }
+.multi-item { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px 0 9px; border: 0; border-radius: 999px; background: var(--bg-1); color: var(--ink-2); font: 650 0.875rem var(--font-body, inherit); cursor: pointer; }
+.multi-item.is-on { background: var(--accent); color: var(--on-color); }
+.multi-item:disabled:not(.is-on) { opacity: 0.45; cursor: default; }
+.multi-icon { font-size: 1.05rem; line-height: 1; }
+.table-view[data-game='escales'] .multi-item:not(.is-on) { background: var(--es-nav); color: var(--es-inv); }
+@media (pointer: coarse) { .multi-item { min-height: 40px; } }

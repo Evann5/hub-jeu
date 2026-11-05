@@ -1,6 +1,6 @@
 // Escales côté navigateur : le monde en 3D (client/scene.js), et par-dessus l'interface : les joueurs, toujours visibles ; au centre,
 // seulement ce que tu as à décider, quand c'est à toi ; et les fenêtres qu'on ouvre soi-même. Les règles restent côté serveur (rules.js).
-import { REGIONS, TILES, RULES, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS, mortgageValue, unmortgageCost } from './client/board.js';
+import { REGIONS, TILES, RULES, applyMap, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS, mortgageValue, unmortgageCost } from './client/board.js';
 import { createWorld, PAWN_COLORS } from './client/scene.js';
 import { FLAGS } from './client/countries.js';
 import { createSound } from './client/sound.js';
@@ -70,57 +70,64 @@ export function mount(root, api) {
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
   // Le texte est donné exprès : les accents vietnamiens sont dans un fichier à part, qui ne se charge que si on les demande.
-  const tileText = TILES.map((t) => t.short ?? t.name).join('');
-  const titleText = `${REGIONS.map((r) => r.name).join('')}Escales`;
-  Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('800 60px "ES Titres"', titleText), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
-    if (gone) return;
-    try {
-      world = createWorld(stage, {
-        onStep: sound.step,
-        onHover: showTip,
-        onStill: () => { if (uiTimer) applyUI(); },
-        onTile: (pos) => {
-          openOverlay({ kind: 'city', pos });
-          // Toucher une ville : les autres villes de son pays montent avec elle.
-          const t = TILES[pos];
-          if (t.type === 'city') world.focus({ tiles: TILES.filter((x) => x.region === t.region).map((x) => x.pos), color: REGIONS[t.region].color });
-          else if (t.type === 'escale') world.focus({ tiles: TILES.filter((x) => x.type === 'escale').map((x) => x.pos), color: '#CBD5E1' });
-        },
-        topInset: () => Math.max(6, Math.max(players.getBoundingClientRect().bottom, tools.hidden || getComputedStyle(tools).position === 'fixed' ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6), // jamais négatif : à la fin de partie, le panneau disparaît sur téléphone
-        rightInset: () => side.offsetWidth + 12,
-        onFit: ([cx, cy], [, fy], [, oy], [, by], [, dy], [, uy]) => {
-          frame.style.setProperty('--uy', `${Math.round(uy)}px`);
-          // À mi-chemin entre les dés et la ligne de ce qui vient de se passer ; quand la place manque, collé sous les dés : le message peut prendre deux lignes.
-          frame.style.setProperty('--ty', `${Math.round(fy - dy < 140 ? dy + 23 : (dy + fy) / 2)}px`);
-          frame.style.setProperty('--tspan', `${Math.round(fy - dy)}px`);
-          turnBox.classList.toggle('is-row', fy - dy < 140);
-          turnBox.classList.toggle('is-tiny', fy - dy < 52);
-          frame.style.setProperty('--by', `${Math.round(by)}px`);
-          frame.style.setProperty('--oy', `${Math.round(oy)}px`);
-          frame.style.setProperty('--cx', `${Math.round(cx)}px`);
-          frame.style.setProperty('--cy', `${Math.round(cy)}px`);
-          frame.style.setProperty('--fy', `${Math.round(fy)}px`);
-        },
-      });
-      if (v) {
-        world.update(v);
-        renderPlayers(true); // les portraits se préparent ici, au chargement, plutôt qu'en pleine partie
-        promptKey = null;
-        shownTrades = null;
-        renderAction();
-        renderFocus();
+  // La carte vient de l'état de la partie : le plateau se construit quand on la connaît.
+  let boardStarted = false;
+  function startBoard(map) {
+    if (boardStarted) return;
+    boardStarted = true;
+    applyMap(map);
+    const tileText = TILES.map((t) => t.short ?? t.name).join('');
+    const titleText = `${REGIONS.map((r) => r.name).join('')}Escales`;
+    Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('800 60px "ES Titres"', titleText), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
+      if (gone) return;
+      try {
+        world = createWorld(stage, {
+          onStep: sound.step,
+          onHover: showTip,
+          onStill: () => { if (uiTimer) applyUI(); },
+          onTile: (pos) => {
+            openOverlay({ kind: 'city', pos });
+            // Toucher une ville : les autres villes de son pays montent avec elle.
+            const t = TILES[pos];
+            if (t.type === 'city') world.focus({ tiles: TILES.filter((x) => x.region === t.region).map((x) => x.pos), color: REGIONS[t.region].color });
+            else if (t.type === 'escale') world.focus({ tiles: TILES.filter((x) => x.type === 'escale').map((x) => x.pos), color: '#CBD5E1' });
+          },
+          topInset: () => Math.max(6, Math.max(players.getBoundingClientRect().bottom, tools.hidden || getComputedStyle(tools).position === 'fixed' ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6), // jamais négatif : à la fin de partie, le panneau disparaît sur téléphone
+          rightInset: () => side.offsetWidth + 12,
+          onFit: ([cx, cy], [, fy], [, oy], [, by], [, dy], [, uy]) => {
+            frame.style.setProperty('--uy', `${Math.round(uy)}px`);
+            // À mi-chemin entre les dés et la ligne de ce qui vient de se passer ; quand la place manque, collé sous les dés : le message peut prendre deux lignes.
+            frame.style.setProperty('--ty', `${Math.round(fy - dy < 140 ? dy + 23 : (dy + fy) / 2)}px`);
+            frame.style.setProperty('--tspan', `${Math.round(fy - dy)}px`);
+            turnBox.classList.toggle('is-row', fy - dy < 140);
+            turnBox.classList.toggle('is-tiny', fy - dy < 52);
+            frame.style.setProperty('--by', `${Math.round(by)}px`);
+            frame.style.setProperty('--oy', `${Math.round(oy)}px`);
+            frame.style.setProperty('--cx', `${Math.round(cx)}px`);
+            frame.style.setProperty('--cy', `${Math.round(cy)}px`);
+            frame.style.setProperty('--fy', `${Math.round(fy)}px`);
+          },
+        });
+        if (v) {
+          world.update(v);
+          renderPlayers(true); // les portraits se préparent ici, au chargement, plutôt qu'en pleine partie
+          promptKey = null;
+          shownTrades = null;
+          renderAction();
+          renderFocus();
+        }
+        boardReady = true;
+        if (v) renderAction();
+        loading.remove();
+      } catch (err) {
+        loading.remove();
+        console.error(err);
+        boardReady = true; // sans 3D, on joue quand même avec les boutons
+        if (v) renderAction();
+        stage.replaceChildren(h('p.es-no3d', 'Ton navigateur n’affiche pas la 3D. Tu peux quand même jouer avec les boutons et la liste des villes.'));
       }
-      boardReady = true;
-      if (v) renderAction();
-      loading.remove();
-    } catch (err) {
-      loading.remove();
-      console.error(err);
-      boardReady = true; // sans 3D, on joue quand même avec les boutons
-      if (v) renderAction();
-      stage.replaceChildren(h('p.es-no3d', 'Ton navigateur n’affiche pas la 3D. Tu peux quand même jouer avec les boutons et la liste des villes.'));
-    }
-  });
+    });
+  }
 
   // Une petite image rendue une fois par le monde 3D.
   function picture(image, cls = '') {
@@ -940,6 +947,7 @@ export function mount(root, api) {
   }
 
   api.onState((view, st) => {
+    startBoard(view.map);
     if (before.rollN !== null && view.rollN !== before.rollN) sound.dice();
     before.rollN = view.rollN;
     v = view;

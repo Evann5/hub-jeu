@@ -2,7 +2,7 @@
 // L'heure vient de ctx.now, le hasard de ctx.random. Tout le raisonnement est expliqué dans docs/escales.md.
 //
 // Un tour : « roll » (lancer) → la case décide de la suite (buy, debt) → « end » → joueur suivant.
-import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE, mortgageValue, unmortgageCost } from './client/board.js';
+import { REGIONS, TILES, COUNTRIES, DEFAULT_MAP, MAP_SIZE, isCountry, minCountries, nameOn, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE, mortgageValue, unmortgageCost } from './client/board.js';
 
 export const SALARY = 200;
 export const FINE = 50; // pour sortir de la Douane
@@ -85,13 +85,32 @@ function canManage(s, p) {
 
 // options : cash (argent de départ), rounds (tours avant le décompte, 0 = jusqu'au dernier), timer (secondes par action, 0 = sans),
 // bots (robots à ajouter). Seul à la table, 3 robots s'ajoutent d'office : on peut toujours jouer.
+// Les pays de la partie : ceux choisis dans le salon, et le hasard pour les places restantes. Sans choix, les 8 de départ.
+function chooseMap(options, ctx) {
+  if (!Array.isArray(options.countries)) return [...DEFAULT_MAP];
+  const chosen = [...new Set(options.countries.filter(isCountry))].slice(0, MAP_SIZE);
+  const rest = shuffle(COUNTRIES.map((c) => c.id).filter((id) => !chosen.includes(id)), ctx);
+  return shuffle([...chosen, ...rest.slice(0, MAP_SIZE - chosen.length)], ctx);
+}
+
+// Avant de lancer : assez de pays pour le nombre de joueurs.
+export function checkStart(players, options = {}) {
+  if (!Array.isArray(options.countries)) return null;
+  const wanted = Math.max(0, Math.floor(Number(options.bots) || 0));
+  const total = Math.min(10, players.length + (wanted || (players.length === 1 ? 3 : 0)));
+  const need = minCountries(total);
+  return options.countries.length >= need ? null : `Choisis au moins ${need} pays pour ${total} joueurs (il en manque ${need - options.countries.length}).`;
+}
+
 export function setup(players, options = {}, ctx) {
   const wanted = Math.max(0, Math.floor(Number(options.bots) || 0));
   const count = Math.min(wanted || (players.length === 1 ? 3 : 0), 10 - players.length);
   const taken = new Set(players.map((p) => p.pseudo.toLowerCase())); // un robot ne porte jamais le nom d'un joueur de la table
   const bots = shuffle(BOT_NAMES.filter((n) => !taken.has(n.toLowerCase())), ctx).slice(0, count).map((pseudo, i) => ({ id: -(i + 1), pseudo, bot: true }));
   const everyone = [...players, ...bots];
+  const map = chooseMap(options, ctx);
   const s = {
+    map,
     players: shuffle(everyone, ctx).map((p, seat) => ({
       id: p.id, pseudo: p.pseudo, bot: Boolean(p.bot), seat, cash: Number(options.cash) || 1500, pos: 0, out: false, blocked: 0, doubles: 0,
     })),
@@ -270,13 +289,13 @@ function land(s, ctx) {
         return undefined;
       }
       if (prop.owner === p.id || prop.mortgaged) return settle(s, ctx);
-      return charge(s, rentOf(s, p.pos), prop.owner, `à ${byId(s, prop.owner).pseudo} (${t.name})`, ctx);
+      return charge(s, rentOf(s, p.pos), prop.owner, `à ${byId(s, prop.owner).pseudo} (${nameOn(s.map, t.pos)})`, ctx);
     }
     case 'telex':
       return drawCard(s, ctx);
     case 'tax': {
       const amount = t.tax === 'percent' ? Math.max(50, Math.floor(p.cash / 10)) : t.amount;
-      return charge(s, amount, null, `(${t.name})`, ctx);
+      return charge(s, amount, null, `(${nameOn(s.map, t.pos)})`, ctx);
     }
     case 'chantier':
       return charge(s, WORKS_FEE, null, '(Chantier)', ctx);
@@ -457,7 +476,7 @@ function botTrade(s, p, ctx) {
       if (ownedInRegion(s, owner.id, r) >= s.majority || !botAccepts(s, owner, trade)) continue;
       transfer(s, p, owner, trade.give);
       transfer(s, owner, p, trade.get);
-      log(s, `${p.pseudo} rachète ${t.name} à ${owner.pseudo} pour ${money(offer)}.`);
+      log(s, `${p.pseudo} rachète ${nameOn(s.map, t.pos)} à ${owner.pseudo} pour ${money(offer)}.`);
       return true;
     }
     if (s.trades.some((x) => x.from === p.id || (x.get.cities[0] === t.pos && x.to === owner.id))) continue;
@@ -475,14 +494,14 @@ function botManage(s, p) {
   if (again !== undefined) {
     p.cash -= unmortgageCost(TILES[again]);
     s.props[again].mortgaged = false;
-    log(s, `${p.pseudo} récupère ${TILES[again].name}.`);
+    log(s, `${p.pseudo} récupère ${nameOn(s.map, again)}.`);
     return true;
   }
   const spot = owned.filter((pos) => canBuildAt(s, p.id, pos) && p.cash >= buildCost(s, pos) + 150).sort((a, b) => s.props[b].level - s.props[a].level)[0];
   if (spot === undefined) return false;
   p.cash -= buildCost(s, spot);
   s.props[spot].level += 1;
-  log(s, `${p.pseudo} construit à ${TILES[spot].name}.`);
+  log(s, `${p.pseudo} construit à ${nameOn(s.map, spot)}.`);
   return true;
 }
 
@@ -504,9 +523,9 @@ function botStep(s, ctx) {
       if (p.cash >= t.price + 60) {
         p.cash -= t.price;
         s.props[p.pos] = { owner: p.id, level: 0, mortgaged: false };
-        log(s, `${p.pseudo} achète ${t.name} pour ${money(t.price)}.`);
+        log(s, `${p.pseudo} achète ${nameOn(s.map, t.pos)} pour ${money(t.price)}.`);
       } else {
-        log(s, `${p.pseudo} laisse ${t.name}.`);
+        log(s, `${p.pseudo} laisse ${nameOn(s.map, t.pos)}.`);
       }
       settle(s, ctx);
       return;
@@ -538,8 +557,8 @@ function checkOffer(s, p, offer, actorId) {
   if (p.cash < offer.cash) throw new Error(mine ? `Tu n'as pas ${money(offer.cash)}.` : `${p.pseudo} n'a pas ${money(offer.cash)}.`);
   for (const pos of offer.cities) {
     const prop = s.props[pos];
-    if (prop?.owner !== p.id) throw new Error(`${TILES[pos].name} n'appartient pas à ${p.pseudo}.`);
-    if (prop.level > 0) throw new Error(`${TILES[pos].name} a des constructions : il faut les vendre avant.`);
+    if (prop?.owner !== p.id) throw new Error(`${nameOn(s.map, pos)} n'appartient pas à ${p.pseudo}.`);
+    if (prop.level > 0) throw new Error(`${nameOn(s.map, pos)} a des constructions : il faut les vendre avant.`);
   }
 }
 
@@ -595,14 +614,14 @@ export function move(state, playerId, given, ctx) {
       if (p.cash < t.price) throw new Error(`Il te manque ${money(t.price - p.cash)}.`);
       p.cash -= t.price;
       s.props[p.pos] = { owner: p.id, level: 0, mortgaged: false };
-      log(s, `${p.pseudo} achète ${t.name} pour ${money(t.price)}.`);
+      log(s, `${p.pseudo} achète ${nameOn(s.map, t.pos)} pour ${money(t.price)}.`);
       settle(s, ctx);
       break;
     }
     case 'decline': {
       needPhase(s, 'buy');
       const t = TILES[p.pos];
-      log(s, `${p.pseudo} laisse ${t.name}.`);
+      log(s, `${p.pseudo} laisse ${nameOn(s.map, t.pos)}.`);
       settle(s, ctx);
       break;
     }
@@ -617,7 +636,7 @@ export function move(state, playerId, given, ctx) {
       if (p.cash < cost) throw new Error(`Il te faut ${money(cost)}.`);
       p.cash -= cost;
       s.props[pos].level += 1;
-      log(s, `${p.pseudo} construit à ${TILES[pos].name}.`);
+      log(s, `${p.pseudo} construit à ${nameOn(s.map, pos)}.`);
       break;
     }
     case 'sell': {
@@ -626,7 +645,7 @@ export function move(state, playerId, given, ctx) {
       if (!prop.level) throw new Error('Rien à vendre ici.');
       prop.level -= 1;
       p.cash += Math.floor(TILES[pos].build / 2);
-      log(s, `${p.pseudo} vend une construction à ${TILES[pos].name}.`);
+      log(s, `${p.pseudo} vend une construction à ${nameOn(s.map, pos)}.`);
       break;
     }
     case 'mortgage': {
@@ -636,7 +655,7 @@ export function move(state, playerId, given, ctx) {
       if (prop.level) throw new Error('Vends d’abord les constructions.');
       prop.mortgaged = true;
       p.cash += mortgageValue(TILES[pos]);
-      log(s, `${p.pseudo} met ${TILES[pos].name} en gage.`);
+      log(s, `${p.pseudo} met ${nameOn(s.map, pos)} en gage.`);
       break;
     }
     case 'unmortgage': {
@@ -647,7 +666,7 @@ export function move(state, playerId, given, ctx) {
       if (p.cash < cost) throw new Error(`Il te faut ${money(cost)}.`);
       p.cash -= cost;
       prop.mortgaged = false;
-      log(s, `${p.pseudo} récupère ${TILES[pos].name}.`);
+      log(s, `${p.pseudo} récupère ${nameOn(s.map, pos)}.`);
       break;
     }
     case 'pay':
@@ -733,7 +752,7 @@ export function timeout(state, ctx) {
   switch (s.phase) {
     case 'roll': doRoll(s, ctx); break;
     case 'buy':
-      log(s, `${p.pseudo} laisse ${TILES[p.pos].name}.`);
+      log(s, `${p.pseudo} laisse ${nameOn(s.map, p.pos)}.`);
       settle(s, ctx);
       break;
     case 'end': nextTurn(s, ctx); break;

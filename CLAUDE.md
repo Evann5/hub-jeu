@@ -5,7 +5,7 @@ Hub privé de jeux de société en ligne pour la classe de Minh (études sup, 20
 ## Où on en est (05/11/2026)
 - Étape 1 (comptes, messagerie, présence, admin) et étape 2 (tables de jeu) construites.
 - 30 jeux dans `games/`, chacun avec son univers visuel (registre : `docs/da/univers.md`) et ses tests de règles (`node --test games/*/rules.test.js`).
-- Escales (`games/escales`, raisonnement dans `docs/escales.md`) : le grand jeu de plateau, en 3D, avec sa propre identité (palette Ardoise, sombre et moderne, bouton jaune, grand globe plat en bas à droite derrière le plateau ; Baloo 2 + Barlow Semi Condensed), différente du hub ; ses villes définitives restent à choisir.
+- Escales (`games/escales`, raisonnement dans `docs/escales.md`) : le grand jeu de plateau, en 3D, avec sa propre identité (palette Ardoise, sombre et moderne, bouton jaune, grand globe plat en bas à droite derrière le plateau ; Baloo 2 + Barlow Semi Condensed), différente du hub ; 24 pays au choix dans le salon (`games/escales/client/pays.js`).
 - 05/11/2026 : les 30 jeux et le hub ont eu une passe de finition et une recette indépendante (Chromium et WebKit, téléphone et ordinateur). Jamais testés sur un vrai téléphone ni avec de vrais joueurs ; sons jamais écoutés.
 - Pas encore en ligne : Minh attend d'aller en cours pour pousser sur le VPS de son pote (`docs/mise-en-ligne-vps.md`, pas encore essayé sur un vrai VPS). Solutions de repli : alwaysdata (`docs/mise-en-ligne-alwaysdata.md`), O2Switch (`docs/mise-en-ligne.md`).
 

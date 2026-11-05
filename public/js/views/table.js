@@ -166,6 +166,30 @@ function playersLabel(g) {
 function optionControl(def, value, editable) {
   const send = (v) => call(state.socket, 'table:options', { id: cur.id, options: { [def.key]: v } }).catch((err) => toast(err.message, { error: true }));
   let control;
+  if (def.type === 'multi') {
+    const picked = value ?? def.default ?? [];
+    const full = picked.length >= def.max;
+    // Le minimum suit le nombre de joueurs, robots compris.
+    const seats = cur.table.seats.length;
+    const total = Math.min(cur.game.maxPlayers, seats + (Number(cur.table.options.bots) || (seats === 1 ? 3 : 0)));
+    const need = def.minByPlayers ? Math.min(def.max, Math.max(def.minByPlayers, total)) : 0;
+    const missing = Math.max(0, need - picked.length);
+    const row = h('div.opt-row.is-multi',
+      h('span.opt-label', def.label, def.help ? h('small', def.help) : null),
+      h('div.multi-head', h(`output.multi-count${missing ? '.is-short' : ''}`, { 'aria-live': 'polite' }, missing ? `${picked.length} choisis, encore ${missing} au moins` : `${picked.length} sur ${def.max}`),
+        editable ? h('button.link-btn', { type: 'button', onclick: () => send([...def.choices].map((c) => c.value).sort(() => Math.random() - 0.5).slice(0, def.max)) }, 'Au hasard') : null,
+        editable && picked.length ? h('button.link-btn', { type: 'button', onclick: () => send([]) }, 'Tout enlever') : null),
+      h('div.multi', { role: 'group', 'aria-label': def.label }, def.choices.map((c) => {
+        const on = picked.includes(c.value);
+        return h(`button.multi-item${on ? '.is-on' : ''}`, {
+          type: 'button',
+          'aria-pressed': String(on),
+          disabled: !editable || (!on && full),
+          onclick: () => send(on ? picked.filter((x) => x !== c.value) : [...picked, c.value]),
+        }, c.icon ? h('span.multi-icon', { 'aria-hidden': 'true' }, c.icon) : null, c.label);
+      })));
+    return row;
+  }
   if (def.type === 'number') {
     control = h('div.stepper',
       h('button', { type: 'button', disabled: !editable || value <= def.min, 'aria-label': `${def.label} : moins`, onclick: () => send(value - 1) }, '−'),

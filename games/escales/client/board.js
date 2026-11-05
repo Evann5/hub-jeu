@@ -2,7 +2,9 @@
 // Pour changer de villes : modifier REGIONS, rien d'autre. 8 régions de 4 villes, de la moins chère à la plus chère.
 // model : le monument 3D de la ville (client/monuments.js).
 
-export const REGIONS = [
+import { EXTRA_COUNTRIES } from './pays.js';
+
+const STARTERS = [
   { id: 'maroc', name: 'Maroc', color: '#2EC4B6', cities: [
     { name: 'Chefchaouen', model: 'maisonsBleues', fact: 'La ville bleue, ruelles peintes du sol au toit.' },
     { name: 'Fès', model: 'riad', fact: 'La plus grande médina piétonne du monde.' },
@@ -53,6 +55,16 @@ export const REGIONS = [
   ] },
 ];
 
+// Tous les pays au choix. Le plateau en pose 8 : REGIONS est la carte en cours, les 8 de départ tant qu'on n'en a pas choisi d'autres.
+export const COUNTRIES = [...STARTERS, ...EXTRA_COUNTRIES];
+export const DEFAULT_MAP = STARTERS.map((c) => c.id);
+export const REGIONS = [...STARTERS];
+export const MAP_SIZE = REGIONS.length;
+const byId = new Map(COUNTRIES.map((c) => [c.id, c]));
+export const isCountry = (id) => byId.has(id);
+// Combien de pays il faut choisir : autant que de joueurs, de 4 à 8. Les places restantes sont tirées au hasard.
+export const minCountries = (players) => Math.min(MAP_SIZE, Math.max(4, players));
+
 // Prix des 4 villes de chaque région, coût d'un niveau de construction.
 const PRICES = [
   [60, 60, 70, 80], [90, 90, 100, 120], [130, 130, 140, 160], [170, 170, 180, 200],
@@ -75,7 +87,7 @@ const ESCALES = ['Escale Nord', 'Escale Est', 'Escale Sud', 'Escale Ouest'];
 function buildTiles() {
   const tiles = [];
   const city = (r, i) => ({
-    type: 'city', region: r, name: REGIONS[r].cities[i].name, short: REGIONS[r].cities[i].short, model: REGIONS[r].cities[i].model, fact: REGIONS[r].cities[i].fact,
+    type: 'city', region: r, slot: i, name: REGIONS[r].cities[i].name, short: REGIONS[r].cities[i].short, model: REGIONS[r].cities[i].model, fact: REGIONS[r].cities[i].fact,
     price: PRICES[r][i], build: BUILD[r], rent: Math.round(PRICES[r][i] / 10),
   });
   const SIDES = [
@@ -93,6 +105,23 @@ function buildTiles() {
 }
 
 export const TILES = buildTiles();
+
+// Le nom d'une case sur une carte donnée. Le serveur fait tourner plusieurs tables en même temps : il ne touche jamais à TILES.
+export function nameOn(map, pos) {
+  const t = TILES[pos];
+  if (t.type !== 'city' || !map) return t.name;
+  return byId.get(map[t.region])?.cities[t.slot].name ?? t.name;
+}
+
+// Dans le navigateur, une seule table à la fois : la carte de la partie remplace celle de départ.
+export function applyMap(map) {
+  (map ?? DEFAULT_MAP).forEach((id, r) => { REGIONS[r] = byId.get(id) ?? STARTERS[r]; });
+  for (const t of TILES) {
+    if (t.type !== 'city') continue;
+    const { name, short, model, fact } = REGIONS[t.region].cities[t.slot];
+    Object.assign(t, { name, short, model, fact });
+  }
+}
 
 // Les règles en bref, consultables pendant la partie.
 export const RULES = [

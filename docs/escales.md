@@ -63,7 +63,6 @@ Chaque place a son voyageur, dans `CAST` (`client/monuments.js`) : pilote, routa
 
 ## Ce qui reste à faire
 
-- Les villes définitives de Minh.
 - Écouter les sons : ils n'ont jamais été entendus par personne d'autre que le programme qui les fabrique.
 - Une vraie partie, en ligne, sur de vrais téléphones.
 

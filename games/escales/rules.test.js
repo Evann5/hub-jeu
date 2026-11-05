@@ -1,8 +1,8 @@
 // Tests d'Escales : node --test games/escales/rules.test.js
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setup, move, view, status, timeout, leave, rentOf, worthOf, SALARY, FINE, FESTIVAL_GAIN, WORKS_FEE } from './rules.js';
-import { TILES, REGIONS, SIZE, CUSTOMS_POS, MAX_LEVEL } from './client/board.js';
+import { setup, move, view, status, timeout, leave, rentOf, worthOf, checkStart, SALARY, FINE, FESTIVAL_GAIN, WORKS_FEE } from './rules.js';
+import { TILES, REGIONS, SIZE, CUSTOMS_POS, MAX_LEVEL, DEFAULT_MAP, nameOn, COUNTRIES } from './client/board.js';
 
 const seeded = (seed) => () => {
   seed = (seed * 1664525 + 1013904223) % 4294967296;
@@ -632,5 +632,38 @@ test('dette : la vue annonce ce que « Réunir l’argent » vendra, et le coup 
     const x = plan.find((l) => l.pos === pos) ?? { levels: 0, mortgage: false };
     assert.equal(after.props[pos].level, s.props[pos].level - x.levels, TILES[pos].name);
     assert.equal(Boolean(after.props[pos].mortgaged), s.props[pos].mortgaged || x.mortgage, TILES[pos].name);
+  }
+});
+
+test('carte : les pays choisis sont sur le plateau, le hasard complète, et les noms suivent', () => {
+  const s = setup(people(2), { rounds: 25, timer: 0, countries: ['israel', 'coreeNord', 'congo', 'japon'] }, ctxOf(7));
+  assert.equal(s.map.length, 8);
+  assert.equal(new Set(s.map).size, 8);
+  for (const id of ['israel', 'coreeNord', 'congo', 'japon']) assert.ok(s.map.includes(id));
+  const region = s.map.indexOf('israel');
+  const first = TILES.find((t) => t.type === 'city' && t.region === region);
+  assert.equal(nameOn(s.map, first.pos), 'Eilat');
+  assert.equal(TILES.find((t) => t.pos === first.pos).name, REGIONS[region].cities[0].name, 'le serveur ne modifie jamais la carte commune');
+  assert.deepEqual(setup(people(2), { rounds: 25, timer: 0 }, ctxOf(7)).map, DEFAULT_MAP);
+});
+
+test('carte : autant de pays que de joueurs, de 4 à 8, pour lancer', () => {
+  const few = { countries: ['israel', 'congo', 'japon'] };
+  assert.match(checkStart(people(2), few), /au moins 4 pays/);
+  assert.equal(checkStart(people(2), { countries: ['israel', 'congo', 'japon', 'chine'] }), null);
+  assert.match(checkStart(people(4), { ...few, bots: 3, countries: ['israel', 'congo', 'japon', 'chine', 'inde', 'france'] }), /au moins 7 pays pour 7 joueurs/);
+  assert.match(checkStart(people(1), { countries: [] }), /au moins 4 pays pour 4 joueurs/);
+  assert.equal(checkStart(people(4), {}), null);
+});
+
+test('catalogue : 4 villes par pays, un drapeau, un motif et un décor pour chacun', async () => {
+  globalThis.document ??= undefined;
+  const { FLAGS, PATTERNS, PROPS_OF } = await import('./client/countries.js');
+  assert.ok(COUNTRIES.length >= 24);
+  assert.equal(new Set(COUNTRIES.map((c) => c.id)).size, COUNTRIES.length);
+  for (const c of COUNTRIES) {
+    assert.equal(c.cities.length, 4, c.id);
+    assert.ok(FLAGS[c.id] && PATTERNS[c.id] && PROPS_OF[c.id]?.length === 2, c.id);
+    for (const v of c.cities) assert.ok(v.name && v.model && v.fact, v.name);
   }
 });

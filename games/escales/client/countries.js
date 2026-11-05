@@ -179,3 +179,242 @@ export const PROPS_OF = {
   france: ['reverbere', 'kiosque'],
   usa: ['taxi', 'borne'],
 };
+
+// ——— Les pays en plus ———
+const bandsH = (c, x, y, w, h, colors, parts = colors.map(() => 1)) => {
+  const total = parts.reduce((a, b) => a + b, 0);
+  let at = y;
+  colors.forEach((col, i) => {
+    const hh = (h * parts[i]) / total;
+    c.fillStyle = col;
+    c.fillRect(x, at, w, hh + 0.5);
+    at += hh;
+  });
+};
+const inRect = (c, x, y, w, h, draw) => {
+  c.save();
+  c.beginPath();
+  c.rect(x, y, w, h);
+  c.clip();
+  draw();
+  c.restore();
+};
+const disc = (c, x, y, r, color) => {
+  c.fillStyle = color;
+  c.beginPath();
+  c.arc(x, y, r, 0, Math.PI * 2);
+  c.fill();
+};
+const crescent = (c, x, y, r, light, back) => {
+  disc(c, x, y, r, light);
+  disc(c, x + r * 0.28, y, r * 0.8, back);
+};
+
+Object.assign(FLAGS, {
+  israel: (c, x, y, w, h) => {
+    bandsH(c, x, y, w, h, ['#FFFFFF', '#0038B8', '#FFFFFF', '#0038B8', '#FFFFFF'], [1.5, 1.3, 5, 1.3, 1.5]);
+    c.strokeStyle = '#0038B8';
+    c.lineWidth = Math.max(1.2, h * 0.045);
+    const r = h * 0.2;
+    for (const turn of [-Math.PI / 2, Math.PI / 2]) {
+      c.beginPath();
+      for (let i = 0; i < 3; i += 1) c.lineTo(x + w / 2 + Math.cos(turn + (i * 2 * Math.PI) / 3) * r, y + h / 2 + Math.sin(turn + (i * 2 * Math.PI) / 3) * r);
+      c.closePath();
+      c.stroke();
+    }
+  },
+  coreeNord: (c, x, y, w, h) => {
+    bandsH(c, x, y, w, h, ['#024FA2', '#FFFFFF', '#ED1C27', '#FFFFFF', '#024FA2'], [4, 1, 14, 1, 4]);
+    disc(c, x + w * 0.36, y + h / 2, h * 0.26, '#FFFFFF');
+    star(c, x + w * 0.36, y + h / 2, h * 0.24);
+    c.fillStyle = '#ED1C27';
+    c.fill();
+  },
+  congo: (c, x, y, w, h) => {
+    c.fillStyle = '#007FFF';
+    c.fillRect(x, y, w, h);
+    inRect(c, x, y, w, h, () => {
+      for (const [col, half] of [['#F7D618', 0.2], ['#CE1021', 0.14]]) {
+        c.fillStyle = col;
+        c.beginPath();
+        c.moveTo(x - w * half, y + h);
+        c.lineTo(x + w * (1 - half), y);
+        c.lineTo(x + w * (1 + half), y);
+        c.lineTo(x + w * half, y + h);
+        c.closePath();
+        c.fill();
+      }
+    });
+    star(c, x + w * 0.17, y + h * 0.27, h * 0.2);
+    c.fillStyle = '#F7D618';
+    c.fill();
+  },
+  coreeSud: (c, x, y, w, h) => {
+    c.fillStyle = '#FFFFFF';
+    c.fillRect(x, y, w, h);
+    const r = h * 0.24;
+    const [cx, cy] = [x + w / 2, y + h / 2];
+    c.fillStyle = '#CD2E3A';
+    c.beginPath();
+    c.arc(cx, cy, r, Math.PI, 0);
+    c.fill();
+    c.fillStyle = '#0047A0';
+    c.beginPath();
+    c.arc(cx, cy, r, 0, Math.PI);
+    c.fill();
+    disc(c, cx - r / 2, cy, r / 2, '#CD2E3A');
+    disc(c, cx + r / 2, cy, r / 2, '#0047A0');
+    c.fillStyle = '#111111';
+    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      c.save();
+      c.translate(cx + sx * w * 0.32, cy + sy * h * 0.31);
+      c.rotate((sx * sy * Math.PI) / 5);
+      for (let i = -1; i <= 1; i += 1) c.fillRect(-w * 0.055, i * h * 0.05 - h * 0.018, w * 0.11, h * 0.036);
+      c.restore();
+    }
+  },
+  chine: (c, x, y, w, h) => {
+    c.fillStyle = '#DE2910';
+    c.fillRect(x, y, w, h);
+    c.fillStyle = '#FFDE00';
+    star(c, x + w * 0.18, y + h * 0.28, h * 0.17);
+    c.fill();
+    for (const [px, py] of [[0.34, 0.12], [0.4, 0.23], [0.4, 0.37], [0.34, 0.47]]) {
+      star(c, x + w * px, y + h * py, h * 0.055);
+      c.fill();
+    }
+  },
+  inde: (c, x, y, w, h) => {
+    bandsH(c, x, y, w, h, ['#FF9933', '#FFFFFF', '#138808']);
+    c.strokeStyle = '#000080';
+    c.lineWidth = Math.max(1, h * 0.03);
+    c.beginPath();
+    c.arc(x + w / 2, y + h / 2, h * 0.12, 0, Math.PI * 2);
+    c.stroke();
+    disc(c, x + w / 2, y + h / 2, h * 0.03, '#000080');
+  },
+  thailande: (c, x, y, w, h) => bandsH(c, x, y, w, h, ['#A51931', '#F4F5F8', '#2D2A4A', '#F4F5F8', '#A51931'], [1, 1, 2, 1, 1]),
+  turquie: (c, x, y, w, h) => {
+    c.fillStyle = '#E30A17';
+    c.fillRect(x, y, w, h);
+    crescent(c, x + w * 0.38, y + h / 2, h * 0.25, '#FFFFFF', '#E30A17');
+    star(c, x + w * 0.58, y + h / 2, h * 0.12);
+    c.fillStyle = '#FFFFFF';
+    c.fill();
+  },
+  egypte: (c, x, y, w, h) => {
+    bandsH(c, x, y, w, h, ['#CE1126', '#FFFFFF', '#111111']);
+    disc(c, x + w / 2, y + h / 2, h * 0.1, '#C09300');
+  },
+  algerie: (c, x, y, w, h) => {
+    bandsV(c, x, y, w, h, ['#006233', '#FFFFFF']);
+    crescent(c, x + w * 0.48, y + h / 2, h * 0.25, '#D21034', '#FFFFFF');
+    star(c, x + w * 0.6, y + h / 2, h * 0.13);
+    c.fillStyle = '#D21034';
+    c.fill();
+  },
+  senegal: (c, x, y, w, h) => {
+    bandsV(c, x, y, w, h, ['#00853F', '#FDEF42', '#E31B23']);
+    star(c, x + w / 2, y + h / 2, h * 0.17);
+    c.fillStyle = '#00853F';
+    c.fill();
+  },
+  bresil: (c, x, y, w, h) => {
+    c.fillStyle = '#009C3B';
+    c.fillRect(x, y, w, h);
+    c.fillStyle = '#FFDF00';
+    c.beginPath();
+    c.moveTo(x + w * 0.5, y + h * 0.1);
+    c.lineTo(x + w * 0.93, y + h * 0.5);
+    c.lineTo(x + w * 0.5, y + h * 0.9);
+    c.lineTo(x + w * 0.07, y + h * 0.5);
+    c.closePath();
+    c.fill();
+    disc(c, x + w / 2, y + h / 2, h * 0.2, '#002776');
+  },
+  argentine: (c, x, y, w, h) => {
+    bandsH(c, x, y, w, h, ['#74ACDF', '#FFFFFF', '#74ACDF']);
+    disc(c, x + w / 2, y + h / 2, h * 0.1, '#F6B40E');
+  },
+  espagne: (c, x, y, w, h) => bandsH(c, x, y, w, h, ['#AA151B', '#F1BF00', '#AA151B'], [1, 2, 1]),
+  royaumeUni: (c, x, y, w, h) => {
+    c.fillStyle = '#012169';
+    c.fillRect(x, y, w, h);
+    inRect(c, x, y, w, h, () => {
+      for (const [col, lw] of [['#FFFFFF', h * 0.2], ['#C8102E', h * 0.08]]) {
+        c.strokeStyle = col;
+        c.lineWidth = lw;
+        c.beginPath();
+        c.moveTo(x, y);
+        c.lineTo(x + w, y + h);
+        c.moveTo(x + w, y);
+        c.lineTo(x, y + h);
+        c.stroke();
+      }
+      for (const [col, t] of [['#FFFFFF', h * 0.34], ['#C8102E', h * 0.2]]) {
+        c.fillStyle = col;
+        c.fillRect(x + w / 2 - t / 2, y, t, h);
+        c.fillRect(x, y + h / 2 - t / 2, w, t);
+      }
+    });
+  },
+  australie: (c, x, y, w, h) => {
+    c.fillStyle = '#00247D';
+    c.fillRect(x, y, w, h);
+    FLAGS.royaumeUni(c, x, y, w * 0.5, h * 0.5);
+    c.fillStyle = '#FFFFFF';
+    star(c, x + w * 0.25, y + h * 0.75, h * 0.13, 7);
+    c.fill();
+    for (const [px, py] of [[0.75, 0.2], [0.62, 0.45], [0.88, 0.42], [0.75, 0.8]]) {
+      star(c, x + w * px, y + h * py, h * 0.07, 7);
+      c.fill();
+    }
+  },
+});
+
+// Les motifs des bandeaux : simples, à la couleur fournie par la scène.
+const dots = (step, r) => (c, w, h) => {
+  for (let y = 0; y < h + step; y += step) for (let x = (y / step) % 2 ? step / 2 : 0; x < w + step; x += step) {
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fill();
+  }
+};
+const stripes = (step, t) => (c, w, h) => {
+  c.lineWidth = t;
+  c.beginPath();
+  for (let x = -h; x < w + h; x += step) {
+    c.moveTo(x, h);
+    c.lineTo(x + h, 0);
+  }
+  c.stroke();
+};
+const stars = (step, r, points = 5) => (c, w, h) => {
+  for (let y = 0; y < h + step; y += step) for (let x = (y / step) % 2 ? step / 2 : 0; x < w + step; x += step) {
+    star(c, x, y, r, points);
+    c.fill();
+  }
+};
+const diamonds = (step, r) => (c, w, h) => {
+  for (let y = 0; y < h + step; y += step) for (let x = (y / step) % 2 ? step / 2 : 0; x < w + step; x += step) {
+    c.beginPath();
+    c.moveTo(x, y - r);
+    c.lineTo(x + r, y);
+    c.lineTo(x, y + r);
+    c.lineTo(x - r, y);
+    c.closePath();
+    c.fill();
+  }
+};
+Object.assign(PATTERNS, {
+  israel: stars(58, 17, 6), coreeNord: stars(60, 15), congo: stripes(46, 10), coreeSud: dots(44, 11),
+  chine: stars(56, 14), inde: diamonds(46, 13), thailande: diamonds(58, 17), turquie: stars(62, 12),
+  egypte: diamonds(40, 11), algerie: stars(52, 13, 8), senegal: dots(52, 14), bresil: stripes(58, 14),
+  argentine: dots(60, 18), espagne: stripes(40, 8), royaumeUni: diamonds(64, 20), australie: stars(50, 11, 7),
+});
+Object.assign(PROPS_OF, {
+  israel: ['palmier', 'citronnier'], coreeNord: ['cypres', 'lanternePierre'], congo: ['palmier', 'bambou'], coreeSud: ['cerisier', 'lanternePierre'],
+  chine: ['bambou', 'lanternePied'], inde: ['palmier', 'lanternePied'], thailande: ['bambou', 'lanternePied'], turquie: ['cypres', 'kiosque'],
+  egypte: ['palmier', 'tajine'], algerie: ['palmier', 'tajine'], senegal: ['palmier', 'sardine'], bresil: ['palmier', 'citronnier'],
+  argentine: ['cypres', 'borne'], espagne: ['citronnier', 'sardine'], royaumeUni: ['reverbere', 'kiosque'], australie: ['palmier', 'sardine'],
+});

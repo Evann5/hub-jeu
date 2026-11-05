@@ -204,6 +204,8 @@ export function startTable(id, userId) {
   if (t.seats.length < game.minPlayers) {
     throw new ChatError(`Il faut au moins ${game.minPlayers} joueurs pour lancer ${game.name}.`);
   }
+  const problem = game.rules.checkStart?.(players(t), t.options);
+  if (problem) throw new ChatError(problem);
   t.state = runRules(() => game.rules.setup(players(t), t.options, ctx()));
   t.left = [];
   t.status = 'playing';
