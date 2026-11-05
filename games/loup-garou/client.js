@@ -205,7 +205,7 @@ export function mount(root, api) {
         h('p.lg-chosen', a ? h('b', name(a)) : '…', heart(), b ? h('b', name(b)) : '…'),
         btn('Les unir', () => { send({ type: 'love', targets: sel }); sel = []; }, { disabled: sel.length !== 2, key: 'confirm' }))];
     }
-    if (me.role === 'cupid') {
+    if (me.role === 'cupid' && view.n === 1) { // Cupidon n'agit que la première nuit : ensuite il dort comme tout le monde
       const [a, b] = view.lovers ?? [];
       return [r, sleepPanel(`C’est fait : ${a ? name(a) : '?'} et ${b ? name(b) : '?'} sont unis pour la vie. Retourne dormir.`)];
     }

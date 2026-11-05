@@ -243,7 +243,17 @@
   .g-loup-garou .lg-chip { grid-area: chip; justify-self: end; min-height: 46px; padding-right: 14px; }
   .g-loup-garou .lg-scroll { gap: 12px; padding-bottom: 96px; }
   .g-loup-garou .lg-body { gap: 12px; }
-  .g-loup-garou .lg-btn { flex: 1 1 auto; }
+  .g-loup-garou .lg-btn { flex: 1 1 auto; min-height: 46px; }
+  /* Pendant le vote, « Voter blanc » doit rester sur le premier écran : panneaux et pauses plus serrés. */
+  .g-loup-garou .lg-main { gap: 12px; }
+  .g-loup-garou .lg-panel { padding: 14px 16px; gap: 8px; }
+  .g-loup-garou .lg-panel p { font-size: 0.9375rem; line-height: 1.35; }
+  .g-loup-garou .lg-panel .lg-muted { font-size: 0.8125rem; }
+  .g-loup-garou .lg-timer { padding: 6px 12px; gap: 4px; }
+  .g-loup-garou .lg-box { padding: 14px 16px; }
+  .g-loup-garou .lg-village h3 { margin-bottom: 8px; }
+  .g-loup-garou .lg-seats { gap: 8px; }
+  .g-loup-garou .lg-seat { min-height: 50px; padding: 6px 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -110,14 +110,19 @@ export function mount(root, api) {
     const n = v.seats.length;
     const myIdx = v.seats.findIndex((s) => s.id === api.me.id);
     const narrow = (root.clientWidth || 400) < 420; // téléphone : joueurs un peu plus rentrés pour laisser de la place aux noms
-    const rx = narrow ? 37 : n <= 3 ? 38 : 40;
+    const many = n >= 7;
+    el.classList.toggle('is-mid', n >= 4);
+    el.classList.toggle('is-many', many);
+    const rx = narrow ? (n <= 3 ? 37 : many ? 39 : 41) : n <= 3 ? 38 : 40;
     const ry = n <= 3 ? 44 : 41;
     v.seats.forEach((s, i) => {
       const r = (i - Math.max(myIdx, 0) + n) % n;
       const a = ((90 + (r * 360) / n) * Math.PI) / 180;
       const pos = { x: 50 + rx * Math.cos(a), y: 50 + ry * Math.sin(a) };
-      // La mise se pose entre le joueur et le centre.
-      const betPos = { x: pos.x + (50 - pos.x) * 0.34, y: pos.y + (46 - pos.y) * 0.34 };
+      // La mise se pose juste à côté de la plaque, côté centre (décalage en px pour ne jamais passer dessous).
+      const betPos = { x: pos.x + (50 - pos.x) * 0.34, y: pos.y + (46 - pos.y) * 0.34 }; // repère approximatif des vols de jetons
+      const ux = -Math.cos(a);
+      const uy = -Math.sin(a);
       const hole = [cardSlot('sm'), cardSlot('sm')];
       const av = h('span.pk-av', { 'aria-hidden': 'true' });
       const nm = h('span.pk-name');
@@ -131,8 +136,8 @@ export function mount(root, api) {
       seatEl.style.left = `${pos.x}%`;
       seatEl.style.top = `${pos.y}%`;
       const betEl = h('div.pk-bet', { hidden: true });
-      betEl.style.left = `${betPos.x}%`;
-      betEl.style.top = `${betPos.y}%`;
+      betEl.style.left = `calc(${pos.x}% + ${ux.toFixed(3)} * (var(--sw) / 2 + var(--bo)))`;
+      betEl.style.top = `calc(${pos.y}% + ${uy.toFixed(3)} * ${uy > 0 ? 'var(--bvd)' : 'var(--bvu)'})`;
       felt.append(seatEl, betEl);
       seats.push({ el: seatEl, pos, betEl, betPos, hole, av, nm, stack, tag, disc, blind, clock, isMe: i === myIdx });
     });
@@ -264,7 +269,7 @@ export function mount(root, api) {
     });
     const bets = v.seats.reduce((n, s) => n + s.bet, 0);
     const collected = Math.max(0, v.pot - bets);
-    const showPot = v.phase === 'result' ? 0 : collected;
+    const showPot = v.phase === 'hand' ? collected : 0;
     potStack.replaceChildren(showPot > 0 ? chipStack(showPot) : '');
     potLabel.textContent = showPot > 0 ? `Pot ${fmt(showPot)}` : v.phase === 'result' ? '' : 'Pot vide';
     potEl.classList.toggle('is-empty', showPot === 0);
@@ -485,6 +490,7 @@ export function mount(root, api) {
 
   function render() {
     if (!built) build();
+    el.classList.toggle('is-over', v.phase === 'over');
     renderTop();
     renderSeats();
     renderBoard();

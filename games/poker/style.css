@@ -20,6 +20,10 @@
   --cw-sm: 28px;
   --cw-md: 40px;
   --cw-lg: 54px;
+  --sw: 78px;
+  --bo: 46px;
+  --bvu: 38px;
+  --bvd: 58px;
   background:
     radial-gradient(60% 50% at 8% 0%, rgb(255 61 174 / 0.45), transparent 70%),
     radial-gradient(60% 50% at 95% 100%, rgb(25 227 255 / 0.32), transparent 70%),
@@ -118,7 +122,7 @@
 .g-poker .pk-ghost { position: absolute; z-index: 5; pointer-events: none; font-size: 0.85rem; }
 
 /* Joueurs */
-.g-poker .pk-seat { --sw: 78px; position: absolute; width: var(--sw); transform: translate(-50%, -50%); z-index: 2; text-align: center; transition: opacity 0.3s; }
+.g-poker .pk-seat { position: absolute; width: var(--sw); transform: translate(-50%, -50%); z-index: 2; text-align: center; transition: opacity 0.3s; }
 .g-poker .pk-plaque { position: relative; z-index: 1; padding: 4px 6px 5px; border-radius: 14px; background: #fff; color: var(--ink); border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); transition: background 0.2s; }
 .g-poker .pk-who { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .g-poker .pk-av { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--pink-soft); font-size: 0.8rem; line-height: 1; }
@@ -135,8 +139,8 @@
 .g-poker .pk-tag { position: absolute; left: 50%; top: calc(100% + 3px); transform: translateX(-50%); z-index: 2; padding: 2px 8px; border-radius: 999px; border: 2px solid var(--ink); background: var(--cyan); color: var(--ink); font: 900 0.62rem/1.15 'PK Rubik', system-ui, sans-serif; white-space: nowrap; box-shadow: 0 2px 0 var(--ink); }
 .g-poker .pk-tag[hidden] { display: none; }
 .g-poker .pk-disc, .g-poker .pk-blind { position: absolute; z-index: 3; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--ink); box-shadow: 0 2px 0 var(--ink); font: 900 0.62rem/1 'PK Rubik', system-ui, sans-serif; color: var(--ink); }
-.g-poker .pk-disc { left: -8px; top: -8px; width: 22px; height: 22px; background: var(--lemon); }
-.g-poker .pk-blind { right: -8px; top: -8px; width: 24px; height: 24px; background: var(--mint); }
+.g-poker .pk-disc { left: -6px; top: -19px; width: 22px; height: 22px; background: var(--lemon); }
+.g-poker .pk-blind { right: -6px; top: -20px; width: 24px; height: 24px; background: var(--mint); }
 .g-poker .pk-disc[hidden], .g-poker .pk-blind[hidden] { display: none; }
 .g-poker .pk-seat.is-me .pk-plaque { background: #E9FBFF; box-shadow: 0 3px 0 var(--ink), 0 0 0 3px var(--cyan); }
 .g-poker .pk-seat.is-turn .pk-plaque { background: var(--lemon); box-shadow: 0 3px 0 var(--ink), 0 0 0 3px #fff, 0 0 18px 5px var(--lemon); animation: pk-bounce 1.1s ease-in-out infinite; }
@@ -193,7 +197,9 @@
 .g-poker .pk-slider::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--ink); background: var(--lemon); box-shadow: 0 3px 0 var(--ink); }
 
 /* Fin de partie */
-.g-poker .pk-final { grid-column: 1 / -1; display: grid; gap: 6px; max-height: 34vh; overflow-y: auto; }
+.g-poker .pk-final { grid-column: 1 / -1; display: grid; gap: 6px; }
+.g-poker .pk.is-over .pk-hand { display: none; }
+.g-poker .pk.is-over .pk-ctrl { grid-column: 1 / -1; }
 .g-poker .pk-final-title { margin: 0; text-align: center; font: 900 1.2rem/1.1 'PK Rubik', system-ui, sans-serif; color: var(--lemon); }
 .g-poker .pk-rank { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .g-poker .pk-rank li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: rgb(255 255 255 / 0.12); }
@@ -209,7 +215,9 @@
 /* Grands écrans */
 @container (min-width: 700px) {
   .g-poker .pk { --cw-sm: 38px; --cw-md: 56px; --cw-lg: 72px; }
-  .g-poker .pk-seat { --sw: 138px; }
+  .g-poker .pk { --sw: 138px; --bo: 58px; --bvu: 54px; --bvd: 72px; }
+  .g-poker .pk-felt { margin-bottom: 26px; }
+  .g-poker .pk.is-over .pk-panel { padding-bottom: 24px; }
   .g-poker .pk-av { width: 28px; height: 28px; font-size: 1.1rem; }
   .g-poker .pk-name { font-size: 0.86rem; }
   .g-poker .pk-chips { font-size: 1.05rem; }
@@ -227,8 +235,17 @@
   .g-poker .pk-raise { left: 50%; right: auto; width: min(560px, 90%); translate: -50% 0; }
 }
 @container (max-width: 420px) {
-  .g-poker .pk { --cw-md: 37px; }
-  .g-poker .pk-seat { --sw: 80px; }
+  .g-poker .pk { --cw-md: 34px; --sw: 86px; }
+  .g-poker .pk-plaque { padding: 4px 4px 5px; }
+  .g-poker .pk-felt { margin-bottom: 22px; }
+  /* 4 joueurs ou plus : plaques plus étroites et centre resserré, pour que le résultat ne passe pas sous les sièges latéraux */
+  .g-poker .pk.is-mid { --sw: 80px; --bo: 44px; }
+  .g-poker .pk.is-mid .pk-center { width: 50%; }
+  /* 7 à 9 joueurs : cartes du tableau plus petites, mises sans jeton */
+  .g-poker .pk.is-many { --cw-md: 30px; }
+  .g-poker .pk.is-many .pk-name { font-size: 0.66rem; }
+  .g-poker .pk.is-many .pk-bet { padding: 2px 7px; }
+  .g-poker .pk.is-many .pk-bet .pk-chip { display: none; }
   .g-poker .pk-av { display: none; }
   .g-poker .pk-name { font-size: 0.7rem; }
   .g-poker .pk-center { width: 56%; top: 54%; gap: 4px; }
@@ -236,6 +253,16 @@
   .g-poker .pk-result { padding: 6px 10px; }
   .g-poker .pk-win { font-size: 0.95rem; }
   .g-poker .pk-board { gap: 3px; }
+}
+
+/* Fin de partie sur téléphone : le classement passe avant le tapis, entier, quel que soit le nombre de joueurs */
+@container (max-width: 420px) {
+  .g-poker .pk.is-over .pk-felt, .g-poker .pk.is-over .pk-top { display: none; }
+  .g-poker .pk.is-over .pk-panel { margin-top: 8px; }
+  .g-poker .pk-final { gap: 4px; }
+  .g-poker .pk-rank { gap: 3px; }
+  .g-poker .pk-rank li { padding: 2px 12px 2px 3px; }
+  .g-poker .pk-pos { width: 24px; height: 24px; font-size: 0.8rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

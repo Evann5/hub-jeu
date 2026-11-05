@@ -177,7 +177,8 @@ export function mount(root, api) {
   const act = h('div.on-act');
   const clueInput = h('input', { type: 'text', maxlength: 60, autocomplete: 'off', spellcheck: false, 'aria-label': 'Ton indice', placeholder: 'Ton indice, sans chiffre…' });
   const stage = h('div.on-stage', dial, h('div.on-ends', endL, endR));
-  const el = h('div.on', h('div.on-board', top, stage, bottom, act));
+  const board = h('div.on-board', top, stage, bottom);
+  const el = h('div.on', board, act);
   root.append(el, live);
 
   function tick() {
@@ -292,7 +293,7 @@ export function mount(root, api) {
     bottom.replaceChildren(...say);
     act.replaceChildren(...ctl);
     const stamp = `${v.round}-${v.phase}`;
-    if (stamp !== lastStamp) { lastStamp = stamp; el.scrollTop = 0; }
+    if (stamp !== lastStamp) { lastStamp = stamp; board.scrollTop = 0; }
     stage.hidden = v.phase === 'over'; // le récapitulatif prend la place du cadran
     drawDial();
     if (focusKey) {

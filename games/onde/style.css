@@ -25,8 +25,9 @@
   color: var(--ink);
   font: 500 1rem/1.45 'ON Figtree', system-ui, sans-serif;
 }
-.g-onde .on { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 28px; }
-.g-onde .on-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; width: min(640px, 100%); margin: 0 auto; }
+/* La zone de jeu défile ; la barre d'action est un pied de page à part, qui ne recouvre jamais le texte. */
+.g-onde .on { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.g-onde .on-board { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 14px; padding: 14px max(16px, calc((100% - 640px) / 2)) 20px; }
 .g-onde .on-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Bandeau « stream » */
@@ -126,7 +127,7 @@
 .g-onde .on-locks .on-ico { width: 14px; height: 14px; }
 .g-onde .on-wait { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-2); opacity: 0.6; }
 .g-onde .on-locks li { display: inline-flex; align-items: center; gap: 6px; }
-.g-onde .on-act { position: sticky; bottom: 0; z-index: 2; display: grid; justify-items: center; padding: 12px 0 6px; }
+.g-onde .on-act { flex: none; z-index: 2; display: grid; justify-items: center; padding: 10px max(16px, calc((100% - 640px) / 2)) 14px; background: rgb(11 7 32 / 0.92); box-shadow: 0 -1px 0 rgb(255 255 255 / 0.08); }
 .g-onde .on-act:empty { display: none; }
 .g-onde .on-act > * { max-width: 100%; }
 .g-onde .on-btn:hover { transform: translateY(-2px); }
@@ -162,7 +163,7 @@
   .g-onde .on-confetti { display: none; }
 }
 @media (max-width: 480px) {
-  .g-onde .on { padding: 8px 12px 24px; }
+  .g-onde .on-board { padding: 8px 12px 12px; }
   .g-onde .on-board, .g-onde .on-top, .g-onde .on-bottom { gap: 8px; }
   .g-onde .on-team { padding: 6px 10px; border-radius: 18px; }
   .g-onde .on-team-name { font-size: 0.9rem; letter-spacing: 0; text-transform: none; }
@@ -172,7 +173,12 @@
   .g-onde .on-clue { padding: 8px 16px 10px; font-size: 1.1rem; }
   .g-onde .on-end { padding: 4px 12px; font-size: 0.8125rem; }
   .g-onde .on-say { font-size: 0.9375rem; }
-  .g-onde .on-act { margin: 0 -12px -24px; padding: 10px 12px 12px; background: linear-gradient(to top, var(--bg) 72%, transparent); }
+  .g-onde .on-act { padding: 8px 12px 10px; }
+  .g-onde .on-btn { min-height: 48px; }
+  /* Le cadran prend ce qui reste de la hauteur (l'en-tête du hub, la barre d'action et les textes sont déduits). */
+  .g-onde .on-dial { width: clamp(190px, calc((100svh - 545px) * 2.09), 440px); }
+  .g-onde .on:has(.on-form) .on-dial { width: clamp(190px, calc((100svh - 575px) * 2.09), 440px); }
+  .g-onde .on-ends { width: 100%; }
   .g-onde .on-act .on-btn { width: 100%; }
   .g-onde .on-row { width: 100%; flex-wrap: nowrap; gap: 8px; }
   .g-onde .on-row .on-btn { flex: 1; min-width: 0; padding: 0 10px; font-size: 0.875rem; }
