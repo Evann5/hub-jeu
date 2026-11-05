@@ -6,7 +6,8 @@ from lib_ico import *
 PAL = {'sea': '#1F8FB8', 'shallow': '#62D0CF', 'sand': '#F0DBA0', 'sand2': '#DDBF80',
        'trunk': '#8A5E3A', 'leaf': '#2E9E4E', 'leaf2': '#4CBF63',
        'c1': '#F0643E', 'c2': '#F27BAA', 'c3': '#8E5BD1', 'c4': '#F5C242', 'c5': '#FF9E3D',
-       'fish': '#FFD23F', 'fish2': '#2B3A67'}
+       'fish': '#FFD23F', 'fish2': '#2B3A67', 'wood': '#9C7048', 'wood2': '#7A5636', 'hutw': '#F4EEDC', 'hutr': '#D9573A', 'dark': '#4A3A32',
+       'white': '#F6F3EA', 'blue': '#2E6FB5', 'red': '#D64A3A', 'rock': '#B9A27C'}
 
 BEACH = [(-0.88, -0.88), (0.88, -0.88), (0.88, -0.1), (0.55, 0.02), (0.15, -0.12), (-0.3, 0.0), (-0.65, -0.12), (-0.88, -0.05)]
 LAGOON = [(-0.88, -0.88), (0.88, -0.88), (0.88, 0.14), (0.55, 0.26), (0.15, 0.1), (-0.3, 0.22), (-0.65, 0.1), (-0.88, 0.15)]
@@ -54,4 +55,25 @@ def build():
     fan(m, -0.08, 0.28)
     fish(m, -0.05, 0.42, 0.72, 'fish')
     fish(m, 0.55, 0.3, 0.7, 'c5')
+    # passerelle en bois qui s'avance dans le lagon, bateau de plongée amarré au bout
+    m.box(0.66, 0.78, 0.07, 0.115, -0.05, 0.78, 'wood', skip=('bot',))
+    for z in (0.0, 0.2, 0.4, 0.6, 0.76):
+        for x in (0.64, 0.8):
+            m.box(x-0.015, x+0.015, 0.05, 0.1, z-0.015, z+0.015, 'wood2', skip=('bot',))
+        m.box(0.66, 0.78, 0.115, 0.125, z-0.012, z+0.012, 'wood2', skip=('bot',))
+    m.box(0.36, 0.58, 0.062, 0.1, 0.5, 0.86, 'white', skip=('bot',))                 # coque
+    m.box(0.36, 0.58, 0.1, 0.12, 0.5, 0.86, 'red', skip=('bot',))                     # pont
+    m.box(0.4, 0.54, 0.12, 0.24, 0.52, 0.66, 'blue', skip=('bot',))                   # cabine
+    m.box(0.4, 0.54, 0.24, 0.26, 0.5, 0.68, 'white', skip=('bot',))
+    # deux cabanes de plage et trois parasols
+    house(m, -0.78, -0.52, -0.42, -0.24, 0.11, 0.17, 'hutw', 'hutr', 'dark', True, 0.09)
+    house(m, -0.2, 0.04, -0.28, -0.12, 0.11, 0.15, 'hutw', 'hutr', 'dark', True, 0.08)
+    parasol(m, 0.3, -0.18, 0.11, 0.3, 0.17, 'red', 'white', 'wood2')
+    parasol(m, 0.42, -0.08, 0.11, 0.28, 0.16, 'blue', 'white', 'wood2')
+    parasol(m, -0.4, -0.1, 0.11, 0.3, 0.17, 'red', 'white', 'wood2')
+    # rochers et petits coraux supplémentaires pour du relief
+    blob(m, -0.8, 0.1, 0.55, 0.14, 0.12, 0.14, 'rock', n=6, lats=(0, 40, 70))
+    blob(m, -0.62, 0.08, 0.7, 0.1, 0.08, 0.1, 'c4', n=7, lats=(0, 35, 65))
+    blob(m, 0.18, 0.08, 0.5, 0.12, 0.09, 0.12, 'c3', n=7, lats=(0, 35, 65))
+    fan(m, 0.7, 0.2)
     return m

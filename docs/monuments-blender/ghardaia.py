@@ -16,18 +16,20 @@ HOUSE = ['o1', 'o4', 'o3', 'o2', 'o5', 'o3']
 RINGS = [(0.86, 0.66, 15, 0.05), (0.64, 0.47, 12, 0.21), (0.45, 0.31, 9, 0.37), (0.29, 0.18, 6, 0.53)]
 
 
-def house(m, a0, a1, r_in, r_out, y0, y1, col, k):
+def house(m, a0, a1, r_in, r_out, y0, y1, col, k, vis):
     pts = [(r_out*math.cos(a0), r_out*math.sin(a0)), (r_out*math.cos(a1), r_out*math.sin(a1)),
            (r_in*math.cos(a1), r_in*math.sin(a1)), (r_in*math.cos(a0), r_in*math.sin(a0))]
     prism(m, pts, y0, y1, col, 'roofA' if k % 2 == 0 else 'roofB')
     # fenêtre sombre (et porte bleue une fois sur trois) sur la face tournée vers l'extérieur
     am = (a0+a1)/2
-    c = (r_out*math.cos(am), r_out*math.sin(am))
+    rc = r_out*math.cos((a1-a0)/2)      # milieu de la face (corde), pas le cercle : l'ouverture colle au mur
+    c = (rc*math.cos(am), rc*math.sin(am))
     t = (-math.sin(am), math.cos(am))
     w = (a1-a0)*r_out*0.13
-    off = 0.004
+    off = 0.003
     ox, oz = c[0]+math.cos(am)*off, c[1]+math.sin(am)*off
     ref = (c[0]-math.cos(am), (y0+y1)/2, c[1]-math.sin(am))
+    y0 = max(y0, y1-vis)      # on ne pose les ouvertures que sur la partie visible du mur (le bas est caché par l'anneau d'en dessous)
     hh = y1-y0
     if k % 3 == 0:
         m.poly([(ox-t[0]*w, y0, oz-t[1]*w), (ox+t[0]*w, y0, oz+t[1]*w), (ox+t[0]*w, y0+hh*0.5, oz+t[1]*w), (ox-t[0]*w, y0+hh*0.5, oz-t[1]*w)], 'blue', ref)
@@ -49,7 +51,7 @@ def build():
             a0 = i*step+ri*0.21+gap*step*0.5
             a1 = (i+1)*step+ri*0.21-gap*step*0.5
             hh = 0.15+0.1*next(rg)
-            house(m, a0, a1, rin, ro-0.005, 0.05, yf+hh, HOUSE[(i+ri*2) % len(HOUSE)], i)
+            house(m, a0, a1, rin, ro-0.005, 0.05, yf+hh, HOUSE[(i+ri*2) % len(HOUSE)], i, 0.5 if ri == 0 else 0.15)
     # plateforme et mosquée au sommet
     ytop = 0.53+0.22
     cyl(m, 0, 0, ytop-0.01, ytop+0.03, 0.2, 'roofA', n=12, col_top='roofA')
