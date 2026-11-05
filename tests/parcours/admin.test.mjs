@@ -1,5 +1,5 @@
 // Parcours « administration » : un admin rétrogradé est renvoyé à l'accueil, un canal supprimé retire son non-lu.
-import { ADMIN, monterSuite, jusque, aller, hashDe, appel, ouvrirMessages, titre, ecrire } from './aide.mjs';
+import { ADMIN, CODE, MOTEUR, monterSuite, jusque, aller, hashDe, appel, ouvrirMessages, titre, ecrire } from './aide.mjs';
 
 const S = monterSuite();
 
@@ -41,5 +41,24 @@ S.it('canal supprimé : son non-lu disparaît du titre et de la pastille', async
     const supprime = await appel(admin, 'admin:deleteChannel', { id: idCanal });
     if (!supprime?.ok) throw new Error(`suppression : ${JSON.stringify(supprime)}`);
     await jusque(async () => !/^\(/.test(await titre(admin)), 'le non-lu du canal supprimé est retiré');
+  } finally { await admin.contexte.close(); }
+});
+
+S.it('« À donner à la classe » : l’admin voit l’adresse et le code, et copie le message pour la classe', async () => {
+  const admin = await S.admin();
+  try {
+    if (MOTEUR === 'chromium') await admin.contexte.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await aller(admin, '#/admin');
+    const carte = admin.page.locator('section.card', { has: admin.page.getByRole('heading', { name: 'À donner à la classe' }) });
+    await carte.getByText(S.serveur.url, { exact: true }).waitFor();
+    await carte.getByText(CODE, { exact: true }).waitFor();
+    await carte.getByRole('button', { name: 'Copier le message pour la classe' }).click();
+    if (MOTEUR === 'chromium') {
+      await admin.page.locator('.toast', { hasText: 'Message copié' }).waitFor();
+      const presse = await admin.page.evaluate(() => navigator.clipboard.readText());
+      if (!presse.includes(S.serveur.url) || !presse.includes(`Code de la classe : ${CODE}`)) throw new Error(`message copié inattendu : ${presse}`);
+    } else {
+      await admin.page.locator('.toast', { hasText: /Message copié|Copie impossible/ }).waitFor(); // WebKit sans accès au presse-papiers en test
+    }
   } finally { await admin.contexte.close(); }
 });

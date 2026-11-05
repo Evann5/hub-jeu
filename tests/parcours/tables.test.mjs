@@ -15,6 +15,9 @@ S.it('fiche de jeu : la carte ouvre une fiche, « Annuler » ne crée rien, « C
   await fiche.getByText('2 joueurs').waitFor();
   await fiche.getByRole('button', { name: 'Annuler' }).click();
   await fiche.waitFor({ state: 'hidden' });
+  await carte.getByRole('heading', { name: 'Morpion', exact: true }).click(); // toute la carte ouvre la fiche, pas seulement le bouton
+  await fiche.getByRole('button', { name: 'Annuler' }).click();
+  await fiche.waitFor({ state: 'hidden' });
   if ((await hashDe(h)) !== '#/jouer') throw new Error('Annuler a changé d’écran');
   if (await h.page.locator('a.table-row').count() !== 0) throw new Error('une table a été créée sans le demander');
 

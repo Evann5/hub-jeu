@@ -414,6 +414,7 @@ textarea.input { resize: vertical; min-height: 80px; border-radius: var(--radius
   background: var(--bg-2);
   --ring: var(--bg-2);
 }
+#annonces { position: fixed; top: 0; left: 0; margin: 0; } /* hors du flux : elle ne doit pas faire défiler la page */
 .view:focus, h1[tabindex='-1']:focus { outline: none; }
 .tchat-log { display: contents; }
 /* Sur une carte de couleur, l'anneau de focus prend l'encre de la carte : le citron vert ne s'y voit pas. */
