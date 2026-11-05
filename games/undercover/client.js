@@ -14,6 +14,22 @@ function eye(off = false) {
   return svg;
 }
 
+// Largeur d'un caractère en « em » dans Syne 800 (mesurée) : sert à ajuster la taille du mot pour que
+// le plus long mot de l'expression tienne sur une ligne, jamais coupé en plein milieu.
+const EM = { a: 1.04, b: 1.08, c: 0.97, d: 1.08, e: 0.97, f: 0.65, g: 0.93, h: 0.99, i: 0.34, j: 0.34, k: 0.92, l: 0.34, m: 1.63, n: 0.98, o: 1, p: 1.04, q: 1.08, r: 0.54, s: 0.82, t: 0.61, u: 0.98, v: 0.9, w: 1.44, x: 0.96, y: 0.91, z: 0.88, '’': 0.28, '-': 0.57 };
+const ACCENT = { à: 'a', â: 'a', ä: 'a', é: 'e', è: 'e', ê: 'e', ë: 'e', î: 'i', ï: 'i', ô: 'o', ö: 'o', ù: 'u', û: 'u', ü: 'u', ç: 'c', œ: 'o', æ: 'a' };
+export function wordEm(word) {
+  const w = (c) => {
+    const low = c.toLowerCase();
+    const base = EM[low] ?? EM[ACCENT[low]];
+    if (base === undefined) return 1.3;
+    return c === low ? base : base * 1.25; // capitals are wider
+  };
+  let best = 0;
+  for (const token of String(word).split(/ +|(?<=-)/)) best = Math.max(best, [...token].reduce((n, c) => n + w(c), 0));
+  return Math.max(4, Math.round(best * 1.05 * 100) / 100); // 5 % of margin for rounding and rendering differences
+}
+
 function arrow() {
   const svg = document.createElementNS(SVG, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
@@ -67,16 +83,18 @@ export function mount(root, api) {
     const show = (e) => {
       e.preventDefault();
       card.className = `uc-card${small ? ' is-small' : ''}${m.white ? ' role-white' : ''}`;
+      if (!m.white) card.style.setProperty('--n', String(wordEm(m.word)));
       face.replaceChildren(
         h('span.uc-corner.tl', m.white ? 'W' : eye(true)),
         m.white
           ? h('div', h('div.uc-word.uc-q', '?'), h('div.uc-white-note', 'Tu es Mr. White'))
-          : h('span.uc-word', { style: `--n:${Math.max(4, m.word.length)}` }, m.word),
+          : h('span.uc-word', m.word),
         h('span.uc-corner.br', m.white ? 'W' : eye(true)));
       card.replaceChildren(face);
     };
     const hide = () => {
       card.className = `uc-card uc-back${small ? ' is-small' : ''}`;
+      card.style.removeProperty('--n');
       card.replaceChildren(h('span.uc-logo', eye()));
     };
     card.addEventListener('pointerdown', show);

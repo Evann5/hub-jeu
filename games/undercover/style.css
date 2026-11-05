@@ -88,8 +88,10 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .uc-logo { display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: #fff; color: var(--word); box-shadow: 0 0 0 6px #1F37D6, 0 0 0 8px rgb(255 255 255 / 0.5); }
 .g-undercover .uc-logo svg { width: 46px; height: 46px; }
 .g-undercover .uc-face { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--pad); text-align: center; }
-.g-undercover .uc-word { font: 800 min(2.35rem, calc((100cqw - 2 * var(--pad)) / (var(--n, 8) * 0.88)))/1 var(--uc-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
-.g-undercover .uc-card { --pad: 14px; container-type: inline-size; }
+.g-undercover .uc-word { font: 800 min(2.35rem, calc((100cqw - 2 * var(--pad)) / var(--n, 8)))/1 var(--uc-display); letter-spacing: -0.02em; overflow-wrap: normal; }
+.g-undercover .uc-card { --pad: 10px; container-type: inline-size; }
+/* La carte tenue s'élargit pour les mots longs (--n = largeur du plus long mot, en em) : le mot reste grand et entier. */
+.g-undercover .uc-card:not(.uc-back):not(.is-reveal):not(.is-small) { width: clamp(220px, calc(var(--n, 0) * 28px + 2 * var(--pad)), min(100%, 320px)); }
 .g-undercover .uc-q { font-size: 5rem; }
 .g-undercover .uc-white-note { margin-top: 14px; font-weight: 700; }
 .g-undercover .uc-corner { position: absolute; display: grid; place-items: center; font: 800 1rem/1 var(--uc-display); color: var(--word); }
@@ -124,6 +126,8 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .uc-peek .uc-logo { width: 40px; height: 40px; box-shadow: 0 0 0 3px #1F37D6; }
 .g-undercover .uc-peek .uc-logo svg { width: 20px; height: 20px; }
 .g-undercover .uc-peek .uc-card { --pad: 6px; }
+.g-undercover .uc-peek .uc-card:not(.uc-back) { width: clamp(100px, calc(var(--n, 0) * 16px + 2 * var(--pad)), 70%); }
+.g-undercover .uc-peek .uc-word { font-size: min(1.4rem, calc((100cqw - 2 * var(--pad)) / var(--n, 8))); }
 .g-undercover .uc-peek .uc-q { font-size: 2.2rem; }
 .g-undercover .uc-peek .uc-white-note, .g-undercover .uc-peek .uc-corner { display: none; }
 
@@ -196,6 +200,7 @@ button.uc-card:active { cursor: grabbing; }
   .g-undercover .uc-title { margin-top: 10px; }
   .g-undercover .uc-grow { min-height: 8px; }
   .g-undercover .uc-card { width: 176px; height: 246px; margin-top: 14px; }
+  .g-undercover .uc-card:not(.uc-back):not(.is-reveal):not(.is-small) { width: clamp(176px, calc(var(--n, 0) * 28px + 2 * var(--pad)), min(100%, 320px)); }
   .g-undercover .uc-card.is-reveal { width: 150px; height: 206px; }
   .g-undercover .uc-card.is-small { width: 96px; height: 134px; }
   .g-undercover .uc-card.is-tilt { margin-top: 14px; }

@@ -21,7 +21,6 @@
   color: #fff;
   font: 600 1rem/1.35 'BJ Figtree', system-ui, sans-serif;
   overflow: hidden auto;
-  contain: paint; /* la grille en perspective déborde de 60 % de chaque côté : sans ça le jeu mesure 624 px sur 390 et peut glisser sur le côté */
   container-type: inline-size;
 }
 /* Soleil couchant : disque dégradé dont le bas est découpé par des rayures. */

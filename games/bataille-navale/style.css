@@ -75,7 +75,6 @@
 
 /* Téléphone, pendant le tir : le radar garde sa taille, ma flotte devient une petite carte avec ses bateaux à côté. */
 @container (max-width: 739px) {
-  .g-bataille-navale .bn { gap: 10px; padding-bottom: 20px; }
   .g-bataille-navale .bn-boards { gap: 14px; }
   .g-bataille-navale .bn[data-phase='firing'] .bn-pane-mine { --cell: calc(var(--full) * 0.5); width: 100%; grid-template-columns: auto 1fr; align-items: start; column-gap: 14px; justify-items: start; }
   .g-bataille-navale .bn[data-phase='firing'] .bn-pane-mine .bn-title { grid-column: 1 / -1; }
@@ -196,4 +195,9 @@
   .g-bataille-navale .bn-cell.is-last, .g-bataille-navale .bn-cell.is-last::before, .g-bataille-navale .bn-cell.is-last::after { animation: none; }
   .g-bataille-navale .bn-ship, .g-bataille-navale .bn-btn { transition: none; }
   .g-bataille-navale .bn-confetti { display: none; }
+}
+
+/* .bn est lui-même le conteneur : son espacement passe par une media query. */
+@media (max-width: 739px) {
+  .g-bataille-navale .bn { gap: 10px; padding-bottom: 20px; }
 }

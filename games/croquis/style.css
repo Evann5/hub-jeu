@@ -32,8 +32,9 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  container-type: inline-size;
+  container-type: size; /* la hauteur de la zone sert à dimensionner la feuille sur grand écran (cqh) */
   position: relative;
+  --cr-chrome: 230px; /* hauteur prise par tout ce qui n'est pas la feuille : bandeau, marges, saisie */
   font-size: 16px;
   font-weight: 500;
   line-height: 1.35;
@@ -144,6 +145,7 @@
 .g-croquis .cr-width { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 3px solid transparent; border-radius: 16px; background: #EAF1FF; }
 .g-croquis .cr-nib { width: var(--s); height: var(--s); border-radius: 50%; background: var(--ink); }
 .g-croquis .cr-width.is-on { border-color: var(--ink); background: var(--lemon); }
+.g-croquis .cr-ico { display: none; }
 .g-croquis .cr-btn { min-height: 46px; padding: 0 18px; border: 3px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); font-size: 15px; font-weight: 800; box-shadow: 0 4px 0 var(--ink); }
 .g-croquis .cr-btn:hover:not(:disabled) { background: #EAF1FF; }
 .g-croquis .cr-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
@@ -219,12 +221,18 @@
 
 /* ——— Grand écran (la zone du jeu, pas la fenêtre) : feuille à gauche, joueurs à droite ——— */
 @container (min-width: 720px) {
-  .g-croquis .cr-main { grid-template-columns: minmax(0, 1fr) 250px; gap: 20px; padding: 22px 22px 24px; }
+  .g-croquis .cr.is-drawing { --cr-chrome: 300px; } /* + la boîte à pinceaux */
+  .g-croquis .cr-main { grid-template-columns: minmax(0, 1fr) 220px; gap: 20px; padding: 16px 22px 16px; }
+  .g-croquis .cr-stage { gap: 22px; }
+  .g-croquis .cr-tools { gap: 6px; padding: 8px 12px 10px; margin-bottom: 10px; }
+  .g-croquis .cr-color { width: 44px; height: 44px; }
+  .g-croquis .cr-width { width: 44px; height: 44px; }
+  .g-croquis .cr-btn { min-height: 44px; padding: 0 14px; }
   .g-croquis .cr-main > .cr-stage,
   .g-croquis .cr-main > .cr-final { grid-column: 1; grid-row: 1; }
   .g-croquis .cr-side { grid-column: 2; grid-row: 1; }
   .g-croquis .cr-players { grid-template-columns: minmax(0, 1fr); }
-  .g-croquis .cr-sheetbox { max-width: calc((100dvh - 360px) * 4 / 3); min-width: min(100%, 380px); }
+  .g-croquis .cr-sheetbox { max-width: min(960px, calc((100cqh - var(--cr-chrome)) * 4 / 3)); min-width: min(100%, 380px); }
   .g-croquis .cr-feed { height: 180px; }
 }
 

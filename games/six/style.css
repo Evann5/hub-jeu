@@ -34,8 +34,15 @@
   --cw-hand: min(56px, calc((100cqw - 24px - 32px) / 5));
   --cw-strip: 40px;
 }
-@container (min-width: 600px) { .g-six .sx { --cw-hand: min(74px, calc((100cqw - 24px - 72px) / 10)); --cw-lane: min(66px, calc((100cqw - 104px) / 5)); } }
-@container (min-width: 720px) { .g-six .sx { --cw-lane: min(66px, calc((100cqw - 340px - 104px) / 5)); --cw-strip: 46px; } }
+/* .sx est lui-même le conteneur : ces tailles se posent sur ses enfants, sinon elles seraient ignorées. */
+@container (min-width: 600px) {
+  .g-six .sx-handbox { --cw-hand: min(68px, calc((100cqw - 24px - 72px) / 10)); }
+  .g-six .sx-lanes { --cw-lane: min(52px, calc((100cqw - 104px) / 5)); }
+}
+@container (min-width: 720px) {
+  .g-six .sx-lanes { --cw-lane: min(52px, calc((100cqw - 340px - 104px) / 5)); }
+  .g-six .sx-field { --cw-strip: 46px; }
+}
 
 /* ——— Haut ——— */
 .g-six .sx-top { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
@@ -147,6 +154,18 @@
 .g-six .sx-log { margin: 0; min-height: 1.2em; color: rgb(45 27 105 / 0.8); font-size: 0.8125rem; font-weight: 700; }
 
 /* ——— Ma main ——— */
+/* Ordinateur : les quatre rangées et la main tiennent à l'écran sans défiler. */
+@container (min-width: 600px) {
+  .g-six .sx-lanes { gap: 8px; }
+  .g-six .sx-lane { padding-top: 10px; padding-bottom: 6px; }
+}
+@media (max-height: 860px) {
+  @container (min-width: 600px) {
+    .g-six .sx-lanes { --cw-lane: min(44px, calc((100cqw - 340px - 104px) / 5)); }
+    .g-six .sx-handbox { --cw-hand: min(60px, calc((100cqw - 24px - 72px) / 10)); padding-top: 6px; padding-bottom: 8px; }
+    .g-six .sx-hand { padding-top: 6px; }
+  }
+}
 .g-six .sx-handbox {
   position: sticky; bottom: 0; z-index: 5; display: grid; gap: 8px; margin: auto calc(-1 * clamp(10px, 3cqw, 22px)) 0; padding: 12px clamp(10px, 3cqw, 22px) 12px;
   border-top: 3px solid var(--sx-ink); border-radius: 26px 26px 0 0; background: linear-gradient(180deg, #ffffff, #efe4ff); box-shadow: 0 -6px 0 rgb(45 27 105 / 0.12);
