@@ -93,9 +93,13 @@ export function removeUser(userId, { deleted = false } = {}) {
 function rateLimited(userId) {
   const now = Date.now();
   const times = (sendTimes.get(userId) || []).filter((t) => now - t < 5000);
+  if (times.length >= 5) { // un envoi refusé ne prolonge pas l'attente
+    sendTimes.set(userId, times);
+    return true;
+  }
   times.push(now);
   sendTimes.set(userId, times);
-  return times.length > 5;
+  return false;
 }
 
 function assertNotMuted(me) {

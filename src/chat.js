@@ -108,30 +108,31 @@ export function markAllChannelsRead(userId) {
   }
 }
 
+// Les conversations privées possibles de la personne : une requête par conversation, sur l'index (scope, id), plutôt qu'un parcours de tous les messages.
+function dmScopesOf(userId) {
+  return db.prepare('SELECT id FROM users WHERE id != ?').all(userId).map((u) => dmScope(userId, u.id));
+}
+
 // Nombre de messages non lus par scope (canaux et messages privés de la personne).
 export function unreadCounts(userId) {
-  const rows = db
-    .prepare(
-      `SELECT m.scope, COUNT(*) AS n FROM messages m
-       LEFT JOIN reads r ON r.user_id = ? AND r.scope = m.scope
-       WHERE m.id > COALESCE(r.last_id, 0) AND m.user_id != ?
-         AND (m.scope LIKE 'c:%' OR m.scope LIKE ? OR m.scope LIKE ?)
-       GROUP BY m.scope`,
-    )
-    .all(userId, userId, `dm:${userId}:%`, `dm:%:${userId}`);
+  const reads = new Map(db.prepare('SELECT scope, last_id FROM reads WHERE user_id = ?').all(userId).map((r) => [r.scope, r.last_id]));
+  const channels = db.prepare('SELECT id FROM channels').all().map((c) => `c:${c.id}`);
+  const count = db.prepare('SELECT COUNT(*) AS n FROM messages WHERE scope = ? AND id > ? AND user_id != ?');
   const out = {};
-  for (const r of rows) out[r.scope] = r.n;
+  for (const scope of [...channels, ...dmScopesOf(userId)]) {
+    const { n } = count.get(scope, reads.get(scope) ?? 0, userId);
+    if (n) out[scope] = n;
+  }
   return out;
 }
 
 // Conversations privées de la personne, la plus récente d'abord.
 export function dmList(userId) {
-  const rows = db
-    .prepare(
-      `SELECT scope, MAX(id) AS last_id, MAX(created_at) AS last_at FROM messages
-       WHERE scope LIKE ? OR scope LIKE ? GROUP BY scope ORDER BY last_id DESC`,
-    )
-    .all(`dm:${userId}:%`, `dm:%:${userId}`);
+  const latest = db.prepare('SELECT id AS last_id, created_at AS last_at FROM messages WHERE scope = ? ORDER BY id DESC LIMIT 1');
+  const rows = dmScopesOf(userId)
+    .map((scope) => ({ scope, ...latest.get(scope) }))
+    .filter((r) => r.last_id)
+    .sort((x, y) => y.last_id - x.last_id);
   return rows.map((r) => {
     const [a, b] = r.scope.split(':').slice(1).map(Number);
     return { scope: r.scope, otherId: a === userId ? b : a, lastAt: r.last_at };

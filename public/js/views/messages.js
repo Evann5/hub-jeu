@@ -151,6 +151,9 @@ async function loadHistory(scope, before) {
     const conv = state.convs.get(scope) || { messages: [], complete: false, loaded: false };
     const known = new Set(conv.messages.map((m) => m.id));
     conv.messages = [...res.messages.filter((m) => !known.has(m.id)), ...conv.messages];
+    // Un message resté « Pas envoyé » pendant une coupure a pu arriver quand même : il n'apparaît alors qu'une fois.
+    const mine = res.messages.filter((m) => m.userId === state.me.id);
+    conv.messages = conv.messages.filter((x) => x.id > 0 || !mine.some((m) => m.body === x.body && m.createdAt >= x.createdAt - 5000));
     conv.complete = res.complete;
     conv.loaded = true;
     state.convs.set(scope, conv);
@@ -433,11 +436,12 @@ async function send(scope, body, existing) {
   if (scope === currentScope()) renderMessages({ toBottom: true });
   try {
     const { message } = await call(state.socket, 'send', { scope, body });
-    if (conv) {
-      const i = conv.messages.indexOf(local);
+    const live = state.convs.get(scope); // une reconnexion a pu recharger la conversation pendant l'envoi
+    if (live) {
+      const i = live.messages.indexOf(local);
       if (i >= 0) {
-        if (conv.messages.some((x) => x.id === message.id)) conv.messages.splice(i, 1);
-        else conv.messages[i] = message;
+        if (live.messages.some((x) => x.id === message.id)) live.messages.splice(i, 1);
+        else live.messages[i] = message;
       }
     }
   } catch (err) {
@@ -470,7 +474,7 @@ export function onMessage(m) {
   const conv = state.convs.get(m.scope);
   if (conv?.loaded && !conv.messages.some((x) => x.id === m.id)) {
     // Remplace le message « en cours d'envoi » s'il vient de nous.
-    const i = conv.messages.findIndex((x) => x.pending && x.userId === m.userId && x.body === m.body);
+    const i = conv.messages.findIndex((x) => (x.pending || x.failed) && x.userId === m.userId && x.body === m.body); // « Pas envoyé » a pu arriver quand même
     if (i >= 0) conv.messages.splice(i, 1);
     conv.messages.push(m);
   }

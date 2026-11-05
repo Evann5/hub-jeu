@@ -59,6 +59,7 @@ export function errorBox(form, message) {
 
 // Formulaire dont l'envoi est asynchrone : bouton désactivé pendant l'envoi, erreur affichée sans perdre la saisie.
 export function asyncForm(form, action) {
+  form.addEventListener('input', () => errorBox(form, null)); // on corrige : l'ancienne erreur ne reste pas affichée
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = form.querySelector('button[type=submit]');

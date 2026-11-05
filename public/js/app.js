@@ -92,7 +92,10 @@ function startRealtime() {
     state.games = s.games;
     state.tables = s.tables;
     // Après une coupure, on recharge les conversations : des messages ont pu arriver entre-temps.
+    // Les messages pas encore partis restent à l'écran, avec « Réessayer ».
+    const unsent = [...state.convs].map(([scope, c]) => [scope, c.messages.filter((m) => m.id < 0)]).filter(([, list]) => list.length);
     state.convs.clear();
+    for (const [scope, list] of unsent) state.convs.set(scope, { messages: list, complete: false, loaded: false });
     if (s.mustChangePassword) {
       socket.disconnect();
       renderForcedPassword(root, { onDone: startRealtime });
@@ -119,6 +122,7 @@ function startRealtime() {
   socket.on('user', (u) => {
     state.users.set(u.id, u);
     if (u.id === state.me.id) state.me = u;
+    if (u.id === state.me.id && state.route.view === 'admin' && !isAdmin()) go('#/'); // rétrogradé pendant qu'il regardait l'écran admin
     renderNav();
     refreshPeople();
     messages.onUsersChange();
@@ -179,6 +183,7 @@ function startRealtime() {
   });
   socket.on('table', table.onTable);
   socket.on('table:closed', table.onClosed);
+  socket.on('table:kicked', table.onKicked);
   socket.on('invite', ({ tableId, game, from }) => {
     const g = gameOf(game);
     const who = state.users.get(from)?.pseudo || 'Quelqu’un';

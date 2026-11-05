@@ -231,3 +231,26 @@ test('conversation : un scope qui n’est pas du texte est refusé proprement', 
     assert.throws(() => chat.checkScope(bad, 1), chat.ChatError);
   }
 });
+
+test('conversation : une seule écriture par conversation', () => {
+  const me = auth.createUser({ pseudo: 'scope-a', passHash: 'x' }).id;
+  const other = auth.createUser({ pseudo: 'scope-b', passHash: 'x' }).id;
+  const channel = chat.listChannels()[0].id;
+  assert.doesNotThrow(() => chat.checkScope(`c:${channel}`, me));
+  assert.doesNotThrow(() => chat.checkScope(`dm:${Math.min(me, other)}:${Math.max(me, other)}`, me));
+  for (const bad of [`c:0${channel}`, `c:${channel}:99`, `dm:0${Math.min(me, other)}:${Math.max(me, other)}`, `t:007`, 'c:99999999999999999999']) {
+    assert.throws(() => chat.checkScope(bad, me), chat.ChatError, bad);
+  }
+});
+
+test('pseudos : accents acceptés, lettres qui en imitent une autre refusées', () => {
+  for (const ok of ['Élodie', 'Trần', 'Zoé_02', 'a.b-c']) assert.equal(auth.validatePseudo(ok), null, ok);
+  for (const bad of ['ｚｚ-a', 'zɑ-a', 'мinh', 'zz a', 'ᴀbc']) assert.notEqual(auth.validatePseudo(bad), null, bad);
+});
+
+test('pseudos : un sosie d’un membre ou d’un admin est considéré comme pris', () => {
+  auth.createUser({ pseudo: 'Olivia', passHash: 'x' });
+  for (const taken of ['olivia', 'OLIVIA', 'Ólivia', '0livia', 'O1ivia', 'Oiivia']) assert.equal(auth.pseudoTaken(taken), true, taken);
+  assert.equal(auth.pseudoTaken('Olivier'), false);
+  assert.equal(auth.pseudoTaken('sec0nd'), true); // le sosie d'un admin (ADMINS), même pas encore inscrit
+});

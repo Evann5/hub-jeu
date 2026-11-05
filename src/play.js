@@ -164,7 +164,9 @@ export function registerPlay(socket, handler) {
   }));
 
   socket.on('table:kick', handler(socket, ({ id, userId: target }, me) => {
-    changed(tables.kickPlayer(tableId(id), me.id, Number(target)));
+    const n = tableId(id);
+    changed(tables.kickPlayer(n, me.id, Number(target)));
+    io.to(`u:${Number(target)}`).emit('table:kicked', { id: n });
     return {};
   }));
 

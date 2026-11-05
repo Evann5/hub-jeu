@@ -58,6 +58,12 @@ export function onTable(payload) {
   }
 }
 
+export function onKicked({ id }) {
+  if (cur?.id !== id) return;
+  toast('L’hôte t’a retiré de cette table.');
+  go('#/jouer');
+}
+
 export function onClosed({ id }) {
   if (cur?.id !== id) return;
   toast('La table a été fermée.');
@@ -112,6 +118,7 @@ function renderHead() {
   const myTurn = cur.turnGated ? cur.turnShown : t.turn.includes(state.me.id); // un jeu peut retenir l'annonce jusqu'à la fin de son animation (api.showTurn)
   const label = t.status === 'lobby' ? 'En attente' : t.status === 'over' ? 'Terminée' : myTurn ? 'À toi de jouer' : 'En cours';
   if (cur.spoken !== undefined && cur.spoken !== label && (label === 'À toi de jouer' || label === 'Terminée')) announce(label === 'Terminée' ? 'Partie terminée.' : 'À toi de jouer.');
+  if (cur.spoken === 'En cours' && label === 'Terminée' && cur.tab === 'chat' && (mobile() || isWide())) toast('Partie terminée : regarde l’onglet Partie.');
   cur.spoken = label;
   const tab = (key, text, extra) => h('button.table-tab', {
     type: 'button',
@@ -129,7 +136,7 @@ function renderHead() {
     seated() || t.status === 'lobby' ? null : h('span.table-pill.is-watch', 'Spectateur'),
     arrowKeys(h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
       // Depuis le chat, on garde un œil sur la partie : à qui c'est, et le temps qu'il reste.
-      tab('game', 'Partie', cur.tab !== 'game' && t.status === 'playing' ? [myTurn ? h('span.tab-turn', { title: 'À toi de jouer' }) : null, t.deadline ? h('span.tab-time', timeLeft(t.deadline)) : null] : null),
+      tab('game', 'Partie', cur.tab !== 'game' && t.status === 'over' ? h('span.tab-turn', { title: 'Partie terminée' }) : cur.tab !== 'game' && t.status === 'playing' ? [myTurn ? h('span.tab-turn', { title: 'À toi de jouer' }) : null, t.deadline ? h('span.tab-time', timeLeft(t.deadline)) : null] : null),
       tab('chat', 'Joueurs et chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null))),
   ].filter(Boolean)));
 }
@@ -158,8 +165,8 @@ function renderSide() {
   if (isHost() || isAdmin()) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: closeTable }, icon('trash'), 'Fermer la table'));
   keepFocus(cur.ui.players, () => cur.ui.players.replaceChildren(
     h('h2', 'Joueurs', h('span.section-count', `${t.seats.length}/${g.maxPlayers}`)),
-    inLobby ? null : h('ul.seat-list', rows),
-    actions.length ? h('div.side-actions', actions) : null));
+    ...(inLobby ? [] : [h('ul.seat-list', rows)]),
+    ...(actions.length ? [h('div.side-actions', actions)] : [])));
 }
 
 // ——— Salon ———

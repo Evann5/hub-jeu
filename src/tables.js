@@ -146,6 +146,7 @@ export function joinTable(id, userId) {
   const t = getTable(id);
   mustLobby(t);
   if (t.seats.includes(userId)) return t;
+  if (t.kicked?.includes(userId)) throw new ChatError('L’hôte t’a retiré de cette table.');
   if (t.seats.length >= gameOf(t).maxPlayers) throw new ChatError('La table est complète. Tu peux regarder la partie.');
   t.seats.push(userId);
   persist(t);
@@ -183,6 +184,7 @@ export function kickPlayer(id, userId, targetId) {
   mustLobby(t);
   if (targetId === userId) throw new ChatError('Pour partir, utilise « Quitter la table ».');
   t.seats = t.seats.filter((x) => x !== targetId);
+  t.kicked = [...(t.kicked ?? []), targetId]; // gardé en mémoire : le salon ne dure pas
   persist(t);
   return t;
 }
