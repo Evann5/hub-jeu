@@ -106,7 +106,9 @@ export function mount(root, api) {
   }
 
   function roleCard(id, role, word) {
-    return h(`div.uc-card.is-reveal.role-${role}`,
+    // --n : largeur du nom du rôle en capitales (em), pour que « UNDERCOVER » tienne entier sur la carte (voir .uc-role).
+    // wordEm() est mesuré sur des minuscules : les capitales de Syne sont environ 7 % plus larges (mesuré sur « UNDERCOVER »).
+    return h(`div.uc-card.is-reveal.role-${role}`, { style: `--n:${Math.round(wordEm(ROLE[role].toUpperCase()) * 1.08 * 100) / 100}` },
       h('span.uc-corner.tl', ROLE[role][0]),
       h('div.uc-face',
         h('div',
@@ -193,7 +195,7 @@ export function mount(root, api) {
     nodes.push(rows);
     if (v.round > 1) nodes.push(h('p.uc-sub', 'Les indices des manches précédentes :'), chips());
     nodes.push(h('div.uc-grow'));
-    if (me() && !me().out) nodes.push(h('div.uc-peek', h('span', 'Ton mot'), holdCard({ small: true })));
+    if (me() && !me().out) nodes.push(h('div.uc-peek', h('span', 'Maintiens pour voir ton mot'), holdCard({ small: true })));
     return nodes;
   }
 

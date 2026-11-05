@@ -180,9 +180,18 @@ export function mount(root, api) {
   }
 
   // ——— Les panneaux d'action ———
+  // Ce que tout le village sait déjà (rien de secret : view.dead et view.aliveCount sont publics).
+  // On ne le raccourcit jamais selon les rôles vivants, ce qui révélerait qui est en vie.
+  const knownFacts = () => h('dl.lg-facts',
+    h('div', h('dt', 'Nuit'), h('dd', `n° ${view.n}`)),
+    h('div', h('dt', 'En vie'), h('dd', `${view.aliveCount} sur ${view.players.length}`)),
+    h('div.lg-facts-dead', h('dt', 'Morts connus'), h('dd', view.dead.length
+      ? join(view.dead.map((d) => `${name(d.id)} (${roleName(d.role)})`))
+      : 'personne pour l’instant')));
+
   const sleepPanel = (text) => h('section.lg-panel.is-sleep',
     h('div.lg-zzz', { 'aria-hidden': 'true' }, h('span', 'z'), h('span', 'z'), h('span', 'z')),
-    h('h3', 'Le village dort'), h('p', text));
+    h('h3', 'Le village dort'), h('p', text), knownFacts());
 
   const recap = () => {
     const last = view.log.at(-1);
@@ -407,11 +416,11 @@ export function mount(root, api) {
     renderOverlay();
   }
 
-  function closeCard() {
+  function closeCard(auto = false) {
     if (cardFirst && view?.me) try { sessionStorage.setItem(cardKey(), '1'); } catch { /* stockage indisponible : la carte se réaffichera */ }
     cardOpen = false;
     renderOverlay();
-    app.querySelector('[data-key="chip"]')?.focus();
+    if (!auto) app.querySelector('[data-key="chip"]')?.focus(); // fermée toute seule : on ne vole pas le focus
   }
 
   const seenCard = () => { try { return Boolean(sessionStorage.getItem(cardKey())); } catch { return false; } };
@@ -436,7 +445,7 @@ export function mount(root, api) {
         h('p.lg-card-team', `Tu joues pour ${r.team}.`)),
       view.me.role === 'wolf' && view.wolves?.length > 1 ? h('p.lg-card-note', `Ta meute : ${join(view.wolves.filter((x) => x !== view.me.id).map(name))}.`) : null,
       h('p.lg-card-note', `Dans ce village : ${join(comp)}.`),
-      h('button.lg-btn.primary', { type: 'button', onclick: closeCard, dataset: { key: 'card-ok' } }, cardFirst ? 'J’ai compris' : 'Fermer')));
+      h('button.lg-btn.primary', { type: 'button', onclick: () => closeCard(), dataset: { key: 'card-ok' } }, cardFirst ? 'J’ai compris' : 'Fermer')));
     overlay.querySelector('[data-key="card-ok"]').focus();
   }
 
@@ -457,6 +466,7 @@ export function mount(root, api) {
     if (fresh) {
       phaseKey = key;
       sel = [];
+      if (cardOpen) closeCard(true); // la phase change (ex. nuit 1 -> Sorcière) : la carte ne doit pas recouvrir l'écran suivant
       const { kicker, title } = headInfo();
       const dawn = view.phase === 'debate' ? view.log.findLast((e) => e.k === 'dawn' && e.n === view.n) : null;
       live.textContent = `${kicker} : ${title}.${dawn ? (dawn.dead.length ? ` Morts : ${join(dawn.dead.map((id) => `${name(id)}, ${roleName(view.roles[id])}`))}.` : ' Personne n’est mort.') : ''}`;

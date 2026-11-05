@@ -21,6 +21,7 @@ export function mount(root, api) {
   root.append(el);
   let v = null;
   let info = null;
+  let shownKey = ''; // phase + question déjà affichées : sert à ne recentrer la bande qu'au changement d'écran
 
   const fmtPts = (n) => n.toLocaleString('fr-FR');
 
@@ -115,7 +116,19 @@ export function mount(root, api) {
     const scrolled = el.querySelector('.qz-side .qz-board')?.scrollLeft ?? 0; // le classement est recréé à chaque état : la rangée garde sa position
     el.replaceChildren(h('div.qz-stage', h('div.qz-main', main), v.phase === 'over' ? null : h('aside.qz-side', h('h3', 'Classement'), scoreboard())));
     const board = el.querySelector('.qz-side .qz-board');
-    if (board) board.scrollLeft = scrolled;
+    if (board) {
+      board.scrollLeft = scrolled;
+      // À chaque nouvel écran (question, correction), la bande est réordonnée : on la fait défiler jusqu'à la ligne du joueur
+      // si elle est cachée. Entre deux, on ne touche à rien (le joueur peut avoir fait défiler lui-même).
+      const key = `${v.phase}:${v.index}`;
+      const mine = board.querySelector('li.is-me');
+      if (mine && key !== shownKey) {
+        const box = board.getBoundingClientRect();
+        const row = mine.getBoundingClientRect();
+        if (row.left < box.left || row.right > box.right) board.scrollLeft += row.left - box.left - (box.width - row.width) / 2;
+      }
+      shownKey = key;
+    }
     tick();
   }
 

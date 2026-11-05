@@ -1356,3 +1356,7 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .link-btn::after { content: ''; position: absolute; inset: -11px -2px; }
   .table-back::after { content: ''; position: absolute; inset: -4px; }
 }
+
+/* L'onglet Partie, vu depuis le chat : un point quand c'est à toi, et le temps qu'il reste. */
+.tab-turn { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.tab-time { font-size: 0.8125rem; font-variant-numeric: tabular-nums; opacity: 0.85; }

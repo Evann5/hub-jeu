@@ -1,7 +1,7 @@
 // Tests des règles des Loups-garous : node --test games/loup-garou/
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { setup, move, timeout, leave, view, status, composition, autoWolves } from './rules.js';
+import { setup, move, timeout, leave, view, status, composition, autoWolves, FIRST_NIGHT_BONUS_MS } from './rules.js';
 
 const ctx = (random = () => 0, now = 1_000_000) => ({ now, random });
 
@@ -43,7 +43,17 @@ test('setup distribue les rôles de la composition, avec le hasard du contexte',
   for (const r of Object.values(a.roles)) counts[r] = (counts[r] || 0) + 1;
   assert.deepEqual(counts, composition(9, {}));
   assert.equal(a.phase, 'night');
-  assert.equal(a.deadline, 1_000_000 + 45_000);
+  assert.equal(a.deadline, 1_000_000 + 45_000 + FIRST_NIGHT_BONUS_MS); // 1re nuit : +10 s pour lire sa carte
+  assert.equal(a.span, 45_000 + FIRST_NIGHT_BONUS_MS);
+});
+
+test('seule la 1re nuit est rallongée, et pas selon les rôles en jeu', () => {
+  const players = Array.from({ length: 6 }, (_, i) => ({ id: i + 1, pseudo: 'x' }));
+  const avecTout = setup(players, {}, ctx());
+  const sansRoles = setup(players, { seer: false, witch: false, hunter: false, cupid: false }, ctx());
+  assert.equal(avecTout.deadline, sansRoles.deadline);
+  assert.equal(status(avecTout).deadline, 1_000_000 + 45_000 + FIRST_NIGHT_BONUS_MS);
+  assert.equal(FIRST_NIGHT_BONUS_MS, 10_000);
 });
 
 test('durées réglables', () => {

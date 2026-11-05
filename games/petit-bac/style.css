@@ -273,14 +273,15 @@
 .g-petit-bac .pb-line.is-duplicate .pb-pts { background: var(--orange); }
 .g-petit-bac .pb-line.is-refused .pb-pts,
 .g-petit-bac .pb-line.is-letter .pb-pts { background: #E5DDF8; }
-.g-petit-bac .pb-contest { display: inline-flex; align-items: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 4px 14px; border: 3px solid var(--fuchsia); border-radius: 999px; background: #fff; color: var(--fuchsia); font-size: 14px; font-weight: 800; }
+.g-petit-bac .pb-contest { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-width: 44px; min-height: 44px; padding: 4px 14px; line-height: 1.15; border: 3px solid var(--fuchsia); border-radius: 999px; background: #fff; color: var(--fuchsia); font-size: 14px; font-weight: 800; }
 .g-petit-bac .pb-contest:hover { background: #FFE3F2; }
 .g-petit-bac .pb-contest.is-on { background: var(--fuchsia); color: #fff; }
-.g-petit-bac .pb-count { font-variant-numeric: tabular-nums; }
+.g-petit-bac .pb-count { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.g-petit-bac .pb-count:empty { display: none; }
 
 .g-petit-bac .pb-foot {
   position: sticky;
-  bottom: 0;
+  bottom: -28px; /* colle au vrai bas de l'écran (sinon 28 px de liste restent visibles dessous et le pied recouvre la dernière ligne) : .pb a 28 px de marge basse que la marge négative ci-dessous reprend */
   z-index: 3;
   margin: 20px -16px -28px;
   padding: 10px max(16px, calc((100% - 960px) / 2)) 12px;

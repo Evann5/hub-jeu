@@ -26,6 +26,9 @@ function setDeadline(s, ctx, ms) {
 export const ROLES = ['wolf', 'villager', 'seer', 'witch', 'hunter', 'cupid'];
 const SPECIALS = ['seer', 'witch', 'hunter', 'cupid']; // du plus important au moins important
 const SHORT_WITCH_MS = 6000; // Sorcière sans potion : une phase courte, pour ne pas révéler qu'elle n'a plus rien
+// La 1re nuit dure 10 s de plus : le temps de lire sa carte de rôle. La durée ne dépend jamais des rôles vivants
+// (sinon elle révélerait qui est en vie).
+export const FIRST_NIGHT_BONUS_MS = 10_000;
 
 export const MIN_PLAYERS = 5;
 export const MAX_PLAYERS = 18;
@@ -93,7 +96,7 @@ export function setup(players, options, ctx) {
     log: [],
     winner: null, // { side: 'village' | 'wolves' | 'lovers' | 'none', ids: [] }
   };
-  setDeadline(s, ctx, s.times.night);
+  setDeadline(s, ctx, s.times.night + FIRST_NIGHT_BONUS_MS);
   return settle(s, ctx);
 }
 

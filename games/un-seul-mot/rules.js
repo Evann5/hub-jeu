@@ -78,8 +78,11 @@ const writers = (s) => active(s).filter((id) => id !== s.active);
 // Échéance d'une étape : seulement si un minuteur est réglé.
 const due = (s, now, ms) => (s.timer ? now + ms : null);
 
+// 8 manches par défaut : une partie tient dans une pause de cours (13 reste au choix dans le salon, voir game.json).
+export const DEFAULT_ROUNDS = 8;
+
 export function setup(players, options, ctx) {
-  const rounds = Math.max(1, Math.min(Number(options?.rounds) || 13, 20));
+  const rounds = Math.max(1, Math.min(Number(options?.rounds) || DEFAULT_ROUNDS, 20));
   const s = {
     players: players.map((p) => p.id),
     left: [],

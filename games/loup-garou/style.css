@@ -151,6 +151,11 @@
 .g-loup-garou .lg[data-tone='day'] :focus-visible { outline-color: #FF3DAE; }
 
 .g-loup-garou .lg-panel.is-sleep { justify-items: start; overflow: hidden; }
+.g-loup-garou .lg-facts { display: grid; gap: 6px; width: 100%; margin: 0; padding: 10px 14px; border-radius: 14px; background: rgb(255 255 255 / 0.08); }
+.g-loup-garou .lg-facts > div { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.g-loup-garou .lg-facts dt { color: var(--ink-2); font-size: 0.8125rem; font-weight: 700; }
+.g-loup-garou .lg-facts dt::after { content: ' :'; }
+.g-loup-garou .lg-facts dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
 .g-loup-garou .lg-zzz { display: flex; align-items: flex-end; gap: 4px; font: 900 2rem/1 var(--display); color: #FFE14D; text-shadow: 0 3px 0 #0E0330; }
 .g-loup-garou .lg-zzz span { animation: lg-float 1.8s ease-in-out infinite; }
 .g-loup-garou .lg-zzz span:nth-child(2) { animation-delay: 0.3s; font-size: 1.4em; }

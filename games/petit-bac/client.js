@@ -317,10 +317,10 @@ export function mount(root, api) {
           const contestable = c.state !== 'empty' && c.state !== 'letter';
           cell.btn.hidden = !contestable;
           cell.btn.setAttribute('aria-pressed', String(c.mine));
-          cell.btn.setAttribute('aria-label', `${c.mine ? 'Retirer ma contestation de' : 'Contester'} la réponse de ${api.user(c.id).pseudo} : ${c.text}. ${c.votes} sur ${c.need}.`);
+          cell.btn.setAttribute('aria-label', `${c.mine ? 'Retirer ma contestation de' : 'Contester'} la réponse de ${api.user(c.id).pseudo} : ${c.text}. ${c.votes} sur ${c.need} nécessaires.`);
           cell.btn.classList.toggle('is-on', c.mine);
           cell.btn.firstChild.textContent = c.mine ? 'Contestée' : 'Contester';
-          cell.count.textContent = c.votes ? `${c.votes}/${c.need}` : '';
+          cell.count.textContent = c.votes ? `${c.votes} sur ${c.need} nécessaires` : '';
         }
       }
     }
@@ -358,7 +358,7 @@ export function mount(root, api) {
       h('ul.pb-history', view.history.map((r) => h('li',
         h('span.pb-history-letter', r.letter),
         h('span.pb-history-pts', order.filter((p) => r.points[p.id] !== undefined)
-          .map((p) => h('span', api.user(p.id).pseudo, ' ', h('b', `+${r.points[p.id]}`))))))));
+          .map((p) => h('span', name(p.id), ' ', h('b', `+${r.points[p.id]}`))))))));
     pb.scrollTop = 0;
     if (win.has(api.me.id)) confetti(pb);
     live.textContent = 'Partie terminée.';

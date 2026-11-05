@@ -96,6 +96,15 @@ function setTab(tab) {
   if (tab === 'chat') scrollChat();
 }
 
+const timeLeft = (deadline) => {
+  const s = Math.max(0, Math.ceil((deadline - (Date.now() + (cur?.offset ?? 0))) / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+setInterval(() => {
+  const el = cur?.ui?.head?.querySelector('.tab-time');
+  if (el && cur.table?.deadline) el.textContent = timeLeft(cur.table.deadline);
+}, 1000);
+
 function renderHead() {
   const { table: t, game: g } = cur;
   cur.ui.root.className = viewClass();
@@ -115,7 +124,8 @@ function renderHead() {
     cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, icon('eye'), String(cur.watchers)) : null,
     seated() || t.status === 'lobby' ? null : h('span.table-pill.is-watch', 'Spectateur'),
     h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
-      tab('game', 'Partie'),
+      // Depuis le chat, on garde un œil sur la partie : à qui c'est, et le temps qu'il reste.
+      tab('game', 'Partie', cur.tab !== 'game' && t.status === 'playing' ? [myTurn ? h('span.tab-turn', { title: 'À toi de jouer' }) : null, t.deadline ? h('span.tab-time', timeLeft(t.deadline)) : null] : null),
       tab('chat', 'Joueurs et chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null)),
   ].filter(Boolean));
 }

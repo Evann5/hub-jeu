@@ -1,7 +1,8 @@
 // Tests des règles d'« Un seul mot » : node --test games/un-seul-mot/*.test.js
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { setup, move, status, view, timeout, leave, normalize, related, sameWord, checkClue, CHOICES } from './rules.js';
+import { readFileSync } from 'node:fs';
+import { setup, move, status, view, timeout, leave, normalize, related, sameWord, checkClue, CHOICES, DEFAULT_ROUNDS } from './rules.js';
 import { WORDS } from './words.js';
 
 function seeded(seed = 11) {
@@ -65,6 +66,17 @@ test('la liste de mots : environ 400, sans doublon, un mot à la fois', () => {
   assert.ok(WORDS.length >= 400);
   assert.equal(new Set(WORDS).size, WORDS.length);
   assert.ok(WORDS.every((w) => !/\s/.test(w)));
+});
+
+test('sans option, la partie par défaut fait 8 manches, comme game.json', () => {
+  const players = [1, 2, 3].map((id) => ({ id, pseudo: `p${id}` }));
+  const s = setup(players, {}, { now: 0, random: () => 0.5 });
+  assert.equal(DEFAULT_ROUNDS, 8);
+  assert.equal(s.rounds, 8);
+  assert.equal(s.deck.length, 8 * CHOICES);
+  const fiche = JSON.parse(readFileSync(new URL('./game.json', import.meta.url), 'utf8'));
+  assert.equal(fiche.options.find((o) => o.key === 'rounds').default, DEFAULT_ROUNDS);
+  assert.equal(setup(players, { rounds: 13 }, { now: 0, random: () => 0.5 }).rounds, 13);
 });
 
 test('mise en place : hasard fixé, mots tous différents, devineur qui tourne', () => {

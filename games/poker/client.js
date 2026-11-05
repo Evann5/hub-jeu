@@ -102,7 +102,31 @@ export function mount(root, api) {
   const actionsEl = h('div.pk-actions');
   const raiseEl = h('div.pk-raise', { hidden: true });
   const panel = h('div.pk-panel', handEl, h('div.pk-ctrl', statusEl, actionsEl), raiseEl);
-  const el = h('div.pk', h('div.pk-top', topInfo), felt, panel);
+  // Aide-mémoire « Mains » : l'ordre des combinaisons, ouvert à la demande et refermé d'un tap ailleurs (jamais permanent).
+  const HANDS = [
+    ['Quinte flush', '5 cartes qui se suivent, de la même couleur'],
+    ['Carré', '4 cartes du même rang'],
+    ['Full', 'un brelan et une paire'],
+    ['Couleur', '5 cartes de la même couleur'],
+    ['Quinte', '5 cartes qui se suivent'],
+    ['Brelan', '3 cartes du même rang'],
+    ['Double paire', 'deux paires différentes'],
+    ['Paire', '2 cartes du même rang'],
+    ['Carte haute', 'rien de tout ça : la carte la plus haute'],
+  ];
+  const handsPanel = h('div.pk-hands', { id: 'pk-hands', hidden: true, role: 'region', 'aria-label': 'Ordre des combinaisons' },
+    h('p.pk-hands-title', 'De la plus forte à la plus faible'),
+    h('ol', HANDS.map(([name, desc]) => h('li', h('b', name), h('span', desc)))));
+  const setHands = (open) => {
+    handsPanel.hidden = !open;
+    handsBtn.setAttribute('aria-expanded', String(open));
+  };
+  const handsBtn = h('button.pk-handsbtn', { type: 'button', 'aria-expanded': 'false', 'aria-controls': 'pk-hands', onclick: () => setHands(handsPanel.hidden) }, 'Mains');
+  const outsideHands = (e) => { if (!handsPanel.hidden && !handsPanel.contains(e.target) && !handsBtn.contains(e.target)) setHands(false); };
+  const escHands = (e) => { if (e.key === 'Escape' && !handsPanel.hidden) { setHands(false); handsBtn.focus(); } };
+  document.addEventListener('pointerdown', outsideHands);
+  document.addEventListener('keydown', escHands);
+  const el = h('div.pk', h('div.pk-top', topInfo, handsPanel), felt, panel);
   root.append(el);
 
   function build() {
@@ -273,7 +297,9 @@ export function mount(root, api) {
     const collected = Math.max(0, v.pot - bets);
     const showPot = v.phase === 'hand' ? collected : 0;
     potStack.replaceChildren(showPot > 0 ? chipStack(showPot) : '');
-    potLabel.textContent = showPot > 0 ? `Pot ${fmt(showPot)}` : v.phase === 'result' ? '' : 'Pot vide';
+    // Blindes posées mais rien encore au pot : on montre la somme des mises plutôt que « Pot vide ».
+    const openBets = v.phase === 'hand' && showPot === 0 ? bets : 0;
+    potLabel.textContent = showPot > 0 ? `Pot ${fmt(showPot)}` : openBets > 0 ? `Mises : ${fmt(openBets)}` : v.phase === 'result' ? '' : 'Pot vide';
     potEl.classList.toggle('is-empty', showPot === 0);
     potEl.hidden = v.phase !== 'hand' && showPot === 0;
     if (v.phase === 'hand') {
@@ -306,11 +332,14 @@ export function mount(root, api) {
     const blinds = `Blindes ${fmt(v.sb)} / ${fmt(v.bb)}`;
     const next = v.nextBlinds ? ` · ${fmt(v.nextBlinds.sb)} / ${fmt(v.nextBlinds.bb)} dans ${v.handsToLevel} main${v.handsToLevel > 1 ? 's' : ''}` : '';
     const streets = { preflop: 'Avant le flop', flop: 'Flop', turn: 'Turn', river: 'River' };
+    const hadFocus = document.activeElement === handsBtn;
     topInfo.replaceChildren(
       h('span.pk-hno', `Main ${v.handNo}`),
       h('span.pk-blinds', blinds + next),
       ...(v.phase === 'hand' ? [h('span.pk-street', streets[v.street])] : []),
+      handsBtn, // le bouton « Mains » suit les pastilles, à la ligne si elles ne tiennent pas
     );
+    if (hadFocus) handsBtn.focus({ preventScroll: true }); // replaceChildren fait perdre le focus au clavier
   }
 
   // Panneau d'actions
@@ -516,6 +545,8 @@ export function mount(root, api) {
 
   return () => {
     clearInterval(clock);
+    document.removeEventListener('pointerdown', outsideHands);
+    document.removeEventListener('keydown', escHands);
     off();
   };
 }
