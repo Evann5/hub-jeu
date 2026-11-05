@@ -145,7 +145,9 @@ export function cleanChannel({ name, topic }) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '-')
-    .replace(/[^\p{L}\p{N}_-]/gu, '');
+    .replace(/[^\p{L}\p{N}_-]/gu, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
   if (clean.length < 2 || clean.length > LIMITS.channelNameMax) {
     throw new ChatError(`Le nom du canal doit faire de 2 à ${LIMITS.channelNameMax} caractères (lettres, chiffres, tirets).`);
   }

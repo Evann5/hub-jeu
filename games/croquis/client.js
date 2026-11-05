@@ -394,8 +394,7 @@ export function mount(root, api) {
       h('ol.cr-podium', list.map((p, i) => h(`li${win.has(p.id) ? '.is-winner' : ''}`,
         h('span.cr-podium-rank', String(i + 1)),
         api.token(api.user(p.id), { size: 's' }),
-        h('span.cr-podium-name', name(p.id), p.gone ? ' (parti)' : ''),
-        win.has(p.id) ? h('span.cr-medal', 'Champion !') : null,
+        h('span.cr-podium-name', name(p.id), p.gone ? ' (parti)' : '', win.has(p.id) ? h('span.cr-medal', 'Champion !') : null),
         h('b.cr-podium-score', `${p.score} pts`)))));
     if (win.has(api.me.id)) confetti();
   }

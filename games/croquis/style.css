@@ -258,7 +258,7 @@
   .g-croquis .cr.is-drawing .cr-word-label, .g-croquis .cr.is-drawing .cr-word-plain { grid-column: auto; grid-row: auto; }
   .g-croquis .cr.is-drawing .cr-word-plain { padding: 3px 14px; font-size: 1.15rem; }
 
-  .g-croquis .cr-main { display: flex; flex-direction: column; flex: 1 0 auto; gap: 6px; padding: 0 10px 8px; }
+  .g-croquis .cr-main { display: flex; flex-direction: column; flex: 1 0 auto; gap: 6px; padding: 0 10px 4px; }
   .g-croquis .cr-side { display: contents; }
   .g-croquis .cr-stage { display: contents; }
   .g-croquis .cr-stage[hidden] { display: none; }
@@ -288,7 +288,7 @@
   .g-croquis .cr-lbl { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   /* Propositions : la liste prend la place qui reste ; la saisie reste collée en bas de la zone. */
-  .g-croquis .cr-feed-box { order: 3; flex: 1 1 0; min-height: 40px; display: flex; flex-direction: column; margin: 0 0 4px; padding: 4px 8px; border-radius: 18px; box-shadow: 0 0 0 3px var(--ink), 0 4px 0 3px var(--ink); }
+  .g-croquis .cr-feed-box { order: 3; flex: 1 1 0; min-height: 40px; display: flex; flex-direction: column; margin: 0; padding: 4px 8px; border-radius: 18px; box-shadow: 0 0 0 3px var(--ink), 0 4px 0 3px var(--ink); }
   .g-croquis .cr-feed-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .g-croquis .cr-feed { flex: 1 1 0; height: auto; min-height: 0; gap: 4px; font-size: 14px; }
   .g-croquis .cr-feed li { padding: 3px 10px; }
@@ -299,6 +299,7 @@
   .g-croquis .cr-guess-btn { min-width: 100px; min-height: 46px; border-width: 3px; border-radius: 18px; box-shadow: 0 5px 0 #7A0A47, inset 0 3px 0 rgb(255 255 255 / 0.45); }
 
   .g-croquis .cr-final { order: 1; margin-top: 14px; }
-  .g-croquis .cr-medal { position: static; flex: none; box-shadow: 0 2px 0 var(--ink); transform: rotate(-3deg); }
-  .g-croquis .cr-podium li.is-winner .cr-podium-name { min-width: 0; }
+  /* La médaille passe sous le nom du champion au lieu de chevaucher le haut de sa ligne. */
+  .g-croquis .cr-podium li.is-winner .cr-podium-name { display: grid; justify-items: start; gap: 4px; padding: 4px 0; }
+  .g-croquis .cr-medal { position: static; white-space: nowrap; box-shadow: 0 2px 0 var(--ink); transform: rotate(-3deg); }
 }

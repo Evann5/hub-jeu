@@ -1314,3 +1314,15 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Au doigt : les petits contrôles gardent leur taille à l'œil, mais leur zone de toucher atteint 44 px. */
+@media (pointer: coarse) {
+  .chip, .reaction, .icon-btn.sm, .msg-author { position: relative; }
+  .chip::after, .reaction::after, .icon-btn.sm::after, .msg-author::after { content: ''; position: absolute; inset: -8px -2px; }
+}
+
+/* Téléphone en paysage : le contenu ne passe pas sous l'encoche. */
+.app { padding-left: env(safe-area-inset-left); padding-right: max(10px, env(safe-area-inset-right)); }
+@media (max-width: 760px) {
+  .app { padding-right: env(safe-area-inset-right); }
+}

@@ -17,6 +17,7 @@ export function render(container) {
     avatarGrid.replaceChildren(...avatars.map((a) => h('button', {
       type: 'button',
       'aria-pressed': String(a === draft.avatar),
+      'aria-label': `Avatar ${a}`,
       onclick: () => { draft.avatar = a; draw(); },
     }, a)));
     colorRow.replaceChildren(...Object.keys(colors).map((c) => h('button', {

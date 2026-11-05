@@ -189,6 +189,9 @@ button.uc-card:active { cursor: grabbing; }
 .g-undercover .w-civil { background: #fff; color: var(--civil); }
 .g-undercover .w-under { background: var(--under); color: #fff; box-shadow: 0 0 0 2px #fff; }
 .g-undercover .uc-roster .uc-r { min-height: 48px; background: rgb(255 255 255 / 0.14); }
+.g-undercover .uc-roster .uc-r.is-out { opacity: 1; text-decoration: none; }
+.g-undercover .uc-roster .uc-r.is-out .uc-av, .g-undercover .uc-roster .uc-r.is-out .uc-name { opacity: 0.5; }
+.g-undercover .uc-roster .uc-r.is-out .uc-name { text-decoration: line-through; }
 .g-undercover .uc-rc { padding: 4px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; }
 .g-undercover .uc-rc.civil { background: #fff; color: var(--civil); }
 .g-undercover .uc-rc.under { background: var(--under); color: #fff; box-shadow: 0 0 0 2px #fff; }

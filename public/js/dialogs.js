@@ -170,6 +170,7 @@ function adminTools(u, close) {
           tempBox.replaceChildren(
             h('p', `Donne ce mot de passe provisoire à ${u.pseudo} :`),
             h('div.code-box', h('span', tempPassword)));
+          tempBox.scrollIntoView({ block: 'nearest' }); // sur petit écran, il apparaît sous le bord de la fiche
         }),
       }, 'Réinitialiser le mot de passe'),
       h('button.btn.btn-ghost', {
