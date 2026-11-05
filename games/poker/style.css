@@ -242,10 +242,13 @@
   .g-poker .pk.is-mid { --sw: 80px; --bo: 44px; }
   .g-poker .pk.is-mid .pk-center { width: 50%; }
   /* 7 à 9 joueurs : cartes du tableau plus petites, mises sans jeton */
-  .g-poker .pk.is-many { --cw-md: 30px; }
-  .g-poker .pk.is-many .pk-name { font-size: 0.66rem; }
-  .g-poker .pk.is-many .pk-bet { padding: 2px 7px; }
+  .g-poker .pk.is-many { --cw-md: 30px; --cw-sm: 23px; }
+  .g-poker .pk.is-many .pk-name { font-size: 0.7rem; }
+  .g-poker .pk.is-many .pk-bet { padding: 2px 6px; font-size: 0.68rem; }
   .g-poker .pk.is-many .pk-bet .pk-chip { display: none; }
+  /* L'étiquette (« Suit », « Couché »…) mord sur le bas de la plaque au lieu de pendre dessous : elle ne passe plus sur le voisin ni sur les mises. */
+  .g-poker .pk.is-many .pk-tag { top: calc(100% - 3px); padding: 0 6px; border-width: 1.5px; font-size: 0.58rem; }
+  .g-poker .pk.is-many .pk-seat.is-winner .pk-tag { font-size: 0.64rem; }
   .g-poker .pk-av { display: none; }
   .g-poker .pk-name { font-size: 0.7rem; }
   .g-poker .pk-center { width: 56%; top: 54%; gap: 4px; }

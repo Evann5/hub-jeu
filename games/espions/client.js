@@ -302,6 +302,7 @@ export function mount(root, api) {
 
   function overBanner() {
     const w = view.winner;
+    if (!w.team) return h('div.es-banner', h('p.es-stamp-big', 'Mission annulée'), h('p', 'Trop de joueurs sont partis avant le début.'));
     const reasons = {
       cards: `${TEAM[w.team].agency} a retrouvé tous ses contacts.`,
       assassin: `L’${TEAM[w.team === 'red' ? 'blue' : 'red'].agency.toLowerCase()} a touché l’assassin : elle perd.`,
@@ -323,7 +324,7 @@ export function mount(root, api) {
       sigPrev = sig;
       sel = null;
       live.textContent = view.phase === 'teams' ? 'Formez vos agences.'
-        : view.phase === 'over' ? `Fin de partie : ${TEAM[view.winner.team].agency} l’emporte.`
+        : view.phase === 'over' ? (view.winner.team ? `Fin de partie : ${TEAM[view.winner.team].agency} l’emporte.` : 'Fin de partie.')
           : view.phase === 'clue' ? `${TEAM[view.active].agency} : le chef prépare un indice.`
             : `${TEAM[view.active].agency} : indice ${view.clue.word}, ${view.clue.number === 0 ? 'illimité' : view.clue.number}.`;
     }

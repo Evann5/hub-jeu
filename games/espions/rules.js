@@ -265,6 +265,7 @@ export function leave(state, playerId, ctx) {
   const team = s.team[playerId];
   if (s.phase === 'teams') {
     for (const t of TEAMS) if (s.lead[t] === playerId) s.lead[t] = null;
+    if (present(s).length < 4) finish(s, null, 'left'); // à moins de 4, la partie ne pourrait plus jamais commencer
     return { state: s };
   }
   if (s.lead[team] === playerId) {
@@ -319,7 +320,8 @@ export function status(s) {
   return {
     turn,
     over,
-    winners: over ? s.players.filter((id) => s.team[id] === s.winner.team) : [],
+    winners: over && s.winner.team ? s.players.filter((id) => s.team[id] === s.winner.team) : [],
     deadline: s.deadline,
+    ...(over && !s.winner.team ? { label: 'Trop de joueurs sont partis' } : {}),
   };
 }

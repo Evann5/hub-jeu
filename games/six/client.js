@@ -263,7 +263,7 @@ export function mount(root, api) {
   async function animate(v) {
     const step = v.step;
     const n = step.plays.length;
-    const per = n > 6 ? 480 : 720;
+    const per = jobs.length ? 200 : n > 6 ? 480 : 720; // en retard sur le serveur : on rattrape vite
     // Départ : les rangées et les scores d'avant ce pas.
     const gains = view.players.map(() => 0);
     step.plays.forEach((p) => { gains[p.seat] += p.gain; });
@@ -293,7 +293,7 @@ export function mount(root, api) {
       const lane = lanes[p.row];
       if (p.took) {
         lane.classList.add('is-taking');
-        await sleep(520);
+        await sleep(jobs.length ? 150 : 520);
         shown.heads[p.seat] += p.gain;
         paintScore(shown.heads);
         const chip = board.querySelector(`[data-seat="${p.seat}"]`);
@@ -322,6 +322,8 @@ export function mount(root, api) {
     busy = true;
     try {
       while (jobs.length) {
+        // Plus d'un pas d'avance : les pas intermédiaires sont sautés, l'écran ne prend jamais plus d'un pas de retard.
+        if (jobs.length > 2) jobs.splice(0, jobs.length - 2);
         const v = jobs.shift();
         view = v;
         await animate(v);

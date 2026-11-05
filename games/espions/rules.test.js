@@ -418,3 +418,12 @@ test('une partie complète à 6 joueurs, tour par tour', () => {
   assert.equal(s.winner.reason, 'cards');
   assert.ok(log.length >= 9);
 });
+
+test('départs dans le salon : à moins de 4 joueurs, la partie s’arrête sans gagnant', () => {
+  let s = lobby(4);
+  s = leave(s, 1, ctx()).state;
+  assert.equal(s.phase, 'over');
+  assert.deepEqual(s.winner, { team: null, reason: 'left' });
+  assert.deepEqual(status(s).winners, []);
+  assert.equal(status(s).label, 'Trop de joueurs sont partis');
+});
