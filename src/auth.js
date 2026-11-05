@@ -177,7 +177,7 @@ export function recordSuccess(ip, pseudo) {
   failuresByIp.undo(ip);
 }
 
-// Inscriptions : 10 mauvais codes de classe par 15 minutes et 20 inscriptions par heure, par adresse.
+// Inscriptions : 10 mauvais codes de classe par 15 minutes et 60 inscriptions par heure, par adresse.
 const badCodes = createLimiter({ max: 10, windowMs: WINDOW });
 const signups = createLimiter({ max: 60, windowMs: 3600_000 }); // large : toute une classe peut s'inscrire d'un coup depuis le même Wi-Fi
 

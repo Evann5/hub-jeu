@@ -146,7 +146,7 @@
 .g-pioche .pi-pile { position: relative; display: grid; justify-items: center; gap: 0; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; border-radius: 20px; }
 .g-pioche .pi-pile:disabled { cursor: default; opacity: 0.8; }
 .g-pioche .pi-pile:not(:disabled) .pi-back { animation: pi-glow 1.2s ease-in-out infinite alternate; }
-.g-pioche .pi-pile-hint { position: absolute; bottom: -10px; padding: 4px 14px; border-radius: 99px; background: var(--pi-J); color: var(--pi-night); font-weight: 900; font-size: 0.85rem; box-shadow: 0 3px 0 rgb(0 0 0 / 0.35); }
+.g-pioche .pi-pile-hint { position: absolute; bottom: -30px; padding: 4px 14px; border-radius: 99px; background: var(--pi-J); color: var(--pi-night); font-weight: 900; font-size: 0.85rem; box-shadow: 0 3px 0 rgb(0 0 0 / 0.35); }
 .g-pioche .pi-discard { position: relative; }
 .g-pioche .pi-top { rotate: var(--tilt, 0deg); }
 .g-pioche .pi-top.is-new { animation: pi-land 0.32s var(--ease-out, ease-out); }

@@ -206,7 +206,7 @@ export function mount(root, api) {
         h('span.pr-seat-main',
           h('span.pr-seat-name', you(id) ? 'Toi' : api.user(id).pseudo),
           role ? h('span.pr-role', role === 'Président' ? crown() : null, role) : null),
-        showPts ? h('span.pr-pts', String(view.scores[id] || 0), h('small', ' pt'), h('span.sr-only', ' points au total')) : null,
+        showPts ? h('span.pr-pts', String(view.scores[id] || 0), h('small', ' pt'), h('span.sr-only', `${(view.scores[id] || 0) > 1 ? ' points' : ' point'} au total`)) : null,
         out ? h('span.pr-tag', 'parti')
           : done >= 0 ? h('span.pr-tag.gold', `${done + 1}${done === 0 ? 'er' : 'e'}`)
             : you(id) ? null
@@ -350,11 +350,15 @@ export function mount(root, api) {
       api.token(api.user(id), { size: 's' }),
       h('span.pr-rank-name', api.user(id).pseudo, h('small', res.titles[id] === 'Président' ? crown() : null, res.titles[id])),
       h('span.pr-rank-gain', `+${res.gains[id]}`),
-      h('b.pr-rank-pts', String(view.scores[id] || 0), h('span.sr-only', ' points'))));
+      h('b.pr-rank-pts', String(view.scores[id] || 0), h('span.sr-only', (view.scores[id] || 0) > 1 ? ' points' : ' point'))));
     let foot = null;
     if (over) {
       const names = view.winners.map((id) => api.user(id).pseudo).join(' et ');
-      foot = h('p.pr-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne la partie !`);
+      const best = Math.max(...res.order.map((id) => view.scores[id] || 0));
+      const tie = res.order.filter((id) => (view.scores[id] || 0) === best).length > 1;
+      foot = h('div.pr-end',
+        h('p.pr-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne la partie !`),
+        tie ? h('p.pr-hint', 'Égalité de points : départage sur la dernière manche.') : null);
     } else if (api.seat >= 0) {
       foot = h('div.pr-next',
         h('button.pr-btn.go', { type: 'button', onclick: () => send({ type: 'next' }) }, 'Manche suivante'),

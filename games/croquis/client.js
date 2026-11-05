@@ -14,6 +14,22 @@ const MIN_STEP = 3; // on ignore les points plus proches que ça (en unités), p
 const CHUNK = 300; // un trait trop long est envoyé en plusieurs morceaux (limite du serveur : 400 points)
 const CHOOSE_MS = 20_000;
 const REVEAL_MS = 7_000;
+const ICONS = {
+  Gomme: 'm7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21 M22 21H7 M5 11l9 9',
+  Annuler: 'M9 14 4 9l5-5 M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
+  'Tout effacer': 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+};
+
+function ico(path) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  for (const [k, v] of Object.entries({ viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(k, v);
+  svg.classList.add('cr-ico');
+  const d = document.createElementNS(NS, 'path');
+  d.setAttribute('d', path);
+  svg.append(d);
+  return svg;
+}
 
 export function mount(root, api) {
   const { h } = api;
@@ -62,7 +78,8 @@ export function mount(root, api) {
   const final = h('section.cr-final', { hidden: true });
   const main = h('div.cr-main', stage, final, side);
   const live = h('p.cr-sr', { 'aria-live': 'polite' });
-  root.append(h('div.cr', bar, main), live);
+  const cr = h('div.cr', bar, main);
+  root.append(cr, live);
 
   // ——— Dessin ———
 
@@ -185,12 +202,14 @@ export function mount(root, api) {
       type: 'button', role: 'radio', 'aria-label': `Trait ${WIDTH_NAMES[i]}`, title: `Trait ${WIDTH_NAMES[i]}`,
       onclick: () => { tool = { ...tool, width: i }; markTools(); },
     }, h('span.cr-nib', { style: `--s:${6 + i * 7}px` })));
+    // Sur téléphone, ces trois boutons ne montrent que leur icône ; le libellé reste lu par les lecteurs d'écran.
+    const labelled = (label) => [ico(ICONS[label]), h('span.cr-lbl', label)];
     const eraser = h('button.cr-btn', {
       type: 'button', 'aria-pressed': 'false',
       onclick: () => { tool = { ...tool, eraser: !tool.eraser }; markTools(); },
-    }, 'Gomme');
-    const undo = h('button.cr-btn', { type: 'button', onclick: () => api.sendMove({ type: 'undo' }).catch(() => {}) }, 'Annuler');
-    const clear = h('button.cr-btn', { type: 'button', onclick: () => api.sendMove({ type: 'clear' }).catch(() => {}) }, 'Tout effacer');
+    }, labelled('Gomme'));
+    const undo = h('button.cr-btn', { type: 'button', onclick: () => api.sendMove({ type: 'undo' }).catch(() => {}) }, labelled('Annuler'));
+    const clear = h('button.cr-btn', { type: 'button', onclick: () => api.sendMove({ type: 'clear' }).catch(() => {}) }, labelled('Tout effacer'));
     tools.replaceChildren(
       h('div.cr-palette', { role: 'radiogroup', 'aria-label': 'Couleur du crayon' }, colorButtons),
       h('div.cr-row',
@@ -392,6 +411,7 @@ export function mount(root, api) {
     renderGuess();
     const drawer = v.phase === 'drawing' && v.drawer === api.me.id && !spectator;
     tools.hidden = !drawer;
+    cr.classList.toggle('is-drawing', drawer);
     for (const b of tools.querySelectorAll('button')) b.disabled = !drawer;
     canvas.classList.toggle('is-drawable', drawer);
     canvas.setAttribute('aria-label', drawer ? `Ta feuille de dessin : ${v.word}` : 'Le dessin en cours');

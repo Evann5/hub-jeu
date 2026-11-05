@@ -1,6 +1,6 @@
 // Escales côté navigateur : le monde en 3D (client/scene.js), et par-dessus l'interface : les joueurs, toujours visibles ; au centre,
 // seulement ce que tu as à décider, quand c'est à toi ; et les fenêtres qu'on ouvre soi-même. Les règles restent côté serveur (rules.js).
-import { REGIONS, TILES, RULES, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS } from './client/board.js';
+import { REGIONS, TILES, RULES, LEVEL_MULT, LEVEL_NAMES, MAX_LEVEL, ESCALE_RENTS, mortgageValue, unmortgageCost } from './client/board.js';
 import { createWorld, PAWN_COLORS } from './client/scene.js';
 import { FLAGS } from './client/countries.js';
 import { createSound } from './client/sound.js';
@@ -206,6 +206,7 @@ export function mount(root, api) {
   };
 
   let playersKey = null;
+  let hoverOff = null; // le joueur qu'on vient de désélectionner : tant que la souris reste dessus, le survol ne le rallume pas
   function renderPlayers(force = false) {
     const key = JSON.stringify([v.players.map((p) => [p.id, p.cash, p.worth, p.out]), v.cur, v.over, focusId, Boolean(world), Object.values(v.props).map((x) => x.owner)]);
     if (!force && key === playersKey) return;
@@ -213,10 +214,10 @@ export function mount(root, api) {
     players.replaceChildren(...v.players.map((p) => {
       const dot = picture(world?.portrait(p.seat), '.es-face') ?? h('i.es-dot');
       const turn = !v.over && v.players[v.cur].id === p.id;
-      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}${focusId === p.id ? '.is-focus' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]};--pi:${[1, 2].includes(p.seat) ? '#16142E' : '#FFFFFF'}`, 'aria-pressed': String(focusId === p.id), 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir ses villes sur le plateau`, onclick: () => setFocus(focusId === p.id ? null : p.id),
+      const chip = h(`button.es-chip${turn ? '.is-turn' : ''}${p.out ? '.is-out' : ''}${focusId === p.id ? '.is-focus' : ''}`, { type: 'button', style: `--p:${PAWN_COLORS[p.seat]};--pi:${[1, 2].includes(p.seat) ? '#16142E' : '#FFFFFF'}`, 'aria-pressed': String(focusId === p.id), 'aria-label': `${p.id === meId ? 'Toi' : p.pseudo}${p.bot ? ', robot' : ''}, ${p.out ? 'sorti' : money(p.cash)}. Voir ses villes sur le plateau`, onclick: () => { hoverOff = focusId === p.id ? p.id : null; setFocus(focusId === p.id ? null : p.id); },
         // À la souris, survoler un joueur suffit pour voir ses villes ; le clic garde la sélection.
-        onmouseenter: () => { if (focusId === null && !overlay) world?.focus({ player: p.id }); },
-        onmouseleave: () => { if (!overlay) restoreFocus(); } },
+        onmouseenter: () => { if (focusId === null && !overlay && hoverOff !== p.id) world?.focus({ player: p.id }); },
+        onmouseleave: () => { hoverOff = null; if (!overlay) restoreFocus(); } },
         dot,
         h('span.es-pseudo', p.id === meId ? 'Toi' : p.pseudo, h('small', citiesOf(p.id))),
         h('span.es-cash', numberOf(p), deltaOf(p)));
@@ -296,10 +297,11 @@ export function mount(root, api) {
       const ranked = [...v.players].sort((a, b) => Number(a.out) - Number(b.out) || b.worth - a.worth);
       const breakdown = (p) => {
         const n = TILES.filter((t) => v.props[t.pos]?.owner === p.id).length;
-        return `${money(p.cash)} + ${n} ville${n > 1 ? 's' : ''}`;
+        const built = TILES.reduce((sum, t) => sum + (v.props[t.pos]?.owner === p.id ? v.props[t.pos].level : 0), 0);
+        return `${money(p.cash)} + ${n} ville${n > 1 ? 's' : ''}${built ? ` + ${built} niveau${built > 1 ? 'x' : ''}` : ''}`;
       };
       return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : v.winners.length > 3 ? `${v.winners.length} joueurs à égalité !` : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
-        h(`ol.es-rank${ranked.length > 6 ? '.is-long' : ''}`, ranked.map((p, i) => h('li', { style: `--p:${PAWN_COLORS[p.seat]}` },
+        h(`ol.es-rank${ranked.length > 6 ? '.is-long' : ''}`, { style: `--rank-rows:${Math.ceil(ranked.length / 2)}` }, ranked.map((p, i) => h('li', { style: `--p:${PAWN_COLORS[p.seat]}` },
           h('b.es-rank-n', String(i + 1)),
           picture(world?.portrait(p.seat), '.es-face'),
           h('span.es-rank-name', h('b', p.id === meId ? 'Toi' : p.pseudo), h('small', p.out ? 'sorti' : breakdown(p))),
@@ -413,15 +415,19 @@ export function mount(root, api) {
     frame.style.setProperty('--act-h', `${action.hidden ? 0 : action.offsetHeight}px`);
     frame.classList.toggle('is-buying', v.phase === 'buy' && myTurn());
 
-    const mineTrades = v.trades.filter((t) => t.to === meId || t.from === meId);
-    const tradesKey = JSON.stringify(mineTrades);
-    if (tradesKey !== shownTrades) { // recréer les boutons pendant un clic le ferait échouer
-      shownTrades = tradesKey;
-      trades.replaceChildren(...mineTrades.map(tradeCard));
-    }
+    renderTrades();
     tools.hidden = v.over;
     tradeLink.hidden = !me() || me().out; // un spectateur regarde, il n'échange pas
     renderFlash(!action.hidden && !plain);
+  }
+
+  // Les échanges n'attendent pas le pion : retirer ou recevoir une proposition se voit tout de suite.
+  function renderTrades() {
+    const mineTrades = v.trades.filter((t) => t.to === meId || t.from === meId);
+    const tradesKey = JSON.stringify(mineTrades);
+    if (tradesKey === shownTrades) return; // recréer les boutons pendant un clic le ferait échouer
+    shownTrades = tradesKey;
+    trades.replaceChildren(...mineTrades.map(tradeCard));
   }
 
   function offerText(o) {
@@ -498,9 +504,9 @@ export function mount(root, api) {
       t.build ? h('p.es-note', `Construire un niveau coûte ${money(v.costs[pos] ?? t.build)}. Il faut ${v.majority} villes du pays.`) : null,
       h('div.es-row',
         a.build.includes(pos) ? btn(`Construire (${money(v.costs[pos])})`, { type: 'build', pos }) : null,
-        a.unmortgage.includes(pos) ? btn('Récupérer', { type: 'unmortgage', pos }) : null,
+        a.unmortgage.includes(pos) ? btn(`Récupérer (${money(unmortgageCost(t))})`, { type: 'unmortgage', pos }) : null,
         a.sell.includes(pos) ? btn('Vendre un niveau', { type: 'sell', pos }, '.is-ghost') : null,
-        a.mortgage.includes(pos) ? btn('Mettre en gage', { type: 'mortgage', pos }, '.is-ghost') : null));
+        a.mortgage.includes(pos) ? btn(`Mettre en gage (+${money(mortgageValue(t))})`, { type: 'mortgage', pos }, '.is-ghost') : null));
   }
 
   // Les villes, pays par pays : on voit d'un coup où l'on approche de la majorité. Les pays où l'on a le plus viennent d'abord.
@@ -520,8 +526,9 @@ export function mount(root, api) {
     return shell('Villes', h('h2', 'Villes'),
       order.map((i) => {
         const n = mineIn(i);
+        const free = TILES.some((t) => t.region === i && v.props[t.pos]?.owner === meId && !v.props[t.pos].mortgaged);
         return h('section.es-country',
-          h('h3', flagOf(i), REGIONS[i].name, n ? h('small', `${n} sur 4${n >= v.majority ? ', tu peux construire' : ''}`) : null),
+          h('h3', flagOf(i), REGIONS[i].name, n ? h('small', `${n} sur 4${n >= v.majority && free ? ', tu peux construire' : ''}`) : null),
           h('div.es-cells', TILES.filter((t) => t.region === i).map(cell)));
       }),
       h('section.es-country', h('h3', 'Escales'), h('div.es-cells', TILES.filter((t) => t.type === 'escale').map(cell))));
@@ -760,6 +767,7 @@ export function mount(root, api) {
     v = view;
     info = st;
     world?.update(v);
+    renderTrades();
     if (world?.walking() && !v.over) {
       action.hidden = true; // le bouton sur lequel on vient de cliquer s'en va tout de suite
       if (!uiTimer) uiTimer = setTimeout(applyUI, 4000); // au cas où l'animation ne tourne pas (onglet caché, écran du chat)

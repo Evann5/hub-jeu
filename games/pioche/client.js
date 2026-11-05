@@ -335,7 +335,8 @@ export function mount(root, api) {
     let actions = null;
     if (over) {
       const names = view.winners.map((id) => api.user(id).pseudo).join(' et ');
-      actions = h('p.pi-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne${view.winners.length > 1 ? 'nt' : ''} la partie !`);
+      // One-round game: the line above already names the winner.
+      actions = view.rounds === 1 ? null : h('p.pi-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne${view.winners.length > 1 ? 'nt' : ''} la partie !`);
     } else if (api.seat >= 0) {
       actions = h('div.pi-next',
         h('button.pi-btn.go', { type: 'button', onclick: () => send({ type: 'next' }) }, 'Manche suivante'),

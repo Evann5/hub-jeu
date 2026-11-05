@@ -1078,8 +1078,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const scale = Math.min((size.w - side - right) / (x1 - x0), Math.max(60, size.h - top - bottom) / (y1 - y0));
     const midX = (x0 + x1) / 2;
     const midY = (y0 + y1) / 2;
-    // Le milieu du plateau, en pixels depuis le haut. Sur téléphone, il se cale sous les joueurs : le vide éventuel reste en bas, derrière la carte d'action.
-    const screenY = narrow ? top + ((y1 - y0) * scale) / 2 : (top + size.h - bottom) / 2;
+    // Le milieu du plateau, en pixels depuis le haut. Sur téléphone, il descend un peu sous les joueurs, sans passer sous la carte d'action.
+    const boardH = (y1 - y0) * scale;
+    const screenY = narrow ? top + boardH / 2 + Math.min(40, Math.max(0, (size.h - top - bottom - boardH) / 2)) : (top + size.h - bottom) / 2;
     const screenX = (side + size.w - right) / 2;
     camera.left = midX - screenX / scale;
     camera.right = midX + (size.w - screenX) / scale;

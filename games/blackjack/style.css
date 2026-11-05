@@ -21,6 +21,7 @@
   color: #fff;
   font: 600 1rem/1.35 'BJ Figtree', system-ui, sans-serif;
   overflow: hidden auto;
+  contain: paint; /* la grille en perspective déborde de 60 % de chaque côté : sans ça le jeu mesure 624 px sur 390 et peut glisser sur le côté */
   container-type: inline-size;
 }
 /* Soleil couchant : disque dégradé dont le bas est découpé par des rayures. */
@@ -45,7 +46,7 @@
 
 .g-blackjack .bj { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; width: min(1100px, 100%); margin: 0 auto; gap: 8px; padding: 8px 8px 0; }
 
-.g-blackjack .bj-top { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.g-blackjack .bj-top { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 12px; }
 .g-blackjack .bj-pill { padding: 5px 12px; border-radius: 999px; background: var(--ink); color: #fff; border: 2.5px solid var(--violet); box-shadow: 0 3px 0 #000; font: 800 0.7rem/1 'BJ Unbounded', system-ui, sans-serif; }
 .g-blackjack .bj-pill.is-pink { border-color: var(--pink); color: var(--pink-soft); }
 .g-blackjack .bj-pill.is-cyan { border-color: var(--cyan); color: var(--cyan); }
@@ -94,7 +95,7 @@
 .g-blackjack .bj-seats .bj-seat { width: 100%; max-width: 300px; justify-self: center; }
 .g-blackjack .bj-seats[hidden], .g-blackjack .bj-me[hidden] { display: none; }
 .g-blackjack .bj-me { flex: none; display: grid; }
-.g-blackjack .bj-seat { position: relative; display: grid; gap: 4px; justify-items: center; padding: 6px 8px 10px; border-radius: 16px; background: rgb(12 2 39 / 0.82); border: 2.5px solid rgb(178 107 255 / 0.7); box-shadow: 0 3px 0 #000; --cw: var(--cw-sm); }
+.g-blackjack .bj-seat { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; justify-items: center; padding: 6px 8px 10px; border-radius: 16px; background: rgb(12 2 39 / 0.82); border: 2.5px solid rgb(178 107 255 / 0.7); box-shadow: 0 3px 0 #000; --cw: var(--cw-sm); }
 .g-blackjack .bj-seat.is-me { width: min(560px, 100%); justify-self: center; border-color: var(--cyan); box-shadow: 0 3px 0 #000, 0 0 18px rgb(25 227 255 / 0.5); --cw: var(--cw-lg); }
 .g-blackjack .bj-seat.is-turn { border-color: var(--lemon); box-shadow: 0 3px 0 #000, 0 0 22px 4px rgb(255 226 58 / 0.6); }
 .g-blackjack .bj-seat.is-out { opacity: 0.45; filter: grayscale(0.7); }
@@ -189,6 +190,9 @@
 }
 @container (max-width: 420px) {
   .g-blackjack .bj { --cw-sm: 30px; --cw-lg: 52px; gap: 6px; }
+  /* Sièges adverses étroits : la pastille de total et le jeton passent sous les cartes plutôt que de déborder. */
+  .g-blackjack .bj-seat:not(.is-me) .bj-hand { flex-wrap: wrap; }
+  .g-blackjack .bj-seat:not(.is-me) .bj-meta { flex-direction: row; max-width: 100%; }
   .g-blackjack .bj-pill { padding: 5px 10px; font-size: 0.66rem; }
   .g-blackjack .bj-input { font-size: 1.7rem; min-height: 38px; }
 }

@@ -2,7 +2,7 @@
 // L'heure vient de ctx.now, le hasard de ctx.random. Tout le raisonnement est expliqué dans docs/escales.md.
 //
 // Un tour : « roll » (lancer) → la case décide de la suite (buy, debt) → « end » → joueur suivant.
-import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE } from './client/board.js';
+import { REGIONS, TILES, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE, mortgageValue, unmortgageCost } from './client/board.js';
 
 export const SALARY = 200;
 export const FINE = 50; // pour sortir de la Douane
@@ -74,8 +74,6 @@ function canBuildAt(s, id, pos) {
   return t?.type === 'city' && prop?.owner === id && !prop.mortgaged && prop.level < MAX_LEVEL && ownedInRegion(s, id, t.region) >= s.majority;
 }
 
-const mortgageValue = (t) => Math.floor(t.price / 2);
-const unmortgageCost = (t) => Math.ceil((t.price / 2) * 1.1);
 const positionsOf = (s, id) => Object.keys(s.props).map(Number).filter((pos) => s.props[pos].owner === id);
 
 function canManage(s, p) {

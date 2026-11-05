@@ -106,3 +106,7 @@ export const RULES = [
   'Plus d’argent ? Vends des constructions, mets des villes en gage ou négocie. Sinon, c’est la faillite.',
   'Au dernier tour, le plus gros patrimoine gagne (argent, villes, constructions).',
 ];
+
+// Le gage : ce qu'il rapporte, et ce que coûte le rachat.
+export const mortgageValue = (t) => Math.floor(t.price / 2);
+export const unmortgageCost = (t) => Math.ceil((t.price / 2) * 1.1);

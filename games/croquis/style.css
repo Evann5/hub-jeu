@@ -229,29 +229,68 @@
 }
 
 /* ——— Téléphone ——— */
+/* Tout tient dans la zone de jeu sans défiler : bandeau et joueurs compacts, outils en grille, saisie collée en bas. */
 @container (max-width: 600px) {
-  .g-croquis .cr-bar { grid-template-columns: 1fr auto; padding: 10px 12px 12px; }
-  .g-croquis .cr-word { grid-column: 1 / -1; grid-row: 2; }
-  .g-croquis .cr-ring { width: 56px; height: 56px; }
-  .g-croquis .cr-ring-in { width: 44px; height: 44px; }
-  .g-croquis .cr-secs { font-size: 14px; }
-  .g-croquis .cr-cell { width: 28px; height: 38px; font-size: 18px; border-radius: 10px; }
-  .g-croquis .cr-w { gap: 4px; }
-  .g-croquis .cr-mask { gap: 6px 14px; }
-  .g-croquis .cr-main { padding: 20px 14px 18px; }
-  .g-croquis .cr-palette { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .g-croquis .cr-color { width: 40px; height: 40px; }
-  .g-croquis .cr-dot { width: 30px; height: 30px; }
-  .g-croquis .cr-tools { gap: 6px; padding: 8px 10px; }
-  .g-croquis .cr-main { display: flex; flex-direction: column; gap: 14px; padding-top: 0; }
+  .g-croquis .cr-bar { grid-template-columns: auto 1fr auto; gap: 4px 8px; padding: 6px 10px 9px; border-radius: 0 0 22px 22px; box-shadow: 0 4px 0 rgb(15 23 82 / 0.4); }
+  .g-croquis .cr-round { padding: 5px 10px; font-size: 11px; }
+  .g-croquis .cr-timer { grid-column: 3; grid-row: 1; }
+  .g-croquis .cr-ring { width: 40px; height: 40px; }
+  .g-croquis .cr-ring-in { width: 31px; height: 31px; }
+  .g-croquis .cr-secs { font-size: 11px; }
+  /* Le libellé passe sur la ligne du tour et du minuteur ; le mot (ou ses lettres) prend la ligne du dessous. */
+  .g-croquis .cr-word { display: contents; }
+  .g-croquis .cr-word-label { grid-column: 2; grid-row: 1; justify-self: center; text-align: center; font-size: 13px; }
+  .g-croquis .cr-word-plain, .g-croquis .cr-mask { grid-column: 1 / -1; grid-row: 2; justify-self: center; }
+  .g-croquis .cr-word-plain { padding: 4px 16px; font-size: 1.3rem; box-shadow: 0 3px 0 var(--fuchsia); }
+  .g-croquis .cr-cell { width: 26px; height: 34px; font-size: 17px; border-radius: 9px; box-shadow: 0 3px 0 var(--fuchsia); }
+  .g-croquis .cr-w { gap: 3px; }
+  .g-croquis .cr-mask { gap: 4px 12px; }
+  /* Dessinateur : une seule ligne, « Dessine » + mot entre le tour et le minuteur. */
+  .g-croquis .cr.is-drawing .cr-word { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 8px; grid-column: 2; grid-row: 1; }
+  .g-croquis .cr.is-drawing .cr-word-label, .g-croquis .cr.is-drawing .cr-word-plain { grid-column: auto; grid-row: auto; }
+  .g-croquis .cr.is-drawing .cr-word-plain { padding: 3px 14px; font-size: 1.15rem; }
+
+  .g-croquis .cr-main { display: flex; flex-direction: column; flex: 1 0 auto; gap: 6px; padding: 0 10px 8px; }
   .g-croquis .cr-side { display: contents; }
-  .g-croquis .cr-players { order: -1; position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; margin: 0 -14px; padding: 12px 14px 10px; overflow-x: auto; scrollbar-width: none; background: linear-gradient(#3AA6FF 80%, transparent); }
-  .g-croquis .cr-player { flex: none; min-height: 44px; padding-right: 14px; }
-  .g-croquis .cr-player-name { display: flex; align-items: center; gap: 6px; overflow: visible; }
-  .g-croquis .cr-stage { order: 1; gap: 16px; }
-  .g-croquis .cr-feed-box { order: 2; }
-  .g-croquis .cr-final { order: 1; }
-  .g-croquis .cr-widths { margin-right: 0; }
-  .g-croquis .cr-btn { flex: 1 1 auto; padding: 0 12px; }
-  .g-croquis .cr-guess-btn { min-width: 100px; }
+  .g-croquis .cr-stage { display: contents; }
+  .g-croquis .cr-stage[hidden] { display: none; }
+  .g-croquis .cr-players { order: -1; position: sticky; top: 0; z-index: 2; display: flex; gap: 6px; margin: 0 -10px; padding: 6px 12px 8px; overflow-x: auto; scrollbar-width: none; background: linear-gradient(#3AA6FF 80%, transparent); }
+  .g-croquis .cr-player { flex: none; min-height: 32px; padding: 2px 12px 2px 4px; gap: 6px; border-radius: 16px; box-shadow: 0 0 0 2px var(--ink), 0 4px 0 2px var(--ink); }
+  .g-croquis .cr-player .token { --s: 26px; }
+  .g-croquis .cr-player-name { display: flex; align-items: center; gap: 6px; overflow: visible; font-size: 14px; }
+  .g-croquis .cr-player-name small { font-size: 10px; padding: 1px 7px; }
+  .g-croquis .cr-score { font-size: 15px; }
+
+  .g-croquis .cr-sheetbox { order: 1; margin-bottom: 6px; }
+  .g-croquis .cr-sheet { border-radius: 22px; box-shadow: 0 0 0 4px var(--ink), 0 8px 0 4px var(--ink), 0 14px 18px 4px rgb(15 23 82 / 0.3); }
+  .g-croquis .cr-reveal { margin-top: 18px; }
+
+  /* Boîte à pinceaux : couleurs à gauche (5 x 2), épaisseurs et outils à droite (3 x 2), cibles de 40 px. */
+  .g-croquis .cr-tools { order: 2; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 4px 3px; border-radius: 22px; box-shadow: 0 0 0 3px var(--ink), 0 6px 0 3px var(--ink); margin-bottom: 8px; }
+  .g-croquis .cr-palette { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px 0; }
+  .g-croquis .cr-color { width: 40px; height: 40px; }
+  .g-croquis .cr-dot { width: 28px; height: 28px; }
+  .g-croquis .cr-dot::after { top: 4px; left: 6px; width: 9px; height: 6px; }
+  .g-croquis .cr-color.is-on { box-shadow: 0 0 0 3px var(--ink); }
+  .g-croquis .cr-row { display: grid; grid-template-columns: repeat(3, 40px); gap: 4px; }
+  .g-croquis .cr-widths { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 40px); gap: 4px; margin: 0; }
+  .g-croquis .cr-width { width: 40px; height: 40px; border-width: 3px; border-radius: 13px; }
+  .g-croquis .cr-btn { display: grid; place-items: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border-width: 3px; border-radius: 13px; box-shadow: 0 3px 0 var(--ink); }
+  .g-croquis .cr-ico { display: block; width: 20px; height: 20px; }
+  .g-croquis .cr-lbl { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* Propositions : la liste prend la place qui reste ; la saisie reste collée en bas de la zone. */
+  .g-croquis .cr-feed-box { order: 3; flex: 1 1 0; min-height: 40px; display: flex; flex-direction: column; margin: 0 0 4px; padding: 4px 8px; border-radius: 18px; box-shadow: 0 0 0 3px var(--ink), 0 4px 0 3px var(--ink); }
+  .g-croquis .cr-feed-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .g-croquis .cr-feed { flex: 1 1 0; height: auto; min-height: 0; gap: 4px; font-size: 14px; }
+  .g-croquis .cr-feed li { padding: 3px 10px; }
+  .g-croquis .cr-guess-box { order: 4; position: sticky; bottom: 0; z-index: 2; gap: 4px; margin: 0 -10px; padding: 6px 10px 6px; background: linear-gradient(transparent, #4059FF 20%); }
+  .g-croquis .cr-guess-msg { padding: 4px 12px; font-size: 14px; }
+  .g-croquis .cr-guess { gap: 8px; }
+  .g-croquis .cr-guess-input { min-height: 46px; padding: 0 14px; border-width: 3px; border-radius: 18px; box-shadow: 0 4px 0 var(--ink); font-size: 17px; }
+  .g-croquis .cr-guess-btn { min-width: 100px; min-height: 46px; border-width: 3px; border-radius: 18px; box-shadow: 0 5px 0 #7A0A47, inset 0 3px 0 rgb(255 255 255 / 0.45); }
+
+  .g-croquis .cr-final { order: 1; margin-top: 14px; }
+  .g-croquis .cr-medal { position: static; flex: none; box-shadow: 0 2px 0 var(--ink); transform: rotate(-3deg); }
+  .g-croquis .cr-podium li.is-winner .cr-podium-name { min-width: 0; }
 }

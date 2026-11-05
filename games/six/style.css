@@ -43,7 +43,7 @@
 .g-six .sx-top-chips { display: flex; align-items: center; gap: 8px; }
 .g-six .sx-chip, .g-six .sx-timer { padding: 5px 14px; border: 3px solid var(--sx-ink); border-radius: 999px; background: var(--sx-white); box-shadow: 0 3px 0 var(--sx-ink); font: 800 0.8125rem var(--sx-text); white-space: nowrap; }
 .g-six .sx-timer { background: var(--sx-lemon); font: 900 0.9375rem var(--sx-text); font-variant-numeric: tabular-nums; }
-.g-six .sx-timer[hidden] { display: none; }
+.g-six .sx-timer[hidden], .g-six .sx-chip[hidden] { display: none; }
 .g-six .sx-timer.is-low { background: var(--sx-pink); color: #fff; animation: sx-tick 0.5s ease-in-out infinite; }
 @keyframes sx-tick { 50% { transform: scale(1.1); } }
 
@@ -183,9 +183,12 @@
 
 /* ——— Téléphone : les rangées restent visibles, la main tient sur une seule ligne qu'on fait défiler ——— */
 @container (max-width: 599px) {
-  .g-six .sx { gap: 8px; padding-top: 8px; --cw-hand: 46px; --cw-lane: min(40px, calc((100cqw - 104px) / 5)); }
-  .g-six .sx-top { gap: 6px 10px; }
-  .g-six .sx-status { flex-basis: 100%; font-size: 0.8125rem; }
+  /* .sx est lui-même le conteneur : une @container ne peut pas le styler, les tailles de cartes vont donc sur ses enfants. */
+  .g-six .sx-lanes { --cw-lane: min(30px, calc((100cqw - 104px) / 5)); }
+  .g-six .sx-handbox { --cw-hand: 38px; }
+  .g-six .sx-table { --cw-strip: 34px; min-height: 0; padding: 8px; border-radius: 20px; gap: 4px; }
+  .g-six .sx-top { gap: 4px 10px; }
+  .g-six .sx-status { flex-basis: 100%; font-size: 0.78rem; line-height: 1.2; }
   .g-six .sx-chip, .g-six .sx-timer { padding: 3px 10px; font-size: 0.75rem; }
   .g-six .sx-score { grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px 5px; }
   .g-six .sx-pl { grid-template-columns: auto minmax(0, 1fr); gap: 0 5px; padding: 3px 6px 6px 4px; border-radius: 12px; box-shadow: 0 3px 0 var(--sx-ink); }
@@ -194,14 +197,18 @@
   .g-six .sx-pl-heads .sx-horn { width: 16px; height: 16px; }
   .g-six .sx-pl-bar { grid-row: 3; height: 6px; }
   .g-six .sx-pl-name { font-size: 0.75rem; }
-  .g-six .sx-lanes { gap: 12px; }
-  .g-six .sx-lane { padding: 10px 8px 8px; border-radius: 20px; }
+  .g-six .sx-lanes { gap: 10px; }
+  .g-six .sx-lane { padding: 6px 8px 5px; border-radius: 18px; }
+  .g-six .sx-lane-sum { min-width: 34px; padding: 2px 4px; font-size: 0.9rem; gap: 0; }
+  .g-six .sx-lane-sum .sx-horn { width: 14px; height: 14px; }
   .g-six .sx-handbox { gap: 4px; padding-top: 2px; padding-bottom: 6px; border-radius: 20px 20px 0 0; }
   .g-six .sx-hand { flex-wrap: nowrap; justify-content: safe center; overflow-x: auto; overscroll-behavior-x: contain; gap: 7px; padding: 14px 6px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
   .g-six .sx-hand::-webkit-scrollbar { display: none; }
   .g-six .sx-pick { flex: none; scroll-snap-align: center; }
-  .g-six .sx-go { min-height: 42px; font-size: 0.95rem; }
+  .g-six .sx-go { min-height: 38px; font-size: 0.9rem; }
 }
+
+@media (max-width: 599px) { .g-six .sx { gap: 6px; padding-top: 8px; } }
 
 @media (prefers-reduced-motion: reduce) {
   .g-six .sx-lane.is-choice, .g-six .sx-play.is-pending .sx-card, .g-six .sx-lane.is-taking, .g-six .sx-pl.is-bump, .g-six .sx-play.is-flip,

@@ -24,7 +24,7 @@ Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: Th
 
 ## Les règles
 
-- **Tour** : on lance deux dés. Un double fait rejouer ; le troisième à la suite envoie à la Douane.
+- **Tour** : on lance deux dés. Un passage au Départ rapporte 200 €. Un double fait rejouer ; le troisième à la suite envoie à la Douane.
 - **Ville libre** : on l'achète ou on passe. Si on passe, elle reste libre pour le suivant.
 - **Loyer** : 10 % du prix. Majorité de la région : × 2. Région complète : × 3.
 - **Construire** : il faut la majorité d'une région (3 villes sur 4, ou 2 à 2 ou 3 joueurs). Quatre niveaux : Quartier × 4, Quartier animé × 10, Tours × 22, Skyline × 32 ; 25 % de plus si la région est complète. Revente à moitié prix.

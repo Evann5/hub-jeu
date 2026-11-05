@@ -134,7 +134,7 @@ export function mount(root, api) {
         enterKeyHint: i === view.categories.length - 1 ? 'done' : 'next',
         placeholder: `${view.letter}…`,
         disabled: !player,
-        oninput: () => { local[i] = input.value; touch(); updateFilled(); },
+        oninput: () => { local[i] = input.value; touch(); if (ui?.alert) ui.alert.textContent = ''; updateFilled(); },
         onblur: flush,
         onkeydown: (e) => {
           if (e.key !== 'Enter') return;
@@ -200,7 +200,6 @@ export function mount(root, api) {
     const ready = !firstProblem(current.view);
     ui.stop.classList.toggle('is-ready', ready);
     ui.stop.setAttribute('aria-describedby', 'pb-stop-note');
-    ui.alert.textContent = '';
   }
 
   function updateWriting(view, info) {

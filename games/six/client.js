@@ -227,7 +227,9 @@ export function mount(root, api) {
 
   function paintMeta() {
     status.textContent = statusText();
-    roundChip.textContent = view.phase === 'over' ? 'Partie terminée' : `Manche ${view.round} · tour ${view.turnNo}/10 · fin à ${view.target}`;
+    // The hub banner already says the game is over: no duplicate chip.
+    roundChip.hidden = view.phase === 'over';
+    roundChip.textContent = view.phase === 'over' ? '' : `Manche ${view.round} · tour ${view.turnNo}/10 · fin à ${view.target}`;
     paintTimer();
   }
 

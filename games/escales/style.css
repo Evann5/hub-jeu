@@ -141,7 +141,7 @@
 .g-escales .es-rank-name small { color: var(--soft); font-size: 0.75rem; font-weight: 600; }
 .g-escales .es-rank-worth { font-weight: 800; }
 .g-escales .es-rank li { min-height: 36px; }
-.g-escales .es-rank.is-long { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 6px; font-size: 0.875rem; }
+.g-escales .es-rank.is-long { grid-auto-flow: column; grid-template-rows: repeat(var(--rank-rows), auto); grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 6px; font-size: 0.875rem; }
 .g-escales .es-rank.is-long li { grid-template-columns: 14px auto minmax(0, 1fr) auto; gap: 5px; min-height: 32px; }
 .g-escales .es-rank.is-long .es-rank-name small { display: none; }
 .g-escales .es-action.is-over:has(.is-long) { width: min(540px, 90%); }
