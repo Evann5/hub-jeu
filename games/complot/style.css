@@ -168,13 +168,19 @@
   .g-complot .cp-in { padding: 10px 12px 24px; gap: 10px; }
   .g-complot .cp-banner { padding: 10px 14px; }
   .g-complot .cp-banner p { margin-top: 3px; font-size: 0.85rem; }
-  .g-complot .cp-seat { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
-  .g-complot .cp-seat-top { grid-column: 1 / -1; }
+  .g-complot .cp-seat { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding: 8px 10px; }
   .g-complot .cp-seat-cards { min-height: 0; }
+  .g-complot .cp-tags { grid-column: 1 / -1; }
   .g-complot .cp-seat-cards .cp-card.is-sm { width: 44px; }
-  .g-complot .cp-tags { align-self: center; }
+  .g-complot .cp-panel { padding: 10px; }
   .g-complot .cp-acts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-  .g-complot .cp-act-sub { font-size: 0.75rem; line-height: 1.2; }
-  .g-complot .cp-act-name { font-size: 0.88rem; overflow-wrap: anywhere; }
+  .g-complot .cp-act { grid-template-columns: 30px minmax(0, 1fr); column-gap: 8px; min-height: 56px; padding: 6px 8px; }
+  .g-complot .cp-act:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .g-complot .cp-act-face { width: 30px; height: 38px; border-radius: 8px; }
+  .g-complot .cp-act-face.is-free svg { width: 22px; height: 22px; }
+  .g-complot .cp-act-sub { font-size: 0.72rem; line-height: 1.15; }
+  .g-complot .cp-act-claim { font-size: 0.7rem; }
+  /* Jamais de coupure en plein mot : le titre passe à la ligne aux espaces seulement. */
+  .g-complot .cp-act-name { font-size: min(0.8rem, 3.05vw); line-height: 1.1; overflow-wrap: normal; word-break: normal; hyphens: manual; }
   .g-complot .cp-seat-cards .cp-card.is-sm.is-dead { width: 54px; }
 }

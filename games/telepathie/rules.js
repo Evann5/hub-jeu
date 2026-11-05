@@ -196,6 +196,5 @@ export function view(s, playerId) {
     result: s.result,
     left: s.left,
     players: s.players,
-    seed: s.seed,
   };
 }
