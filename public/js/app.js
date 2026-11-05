@@ -248,6 +248,7 @@ function applyRoute({ moved = false } = {}) {
   if (route.view === 'channel' || route.view === 'dm') lastConv = location.hash;
 
   for (const v of [messages, members, admin, games, table]) v.leave();
+  state.cameFrom = state.route.view;
   state.route = route;
   ui.content.className = `view view-${route.view === 'channel' || route.view === 'dm' ? 'messages' : route.view}`;
   ui.content.scrollTop = 0;

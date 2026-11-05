@@ -90,7 +90,7 @@ export function summary(t) {
   // `may` reste sur le serveur : il peut dépendre de rôles secrets (les loups, la voyante…).
   const { turn, over, winners, label, deadline } = statusOf(t);
   return {
-    id: t.id, game: t.game, hostId: t.hostId, status: t.status, seats: t.seats, left: t.left, options: t.options,
+    id: t.id, game: t.game, hostId: t.hostId, status: t.status, seats: t.seats, left: t.left, kicked: t.kicked ?? [], options: t.options,
     turn, over, winners, label, deadline, createdAt: t.createdAt, updatedAt: t.updatedAt,
   };
 }

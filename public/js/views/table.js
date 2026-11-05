@@ -118,7 +118,7 @@ function renderHead() {
   const myTurn = cur.turnGated ? cur.turnShown : t.turn.includes(state.me.id); // un jeu peut retenir l'annonce jusqu'à la fin de son animation (api.showTurn)
   const label = t.status === 'lobby' ? 'En attente' : t.status === 'over' ? 'Terminée' : myTurn ? 'À toi de jouer' : 'En cours';
   if (cur.spoken !== undefined && cur.spoken !== label && (label === 'À toi de jouer' || label === 'Terminée')) announce(label === 'Terminée' ? 'Partie terminée.' : 'À toi de jouer.');
-  if (cur.spoken === 'En cours' && label === 'Terminée' && cur.tab === 'chat' && (mobile() || isWide())) toast('Partie terminée : regarde l’onglet Partie.');
+  if (cur.spoken !== undefined && cur.spoken !== 'Terminée' && label === 'Terminée' && cur.tab === 'chat' && (mobile() || isWide())) toast('Partie terminée : regarde l’onglet Partie.');
   cur.spoken = label;
   const tab = (key, text, extra) => h('button.table-tab', {
     type: 'button',
@@ -243,7 +243,9 @@ function renderLobby() {
 
   const actions = [];
   if (!seated()) {
-    actions.push(full
+    actions.push(t.kicked?.includes(state.me.id)
+      ? h('p.lobby-note', 'L’hôte t’a retiré de cette table : tu peux regarder la partie quand elle commence.')
+      : full
       ? h('p.lobby-note', 'La table est complète : tu peux regarder la partie quand elle commence.')
       : h('button.btn.btn-dark', { type: 'button', onclick: (e) => act(e, 'table:join') }, icon('plus'), 'Rejoindre la table'));
   } else {

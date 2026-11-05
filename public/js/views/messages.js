@@ -106,9 +106,23 @@ function openConversation(scope) {
   ui.messages = h('div.messages', { role: 'log', 'aria-live': 'off', 'aria-label': 'Messages', tabindex: '0' }); // les nouveaux messages sont annoncés un par un (announce)
   ui.typing = h('div.typing', { 'aria-hidden': 'true' });
   ui.composer = h('div');
+  ui.jump = h('button.jump-new', {
+    type: 'button',
+    hidden: true,
+    onclick: () => {
+      ui.messages.scrollTop = ui.messages.scrollHeight;
+      ui.jump.hidden = true;
+      ui.composer.querySelector('textarea')?.focus({ preventScroll: true });
+    },
+  }, 'Nouveaux messages ↓');
   ui.conv.replaceChildren(
     h('header.conv-head',
-      h('a.icon-btn.back', { href: '#/messages', title: 'Retour aux conversations' }, icon('back', 'Retour aux conversations')),
+      h('a.icon-btn.back', {
+        href: '#/messages',
+        title: 'Retour aux conversations',
+        // Venu de la liste : on y revient, sans ajouter une étape que le Retour du navigateur rouvrirait.
+        onclick: (e) => { if (state.cameFrom === 'messages') { e.preventDefault(); history.back(); } },
+      }, icon('back', 'Retour aux conversations')),
       title,
       topic ? h('p.topic', topic) : null,
       state.route.view === 'channel' && isAdmin()
@@ -119,12 +133,15 @@ function openConversation(scope) {
         }, icon('pencil', 'Modifier le canal'))
         : null),
     ui.messages,
-    h('div.composer-wrap', ui.typing, ui.composer),
+    h('div.composer-wrap', ui.jump, ui.typing, ui.composer),
   );
   let atBottom = true;
   ui.messages.addEventListener('scroll', () => {
     atBottom = nearBottom();
-    if (atBottom) markRead();
+    if (atBottom) {
+      ui.jump.hidden = true;
+      markRead();
+    }
   });
   // Le clavier du téléphone réduit la liste : si on lisait la fin, on la garde sous les yeux.
   if (typeof ResizeObserver === 'function') {
@@ -496,6 +513,7 @@ export function onMessage(m) {
     if (m.userId === state.me.id || !appendMessage(m)) renderMessages();
     renderTyping();
     if (seen) markRead();
+    if (m.userId !== state.me.id && !seen) ui.jump.hidden = false;
     if (m.userId !== state.me.id) announce(`${state.users.get(m.userId)?.pseudo ?? 'Quelqu’un'} : ${m.body}`);
   }
   renderList();

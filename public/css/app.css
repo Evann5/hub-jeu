@@ -1056,7 +1056,9 @@ body:has(.table-view[data-game='escales']) { --bg-0: var(--es-nav); --bg-1: var(
 }
 .picker button:hover { background: var(--bg-3); }
 
-.composer-wrap { padding: 0 16px 16px; flex: none; }
+.composer-wrap { position: relative; padding: 0 16px 16px; flex: none; }
+.jump-new { position: absolute; left: 50%; top: -38px; z-index: 3; transform: translateX(-50%); min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-color); font-weight: 700; font-size: 0.875rem; white-space: nowrap; box-shadow: 0 6px 18px rgb(0 0 0 / 0.4); }
+.jump-new[hidden] { display: none; }
 .typing { height: 22px; padding: 2px 6px; font-size: 0.8125rem; color: var(--ink-2); }
 .composer {
   display: flex;
