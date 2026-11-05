@@ -8,3 +8,6 @@
 | Les villes définitives d'Escales (8 régions de 4 villes) | Minh | Quand il veut : tout est dans `games/escales/client/board.js` |
 | Mise en ligne : alwaysdata gratuit (recommandé, à valider par un essai, `docs/mise-en-ligne-alwaysdata.md`) ou O2Switch ? Il faut créer le compte et choisir le code de classe | Minh | Avant la première mise en ligne |
 | Le code de classe de départ | Minh | Avant la première mise en ligne |
+| Escales : quelle palette garder (nuit, ardoise, prune) et quel globe ? Ensuite, retirer les autres et l'essai `?theme=` | Minh | Après avoir vu `docs/propositions/` |
+| Escales : mode spécial « Cartel » (lieux et personnages inventés), cartes d'information sourcées, ou rien | Minh | Quand il veut |
+| Supprimer les fichiers inutilisés d'Escales (`fond-monde.svg`, `globe-clair.svg`, `globe-sombre.svg`, `alfa-slab-*`, `unbounded.woff2`, `figtree.woff2`) | Minh | Quand il veut |
