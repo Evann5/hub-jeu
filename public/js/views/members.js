@@ -1,5 +1,5 @@
 // Écran Membres : toute la classe en cartes, en ligne d'abord, avec une recherche par pseudo.
-import { h, icon, token, count } from '../dom.js';
+import { h, icon, token, count, keepFocus } from '../dom.js';
 import { state, sortedUsers } from '../store.js';
 import { openProfile } from '../dialogs.js';
 
@@ -41,13 +41,13 @@ export function renderGrid() {
   const q = query.trim().toLocaleLowerCase('fr');
   const list = q ? all.filter((u) => u.pseudo.toLocaleLowerCase('fr').includes(q)) : all;
   const online = all.filter((u) => state.online.has(u.id)).length;
-  counter.textContent = `${count(all.length, 'membre', 'membres')}, dont ${online} en ligne`;
+  counter.textContent = q ? count(list.length, 'résultat', 'résultats') : `${count(all.length, 'membre', 'membres')}, dont ${online} en ligne`;
 
   if (!list.length) {
     grid.replaceChildren(h('li.member-empty', `Personne ne s’appelle « ${query.trim()} ».`));
     return;
   }
-  grid.replaceChildren(...list.map((u) => {
+  keepFocus(grid, () => grid.replaceChildren(...list.map((u) => {
     const isOn = state.online.has(u.id);
     const me = u.id === state.me.id;
     return h('li', h('button.member-card', {
@@ -57,7 +57,7 @@ export function renderGrid() {
     },
     token(u, { size: 'l', online: isOn }),
     h('span.member-name', u.pseudo, me ? h('span.tag-me', 'toi') : null, u.role === 'admin' ? h('span.tag-admin', 'admin') : null),
-    h('span.member-status', isOn ? 'En ligne' : 'Hors ligne'),
+    isOn ? h('span.sr-only', 'En ligne') : h('span.member-status', 'Hors ligne'), // la pastille le dit déjà : on n'écrit que l'exception
     h('span.member-bio', u.bio || ' ')));
-  }));
+  })));
 }

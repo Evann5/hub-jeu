@@ -1,13 +1,13 @@
 // Écran Messages : liste des canaux et des messages privés, conversation, membres en ligne (grand écran).
 // Sur téléphone, la liste et la conversation s'affichent l'une après l'autre (#/messages puis #/c/1).
-import { h, icon, token, toast, colorOf, timeOf, dayKey, dayLabel, stamp, richText, count } from '../dom.js';
+import { h, icon, token, toast, colorOf, timeOf, dayKey, dayLabel, stamp, richText, count, keepFocus, announce } from '../dom.js';
 import { call } from '../net.js';
 import { state, dmScope, otherOf, isAdmin, sortedUsers } from '../store.js';
 import { openProfile, openChannelEditor, confirmDialog } from '../dialogs.js';
 
 let ui = null; // éléments de l'écran ouvert, null quand on est ailleurs
 
-const mobile = () => matchMedia('(max-width: 760px)').matches;
+const mobile = () => matchMedia('(max-width: 760px), (max-height: 500px)').matches;
 const touch = () => matchMedia('(hover: none)').matches;
 
 export function currentScope() {
@@ -65,8 +65,8 @@ export function renderList() {
     }, token(u, { size: 's', online: state.online.has(id) }), h('span.label', u.pseudo), badge(state.unread[s])));
   });
 
-  ui.list.replaceChildren(
-    h('div.view-head', h('h1', 'Messages')),
+  keepFocus(ui.list, () => ui.list.replaceChildren(
+    h('div.view-head', h(scope ? 'h2' : 'h1', 'Messages')),
     h('div.conv-scroll',
       h('div.nav-title', h('h2', 'Canaux'),
         isAdmin() ? h('button.icon-btn.sm', { type: 'button', onclick: () => openChannelEditor(), title: 'Créer un canal' }, icon('plus', 'Créer un canal')) : null),
@@ -74,7 +74,7 @@ export function renderList() {
       h('div.nav-title', h('h2', 'Messages privés'),
         h('a.icon-btn.sm', { href: '#/membres', title: 'Écrire à quelqu’un' }, icon('plus', 'Écrire à quelqu’un'))),
       dmItems.length ? h('ul.nav-list', dmItems) : h('p.nav-empty', 'Aucune conversation privée. Choisis quelqu’un dans Membres pour lui écrire.')),
-  );
+  ));
 }
 
 export function renderOnline() {
@@ -83,11 +83,11 @@ export function renderOnline() {
   const on = users.filter((u) => state.online.has(u.id));
   const row = (u, isOn) => h(`button.member${isOn ? '' : '.offline'}`, { type: 'button', onclick: () => openProfile(u.id) },
     token(u, { online: isOn }), h('span.label', u.pseudo), u.role === 'admin' ? h('span.tag-admin', 'admin') : null);
-  ui.online.replaceChildren(
+  keepFocus(ui.online, () => ui.online.replaceChildren(
     h('h2', `En ligne — ${on.length}`),
     ...(on.length ? on.map((u) => row(u, true)) : [h('p.nav-empty', 'Personne d’autre pour l’instant.')]),
     ...(users.length > on.length ? [h('h2', `Hors ligne — ${users.length - on.length}`), ...users.filter((u) => !state.online.has(u.id)).map((u) => row(u, false))] : []),
-  );
+  ));
 }
 
 function openConversation(scope) {
@@ -103,8 +103,8 @@ function openConversation(scope) {
       token(u, { size: 's', online: state.online.has(u.id) }), h('span.label', u.pseudo)));
     topic = state.online.has(u.id) ? 'En ligne' : 'Hors ligne';
   }
-  ui.messages = h('div.messages', { role: 'log', 'aria-label': 'Messages', tabindex: '0' });
-  ui.typing = h('div.typing', { 'aria-live': 'polite' });
+  ui.messages = h('div.messages', { role: 'log', 'aria-live': 'off', 'aria-label': 'Messages', tabindex: '0' }); // les nouveaux messages sont annoncés un par un (announce)
+  ui.typing = h('div.typing', { 'aria-hidden': 'true' });
   ui.composer = h('div');
   ui.conv.replaceChildren(
     h('header.conv-head',
@@ -248,7 +248,7 @@ function renderMessages({ toBottom = false } = {}) {
     nodes.push(messageEl(m, startsGroup(prev, m)));
     prev = m;
   }
-  ui.messages.replaceChildren(...nodes);
+  keepFocus(ui.messages, () => ui.messages.replaceChildren(...nodes));
   if (stick) ui.messages.scrollTop = ui.messages.scrollHeight;
   // À l'ouverture, s'il y a beaucoup de nouveaux messages, on commence par le premier.
   if (toBottom) ui.messages.querySelector('.new-line')?.scrollIntoView({ block: 'nearest' });
@@ -267,7 +267,7 @@ function messageEl(m, first) {
       h('div.msg-head',
         h('button.msg-author', { type: 'button', onclick: () => state.users.has(m.userId) && openProfile(m.userId) }, author.pseudo),
         author.role === 'admin' ? h('span.tag-admin', 'admin') : null,
-        h('time.msg-time', { dateTime: new Date(m.createdAt).toISOString() }, stamp(m.createdAt))),
+        h('time.msg-time', { dateTime: new Date(m.createdAt).toISOString(), title: stamp(m.createdAt) }, timeOf(m.createdAt))), // le jour est déjà dans le séparateur
     );
   } else {
     el.append(h('time.msg-side-time', { dateTime: new Date(m.createdAt).toISOString() }, timeOf(m.createdAt)));
@@ -290,6 +290,7 @@ function messageEl(m, first) {
         type: 'button',
         'aria-pressed': String(mine),
         title: names,
+        dataset: { key: `reaction-${e}` },
         'aria-label': `${e} ${who.length}, ${names}${mine ? '. Retirer ma réaction' : '. Réagir aussi'}`,
         onclick: () => react(m, e),
       }, e, h('b', String(who.length)));
@@ -298,8 +299,8 @@ function messageEl(m, first) {
 
   if (m.id > 0) {
     el.append(h('div.msg-tools',
-      h('button.icon-btn', { type: 'button', title: 'Réagir', onclick: (e) => togglePicker(el, m, e.currentTarget) }, icon('smile', 'Réagir')),
-      isAdmin() ? h('button.icon-btn.danger', { type: 'button', title: 'Supprimer (admin)', onclick: () => adminDelete(m) }, icon('trash', 'Supprimer le message')) : null));
+      h('button.icon-btn', { type: 'button', title: 'Réagir', onclick: (e) => togglePicker(el, m, e.currentTarget) }, icon('smile', `Réagir au message de ${author.pseudo}`)),
+      isAdmin() ? h('button.icon-btn.danger', { type: 'button', title: 'Supprimer (admin)', onclick: () => adminDelete(m) }, icon('trash', `Supprimer le message de ${author.pseudo}`)) : null));
     // Sur écran tactile, un appui sur le message montre les outils.
     el.addEventListener('click', (e) => {
       if (e.target.closest('button, a') || !touch()) return;
@@ -313,7 +314,7 @@ function messageEl(m, first) {
 function updateMessageEl(m) {
   const old = ui?.messages?.querySelector(`[data-id="${m.id}"]`);
   if (!old) return;
-  old.replaceWith(messageEl(m, old.classList.contains('first')));
+  keepFocus(ui.messages, () => old.replaceWith(messageEl(m, old.classList.contains('first'))));
 }
 
 function togglePicker(el, m, opener) {
@@ -322,27 +323,28 @@ function togglePicker(el, m, opener) {
     open.remove();
     return;
   }
-  const picker = h('div.picker', { role: 'menu', 'aria-label': 'Choisir une réaction' },
+  // Se ferme de la même façon quel que soit le chemin : le focus revient au bouton « Réagir », sauf si on a cliqué ailleurs.
+  const close = ({ refocus = true } = {}) => {
+    picker.remove();
+    document.removeEventListener('pointerdown', onPointer, true);
+    document.removeEventListener('keydown', onKey, true);
+    if (refocus && opener.isConnected) opener.focus();
+  };
+  const onPointer = (ev) => { if (!picker.contains(ev.target)) close({ refocus: false }); };
+  const onKey = (ev) => { if (ev.key === 'Escape') close(); };
+  const picker = h('div.picker', { role: 'group', 'aria-label': 'Choisir une réaction' },
     state.options.reactions.map((e) => h('button', {
       type: 'button',
-      role: 'menuitem',
+      'aria-label': `Réagir avec ${e}`,
       onclick: () => {
-        picker.remove();
+        close();
         react(m, e);
       },
     }, e)));
   el.append(picker);
   picker.querySelector('button').focus();
-  const close = (ev) => {
-    if (ev.type === 'keydown' && ev.key !== 'Escape') return;
-    if (ev.type === 'pointerdown' && picker.contains(ev.target)) return;
-    picker.remove();
-    if (ev.type === 'keydown') opener.focus();
-    document.removeEventListener('pointerdown', close, true);
-    document.removeEventListener('keydown', close, true);
-  };
-  document.addEventListener('pointerdown', close, true);
-  document.addEventListener('keydown', close, true);
+  document.addEventListener('pointerdown', onPointer, true);
+  document.addEventListener('keydown', onKey, true);
 }
 
 async function react(m, emoji) {
@@ -487,11 +489,24 @@ export function onMessage(m) {
     if (!seen) state.unread[m.scope] = (state.unread[m.scope] || 0) + 1;
   }
   if (viewing) {
-    renderMessages();
+    if (m.userId === state.me.id || !appendMessage(m)) renderMessages();
     renderTyping();
     if (seen) markRead();
+    if (m.userId !== state.me.id) announce(`${state.users.get(m.userId)?.pseudo ?? 'Quelqu’un'} : ${m.body}`);
   }
   renderList();
+}
+
+// Ajoute le dernier message à l'écran ; renvoie false quand il faut tout redessiner.
+function appendMessage(m) {
+  const list = state.convs.get(m.scope)?.messages;
+  const prev = list?.at(-2);
+  if (!ui?.messages || list?.at(-1) !== m || !prev || !ui.messages.querySelector(`[data-id="${prev.id}"]`)) return false;
+  const stick = nearBottom();
+  if (dayKey(prev.createdAt) !== dayKey(m.createdAt)) ui.messages.append(h('div.day', { role: 'separator' }, dayLabel(m.createdAt)));
+  ui.messages.append(messageEl(m, startsGroup(prev, m)));
+  if (stick) ui.messages.scrollTop = ui.messages.scrollHeight;
+  return true;
 }
 
 export function onMessageUpdate(m) {

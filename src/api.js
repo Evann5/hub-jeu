@@ -5,7 +5,7 @@ import { config } from './config.js';
 import { COLORS, AVATARS, REACTIONS, LIMITS } from './options.js';
 import * as auth from './auth.js';
 import { markAllChannelsRead, deleteUserData } from './chat.js';
-import { broadcastUser, disconnectUser, disconnectSession, removeUser } from './realtime.js';
+import { broadcastUser, disconnectUser, disconnectOtherSessions, disconnectSession, removeUser } from './realtime.js';
 import { sameOrigin } from './securite.js';
 
 export const api = express.Router();
@@ -141,10 +141,10 @@ api.post('/password', async (req, res) => {
   if (passError) throw new ApiError(400, passError);
   const passHash = await auth.hashPassword(password);
   db.prepare('UPDATE users SET pass_hash = ?, must_change_password = 0 WHERE id = ?').run(passHash, user.id);
-  // Les autres appareils sont déconnectés ; celui-ci reçoit une nouvelle session.
-  auth.deleteUserSessions(user.id);
-  disconnectUser(user.id, 'Ton mot de passe a changé : reconnecte-toi.');
-  setSessionCookie(req, res, auth.createSession(user.id));
+  // Les autres appareils sont déconnectés ; celui-ci garde sa session et ses onglets ouverts.
+  const token = auth.readCookie(req.headers.cookie, auth.COOKIE);
+  auth.deleteOtherSessions(user.id, token);
+  disconnectOtherSessions(user.id, token, 'Ton mot de passe a changé : reconnecte-toi.');
   res.json({ ok: true });
 });
 

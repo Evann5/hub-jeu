@@ -1,11 +1,12 @@
 // Fenêtres : confirmation, règles, profil d'un membre (avec les outils admin), création et modification de canal.
-import { h, icon, token, toast } from './dom.js';
+import { h, icon, token, toast, focusKey, findByKey } from './dom.js';
 import { call } from './net.js';
 import { state, go, isAdmin } from './store.js';
 
 // Ouvre une fenêtre modale ; elle se retire du DOM à la fermeture et rend le focus à l'élément d'avant.
 export function modal(title, ...content) {
   const opener = document.activeElement;
+  const openerKey = opener instanceof HTMLElement ? focusKey(opener) : null;
   const dlg = h('dialog', { 'aria-label': title },
     h('div.dlg',
       h('div.dlg-head', h('h2', title),
@@ -13,7 +14,9 @@ export function modal(title, ...content) {
       ...content));
   dlg.addEventListener('close', () => {
     dlg.remove();
-    if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    // L'écran a pu être redessiné pendant que la fenêtre était ouverte : on retrouve l'équivalent, sinon le contenu.
+    if (opener instanceof HTMLElement && opener.isConnected && !opener.disabled) opener.focus();
+    else if (document.activeElement === document.body || !document.activeElement) (openerKey && findByKey(document.body, openerKey) || document.getElementById('contenu'))?.focus();
   });
   dlg.addEventListener('click', (e) => {
     if (e.target === dlg) dlg.close();
@@ -39,7 +42,8 @@ export function confirmDialog(title, text, { confirmLabel = 'Confirmer', danger 
           },
         }, confirmLabel)));
     dlg.addEventListener('close', () => resolve(ok));
-    dlg.querySelector('.dlg-actions .btn:last-child').focus();
+    // Sur une action destructrice, Entrée trop rapide ne doit rien casser.
+    dlg.querySelector(danger ? '.dlg-actions .btn-ghost' : '.dlg-actions .btn:last-child').focus();
   });
 }
 
@@ -107,7 +111,7 @@ export function openProfile(userId) {
     return;
   }
   const online = state.online.has(u.id);
-  const dlg = modal(u.pseudo,
+  const dlg = modal('Profil',
     h('div.profile-card',
       token(u, { size: 'l', online }),
       h('div',
@@ -142,10 +146,11 @@ function adminTools(u, close) {
       toast(err.message, { error: true });
     } finally {
       btn.disabled = false;
+      if (btn.isConnected && !btn.closest('dialog')?.contains(document.activeElement)) btn.focus();
     }
   };
 
-  const tempBox = h('div.dlg-sub');
+  const tempBox = h('div.dlg-sub', { role: 'status' });
   return h('div.dlg-sub',
     h('hr'),
     h('h3', 'Outils admin'),
@@ -169,7 +174,8 @@ function adminTools(u, close) {
           const { tempPassword } = await call(state.socket, 'admin:resetPassword', { userId: u.id });
           tempBox.replaceChildren(
             h('p', `Donne ce mot de passe provisoire à ${u.pseudo} :`),
-            h('div.code-box', h('span', tempPassword)));
+            h('div.code-box', { tabindex: '-1' }, h('span', tempPassword)));
+          tempBox.querySelector('.code-box').focus();
           tempBox.scrollIntoView({ block: 'nearest' }); // sur petit écran, il apparaît sous le bord de la fiche
         }),
       }, 'Réinitialiser le mot de passe'),

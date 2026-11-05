@@ -1,5 +1,5 @@
 // Écrans d'accueil : connexion, inscription, changement de mot de passe obligatoire.
-import { h, icon, token } from './dom.js';
+import { h, icon, token, keepFocus, arrowKeys } from './dom.js';
 import { api } from './net.js';
 import { openRules } from './dialogs.js';
 
@@ -24,14 +24,26 @@ function submitting(form, busy) {
   btn.disabled = busy;
 }
 
-function showError(form, message) {
+// field : le champ fautif, relié au message pour les lecteurs d'écran et placé sous le focus.
+function showError(form, message, field) {
   let box = form.querySelector('.form-error');
+  for (const x of form.querySelectorAll('[data-erreur]')) {
+    x.removeAttribute('data-erreur');
+    x.removeAttribute('aria-invalid');
+    x.removeAttribute('aria-describedby');
+  }
   if (!message) return box?.remove();
   if (!box) {
-    box = h('p.form-error', { role: 'alert' });
+    box = h('p.form-error', { role: 'alert', id: `${form.dataset.name ?? 'form'}-erreur` });
     form.querySelector('button[type=submit]').before(box);
   }
   box.textContent = message;
+  if (field) {
+    field.dataset.erreur = '1';
+    field.setAttribute('aria-invalid', 'true');
+    field.setAttribute('aria-describedby', box.id);
+    field.focus();
+  }
 }
 
 const PASSWORD_MIN = 10;
@@ -78,11 +90,13 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
       h('button', { type: 'button', role: 'tab', 'aria-selected': String(mode === 'login'), onclick: () => draw('login') }, 'Se connecter'),
       h('button', { type: 'button', role: 'tab', 'aria-selected': String(mode === 'register'), onclick: () => draw('register') }, 'Créer un compte'),
     );
-    panel.replaceChildren(
+    keepFocus(panel, () => panel.replaceChildren(
       h('h2', mode === 'login' ? 'Bon retour sur Hubuno' : 'Rejoindre la classe'),
       tabs,
       mode === 'login' ? loginForm() : registerForm(),
-    );
+    ));
+    arrowKeys(tabs);
+    document.title = `${mode === 'login' ? 'Connexion' : 'Inscription'} · Hubuno`;
   }
 
   function loginForm() {
@@ -135,13 +149,12 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
       showError(form, null);
       const missing = [['reg_code', 'Entre le code de la classe : un admin te le donne.'], ['reg_pseudo', 'Choisis un pseudo.']].find(([name]) => !form.elements[name].value.trim());
       if (missing) {
-        showError(form, missing[1]);
-        form.elements[missing[0]].focus();
+        showError(form, missing[1], form.elements[missing[0]]);
         return;
       }
       if (!passwordLongEnough(form, 'reg_password', 'reg-password-hint')) return;
       if (!form.elements.reg_rules.checked) {
-        showError(form, 'Coche la case pour accepter les règles.');
+        showError(form, 'Coche la case pour accepter les règles.', form.elements.reg_rules);
         return;
       }
       submitting(form, true);

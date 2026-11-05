@@ -1,8 +1,8 @@
 // Hubuno côté navigateur : démarrage, connexion temps réel, barre de navigation et choix de l'écran.
-import { h, icon, token, toast, setColors, count } from './dom.js';
+import { h, icon, token, toast, setColors, count, keepFocus } from './dom.js';
 import { api, connect } from './net.js';
 import { renderAuth, renderForcedPassword } from './auth.js';
-import { state, actions, go, unreadTotal, isAdmin, gameOf, myTurnTables } from './store.js';
+import { state, actions, go, dmScope, unreadTotal, isAdmin, gameOf, myTurnTables } from './store.js';
 import * as home from './views/home.js';
 import * as games from './views/games.js';
 import * as table from './views/table.js';
@@ -49,6 +49,14 @@ function showAuth(mode) {
   renderAuth(root, { mode, onDone: afterLogin });
 }
 
+// Quand la sourdine se termine, la zone de saisie revient sans changer d'écran.
+let muteTimer = null;
+function armMuteEnd() {
+  clearTimeout(muteTimer);
+  const left = state.mutedUntil - Date.now();
+  if (left > 0) muteTimer = setTimeout(() => { messages.renderComposer(); table.onMuted(); }, Math.min(left + 500, 2 ** 31 - 1));
+}
+
 function afterLogin({ mustChangePassword }) {
   if (mustChangePassword) renderForcedPassword(root, { onDone: startRealtime });
   else startRealtime();
@@ -75,6 +83,7 @@ function startRealtime() {
   socket.on('state', (s) => {
     state.me = s.me;
     state.mutedUntil = s.mutedUntil;
+    armMuteEnd();
     state.users = new Map(s.users.map((u) => [u.id, u]));
     state.channels = s.channels;
     state.dms = s.dms;
@@ -117,12 +126,18 @@ function startRealtime() {
   socket.on('user:removed', (id) => {
     state.users.delete(id);
     state.dms = state.dms.filter((d) => d.otherId !== id);
+    delete state.unread[dmScope(id)]; // sinon la pastille compte une conversation qui n'existe plus
+    renderNav();
     for (const conv of state.convs.values()) conv.messages = conv.messages.filter((m) => m.userId !== id);
     if (state.route.view === 'dm' && state.route.id === id) go('#/messages');
     else refreshPeople();
   });
   socket.on('channels', (channels) => {
     state.channels = channels;
+    for (const scope of Object.keys(state.unread)) {
+      if (scope.startsWith('c:') && !channels.some((c) => `c:${c.id}` === scope)) delete state.unread[scope];
+    }
+    renderNav();
     if (state.route.view === 'channel' && !channels.some((c) => c.id === state.route.id)) {
       go('#/messages');
       return;
@@ -132,6 +147,7 @@ function startRealtime() {
   });
   socket.on('muted', (until) => {
     state.mutedUntil = until;
+    armMuteEnd();
     messages.renderComposer();
     table.onMuted();
     toast(until ? 'Un admin t’a mis en sourdine.' : 'Tu peux de nouveau écrire.');
@@ -166,7 +182,7 @@ function startRealtime() {
   socket.on('invite', ({ tableId, game, from }) => {
     const g = gameOf(game);
     const who = state.users.get(from)?.pseudo || 'Quelqu’un';
-    toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}`, onclick: (e) => e.currentTarget.closest('.toast')?.remove() }, 'Rejoindre')], { ms: 12000, action: true });
+    toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}`, onclick: (e) => e.currentTarget.closest('.toast')?.remove() }, 'Rejoindre')], { ms: 30000, action: true });
   });
 }
 
@@ -174,7 +190,7 @@ function startRealtime() {
 function refreshPeople() {
   if (!ui) return;
   const { view } = state.route;
-  if (view === 'home') home.render(ui.content);
+  if (view === 'home') keepFocus(ui.content, () => home.render(ui.content));
   else if (view === 'members') members.renderGrid();
   else if (view === 'table') table.refresh();
   else if (['messages', 'channel', 'dm'].includes(view)) {
@@ -186,7 +202,7 @@ function refreshPeople() {
 // ——— Navigation ———
 // #/ accueil, #/jouer, #/t/5 (une table), #/messages, #/c/3, #/dm/7, #/membres, #/profil, #/admin
 
-window.addEventListener('hashchange', () => ui && applyRoute());
+window.addEventListener('hashchange', () => ui && applyRoute({ moved: true }));
 
 function parseRoute(hash = location.hash) {
   const m = /^#\/([a-z]+)(?:\/(\d+))?/.exec(hash);
@@ -214,10 +230,10 @@ function parseRoute(hash = location.hash) {
   }
 }
 
-function applyRoute() {
+function applyRoute({ moved = false } = {}) {
   let route = parseRoute();
   // Sur ordinateur, « Messages » ouvre directement la dernière conversation (la liste est déjà à côté).
-  if (route.view === 'messages' && !matchMedia('(max-width: 760px)').matches) {
+  if (route.view === 'messages' && !matchMedia('(max-width: 760px), (max-height: 500px)').matches) {
     const target = lastConv && parseRoute(lastConv).view !== 'messages' ? lastConv : state.channels[0] && `#/c/${state.channels[0].id}`;
     if (target) {
       history.replaceState(null, '', target);
@@ -236,6 +252,20 @@ function applyRoute() {
   }[route.view];
   view.render(ui.content);
   renderNav();
+  // Nouvel écran : le clavier et le lecteur d'écran repartent de son titre (sauf si l'écran a déjà placé le focus, comme la zone d'écriture).
+  if (moved && !ui.content.contains(document.activeElement)) {
+    const title = ui.content.querySelector('h1');
+    if (title) title.tabIndex = -1;
+    (title ?? ui.content).focus({ preventScroll: true });
+  }
+}
+
+// Le nom de l'écran, dans le titre de l'onglet.
+function pageName({ view, id }) {
+  if (view === 'channel') return `#${state.channels.find((c) => c.id === id)?.name ?? 'canal'}`;
+  if (view === 'dm') return state.users.get(id)?.pseudo ?? 'Messages';
+  if (view === 'table') return gameOf(state.tables.find((t) => t.id === id)?.game)?.name ?? 'Table';
+  return { home: 'Accueil', games: 'Jouer', messages: 'Messages', members: 'Membres', profile: 'Profil', admin: 'Admin' }[view] ?? '';
 }
 
 // ——— Coque : barre de navigation + écran ———
@@ -262,7 +292,7 @@ function renderNav() {
   if (!ui) return;
   const { view } = state.route;
   const total = unreadTotal();
-  document.title = total ? `(${total > 99 ? '99+' : total}) Hubuno` : 'Hubuno';
+  document.title = `${total ? `(${total > 99 ? '99+' : total}) ` : ''}${pageName(state.route)} · Hubuno`;
   const section = ['messages', 'channel', 'dm'].includes(view) ? 'messages' : view === 'table' ? 'games' : view;
   const turns = myTurnTables().length;
   const turnBadge = turns ? h('span.badge.nav-badge.badge-turn', { 'aria-hidden': 'true' }, String(turns)) : null;
@@ -276,7 +306,7 @@ function renderNav() {
   const badge = total ? h('span.badge.nav-badge', { 'aria-hidden': 'true' }, total > 99 ? '99+' : String(total)) : null;
   const unreadText = total ? `, ${count(total, 'non lu', 'non lus')}` : null;
 
-  ui.nav.replaceChildren(
+  keepFocus(ui.nav, () => ui.nav.replaceChildren(
     h('a.nav-brand', { href: '#/', 'aria-label': 'Hubuno, accueil' }, h('span.brand-mark', 'H'), h('span.brand-name', 'Hubuno')),
     h('ul.nav-items',
       item('home', '#/', 'Accueil', icon('home')),
@@ -285,7 +315,7 @@ function renderNav() {
       item('members', '#/membres', 'Membres', icon('users')),
       isAdmin() ? item('admin', '#/admin', 'Admin', icon('shield')) : null,
       item('profile', '#/profil', 'Profil', token(state.me, { size: 's', online: true }))),
-  );
+  ));
 }
 
 boot();

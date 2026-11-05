@@ -77,7 +77,7 @@ server {
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
         # Le temps réel : sans ces lignes, les parties se coupent.

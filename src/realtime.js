@@ -66,6 +66,17 @@ export function disconnectUser(userId, reason) {
   io.in(`u:${userId}`).disconnectSockets(true);
 }
 
+// Ferme les connexions d'une personne sur ses autres appareils : celles de la session keepToken restent ouvertes.
+export function disconnectOtherSessions(userId, keepToken, reason) {
+  if (!io) return;
+  const keep = tokenHash(keepToken);
+  for (const socket of io.sockets.sockets.values()) {
+    if (socket.data.userId !== userId || socket.data.tokenHash === keep) continue;
+    socket.emit('kicked', reason);
+    socket.disconnect(true);
+  }
+}
+
 // Ferme les connexions en direct d'une seule session (déconnexion depuis un appareil), pas celles des autres appareils.
 export function disconnectSession(token) {
   if (!io || !token) return;

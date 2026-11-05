@@ -24,6 +24,7 @@ const DICE_Z = -7.15; // la piste des dés, en haut de la zone centrale
 const BOTTOM_LIFT = 1.2; // les bandeaux du bas remontent : les monuments de la rangée du bas, debout devant eux, ne cachent plus leur nom
 const PAWN_SCALE = Math.min(window.innerWidth, window.innerHeight) < 520 ? 2 : 1.75; // tient sur sa case ; un peu plus grand sur téléphone, où tout est petit
 
+const SIDE_BACK = 0.18;
 const SIDE_H = 2.15; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
 const SIDE_HEROES = { eiffel: 3.7, empire: 3.1, gratteCiel2: 3 }; // sauf ceux qu'on doit reconnaître de loin
 const BOTTOM_CORNER_H = 1.7; // au-delà, ce qui est posé sur un coin du bas cacherait le nom de la ville juste derrière
@@ -71,11 +72,11 @@ function plateGeometry(w, d, h, r) {
 }
 
 // Le monument est mis à l'échelle de sa case, aligné sur une ligne avant ; devant, le texte imprimé reste libre.
-function fitModel(model, w, front, hero = 1, flip = false, maxH = Infinity) {
+function fitModel(model, w, front, hero = 1, flip = false, maxH = Infinity, overflow = 0.35) {
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
-  const room = TILE_D / 2 + front + 0.35; // le monument peut déborder vers l'extérieur du plateau
+  const room = TILE_D / 2 + front + overflow; // en haut et en bas, le monument peut déborder vers l'extérieur du plateau
   const scale = Math.min(hero * Math.min(1.1, room / Math.max(size.z, 0.01), (w - 0.2) / Math.max(size.x, 0.01)), maxH / Math.max(size.y, 0.01));
   model.scale.setScalar(scale);
   model.position.set(-((box.min.x + box.max.x) / 2) * scale, PLATE_H - box.min.y * scale, flip ? -front - box.min.z * scale : front - box.max.z * scale);
@@ -513,10 +514,12 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const color = t.type === 'city' ? `#${softened(REGIONS[t.region].color, 0.1).getHexString()}` : SPECIAL_COLOR[t.type];
     const base = paint(f.corner ? baseGeo.corner : baseGeo.side, `#${new THREE.Color(color).multiplyScalar(0.62).getHexString()}`); // le socle, d'un ton plus foncé : la case a de l'épaisseur
     const plate = paint(plateGeometry(w - 0.34, TILE_D - 0.34, PLATE_H, 0.1), color);
-    const front = f.corner ? 0.05 : f.flat ? 0.34 : -0.1;
+    const onSide = !f.corner && !f.flat;
+    const front = f.corner ? 0.05 : f.flat ? 0.34 : 0.1;
     const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
     model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
-    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H);
+    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H, onSide ? -0.03 : 0.35);
+    if (onSide) model.position.x += f.rot < 0 ? -SIDE_BACK : SIDE_BACK; // reculé sur sa case : le pion se tient devant, sur la case
     const top = new THREE.Box3().setFromObject(model).max.y;
     items.push({ object: base, matrix: m, tile: t.pos, lift: true }, { object: plate, matrix: m, tile: t.pos, lift: true }, { object: model, matrix: m, ao: PLATE_H, tile: t.pos, lift: true });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
@@ -820,7 +823,13 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
 
 
   // ——— Les personnages : ils marchent sur le sol, le long du bord intérieur, pour ne jamais cacher le texte ———
-  const personMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  // Les pions se dessinent en dernier, sur une profondeur remise à zéro : un monument ne les coupe jamais et ils ne rentrent jamais dedans.
+  const personMat = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true });
+  const depthReset = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ transparent: true }));
+  depthReset.frustumCulled = false;
+  depthReset.renderOrder = 9;
+  depthReset.onBeforeRender = (r) => { r.state.buffers.depth.setMask(true); r.clearDepth(); };
+  scene.add(depthReset);
   const blobMat = new THREE.MeshBasicMaterial({ color: '#05060A', transparent: true, opacity: 0.42, depthWrite: false });
   // Chaque personnage a son socle, à sa couleur : on voit d'un coup sur quelle case il se tient.
   const SOCLE_Y = PLATE_H + 0.02;
@@ -877,7 +886,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const bubbleTexture = new THREE.CanvasTexture(bubbleCanvas);
   bubbleTexture.colorSpace = THREE.SRGBColorSpace;
   const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTexture, transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
-  bubble.renderOrder = 6;
+  bubble.renderOrder = 12;
   scene.add(bubble);
   let bubbleName = null;
   const drawBubble = (name, color) => {
@@ -940,9 +949,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       const step = Math.min(0.6, 1.62 / Math.max(1, perRow - 1));
       return new THREE.Vector3(f.x + col * step, 0, f.z - 0.08 - row * 0.5);
     }
-    // Côtés du plateau : au milieu de la moitié extérieure de la case, l'étiquette reste libre côté centre.
-    const step = Math.min(0.46, 1.2 / Math.max(1, perRow - 1));
-    return new THREE.Vector3(f.x + Math.sign(f.x) * 0.72 + col * step, 0, f.z + 0.42 - row * 0.5);
+    // Côtés du plateau : juste à côté de l'étiquette, sur le devant de la case, avec le monument derrière.
+    const step = Math.min(0.46, 1.08 / Math.max(1, perRow - 1));
+    return new THREE.Vector3(f.x + Math.sign(f.x) * Math.max(0.44, 0.2 + perRow * 0.175) + col * step, 0, f.z + 0.62 - row * 0.5);
   }
 
   // ——— Le podium, à la fin de la partie : trois marches au milieu du plateau, et les trois premiers dessus ———
@@ -1467,6 +1476,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       if (!pawn) {
         // Chaque personnage est fondu en une seule forme, sa tenue à la couleur du joueur.
         const mesh = new THREE.Mesh(bake([{ object: buildCharacter(p.seat, PAWN_COLORS[p.seat]) }], { fullColor: true }), personMat);
+        mesh.renderOrder = 10;
         mesh.scale.setScalar(PAWN_SCALE);
         mesh.rotation.set(LEAN, FACING, 0);
         const blob = new THREE.Mesh(socleGeo, socleMat(p.seat));

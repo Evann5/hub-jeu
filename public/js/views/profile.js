@@ -1,5 +1,5 @@
 // Écran Profil : mon avatar, ma couleur, ma bio, mon mot de passe, les règles, la déconnexion et la suppression du compte.
-import { h, icon, token, toast } from '../dom.js';
+import { h, icon, token, toast, keepFocus } from '../dom.js';
 import { api, call } from '../net.js';
 import { state, actions, isAdmin } from '../store.js';
 import { modal, asyncForm, openRules } from '../dialogs.js';
@@ -14,19 +14,19 @@ export function render(container) {
   function draw() {
     preview.replaceChildren(token({ ...state.me, ...draft }, { size: 'l' }),
       h('div', h('strong', state.me.pseudo), h('span', isAdmin() ? 'Admin' : 'Membre')));
-    avatarGrid.replaceChildren(...avatars.map((a) => h('button', {
+    keepFocus(avatarGrid, () => avatarGrid.replaceChildren(...avatars.map((a) => h('button', {
       type: 'button',
       'aria-pressed': String(a === draft.avatar),
       'aria-label': `Avatar ${a}`,
       onclick: () => { draft.avatar = a; draw(); },
-    }, a)));
-    colorRow.replaceChildren(...Object.keys(colors).map((c) => h('button', {
+    }, a))));
+    keepFocus(colorRow, () => colorRow.replaceChildren(...Object.keys(colors).map((c) => h('button', {
       type: 'button',
       'aria-pressed': String(c === draft.color),
       'aria-label': c,
       title: c,
       onclick: () => { draft.color = c; draw(); },
-    }, token({ color: c, avatar: draft.avatar }))));
+    }, token({ color: c, avatar: draft.avatar })))));
   }
   draw();
 
@@ -82,7 +82,9 @@ function openDeleteAccount() {
     h('p', 'Ton compte, tes messages et tes réactions seront effacés tout de suite. Ça ne peut pas être annulé.'),
     h('label.field', h('span', 'Ton mot de passe, pour confirmer'),
       h('input.input', { name: 'del_password', type: 'password', autocomplete: 'current-password', required: true })),
-    h('div.dlg-actions', h('button.btn.btn-danger-solid', { type: 'submit' }, 'Supprimer définitivement mon compte'))),
+    h('div.dlg-actions',
+      h('button.btn.btn-ghost', { type: 'button', onclick: () => dlg.close() }, 'Annuler'),
+      h('button.btn.btn-danger-solid', { type: 'submit' }, 'Supprimer définitivement mon compte'))),
   async () => {
     await api('delete-account', { password: form.elements.del_password.value });
     dlg.close();

@@ -9,7 +9,10 @@ import { createLimiter, passwordProblem, safeEqual, PASSWORD_MAX } from './secur
 export const COOKIE = 'hubuno_session';
 // Alphabet latin seulement : sinon un « а » cyrillique permet d'imiter le pseudo d'un admin.
 const PSEUDO_RE = new RegExp(`^[\\p{Script=Latin}0-9_.-]{${LIMITS.pseudoMin},${LIMITS.pseudoMax}}$`, 'u');
-const plainPseudo = (pseudo) => pseudo.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+const FOLD = { ı: 'i', ł: 'l', ø: 'o', đ: 'd', ð: 'd', ħ: 'h', ŧ: 't', ß: 'ss', æ: 'ae', œ: 'oe', ſ: 's' };
+const plainPseudo = (pseudo) => pseudo.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[ıłøđðħŧßæœſ]/g, (c) => FOLD[c]);
+// Pour comparer ce que l'œil confond : MINH et MlNH, Olivia et 0livia.
+const lookalike = (pseudo) => plainPseudo(pseudo).replace(/[il1]/g, 'l').replace(/0/g, 'o');
 
 // scrypt tourne dans le pool de threads de Node (la boucle principale n'est jamais bloquée), mais on limite les calculs en parallèle :
 // 2 à la fois, 100 en attente au plus, le reste est refusé (un déluge de connexions ne doit pas saturer le serveur).
@@ -68,7 +71,9 @@ export function classCode() {
 }
 
 export function validatePseudo(pseudo) {
-  if (!PSEUDO_RE.test(pseudo)) {
+  // Accents acceptés (Élodie, Trần) ; lettres qui imitent une lettre normale refusées (ｚ pleine chasse, ɑ, ı seul…).
+  const plainEnough = pseudo.normalize('NFKC') === pseudo.normalize('NFC') && /^[a-z0-9_.-]*$/.test(plainPseudo(pseudo));
+  if (!PSEUDO_RE.test(pseudo) || !plainEnough) {
     return `Le pseudo doit faire de ${LIMITS.pseudoMin} à ${LIMITS.pseudoMax} caractères : lettres, chiffres, point, tiret ou tiret bas.`;
   }
   return null;
@@ -108,10 +113,11 @@ export function getUser(id) {
   return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
 }
 
-// Élodie, élodie et Elodie sont le même pseudo pour un lecteur : un seul compte.
+// Élodie, élodie et Elodie sont le même pseudo pour un lecteur : un seul compte. Un sosie du pseudo d'un admin est pris même si cet admin n'est pas encore inscrit.
 export function pseudoTaken(pseudo) {
-  const wanted = plainPseudo(pseudo);
-  return db.prepare('SELECT pseudo FROM users').all().some((u) => plainPseudo(u.pseudo) === wanted);
+  const wanted = lookalike(pseudo);
+  if (config.admins.some((a) => lookalike(a) === wanted && a !== plainPseudo(pseudo))) return true;
+  return db.prepare('SELECT pseudo FROM users').all().some((u) => lookalike(u.pseudo) === wanted);
 }
 
 export function isAdminPseudo(pseudo) {
@@ -144,6 +150,10 @@ export function deleteSession(token) {
 
 export function deleteUserSessions(userId) {
   db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+}
+
+export function deleteOtherSessions(userId, keepToken) {
+  db.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').run(userId, sha256(keepToken));
 }
 
 export function purgeExpiredSessions() {

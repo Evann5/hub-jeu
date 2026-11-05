@@ -95,16 +95,76 @@ export function token(user, { size = '', online = false } = {}) {
     h('span', user?.avatar || '?'));
 }
 
+// Un même message envoyé plusieurs fois reste affiché une seule fois, et dure un peu plus.
+const activeToasts = new Map();
+
 export function toast(text, { error = false, ms = 3500, action = false } = {}) {
+  const same = typeof text === 'string' ? activeToasts.get(text) : null;
+  if (same) {
+    clearTimeout(same.timer);
+    same.timer = setTimeout(same.end, ms);
+    return same.el;
+  }
   const el = h(`div.toast${error ? '.error' : ''}${action ? '.has-action' : ''}`, text);
+  if (action) el.append(h('button.toast-close', { type: 'button', onclick: () => el.remove() }, icon('x', 'Fermer')));
   const box = document.getElementById('toasts');
   // Sur une table, le message se pose juste sous l'en-tête : il ne cache ni le titre ni « À toi de jouer ».
   const head = document.querySelector('.view-table .table-head');
   if (head) box.style.setProperty('--toast-top', `${Math.round(head.getBoundingClientRect().bottom) + 8}px`);
   else box.style.removeProperty('--toast-top');
   box.append(el);
-  setTimeout(() => el.remove(), ms);
+  const end = () => {
+    el.remove();
+    if (typeof text === 'string') activeToasts.delete(text);
+  };
+  const timer = setTimeout(end, ms);
+  if (typeof text === 'string') activeToasts.set(text, { el, end, timer });
   return el;
+}
+
+// Annonce un événement aux lecteurs d'écran, une seule fois (le reste de la page n'est pas lu en direct).
+export function announce(text) {
+  const box = document.getElementById('annonces');
+  if (!box) return;
+  box.textContent = '';
+  setTimeout(() => { box.textContent = text; }, 50);
+}
+
+// Ce qui permet de retrouver un élément après qu'on a redessiné son écran.
+export function focusKey(el) {
+  const owner = el.closest('[data-id]')?.dataset.id ?? '';
+  return `${owner}|${el.dataset.key ?? el.getAttribute('href') ?? el.getAttribute('title') ?? el.getAttribute('aria-label') ?? el.textContent}`;
+}
+
+export function findByKey(zone, key) {
+  return [...zone.querySelectorAll('a, button, input, select, textarea, [tabindex]')].find((x) => !x.disabled && focusKey(x) === key);
+}
+
+// Redessine une zone sans perdre la place de la personne qui navigue au clavier.
+export function keepFocus(zone, redraw) {
+  const active = document.activeElement;
+  const key = active && active !== zone && zone.contains(active) ? focusKey(active) : null;
+  redraw();
+  if (key !== null && !active.isConnected) findByKey(zone, key)?.focus({ preventScroll: true });
+}
+
+// Un groupe de choix (radios, onglets) : un seul arrêt de tabulation, puis les flèches, comme son rôle le promet.
+export function arrowKeys(group) {
+  const items = () => [...group.querySelectorAll('[role=radio], [role=tab]')];
+  for (const x of items()) x.tabIndex = x.getAttribute('aria-checked') === 'true' || x.getAttribute('aria-selected') === 'true' ? 0 : -1;
+  if (group.dataset.arrows) return group;
+  group.dataset.arrows = '1';
+  group.addEventListener('keydown', (e) => {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    const list = items().filter((x) => !x.disabled);
+    const i = list.indexOf(document.activeElement);
+    if (!step || i < 0) return;
+    e.preventDefault();
+    const next = list[(i + step + list.length) % list.length];
+    next.focus();
+    next.click();
+  });
+  return group;
 }
 
 const timeFmt = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });

@@ -15,10 +15,12 @@ export function dmScope(a, b) {
 // Vérifie que l'utilisateur peut lire et écrire dans ce scope ; renvoie ce qu'on sait du scope.
 export function checkScope(scope, userId) {
   const m = typeof scope === 'string' ? /^(c|dm|t):(\d+)(?::(\d+))?$/.exec(scope) : null; // un scope qui n'est pas du texte n'est jamais valide
-  if (!m) throw new ChatError('Conversation introuvable.');
+  // Une seule écriture par conversation : « c:01 » ou « c:1:99 » créeraient des non-lus que personne ne peut effacer.
+  const canonical = m && (m[1] === 'dm' ? `dm:${Number(m[2])}:${Number(m[3])}` : `${m[1]}:${Number(m[2])}`);
+  if (!m || canonical !== scope) throw new ChatError('Conversation introuvable.');
   if (m[1] === 't') {
     // Chat d'une table : ouvert aux joueurs et aux spectateurs (toute la classe peut regarder).
-    if (m[3] || !tableExists(m[2])) throw new ChatError("Cette table n'existe plus.");
+    if (!tableExists(m[2])) throw new ChatError("Cette table n'existe plus.");
     return { kind: 'table', tableId: Number(m[2]) };
   }
   if (m[1] === 'c') {

@@ -1,6 +1,6 @@
 // Écran d'une table (#/t/:id) : le salon (places, réglages, lancement), puis le jeu monté depuis games/<id>/client.js,
 // les joueurs et le chat de la table. Sur téléphone, deux onglets : « Partie » et « Chat ».
-import { h, icon, token, toast, colorOf, count, gameLogo } from '../dom.js';
+import { h, icon, token, toast, colorOf, count, gameLogo, keepFocus, arrowKeys, announce } from '../dom.js';
 import { call } from '../net.js';
 import { state, go, gameOf, isAdmin } from '../store.js';
 import { modal, confirmDialog, openProfile } from '../dialogs.js';
@@ -61,6 +61,7 @@ export function onTable(payload) {
 export function onClosed({ id }) {
   if (cur?.id !== id) return;
   toast('La table a été fermée.');
+  unmountGame(); // sinon la 3D, le son et les écouteurs du jeu continuent de tourner
   cur = null;
   go('#/jouer');
 }
@@ -109,25 +110,28 @@ function renderHead() {
   const { table: t, game: g } = cur;
   cur.ui.root.className = viewClass();
   const myTurn = cur.turnGated ? cur.turnShown : t.turn.includes(state.me.id); // un jeu peut retenir l'annonce jusqu'à la fin de son animation (api.showTurn)
-  const label = t.status === 'lobby' ? 'Salon' : t.status === 'over' ? 'Terminée' : myTurn ? 'À toi de jouer' : 'En cours';
+  const label = t.status === 'lobby' ? 'En attente' : t.status === 'over' ? 'Terminée' : myTurn ? 'À toi de jouer' : 'En cours';
+  if (cur.spoken !== undefined && cur.spoken !== label && (label === 'À toi de jouer' || label === 'Terminée')) announce(label === 'Terminée' ? 'Partie terminée.' : 'À toi de jouer.');
+  cur.spoken = label;
   const tab = (key, text, extra) => h('button.table-tab', {
     type: 'button',
+    dataset: { key: `tab-${key}` },
     role: 'tab',
     'aria-selected': String(cur.tab === key),
     onclick: () => setTab(key),
   }, text, extra);
-  cur.ui.head.replaceChildren(...[
+  keepFocus(cur.ui.head, () => cur.ui.head.replaceChildren(...[
     h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux', onclick: () => { if (t.status === 'lobby' && seated()) toast('Ta place reste gardée. Un salon vide se ferme au bout de 5 minutes.'); } }, icon('back', 'Retour aux jeux')),
     h('span.table-emoji', gameLogo(g)),
     h('div.table-title', h('h1', g.name), h('p', `Table de ${userOf(t.hostId).pseudo}`)),
     h(`span.table-pill${t.status === 'playing' && myTurn ? '.is-turn' : ''}`, label),
     cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, icon('eye'), String(cur.watchers)) : null,
     seated() || t.status === 'lobby' ? null : h('span.table-pill.is-watch', 'Spectateur'),
-    h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
+    arrowKeys(h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
       // Depuis le chat, on garde un œil sur la partie : à qui c'est, et le temps qu'il reste.
       tab('game', 'Partie', cur.tab !== 'game' && t.status === 'playing' ? [myTurn ? h('span.tab-turn', { title: 'À toi de jouer' }) : null, t.deadline ? h('span.tab-time', timeLeft(t.deadline)) : null] : null),
-      tab('chat', 'Joueurs et chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null)),
-  ].filter(Boolean));
+      tab('chat', 'Joueurs et chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null))),
+  ].filter(Boolean)));
 }
 
 // ——— Joueurs (colonne de droite) ———
@@ -146,15 +150,16 @@ function renderSide() {
         won ? h('span.tag-win', 'gagne') : null,
         turn ? h('span.sr-only', ', à son tour') : null));
   });
+  const inLobby = t.status === 'lobby'; // la carte du salon montre déjà les joueurs, Inviter et Quitter
   const actions = [];
-  if (seated()) actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: openInvite }, icon('users'), 'Inviter'));
+  if (seated() && !inLobby) actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: openInvite }, icon('users'), 'Inviter'));
   if (seated() && t.status === 'playing' && !t.left.includes(state.me.id)) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: forfeit }, 'Abandonner'));
-  if (seated() && t.status !== 'playing') actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: leaveTable }, icon('logout'), 'Quitter la table'));
+  if (seated() && t.status === 'over') actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: leaveTable }, icon('logout'), 'Quitter la table'));
   if (isHost() || isAdmin()) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: closeTable }, icon('trash'), 'Fermer la table'));
-  cur.ui.players.replaceChildren(
+  keepFocus(cur.ui.players, () => cur.ui.players.replaceChildren(
     h('h2', 'Joueurs', h('span.section-count', `${t.seats.length}/${g.maxPlayers}`)),
-    h('ul.seat-list', rows),
-    h('div.side-actions', actions));
+    inLobby ? null : h('ul.seat-list', rows),
+    actions.length ? h('div.side-actions', actions) : null));
 }
 
 // ——— Salon ———
@@ -198,13 +203,14 @@ function optionControl(def, value, editable) {
   } else if (def.type === 'bool') {
     control = h('button.switch-btn', { type: 'button', role: 'switch', 'aria-checked': String(Boolean(value)), 'aria-label': def.label, disabled: !editable, onclick: () => send(!value) }, h('span'));
   } else {
-    control = h('div.seg', { role: 'radiogroup', 'aria-label': def.label }, def.choices.map((c) => h('button', {
+    control = arrowKeys(h('div.seg', { role: 'radiogroup', 'aria-label': def.label }, def.choices.map((c) => h('button', {
       type: 'button',
       role: 'radio',
+      dataset: { key: `${def.key}-${c.value}` },
       'aria-checked': String(c.value === value),
       disabled: !editable,
       onclick: () => send(c.value),
-    }, c.label)));
+    }, c.label))));
   }
   return h('div.opt-row', h('span.opt-label', def.label, def.help ? h('small', def.help) : null), control);
 }
@@ -234,10 +240,13 @@ function renderLobby() {
       ? h('p.lobby-note', 'La table est complète : tu peux regarder la partie quand elle commence.')
       : h('button.btn.btn-dark', { type: 'button', onclick: (e) => act(e, 'table:join') }, icon('plus'), 'Rejoindre la table'));
   } else {
+    const waiting = missing > 0; // tant qu'on ne peut pas lancer, le bouton principal, c'est Inviter
+    const invite = h(`button.btn.${waiting ? 'btn-dark' : 'btn-outline-dark'}`, { type: 'button', onclick: openInvite }, icon('users'), 'Inviter');
+    if (waiting) actions.push(invite);
     if (isHost()) {
-      actions.push(h('button.btn.btn-dark', { type: 'button', disabled: missing > 0, onclick: (e) => act(e, 'table:start') }, icon('dice'), 'Lancer la partie'));
+      actions.push(h(`button.btn.${waiting ? 'btn-outline-dark' : 'btn-dark'}`, { type: 'button', disabled: waiting, onclick: (e) => act(e, 'table:start') }, icon('dice'), 'Lancer la partie'));
     }
-    actions.push(h('button.btn.btn-outline-dark', { type: 'button', onclick: openInvite }, icon('users'), 'Inviter'));
+    if (!waiting) actions.push(invite);
     actions.push(h('button.btn.btn-outline-dark', { type: 'button', onclick: leaveTable }, icon('logout'), 'Quitter'));
   }
   const hint = missing > 0
@@ -245,7 +254,8 @@ function renderLobby() {
     : isHost() ? 'Tout le monde est là ? Lance la partie.' : seated() ? `En attente de ${userOf(t.hostId).pseudo}, qui lance la partie.` : null;
 
   // Le corps défile ; le pied (message + boutons) reste toujours visible en bas de la carte.
-  cur.ui.main.replaceChildren(h('div.lobby',
+  const fillMain = (node) => keepFocus(cur.ui.main, () => cur.ui.main.replaceChildren(node));
+  fillMain(h('div.lobby',
     h('section.lobby-card',
       h('div.lobby-body',
         h('div.lobby-top', h('span.lobby-emoji', gameLogo(g)), h('span.game-meta', playersLabel(g), g.duration ? ` · ${g.duration}` : '')),
@@ -464,7 +474,7 @@ function chatMessage(m) {
 // Le chat est construit une fois ; seuls les messages sont redessinés (la saisie en cours ne se perd pas).
 function renderChat() {
   if (!cur?.ui) return;
-  cur.ui.chatList = h('ol.tchat-list', { role: 'log', 'aria-label': 'Messages de la table' });
+  cur.ui.chatList = h('ol.tchat-list');
   const muted = state.mutedUntil > Date.now();
   const input = h('input.input', { type: 'text', placeholder: 'Écrire à la table', 'aria-label': 'Écrire à la table', maxlength: 500, enterkeyhint: 'send', autocomplete: 'off' });
   const form = h('form.tchat-form', input, h('button.btn', { type: 'submit', title: 'Envoyer' }, icon('send', 'Envoyer')));
@@ -480,7 +490,7 @@ function renderChat() {
       toast(err.message, { error: true });
     }
   });
-  cur.ui.chat.replaceChildren(h('h2', 'Chat de la table'), cur.ui.chatList, muted ? h('p.composer-note', 'Tu es en sourdine.') : form);
+  cur.ui.chat.replaceChildren(h('h2', 'Chat de la table'), h('div.tchat-log', { role: 'log', 'aria-live': 'off', 'aria-label': 'Messages de la table' }, cur.ui.chatList), muted ? h('p.composer-note', 'Tu es en sourdine.') : form);
   renderChatList();
 }
 
@@ -505,6 +515,8 @@ export function onMessage(m) {
   if (m.userId !== state.me.id && (mobile() || isWide()) && cur.tab !== 'chat') {
     cur.chatUnread += 1;
     renderHead();
+  } else if (m.userId !== state.me.id) {
+    announce(`${userOf(m.userId).pseudo} : ${m.body}`);
   }
   renderChatList();
 }

@@ -1,5 +1,5 @@
 // Écran Jouer : les jeux de la classe (ouvrir une table) et les tables en cours (rejoindre, reprendre, regarder).
-import { h, icon, token, toast, count, gameLogo } from '../dom.js';
+import { h, icon, token, toast, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
 import { call } from '../net.js';
 import { state, go, gameOf, myTurnTables } from '../store.js';
 
@@ -44,11 +44,11 @@ function gameCard(g) {
     type: 'button',
     'aria-label': `Ouvrir une table de ${g.name}`,
     onclick: (e) => openTable(g, e.currentTarget),
-  }, icon('plus'), h('span', 'Ouvrir une table'));
+  }, icon('plus'), h('span', 'Ouvrir', h('span.game-open-more', ' une table')));
   return h('article.game-card', { style: `--g:${g.color};--g-ink:${g.ink}` },
     gameLogo(g),
     h('div.game-card-body',
-      h('h2', g.name),
+      h('h3', g.name),
       h('p.game-meta', playersLabel(g), g.duration ? `, ${g.duration}` : ''),
       h('p.game-tagline', g.tagline)),
     btn);
@@ -59,7 +59,7 @@ function featuredCard(g) {
   const live = state.tables.filter((t) => t.game === g.id && t.status !== 'over');
   const waiting = live.filter((t) => t.status === 'lobby').length;
   const playing = live.length - waiting;
-  const news = [waiting ? count(waiting, 'salon ouvert', 'salons ouverts') : null, playing ? count(playing, 'partie en cours', 'parties en cours') : null].filter(Boolean).join(', ');
+  const news = [waiting ? count(waiting, 'table ouverte', 'tables ouvertes') : null, playing ? count(playing, 'partie en cours', 'parties en cours') : null].filter(Boolean).join(', ');
   return h('section.game-hero', { 'data-game': g.id, style: `--g:${g.color};--g-ink:${g.ink}` },
     gameLogo(g),
     h('div.game-hero-text',
@@ -71,7 +71,7 @@ function featuredCard(g) {
 }
 
 function statusLabel(t, g) {
-  if (t.status === 'lobby') return `Salon · ${t.seats.length}/${g.maxPlayers}`;
+  if (t.status === 'lobby') return `En attente · ${t.seats.length}/${g.maxPlayers}`;
   if (t.status === 'playing') return t.turn.includes(state.me.id) ? 'À toi de jouer' : 'En cours';
   return 'Terminée';
 }
@@ -112,7 +112,7 @@ export function render(el) {
   const test = FILTERS.find((f) => f.key === filter).test;
   const hero = state.games.find((g) => g.featured);
   const shown = state.games.filter((g) => g !== hero && test(g) && (family === 'tous' || g.family === family));
-  const chips = (label, list, value, set) => h('div.filter-chips', { role: 'radiogroup', 'aria-label': label }, list.map((f) => h('button.chip', {
+  const chips = (label, list, value, set) => arrowKeys(h('div.filter-chips', { role: 'radiogroup', 'aria-label': label }, list.map((f) => h('button.chip', {
     type: 'button',
     role: 'radio',
     'aria-checked': String(f.key === value),
@@ -120,24 +120,24 @@ export function render(el) {
       set(f.key);
       render(el);
     },
-  }, f.label)));
+  }, f.label))));
   const filters = h('div.games-filters',
     chips('Type de jeu', FAMILIES, family, (k) => { family = k; }),
     chips('Nombre de joueurs', FILTERS.map((f) => (f.key === 'tous' ? { ...f, label: 'Tous joueurs' } : f)), filter, (k) => { filter = k; }));
 
-  el.replaceChildren(h('div.page',
+  keepFocus(el, () => el.replaceChildren(h('div.page',
     h('div.view-head.page-head',
       h('div', h('h1', 'Jouer'),
         h('p.view-sub', turns ? `C’est à toi de jouer sur ${count(turns, 'table', 'tables')}.` : 'Ouvre une table, invite la classe, joue en direct.'))),
     hero ? featuredCard(hero) : null,
     open.length || playing.length ? h('div.tables-cols',
-      section('Salons ouverts', open, 'Aucun salon ouvert pour l’instant.'),
+      section('Tables ouvertes', open, 'Aucune table ouverte pour l’instant.'),
       section('Parties en cours', playing, 'Aucune partie en cours.')) : null,
     h('div.games-head', h('h2.section-title', 'Les jeux', h('span.section-count', String(shown.length))), filters),
     shown.length
       ? h('div.game-grid', shown.map(gameCard))
       : h('p.section-empty', 'Aucun jeu ne correspond à ces deux filtres. Essaie un autre nombre de joueurs.'),
-    over.length ? section('Tes dernières parties', over, '') : null));
+    over.length ? section('Tes dernières parties', over, '') : null)));
 }
 
 // La liste des tables a changé : on redessine si l'écran est ouvert.

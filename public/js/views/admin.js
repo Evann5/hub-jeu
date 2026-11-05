@@ -58,6 +58,7 @@ export function render(container) {
         token(u, { size: 's' }), h('span.label', u.pseudo),
         h('button.btn.btn-ghost.btn-sm', {
           type: 'button',
+          'aria-label': `Débloquer ${u.pseudo}`,
           onclick: async () => {
             try {
               await call(state.socket, 'admin:ban', { userId: u.id, banned: false });

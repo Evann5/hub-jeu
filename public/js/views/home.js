@@ -36,7 +36,7 @@ export function render(container) {
   const turns = myTurnTables().length;
   const lobbies = state.tables.filter((t) => t.status === 'lobby').length;
   const playText = turns ? `C’est à toi de jouer sur ${count(turns, 'table', 'tables')}.`
-    : lobbies ? `${count(lobbies, 'salon ouvert attend', 'salons ouverts attendent')} des joueurs.`
+    : lobbies ? `${count(lobbies, 'table ouverte attend', 'tables ouvertes attendent')} des joueurs.`
       : `${count(state.games.length, 'jeu', 'jeux')} : ouvre une table et invite la classe.`;
 
   const summary = [
