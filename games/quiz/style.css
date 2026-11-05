@@ -113,6 +113,10 @@
   .g-quiz .qz-side { order: -1; padding: 6px; border-radius: 20px; }
   .g-quiz .qz-side h3 { display: none; }
   .g-quiz .qz-side .qz-board { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  /* Indice de défilement : la rangée s'efface au bord où il reste des joueurs à découvrir (classes posées par le client). */
+  .g-quiz .qz-side .qz-board.has-next { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+  .g-quiz .qz-side .qz-board.has-prev { -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px); mask-image: linear-gradient(90deg, transparent, #000 28px); }
+  .g-quiz .qz-side .qz-board.has-prev.has-next { -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent); }
   .g-quiz .qz-side .qz-board li { flex: none; display: flex; min-height: 36px; gap: 6px; padding: 3px 10px 3px 4px; }
   .g-quiz .qz-side .qz-rank { display: none; }
   .g-quiz .qz-side .qz-pseudo { max-width: 8ch; font-size: 0.85rem; }

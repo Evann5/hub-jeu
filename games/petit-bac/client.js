@@ -25,6 +25,18 @@ const mmss = (ms) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
+// Indice de défilement : tant qu'il reste du contenu caché à gauche ou à droite de la rangée, elle porte `has-prev` / `has-next` (le dégradé est dans style.css).
+function scrollHint(box) {
+  const update = () => {
+    box.classList.toggle('has-prev', box.scrollLeft > 1);
+    box.classList.toggle('has-next', box.scrollWidth - box.clientWidth - box.scrollLeft > 1);
+  };
+  box.addEventListener('scroll', update, { passive: true });
+  if (typeof ResizeObserver === 'function') new ResizeObserver(update).observe(box);
+  if (typeof MutationObserver === 'function') new MutationObserver(update).observe(box, { childList: true, subtree: true, characterData: true });
+  return box;
+}
+
 export function mount(root, api) {
   const { h } = api;
   const pb = h('div.pb');
@@ -96,7 +108,7 @@ export function mount(root, api) {
         h('div.pb-title', ui.head, ui.letter),
         ui.callout,
         ui.clockBox),
-      strip);
+      scrollHint(strip));
   }
 
   // Confettis de victoire (rien du tout si l'utilisateur préfère moins de mouvement).

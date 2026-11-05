@@ -3,6 +3,18 @@
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 
+// Indice de défilement : tant qu'il reste du contenu caché à gauche ou à droite de la rangée, elle porte `has-prev` / `has-next` (le dégradé est dans style.css).
+function scrollHint(box) {
+  const update = () => {
+    box.classList.toggle('has-prev', box.scrollLeft > 1);
+    box.classList.toggle('has-next', box.scrollWidth - box.clientWidth - box.scrollLeft > 1);
+  };
+  box.addEventListener('scroll', update, { passive: true });
+  if (typeof ResizeObserver === 'function') new ResizeObserver(update).observe(box);
+  if (typeof MutationObserver === 'function') new MutationObserver(update).observe(box, { childList: true, subtree: true, characterData: true });
+  return box;
+}
+
 export function mount(root, api) {
   const { h } = api;
   const el = h('div.qz');
@@ -24,12 +36,12 @@ export function mount(root, api) {
 
   function scoreboard({ big = false } = {}) {
     const rows = v.ranking.filter((id) => !v.left.includes(id)).slice(0, big ? 20 : 6);
-    return h(`ol.qz-board${big ? '.is-big' : ''}`, rows.map((id, i) => h(`li${id === api.me.id ? '.is-me' : ''}`,
+    return scrollHint(h(`ol.qz-board${big ? '.is-big' : ''}`, rows.map((id, i) => h(`li${id === api.me.id ? '.is-me' : ''}`,
       h('span.qz-rank', String(i + 1)),
       api.token(api.user(id), { size: 's' }),
       h('span.qz-pseudo', api.user(id).pseudo),
       v.gained[id] ? h('span.qz-plus', `+${fmtPts(v.gained[id])}`) : null,
-      h('b', fmtPts(v.scores[id] || 0)))));
+      h('b', fmtPts(v.scores[id] || 0))))));
   }
 
   function screenReady() {

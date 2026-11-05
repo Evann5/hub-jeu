@@ -175,7 +175,7 @@
   .g-complot .cp-seat-cards { min-height: 0; gap: 5px; }
   .g-complot .cp-tags { grid-column: 1 / -1; }
   .g-complot .cp-seat-cards .cp-card.is-sm { width: 22px; border-radius: 6px; }
-  .g-complot .cp-seat-cards .cp-card.is-sm.is-dead { width: 58px; height: 31px; aspect-ratio: auto; }
+  .g-complot .cp-seat-cards .cp-card.is-sm.is-dead { width: 68px; height: 31px; aspect-ratio: auto; }
   .g-complot .cp-coins svg { width: 20px; height: 20px; }
   .g-complot .cp-coins b { font-size: 1rem; }
   .g-complot .cp-panel { padding: 10px; }
