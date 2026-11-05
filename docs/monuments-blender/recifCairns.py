@@ -32,6 +32,18 @@ def prism_loc(m, poly, y0, y1, col_side, col_top):
     face2d(m, poly, lambda u, v: (u, y1, v), col_top, (cx, y1-1, cz))
 
 
+def slab(m, pts, n, th, col):
+    """Lame mince fermée (épaisseur th) sur un polygone plan de normale n : deux faces écartées, plus de faces confondues qui scintillent."""
+    c = centroid(pts)
+    f = [(p[0]+n[0]*th/2, p[1]+n[1]*th/2, p[2]+n[2]*th/2) for p in pts]
+    b = [(p[0]-n[0]*th/2, p[1]-n[1]*th/2, p[2]-n[2]*th/2) for p in pts]
+    m.poly(f, col, c)
+    m.poly(b, col, c)
+    for i in range(len(pts)):
+        j = (i+1) % len(pts)
+        m.poly([f[i], f[j], b[j], b[i]], col, c)
+
+
 def stag(m, x, z, h, col, col2=None):
     m.beam((x, G, z), (x, G+h, z), 0.05, col, w1=0.02, sides=3, caps=True)
     for i in range(5):
@@ -48,9 +60,7 @@ def dome(m, x, z, r, col, col2):
 def fan(m, x, z, w, h, col, rot=0.0):
     c, s = math.cos(rot), math.sin(rot)
     pts = [(x-w*c, G, z+w*s), (x+w*c, G, z-w*s), (x+w*0.7*c, G+h*0.8, z-w*0.7*s), (x, G+h, z), (x-w*0.7*c, G+h*0.8, z+w*0.7*s)]
-    e = 0.004     # les deux faces écartées de 0,008 : plus de faces confondues qui scintillent
-    m.poly([(p[0]-s*e, p[1], p[2]-c*e) for p in pts], col, (x+s, G, z+c))
-    m.poly([(p[0]+s*e, p[1], p[2]+c*e) for p in pts], col, (x-s, G, z-c))
+    slab(m, pts, (s, 0.0, c), 0.012, col)
 
 def palm2(m, x, z, h, lean, y0, fronds=6, flen=0.28):
     """Palmier : tronc et palmes en lames à deux faces."""
@@ -82,9 +92,9 @@ def build():
     dome(m, 0.25, 0.1, 0.17, 'yellow', 'orange')
     fan(m, -0.5, 0.02, 0.1, 0.28, 'red', 0.4)
     # îlot et palmier
-    face2d(m, ring_poly([1.0, 0.9, 1.0, 0.92, 1.0, 0.88], 0.17, 0.17, -0.56, -0.56), lambda u, v: (u, 0.07, v), 'foam', (0, 0, 0))
-    prism_loc(m, ring_poly([1.0, 0.9, 1.0, 0.92, 1.0, 0.88], 0.14, 0.14, -0.56, -0.56), 0.04, 0.11, 'sand', 'sand')
-    palm2(m, -0.56, -0.56, 0.5, 0.06, 0.11)
+    face2d(m, ring_poly([1.0, 0.9, 1.0, 0.92, 1.0, 0.88], 0.17, 0.17, -0.5, -0.5), lambda u, v: (u, 0.07, v), 'foam', (0, 0, 0))
+    prism_loc(m, ring_poly([1.0, 0.9, 1.0, 0.92, 1.0, 0.88], 0.14, 0.14, -0.5, -0.5), 0.04, 0.11, 'sand', 'sand')
+    palm2(m, -0.5, -0.5, 0.5, 0.06, 0.11, flen=0.22)
     # bateau d'excursion
     bx, bz = 0.3, 0.5
     hull = [(bx-0.3, bz-0.08), (bx+0.18, bz-0.09), (bx+0.32, bz), (bx+0.18, bz+0.09), (bx-0.3, bz+0.08)]
@@ -95,8 +105,7 @@ def build():
     m.box(bx-0.22, bx+0.07, 0.27, 0.295, bz-0.08, bz+0.08, 'blue', skip=('bot',))
     m.box(bx+0.05, bx+0.052, 0.19, 0.25, bz-0.05, bz+0.05, 'dark')
     m.beam((bx+0.12, 0.15, bz), (bx+0.12, 0.42, bz), 0.02, 'white', w1=0.012)
-    m.poly([(bx+0.12, 0.4, bz-0.004), (bx+0.12, 0.28, bz-0.004), (bx+0.28, 0.17, bz-0.004)], 'yellow', (bx, 0.3, bz+1))
-    m.poly([(bx+0.12, 0.4, bz+0.004), (bx+0.12, 0.28, bz+0.004), (bx+0.28, 0.17, bz+0.004)], 'yellow', (bx, 0.3, bz-1))
+    slab(m, [(bx+0.12, 0.4, bz), (bx+0.12, 0.28, bz), (bx+0.28, 0.17, bz)], (0, 0, 1), 0.012, 'yellow')
     # agrandit le récif et ses coraux (les rendre lisibles à 30 px), sans toucher à la dalle de mer
     S, SY = 1.2, 1.55
     xform(m, lambda p: (p[0]*S, 0.04+(p[1]-0.04)*SY, p[2]*S), start)
