@@ -61,6 +61,7 @@ function reveal(s, ctx) {
 export function move(s, playerId, action, ctx) {
   if (s.phase !== 'question') throw new Error('Attends la prochaine question.');
   if (action?.type !== 'answer') throw new Error('Choisis une réponse.');
+  if (!active(s).includes(playerId)) throw new Error('Tu as quitté la partie.');
   const choice = Number(action.choice);
   if (![0, 1, 2, 3].includes(choice)) throw new Error('Réponse inconnue.');
   if (playerId in s.answers) throw new Error('Tu as déjà répondu.');

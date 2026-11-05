@@ -97,3 +97,10 @@ test('abandon : on n’attend plus le joueur parti', () => {
   s = leave(s, 3, { now: 6000, random: seeded() }).state;
   assert.equal(s.phase, 'reveal');
 });
+
+// Audit des coups forgés : move() refuse seul ce que le hub filtre déjà par `turn`.
+test('un joueur parti ne répond pas', () => {
+  let s = start();
+  s = leave(s, 3, { now: 5000, random: seeded() }).state;
+  assert.throws(() => answer(s, 3, 0, 6000), /quitté/);
+});

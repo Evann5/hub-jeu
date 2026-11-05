@@ -15,7 +15,7 @@ const players = [1, 2, 3].map((id) => ({ id, pseudo: `p${id}` }));
 const start = () => setup(players, { rounds: 3, writeTime: 60 }, ctx());
 const play = (s, id, action) => move(s, id, action, ctx(1000)).state;
 const writeAll = (s) => {
-  for (const id of [1, 2, 3]) s = play(s, id, { type: 'define', text: `Fausse définition numéro ${id}` });
+  for (const id of [1, 2, 3]) if (!(id in s.defs)) s = play(s, id, { type: 'define', text: `Fausse définition numéro ${id}` });
   return s;
 };
 

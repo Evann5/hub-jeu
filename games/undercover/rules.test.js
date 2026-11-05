@@ -237,7 +237,10 @@ test('on ne vote qu’une fois, et pas quand on est éliminé', () => {
   s = play(s, victim, { type: 'vote', target: a });
   assert.ok(s.out.includes(victim), 'le civil est éliminé');
   assert.equal(s.phase, 'verdict');
-  assert.throws(() => move(s, victim, { type: 'vote', target: a }, ctx()), /pas le moment de voter|éliminé/);
+  s = allClues(pastWord(s)); // manche suivante : indices, puis débat
+  s = pastWord(s);
+  assert.equal(s.phase, 'vote');
+  assert.throws(() => move(s, victim, { type: 'vote', target: a }, ctx()), /éliminé/);
 });
 
 test('seul Mr. White éliminé propose un mot', () => {

@@ -381,14 +381,25 @@ async function mountGame() {
     },
     sendMove(action) {
       return call(state.socket, 'table:move', { id: mine.id, action }).catch((err) => {
-        toast(err.message, { error: true });
+        toast(err.message, { error: true, ms: 2400 }); // assez court : il passe au-dessus des joueurs
         throw err;
       });
     },
     now: () => Date.now() + mine.offset,
     openChat: () => setTab('chat'),
-    gateTurn() { mine.turnGated = true; mine.turnShown = mine.table.turn.includes(state.me.id); },
-    showTurn() { if (cur !== mine || !mine.turnGated) return; const now = mine.table.turn.includes(state.me.id); if (now !== mine.turnShown) { mine.turnShown = now; renderHead(); } },
+    gateTurn() { mine.turnGated = true; mine.overShown = false; mine.turnShown = mine.table.turn.includes(state.me.id); },
+    showTurn() {
+      if (cur !== mine || !mine.turnGated) return;
+      const now = mine.table.turn.includes(state.me.id);
+      if (now !== mine.turnShown) {
+        mine.turnShown = now;
+        renderHead();
+      }
+      if (mine.table.status === 'over' && !mine.overShown) {
+        mine.overShown = true;
+        renderEndBar();
+      }
+    },
     asset: (path) => `games/${g.id}/assets/${path}`,
     h,
     token,
@@ -419,8 +430,9 @@ function unmountGame() {
 function renderEndBar() {
   const { table: t, endbar } = cur;
   if (!endbar) return;
-  endbar.hidden = t.status !== 'over';
-  if (t.status !== 'over') return;
+  // Un jeu animé garde la fin pour lui jusqu'à la fin de sa dernière animation (api.showTurn).
+  endbar.hidden = t.status !== 'over' || (cur.turnGated && !cur.overShown);
+  if (endbar.hidden) return;
   const names = t.winners.map((id) => userOf(id).pseudo);
   endbar.replaceChildren(h('div.endbar',
     h('p', h('b', 'Partie terminée'), t.label ? ` · ${t.label.replace(new RegExp(`^${state.me.pseudo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} gagne$`), 'Tu gagnes')}` : names.length ? ` · ${names.length > 1 ? 'Gagnants' : 'Gagnant'} : ${names.join(', ')}` : ' · Personne ne gagne'),

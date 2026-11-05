@@ -101,6 +101,14 @@
   box-shadow: 0 7px 10px rgb(10 20 70 / 0.35), inset 0 -5px 8px rgb(0 0 0 / 0.18);
   transform: rotateY(180deg);
 }
+/* Safari ignore backface-visibility ici (les pions fuchsia sortaient bleus) : la bonne face est aussi choisie par visibility, y compris pendant le retournement. */
+.g-reversi .r-disc:not(.is-white) .r-face.f1, .g-reversi .r-disc.is-white .r-face.f0 { visibility: hidden; }
+.g-reversi .r-disc.is-flip.to1 .r-face.f0 { animation: r-face-out 0.6s calc(0.3s + var(--k, 0) * 90ms) both; }
+.g-reversi .r-disc.is-flip.to1 .r-face.f1 { animation: r-face-in 0.6s calc(0.3s + var(--k, 0) * 90ms) both; }
+.g-reversi .r-disc.is-flip.to0 .r-face.f1 { animation: r-face-out 0.6s calc(0.3s + var(--k, 0) * 90ms) both; }
+.g-reversi .r-disc.is-flip.to0 .r-face.f0 { animation: r-face-in 0.6s calc(0.3s + var(--k, 0) * 90ms) both; }
+@keyframes r-face-out { 0%, 44% { visibility: visible; } 45%, 100% { visibility: hidden; } }
+@keyframes r-face-in { 0%, 44% { visibility: hidden; } 45%, 100% { visibility: visible; } }
 .g-reversi .r-disc.is-put { animation: r-put 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
 @keyframes r-put { from { translate: 0 -60%; scale: 0.4; opacity: 0; } 60% { translate: 0 0; scale: 1.15; opacity: 1; } to { scale: 1; } }
 .g-reversi .r-disc.is-flip.to1 { animation: r-to1 0.6s calc(0.3s + var(--k, 0) * 90ms) ease-in-out both; }
@@ -132,6 +140,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .g-reversi .r-disc.is-put, .g-reversi .r-disc.is-flip, .g-reversi .is-legal > .r-hint, .g-reversi .r-score.is-turn { animation: none; }
+  .g-reversi .r-disc.is-flip .r-face { animation: none; }
   .g-reversi .fx-confetti { display: none; }
   .g-reversi .r-score, .g-reversi .r-timer-fill { transition: none; }
 }

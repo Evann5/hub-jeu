@@ -21,6 +21,7 @@ const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)')
 
 export function mount(root, api) {
   const { h } = api;
+  api.gateTurn(); // le bandeau de fin attend la dernière animation
 
   // ——— Pictogramme : une tête de bœuf à cornes ———
   function horn() {
@@ -255,7 +256,7 @@ export function mount(root, api) {
     paintHand();
     log.textContent = logText(view.step);
     wrap.dataset.phase = view.phase;
-    if (view.phase === 'over') confetti();
+    if (view.phase === 'over' && (api.seat < 0 || view.winners.includes(api.me.id))) confetti(); // pas de fête pour ceux qui perdent
     else confettiDone = false;
   }
 
@@ -334,6 +335,7 @@ export function mount(root, api) {
     busy = false;
     view = latest;
     renderStatic();
+    api.showTurn();
   }
 
   let latest = null;
@@ -365,6 +367,7 @@ export function mount(root, api) {
     // Une carte sélectionnée qui n'est plus dans la main (nouveau tour) est oubliée.
     if (selected !== null && !(v.hand || []).includes(selected)) selected = null;
     renderStatic();
+    api.showTurn();
   });
 
   return () => {

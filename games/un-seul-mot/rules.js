@@ -188,12 +188,15 @@ export function move(s, playerId, action, ctx) {
     case 'write': {
       if (type !== 'clue') throw new Error('Écris ton indice.');
       if (isActive) throw new Error('Tu devines : ce sont les autres qui écrivent.');
+      if (!writers(s).includes(playerId)) throw new Error('Tu as quitté la partie.');
       if (playerId in s.clues) throw new Error('Tu as déjà donné ton indice.');
       const t = { ...s, clues: { ...s.clues, [playerId]: checkClue(action.text, s.word) } };
       return { state: writers(t).every((id) => id in t.clues) ? toReview(t, ctx) : t };
     }
     case 'review': {
       if (isActive) throw new Error('Tu devines : attends que les autres aient trié les indices.');
+      if (!writers(s).includes(playerId)) throw new Error('Tu as quitté la partie.');
+      if (s.done.includes(playerId)) throw new Error('Tu as déjà confirmé : attends les autres.');
       if (type === 'done') {
         const t = { ...s, done: [...s.done, playerId] };
         return { state: writers(t).every((id) => t.done.includes(id)) ? toGuess(t, ctx) : t };

@@ -227,3 +227,11 @@ test('toutes les cartes de la partie sont uniques et le hasard ne vient que de c
   assert.equal(cards.length, 96);
   assert.equal(new Set(cards).size, 96);
 });
+
+// Audit des coups forgés : move() refuse seul ce que le hub filtre déjà par `turn`.
+test('un joueur parti ne pose pas de carte et ne propose pas d’étoile', () => {
+  let s = readyAll(setup(mk(3), {}, ctx()));
+  s = leave(s, 3, ctx()).state;
+  assert.throws(() => move(s, 3, { type: 'play', card: s.hands[3][0] }, ctx()), /quitté/);
+  assert.throws(() => move(s, 3, { type: 'star' }, ctx()), /quitté/);
+});

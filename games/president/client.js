@@ -366,7 +366,7 @@ export function mount(root, api) {
     }
     els.overlay.hidden = false;
     els.overlay.replaceChildren(h('section.pr-panel', { 'aria-label': 'Résultat de la manche' },
-      confetti(h),
+      api.seat < 0 || (over ? view.winners.includes(api.me.id) : you(res.order[0])) ? confetti(h) : null,
       crown('pr-crown big'),
       h('h2', over ? 'Partie terminée' : `Manche ${view.round} sur ${view.rounds}`),
       h('p.pr-panel-line', `${sub(res.order[0], 'es', 'est')} Président${view.phase === 'over' ? ' de la dernière manche' : ''}.`),

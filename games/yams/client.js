@@ -292,7 +292,7 @@ export function mount(root, api) {
     renderAll();
     if (v.over && !first && !wasOver) {
       page.scrollTop = 0; // le vainqueur s'affiche en haut : on y remonte, sinon il reste hors de l'écran, sous la feuille
-      confetti();
+      if (api.seat < 0 || v.winners.includes(api.me.id)) confetti();
     }
     animate = false; // les rendus suivants (garder un dé, choisir une case) ne rejouent pas l'animation
   });

@@ -120,6 +120,7 @@ function applyStar(s) {
 
 export function move(s, playerId, action, ctx) {
   if (s.phase === 'over') throw new Error('La partie est terminée.');
+  if (!active(s).includes(playerId)) throw new Error('Tu as quitté la partie.');
   const type = action?.type;
   if (s.phase === 'focus') {
     if (type !== 'ready') throw new Error('Respire : clique sur « Prêt » quand tu es concentré.');

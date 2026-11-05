@@ -320,3 +320,21 @@ test('un joueur qui a quitté ne voit plus le mot', () => {
   assert.equal(view(s, 3).word, null);
   assert.equal(view(s, 2).word, 'mer');
 });
+
+// Audit des coups forgés : move() refuse seul ce que le hub filtre déjà par `turn`.
+test('revue des indices : on ne confirme qu’une fois, et on ne vote plus après avoir confirmé', () => {
+  let s = writing(start(5), 'mer');
+  for (const [id, t] of [[2, 'bleu'], [3, 'sel'], [4, 'vague'], [5, 'bateau']]) s = play(s, id, { type: 'clue', text: t });
+  assert.equal(s.phase, 'review');
+  s = play(s, 2, { type: 'done' });
+  assert.throws(() => move(s, 2, { type: 'done' }, ctx()), /déjà confirmé/);
+  assert.throws(() => move(s, 2, { type: 'cancel', target: 3 }, ctx()), /déjà confirmé/);
+  assert.deepEqual(s.done, [2]);
+  assert.equal(s.votes[3]?.length ?? 0, 0);
+});
+
+test('un joueur parti n’écrit pas d’indice', () => {
+  let s = writing(start(4), 'mer');
+  s = leave(s, 3, ctx()).state;
+  assert.throws(() => move(s, 3, { type: 'clue', text: 'sel' }, ctx()), /quitté/);
+});

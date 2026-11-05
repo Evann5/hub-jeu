@@ -396,7 +396,7 @@ export function mount(root, api) {
       logBox(opened)));
     if (v.phase === 'over' && v.winner !== null && !confettiShown) {
       confettiShown = true;
-      confetti();
+      if (api.seat < 0 || v.winner === api.me.id) confetti();
     }
     root.scrollTop = scroll;
     if (focus) el.querySelector(`[data-key="${focus}"]:not(:disabled)`)?.focus({ preventScroll: true });

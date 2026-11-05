@@ -241,7 +241,7 @@ export function mount(root, api) {
 | `user(id)`, `token(user, { size: 's' })` | Un membre, son avatar (élément DOM) |
 | `now()` | L'heure du serveur, pour afficher un compte à rebours depuis `deadline` |
 | `h(tag, props, ...enfants)` | Crée des éléments (`h('button.ma-classe', { onclick }, 'Texte')`), texte toujours inséré comme texte |
-| `gateTurn()`, `showTurn()` | Facultatif, pour un jeu animé : après `gateTurn()`, le badge « À toi de jouer » ne change plus que quand le jeu appelle `showTurn()`, à la fin de son animation |
+| `gateTurn()`, `showTurn()` | Facultatif, pour un jeu animé : après `gateTurn()`, le badge « À toi de jouer » et le bandeau de fin n'apparaissent que quand le jeu appelle `showTurn()`, à la fin de son animation |
 | `toast(texte)`, `openChat()`, `asset(chemin)` | Notification, ouvrir le chat (onglet sur téléphone), URL d'un fichier de `assets/` |
 
 `root` occupe toute la zone de jeu (hauteur fixe, le jeu gère son défilement). Le hub affiche autour : l'en-tête, les joueurs, le chat, et une barre « Partie terminée » avec la revanche.

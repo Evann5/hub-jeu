@@ -244,7 +244,7 @@ export function mount(root, api) {
       h(`button.mt-btn.mt-btn-liar${armed === 'liar' ? '.is-armed' : ''}`, { type: 'button', dataset: { k: 'call-liar' }, disabled: busy, onclick: () => arm('liar') },
         armed === 'liar' ? 'Sûr ? Touche encore' : 'Menteur !'),
       v.options.exact ? h(`button.mt-btn.mt-btn-exact${armed === 'exact' ? '.is-armed' : ''}`, { type: 'button', dataset: { k: 'call-exact' }, disabled: busy, onclick: () => arm('exact') },
-        armed === 'exact' ? 'Sûr ? Touche encore' : 'Tout pile') : null) : null;
+        armed === 'exact' ? 'Sûr ? Touche encore' : ['Tout pile', h('small.mt-btn-note', 'annonce exacte au dé près')]) : null) : null;
     return h('div.mt-builder',
       h('div.mt-faces', { role: 'group', 'aria-label': 'Valeur annoncée' }, faces),
       h('div.mt-bidrow',
@@ -301,7 +301,7 @@ export function mount(root, api) {
     }
     const scroller = page.querySelector('.mt-scroll');
     if (scroller) scroller.scrollTop = newRound ? 0 : top;
-    if (v.phase === 'over' && seenPhase !== null && seenPhase !== 'over') confetti();
+    if (v.phase === 'over' && seenPhase !== null && seenPhase !== 'over' && (api.seat < 0 || v.winner === api.me.id)) confetti();
     if (v.phase === 'bid') seenRound = v.round;
     seenPhase = v.phase;
   }

@@ -366,7 +366,7 @@ export function mount(root, api) {
     const byRole = ['wolf', 'seer', 'witch', 'hunter', 'cupid', 'villager'];
     const order = [...view.players].sort((a, b) => byRole.indexOf(view.roles[a]) - byRole.indexOf(view.roles[b]));
     return [h('section.lg-panel.is-over',
-      confetti(),
+      !view.me || meWon ? confetti() : null,
       h('h3', titles[w.side]),
       h('p', subs[w.side]),
       view.me ? h('p.lg-result', meWon ? 'Tu fais partie des gagnants.' : 'Tu as perdu cette fois.') : null,

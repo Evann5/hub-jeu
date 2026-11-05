@@ -296,7 +296,7 @@ export function mount(root, api) {
     fresh = new Set();
     if (v.phase === 'over' && v.winner !== null && !confettiShown) {
       confettiShown = true;
-      confetti();
+      if (api.seat < 0 || v.winner === api.me.id) confetti();
     }
     if (opened) el.querySelector('.cr-log').open = true;
     root.scrollTop = scroll;

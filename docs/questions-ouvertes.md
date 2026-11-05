@@ -9,3 +9,6 @@
 | Le code de classe de départ | Minh | Avant la première mise en ligne |
 | Escales : mode spécial « Cartel » (lieux et personnages inventés), cartes d'information sourcées, ou rien | Minh | Quand il veut |
 | Supprimer les fichiers inutilisés d'Escales (`fond-monde.svg`, `globe-clair.svg`, `globe-sombre.svg`, `globe-nuit.svg`, `globe-prune.svg`, `continents.png`, `alfa-slab-*`, `unbounded.woff2`, `figtree.woff2`) et les anciennes propositions (`docs/propositions/`) | Minh | Quand il veut |
+| Escales : garder Goma (ville de RD Congo sous contrôle du M23 d'après la vérification des faits) ou la remplacer | Minh | Quand il veut |
+| Mytho et Onde : « Manche suivante » reste ouvert à tous les joueurs, ou seulement au créateur de la table | Minh | Après une vraie partie |
+| Escales : monuments de Dakar et d'Alger simplifiés (formes stylisées) : à garder ou à retoucher | Minh | Quand il veut |
