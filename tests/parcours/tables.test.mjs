@@ -146,3 +146,46 @@ S.it('rejoindre en un clic : depuis la liste, depuis la fiche du jeu et depuis u
   // Le salon montre bien les quatre joueurs chez l'hôte.
   await jusque(async () => (await h.page.locator('.lobby-seat:not(.empty)').count()) === 4, 'quatre joueurs assis');
 });
+
+// Suit les écouteurs posés par le code d'Escales sur window, document et body (reconnus à leur pile d'appel) : ce sont eux qui survivent à une fermeture oubliée.
+const SUIVRE_ECOUTEURS_ESCALES = () => {
+  window.__ecouteursEscales = [];
+  const ajouter = EventTarget.prototype.addEventListener;
+  const retirer = EventTarget.prototype.removeEventListener;
+  const capture = (o) => (typeof o === 'boolean' ? o : Boolean(o?.capture));
+  EventTarget.prototype.addEventListener = function (type, fn, o) {
+    const global = this === window || this === document || this === document.documentElement || this === document.body; // les écouteurs d'un bouton retiré de la page partent avec lui
+    if (global && /games\/escales/.test(new Error().stack || '')) window.__ecouteursEscales.push({ cible: this, type, fn, capture: capture(o) });
+    return ajouter.call(this, type, fn, o);
+  };
+  EventTarget.prototype.removeEventListener = function (type, fn, o) {
+    window.__ecouteursEscales = window.__ecouteursEscales.filter((e) => !(e.cible === this && e.type === type && e.fn === fn && e.capture === capture(o)));
+    return retirer.call(this, type, fn, o);
+  };
+};
+
+S.it('Escales fermée pendant qu’on regarde : le canvas 3D disparaît, le titre revient à Jouer et plus aucun écouteur d’Escales ne reste', async ({ ouvrir }) => {
+  const h = await ouvrir();
+  const g = await ouvrir(S.pseudo(), { init: SUIVRE_ECOUTEURS_ESCALES });
+  await aller(h, '#/jouer');
+  await h.page.locator('.game-hero').getByRole('button', { name: 'Jouer à Escales' }).click();
+  await h.page.getByRole('dialog').getByRole('button', { name: 'Créer une partie' }).click();
+  await h.page.locator('.lobby-card').waitFor();
+  const adresse = await hashDe(h);
+  await h.page.getByRole('button', { name: 'Lancer la partie' }).click();
+  await h.page.locator('.es-world canvas').waitFor({ state: 'attached', timeout: 60_000 });
+  await aller(g, adresse); // g regarde, sans s'asseoir
+  await g.page.locator('.es-world canvas').waitFor({ state: 'attached', timeout: 60_000 });
+  const enJeu = await g.page.evaluate(() => window.__ecouteursEscales.length);
+  if (enJeu < 1) throw new Error('aucun écouteur d’Escales détecté pendant la partie : le test ne prouverait rien');
+  if ((await g.page.title()).startsWith('Jouer')) throw new Error('le titre de l’onglet n’annonce pas la partie');
+
+  const chat = h.page.getByRole('tab', { name: 'Chat' }); // l'onglet Chat porte les actions de la partie quand la 3D occupe la place
+  if (await chat.count()) await chat.click();
+  await h.page.getByRole('button', { name: 'Fermer la partie' }).click();
+  await confirmer(h, 'Fermer la partie');
+  await jusque(async () => (await hashDe(g)) === '#/jouer' && (await g.page.locator('.es-world canvas').count()) === 0, 'le canvas 3D est retiré de la page du spectateur', { delai: 20_000 });
+  await jusque(async () => (await g.page.title()).startsWith('Jouer'), 'le titre de l’onglet redevient celui de Jouer');
+  const restants = await g.page.evaluate(() => window.__ecouteursEscales.map((e) => `${e.cible?.nodeName ?? e.cible?.constructor?.name}:${e.type}`));
+  if (restants.length) throw new Error(`${restants.length} écouteur(s) d’Escales encore actif(s) : ${restants.join(', ')}`);
+});

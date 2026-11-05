@@ -39,8 +39,8 @@ Pour la personne qui gère le compte O2Switch. Compter environ 20 minutes la pre
 1. Ouvrir l'adresse de Hubuno : l'écran avec les piles de jetons doit s'afficher.
 2. Minh crée son compte avec le code de la classe. Il doit voir l'icône de bouclier (administration) en haut à gauche.
 3. Dans **Administration**, en bas, la rubrique **Connexion en direct** indique :
-   - « WebSocket » : parfait.
-   - « Long-polling » : Hubuno marche quand même, avec un peu plus de délai. Prévenir Minh : c'est la question encore ouverte sur O2Switch.
+   - « Connexion directe » : parfait.
+   - « Connexion de secours » : Hubuno marche quand même, avec un peu plus de délai. Prévenir Minh : c'est la question encore ouverte sur O2Switch.
 4. Test à deux : deux téléphones connectés à deux comptes. Un message envoyé par l'un doit apparaître chez l'autre en une seconde environ.
 
 ## Si ça ne marche pas

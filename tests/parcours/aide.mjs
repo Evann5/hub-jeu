@@ -98,7 +98,7 @@ export function monterSuite({ env = {} } = {}) {
   before(async () => {
     if (S.raison) return;
     try {
-      S.nav = await pw[MOTEUR].launch(MOTEUR === 'chromium' ? { channel: 'chromium' } : {});
+      S.nav = await pw[MOTEUR].launch(MOTEUR === 'chromium' ? { channel: 'chromium', args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] } : {}); // le GPU sert à Escales (WebGL)
     } catch (e) {
       S.raison = `Le navigateur ${MOTEUR} ne se lance pas (${e.message.split('\n')[0]}). Installe-le avec « npx playwright install ${MOTEUR} » : tests ignorés.`;
       return;
@@ -113,11 +113,12 @@ export function monterSuite({ env = {} } = {}) {
   S.pseudo = (prefixe = 'zz') => `${prefixe}${Date.now().toString(36).slice(-4)}${(S.n++).toString(36)}`.slice(0, 20);
 
   // Ouvre un navigateur « personne » : compte créé par l'API (admin : le code admin remplace le code de classe), page sur l'accueil.
-  S.ouvrir = async (pseudo = S.pseudo(), { admin = false, viewport = { width: 1280, height: 800 }, tactile = false, page: avecPage = true } = {}) => {
+  S.ouvrir = async (pseudo = S.pseudo(), { admin = false, viewport = { width: 1280, height: 800 }, tactile = false, page: avecPage = true, init = null } = {}) => {
     const contexte = await S.nav.newContext({
       viewport, baseURL: S.serveur.url,
       ...(tactile ? { hasTouch: true, isMobile: MOTEUR !== 'webkit', deviceScaleFactor: 2 } : {}),
     });
+    if (init) await contexte.addInitScript(init);
     const p = { contexte, pseudo, erreurs: [] };
     let r = await contexte.request.post(`${S.serveur.url}api/register`, { data: { classCode: admin ? CODE_ADMIN : CODE, pseudo, password: MDP, acceptRules: true } });
     if (!r.ok() && admin) r = await contexte.request.post(`${S.serveur.url}api/login`, { data: { pseudo, password: MDP } });

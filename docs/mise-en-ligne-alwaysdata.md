@@ -31,7 +31,7 @@ Sur le Mac, pas sur alwaysdata. Avec uniquement les fichiers de l'étape 3, dans
 
 ## L'essai avant d'inviter la classe
 
-1. Une partie à plusieurs, depuis des connexions différentes (Wi-Fi et 4G). Dans **Administration > Connexion en direct**, on doit lire « WebSocket ».
+1. Une partie à plusieurs, depuis des connexions différentes (Wi-Fi et 4G). Dans **Administration > Connexion en direct**, on doit lire « Connexion directe » ; « Connexion de secours » veut dire que les WebSockets ne passent pas : ça marche quand même, avec un peu de retard.
 2. Redémarrer le site : les comptes doivent toujours être là.
 3. Laisser tourner une nuit : le matin, la page doit répondre tout de suite.
 4. Partie à 10 joueurs : surveiller la mémoire dans l'administration d'alwaysdata.
