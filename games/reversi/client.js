@@ -122,7 +122,7 @@ export function mount(root, api) {
       box.replaceChildren(
         h('span.r-token', { 'aria-hidden': 'true' }),
         api.token(api.user(id), { size: 's' }),
-        h('span.r-who', h('span.r-name', api.user(id).pseudo), h('span.r-side', `${SIDE[seat]}${id === api.me.id ? ' · toi' : ''}${won ? ' · gagne' : ''}`)),
+        h('span.r-who', h('span.r-name', api.user(id).pseudo), h('span.r-side', `${SIDE[seat]}${id === api.me.id ? ' · toi' : ''}`, won ? h('span.r-won', ' · gagne') : null)),
         h('span.r-count', { 'aria-label': `${s.counts[seat]} pions` }, String(s.counts[seat])));
     });
   }
@@ -167,7 +167,7 @@ export function mount(root, api) {
   api.onState((s, i) => {
     state = s;
     info = i;
-    if (wasOver === false && i.over && s.winner && !s.forfeit) confetti(root, h);
+    if (wasOver === false && i.over && s.winner && !s.forfeit && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // pas de confettis sur l'écran de celui qui perd
     wasOver = i.over;
     renderScores(s);
     renderBoard(s);

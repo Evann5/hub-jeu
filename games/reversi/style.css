@@ -110,7 +110,7 @@
 
 /* Dernier pion posé : une étoile jaune dans le coin */
 .g-reversi .r-cell.is-last::after {
-  content: ''; position: absolute; top: -4%; right: -4%; z-index: 2; width: 26%; aspect-ratio: 1;
+  content: ''; position: absolute; top: -9%; right: -9%; z-index: 2; width: 40%; aspect-ratio: 1; filter: drop-shadow(0 1px 1px rgb(20 25 107 / 0.5));
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7-6.3-3.8-6.3 3.8 1.7-7L2 9.2l7.1-.6z' fill='%23FFE23D' stroke='%2314196B' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
@@ -124,6 +124,7 @@
   .g-reversi .r { padding: 10px 8px 14px; gap: 8px; }
   .g-reversi .r-score { padding: 6px 10px 6px 8px; gap: 6px; }
   .g-reversi .r-score .token { display: none; }
+  .g-reversi .r-won { display: none; } /* « gagne » est déjà dit par le statut et la carte jaune ; il était coupé */
   .g-reversi .r-count { font-size: 1.55rem; }
   .g-reversi .r-frame { padding: 6px; border-radius: 28px; }
   .g-reversi .r-grid, .g-reversi .r-row { gap: 3px; }

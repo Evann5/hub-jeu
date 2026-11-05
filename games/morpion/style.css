@@ -42,6 +42,7 @@
 .g-morpion .mp-cell.is-win { background: var(--accent); box-shadow: 0 0 28px var(--glow); animation: mp-win 0.5s var(--ease-out); }
 .g-morpion .mp-cell.is-dim { opacity: 0.4; }
 .g-morpion .mp-cell.is-new { animation: mp-pop 0.28s var(--ease-out); }
+.g-morpion .mp-cell.is-new:not(.is-win) { box-shadow: inset 0 0 0 4px rgb(255 255 255 / 0.9); } /* dernier signe posé : un liseré blanc qui reste */
 .g-morpion .mp-ghost, .g-morpion .mp-markslot { grid-area: 1 / 1; display: grid; place-items: center; width: 62%; aspect-ratio: 1; }
 .g-morpion .mp-ghost { opacity: 0; transition: opacity 0.12s; color: var(--ink-2); }
 .g-morpion .mp-cell:not(:disabled):hover .mp-ghost, .g-morpion .mp-cell:not(:disabled):focus-visible .mp-ghost { opacity: 0.45; }

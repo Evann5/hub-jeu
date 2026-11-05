@@ -263,7 +263,7 @@ export function mount(root, api) {
   let wasOver = null; // null tant qu'aucun état n'a été reçu : pas de confettis en rechargeant une partie finie
   api.onState((s, i) => {
     const wasBoard = state?.board;
-    if (wasOver === false && i.over && s.winner && !s.forfeit) confetti(root, h);
+    if (wasOver === false && i.over && s.winner && !s.forfeit && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // pas de confettis sur l'écran de celui qui perd
     wasOver = i.over;
     state = s;
     info = i;
