@@ -6,7 +6,7 @@ from lib_maroc_portugal import *
 PAL = {
     'ground': '#8FA865', 'hill1': '#9C6B3E', 'hill2': '#B5803F', 'hill3': '#6E8B4E', 'wall': '#C0613A', 'wall2': '#A94F2F',
     'sand': '#E3A56E', 'roof': '#8E3B2B', 'win': '#3A3633', 'water': '#4FA3C7', 'cyp': '#2F6B3A', 'trunk': '#6A4528',
-    'mA': '#6E7C96', 'snow': '#F4F7FA', 'cream': '#EFD9B0', 'green': '#5E9F7F',
+    'grass': '#8DB162', 'mA': '#6E7C96', 'snow': '#F4F7FA', 'cream': '#EFD9B0', 'green': '#5E9F7F',
 }
 
 def ring_poly(radii, scale, cx=0.0, cz=0.0, rot=0.0):
@@ -49,10 +49,14 @@ def build():
             m.poly([(x+r*math.sin(a0), 0.04, -0.6+r*math.cos(a0)), (x+r*math.sin(a1), 0.04, -0.6+r*math.cos(a1)),
                     (x+rc*math.sin(a1), yc, -0.6+rc*math.cos(a1)), (x+rc*math.sin(a0), yc, -0.6+rc*math.cos(a0))], 'mA', (x, yc, -0.6))
             m.poly([(x+rc*math.sin(a0), yc, -0.6+rc*math.cos(a0)), (x+rc*math.sin(a1), yc, -0.6+rc*math.cos(a1)), (x, 0.04+h, -0.6)], 'snow', (x, yc, -0.6))
-    # colline
+    # colline : un seul talus continu (roche brune en bas, pente verte, plateau herbeux), sans anneau saillant
     R = [0.9, 0.84, 0.92, 0.86, 0.94, 0.85, 0.9, 0.82, 0.93, 0.87]
-    prism_xz(m, ring_poly(R, 0.88, 0, -0.04), 0.04, 0.18, 'hill1', 'hill2')
-    prism_xz(m, ring_poly(R, 0.76, 0, -0.04, 0.2), 0.18, 0.3, 'hill2', 'hill3')
+    def ring3(scale, y):
+        return [(x, y, z) for (x, z) in ring_poly(R, scale, 0, -0.04)]
+    hc = (0, 0.15, -0.04)
+    m.band(ring3(0.94, 0.04), ring3(0.9, 0.11), 'hill1', hc)
+    m.band(ring3(0.9, 0.11), ring3(0.78, 0.3), 'hill3', hc)
+    face2d(m, ring_poly(R, 0.78, 0, -0.04), lambda u, v: (u, 0.3, v), 'grass', (0, 0.1, -0.04))
     Y = 0.3
     # rempart de devant et ses tours
     wf = B(-0.52, 0.52, Y, Y+0.3, 0.12, 0.3)
@@ -76,6 +80,6 @@ def build():
     tower(m, 0.5, -0.3, 0.7, Y, 0.12, roof='green')
     tower(m, 0.0, -0.5, 0.55, Y, 0.1)
     # cyprès
-    for (x, z) in ((-0.2, 0.42), (0.18, 0.42), (-0.82, 0.3), (0.82, 0.3)):
-        lathe(m, [(0.0, 0.04), (0.05, 0.05), (0.05, 0.1), (0.035, 0.4), (0.0, 0.52)], 5, ['trunk', 'cyp', 'cyp', 'cyp'], x, z)
+    for (x, z, yb) in ((-0.22, 0.46, Y), (0.2, 0.46, Y), (-0.7, 0.5, 0.2), (0.72, 0.46, 0.2), (-0.35, 0.68, 0.1), (0.4, 0.68, 0.1)):
+        lathe(m, [(0.0, yb), (0.05, yb+0.01), (0.055, yb+0.06), (0.04, yb+0.3), (0.0, yb+0.42)], 5, ['trunk', 'cyp', 'cyp', 'cyp'], x, z)
     return m

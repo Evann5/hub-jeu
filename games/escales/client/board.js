@@ -7,14 +7,14 @@ import { EXTRA_COUNTRIES } from './pays.js';
 const STARTERS = [
   { id: 'maroc', name: 'Maroc', color: '#2EC4B6', cities: [
     { name: 'Chefchaouen', model: 'maisonsBleues', fact: 'La ville bleue, ruelles peintes du sol au toit.' },
-    { name: 'Fès', model: 'riad', fact: 'La plus grande médina piétonne du monde.' },
+    { name: 'Fès', model: 'riad', fact: 'Une immense médina sans voitures, classée à l’UNESCO.' },
     { name: 'Marrakech', model: 'minaret', fact: 'Jemaa el-Fna s’allume à la tombée de la nuit.' },
     { name: 'Casablanca', model: 'mosquee', fact: 'L’océan, l’art déco et la mosquée Hassan II.' },
   ] },
   { id: 'vietnam', name: 'Vietnam', color: '#FFC93C', cities: [
     { name: 'Hội An', model: 'lanternes', fact: 'Des lanternes par milliers au-dessus de la rivière.' },
     { name: 'Huế', model: 'porte', fact: 'L’ancienne cité impériale, sur la rivière des Parfums.' },
-    { name: 'Hanoï', model: 'pagodeUnPilier', fact: 'Le vieux quartier et ses 36 rues de métiers.' },
+    { name: 'Hanoï', model: 'pagodeUnPilier', fact: 'Le vieux quartier dit des 36 rues, aux noms de métiers.' },
     { name: 'Hô Chi Minh-Ville', short: 'Hô Chi Minh', model: 'gratteCiel', fact: 'Des millions de scooters, jour et nuit.' },
   ] },
   { id: 'portugal', name: 'Portugal', color: '#6CC551', cities: [
@@ -24,22 +24,22 @@ const STARTERS = [
     { name: 'Lisbonne', model: 'tram', fact: 'Le tram 28 grimpe les collines de l’Alfama.' },
   ] },
   { id: 'mexique', name: 'Mexique', color: '#FF5FA2', cities: [
-    { name: 'Oaxaca', model: 'maisonsColorees', fact: 'La capitale du mole et des alebrijes.' },
+    { name: 'Oaxaca', model: 'maisonsColorees', fact: 'Le mole et les alebrijes en bois sculpté.' },
     { name: 'Guanajuato', model: 'maisonsColorees2', fact: 'Des maisons de toutes les couleurs et des rues sous terre.' },
-    { name: 'Guadalajara', model: 'cathedrale', fact: 'Le berceau des mariachis.' },
+    { name: 'Guadalajara', model: 'cathedrale', fact: 'La ville du mariachi, avec son festival international.' },
     { name: 'Mexico', model: 'pyramide', fact: 'Une ville géante, posée sur un ancien lac.' },
   ] },
   { id: 'italie', name: 'Italie', color: '#FF9248', cities: [
     { name: 'Naples', model: 'volcan', fact: 'La pizza, avec le Vésuve en toile de fond.' },
     { name: 'Florence', model: 'duomo', fact: 'Le dôme de Brunelleschi domine les toits rouges.' },
-    { name: 'Venise', model: 'gondole', fact: 'Plus de 400 ponts et aucune voiture.' },
-    { name: 'Rome', model: 'colisee', fact: 'On y marche sur 2 000 ans d’histoire.' },
+    { name: 'Venise', model: 'gondole', fact: 'Plus de 400 ponts, et pas de voitures dans le centre.' },
+    { name: 'Rome', model: 'colisee', fact: 'On y marche sur plus de 2 000 ans d’histoire.' },
   ] },
   { id: 'japon', name: 'Japon', color: '#FFB3C7', cities: [
-    { name: 'Nara', model: 'pagode', fact: 'Des daims en liberté saluent les passants.' },
+    { name: 'Nara', model: 'pagode', fact: 'Des cerfs en liberté saluent les passants.' },
     { name: 'Kyoto', model: 'torii', fact: 'Plus de mille temples et les allées de bambous.' },
     { name: 'Osaka', model: 'chateau', fact: 'Dotonbori et ses enseignes géantes, la cuisine du pays.' },
-    { name: 'Tokyo', model: 'tourTokyo', fact: 'Shibuya, le carrefour le plus traversé au monde.' },
+    { name: 'Tokyo', model: 'tourTokyo', fact: 'Shibuya, l’un des carrefours les plus fréquentés au monde.' },
   ] },
   { id: 'france', name: 'France', color: '#6FA1FF', cities: [
     { name: 'Marseille', model: 'basilique', fact: 'Le Vieux-Port, et la Bonne Mère qui veille.' },
