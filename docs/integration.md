@@ -46,6 +46,7 @@ Variables d'environnement (`src/config.js`) :
 | `BASE_PATH` | Sous-dossier de l'appli (`/hubuno`), vide pour un domaine ou sous-domaine. |
 | `DATA_DIR` | Dossier de la base SQLite, `data/` par défaut. |
 | `PORT` | Port d'écoute, fourni par O2Switch (Passenger). |
+| `HOST` | Adresse d'écoute. Sur un VPS derrière nginx : `127.0.0.1`. Vide partout ailleurs. |
 
 ## 4. Organisation des fichiers
 

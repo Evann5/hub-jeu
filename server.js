@@ -69,7 +69,7 @@ function housekeeping() {
 housekeeping();
 setInterval(housekeeping, 3600_000).unref();
 
-server.listen(config.port, () => {
+server.listen(config.port, config.host, () => {
   console.log(`Hubuno écoute sur le port ${config.port}${config.basePath ? `, sous ${config.basePath}` : ''}.`);
   if (!classCode()) console.warn('Aucun code de classe : réglez CLASS_CODE pour ouvrir les inscriptions.');
 });

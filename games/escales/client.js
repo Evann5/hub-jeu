@@ -328,7 +328,7 @@ export function mount(root, api) {
       const breakdown = (p) => {
         const n = TILES.filter((t) => v.props[t.pos]?.owner === p.id).length;
         const built = TILES.reduce((sum, t) => sum + (v.props[t.pos]?.owner === p.id ? v.props[t.pos].level : 0), 0);
-        return `${money(p.cash)} + ${n} ville${n > 1 ? 's' : ''}${built ? ` + ${built} niveau${built > 1 ? 'x' : ''}` : ''}`;
+        return [money(p.cash), n ? `${n} ville${n > 1 ? 's' : ''}` : null, built ? `${built} niveau${built > 1 ? 'x' : ''}` : null].filter(Boolean).join(' + ');
       };
       return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : v.winners.length > 3 ? `${v.winners.length} joueurs à égalité !` : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
         h(`ol.es-rank${ranked.length > 6 ? '.is-long' : ''}`, { style: `--rank-rows:${Math.ceil(ranked.length / 2)}` }, ranked.map((p, i) => h('li', { style: `--p:${PAWN_COLORS[p.seat]}` },

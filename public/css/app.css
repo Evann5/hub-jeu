@@ -1201,6 +1201,7 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .table-view.is-wide .table-body { position: relative; grid-template-columns: minmax(0, 1fr); }
   .table-view.is-wide .table-side { position: absolute; top: 0; left: 0; bottom: 0; z-index: 8; width: 320px; background: var(--bg-2); box-shadow: 18px 0 40px rgb(0 0 0 / 0.45); }
   .table-view.is-wide.tab-game .table-side { display: none; }
+  .table-view.is-wide:not(.tab-game) .table-endbar { padding-left: 336px; } /* le panneau des joueurs ne cache pas le résultat */
   .table-view.is-wide .table-tabs { display: flex; margin-left: auto; gap: 4px; padding: 3px; border-radius: 999px; background: var(--bg-1); }
   .table-view.is-wide .table-tab { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--ink-2); font-weight: 700; }
   .table-view.is-wide .table-tab[aria-selected='true'] { background: var(--bg-3); color: var(--ink); }

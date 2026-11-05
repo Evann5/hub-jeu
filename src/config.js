@@ -10,6 +10,8 @@ const basePath = (process.env.BASE_PATH || '').replace(/\/+$/, '').replace(/^(?!
 export const config = {
   root,
   port: Number(process.env.PORT) || 3000,
+  // Sur un VPS derrière nginx : 127.0.0.1, pour que personne n'atteigne l'appli sans passer par lui. Vide : toutes les adresses.
+  host: process.env.HOST || undefined,
   basePath,
   dataDir: process.env.DATA_DIR || join(root, 'data'),
   // Code de classe de départ ; un admin peut le changer ensuite depuis Hubuno.
