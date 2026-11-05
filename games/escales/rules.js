@@ -390,6 +390,13 @@ function liquidate(s, p, needed) {
   }
 }
 
+// Ce que « Réunir l'argent » va vendre ou mettre en gage : le joueur le voit avant de décider.
+function debtPlan(state, me) {
+  const copy = JSON.parse(JSON.stringify(state));
+  liquidate(copy, byId(copy, me.id), state.debt.amount);
+  return positionsOf(state, me.id).map((pos) => ({ pos, levels: state.props[pos].level - copy.props[pos].level, mortgage: copy.props[pos].mortgaged && !state.props[pos].mortgaged })).filter((x) => x.levels || x.mortgage);
+}
+
 function settleDebt(s, ctx) {
   const p = cur(s);
   const { amount, to, why } = s.debt;
@@ -783,6 +790,7 @@ export function view(state, playerId) {
       return sum + Math.floor((prop.level * (t.build || 0)) / 2) + (prop.mortgaged ? 0 : mortgageValue(t));
     }, 0) : null,
     costs: Object.fromEntries(mine.filter((pos) => TILES[pos].type === 'city').map((pos) => [pos, buildCost(state, pos)])),
+    ...(inDebt && cur(state).id === me.id && me.cash < state.debt.amount ? { debtPlan: debtPlan(state, me) } : {}),
   };
 }
 

@@ -1040,7 +1040,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       v.set(0, 0, z).project(camera);
       return [((v.x + 1) / 2) * size.w, ((1 - v.y) / 2) * size.h];
     };
-    onFit?.(onScreen(0.4), onScreen(2.75), onScreen(-1.1), onScreen(5.35), onScreen(DICE_Z + 1.45));
+    onFit?.(onScreen(0.4), onScreen(2.75), onScreen(-1.1), onScreen(5.35), onScreen(DICE_Z + 1.45), onScreen(HALF + 1.15));
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
@@ -1057,8 +1057,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     } else if (quality.step === 2) {
       sun.castShadow = false;
       scene.traverse((o) => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; });
-    } else if (quality.step === 3 && dpr > 0.75) {
-      dpr = 0.75;
+    } else if (quality.step === 3 && dpr > 1) { // jamais sous 1 : dans un jeu au tour par tour, un plateau illisible gêne plus qu'une image saccadée
+      dpr = 1;
       renderer.setPixelRatio(dpr);
       renderer.setSize(size.w, size.h, false);
     }

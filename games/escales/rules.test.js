@@ -614,3 +614,22 @@ test('des centaines de parties de robots vont au bout, de 2 à 10 joueurs', () =
     }
   }
 });
+
+test('dette : la vue annonce ce que « Réunir l’argent » vendra, et le coup fait exactement ça', () => {
+  let s = start(3);
+  const me = s.players[s.cur];
+  const other = s.players.find((p) => p.id !== me.id);
+  const lyon = TILES.find((t) => t.name === 'Lyon').pos;
+  const paris = TILES.find((t) => t.name === 'Paris').pos;
+  const bordeaux = TILES.find((t) => t.name === 'Bordeaux').pos;
+  s = { ...s, phase: 'debt', after: 'end', debt: { amount: 300, to: other.id, why: 'pour l’essai' }, players: s.players.map((p) => (p.id === me.id ? { ...p, cash: 10 } : p)), props: { [lyon]: { owner: me.id, level: 2, mortgaged: false }, [paris]: { owner: me.id, level: 0, mortgaged: false }, [bordeaux]: { owner: me.id, level: 0, mortgaged: false } } };
+  const plan = view(s, me.id).debtPlan;
+  assert.ok(plan.length >= 1);
+  assert.equal(view(s, other.id).debtPlan, undefined, 'seul le joueur en dette le voit');
+  const after = move(s, me.id, { type: 'raise' }, ctxOf()).state;
+  for (const pos of [lyon, paris, bordeaux]) {
+    const x = plan.find((l) => l.pos === pos) ?? { levels: 0, mortgage: false };
+    assert.equal(after.props[pos].level, s.props[pos].level - x.levels, TILES[pos].name);
+    assert.equal(Boolean(after.props[pos].mortgaged), s.props[pos].mortgaged || x.mortgage, TILES[pos].name);
+  }
+});

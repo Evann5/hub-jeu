@@ -61,7 +61,9 @@ export function mount(root, api) {
   const layer = h('div.es-layer');
   const loading = h('p.es-loading', 'Le plateau arrive…');
   const turnBox = h('div.es-turn', { hidden: true, 'aria-hidden': 'true' }); // le bandeau du hub et la liste des joueurs le disent déjà aux lecteurs d'écran
-  const frame = h('div.es', stage, loading, tip, turnBox, side, flash, action, layer);
+  // Sur téléphone, sous le plateau : où en est la partie, et le rappel que les cases se touchent.
+  const under = h('p.es-under');
+  const frame = h('div.es', stage, loading, tip, turnBox, under, side, flash, action, layer);
   api.gateTurn();
   root.append(frame);
 
@@ -85,7 +87,8 @@ export function mount(root, api) {
         },
         topInset: () => Math.max(6, Math.max(players.getBoundingClientRect().bottom, tools.hidden || getComputedStyle(tools).position === 'fixed' ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6), // jamais négatif : à la fin de partie, le panneau disparaît sur téléphone
         rightInset: () => side.offsetWidth + 12,
-        onFit: ([cx, cy], [, fy], [, oy], [, by], [, dy]) => {
+        onFit: ([cx, cy], [, fy], [, oy], [, by], [, dy], [, uy]) => {
+          frame.style.setProperty('--uy', `${Math.round(uy)}px`);
           // À mi-chemin entre les dés et la ligne de ce qui vient de se passer ; quand la place manque, collé sous les dés : le message peut prendre deux lignes.
           frame.style.setProperty('--ty', `${Math.round(fy - dy < 140 ? dy + 23 : (dy + fy) / 2)}px`);
           frame.style.setProperty('--tspan', `${Math.round(fy - dy)}px`);
@@ -106,10 +109,14 @@ export function mount(root, api) {
         renderAction();
         renderFocus();
       }
+      boardReady = true;
+      if (v) renderAction();
       loading.remove();
     } catch (err) {
       loading.remove();
       console.error(err);
+      boardReady = true; // sans 3D, on joue quand même avec les boutons
+      if (v) renderAction();
       stage.replaceChildren(h('p.es-no3d', 'Ton navigateur n’affiche pas la 3D. Tu peux quand même jouer avec les boutons et la liste des villes.'));
     }
   });
@@ -261,10 +268,10 @@ export function mount(root, api) {
         h('span.es-stamp', { 'aria-hidden': 'true' }, 'À vendre'),
         h('b', t.name),
         h('small', isCity ? flagOf(t.region) : null, isCity ? REGIONS[t.region].name : 'Escale'),
-        h('span', `Loyer ${money(isCity ? t.rent : ESCALE_RENTS[1])}`),
+        h('span', isCity ? `Loyer ${money(t.rent)}, ${money(t.rent * 2)} avec ${v.majority} villes du pays` : `Loyer ${money(ESCALE_RENTS[1])}, plus avec d'autres escales`),
         h('span.es-pips-line', { 'aria-hidden': 'true' }, pips),
         h(isCity && missing <= 0 ? 'em' : 'small.es-offer-goal', goal),
-        left >= 0 ? h('small.es-offer-goal', `Il te restera ${money(left)}`) : null));
+        left >= 0 ? h(`small.es-offer-goal${left < 150 ? '.is-low' : ''}`, left < 150 ? `Il ne te restera que ${money(left)} : attention aux loyers` : `Il te restera ${money(left)}`) : null));
   }
 
   // Où en est le pays : à qui sont ses villes, et ce qu'il te manque pour y construire.
@@ -297,6 +304,22 @@ export function mount(root, api) {
   const say = (text) => h('p.es-say', text);
   const buildLink = () => (v.actions.build.length ? h('button.es-btn.is-ghost', { type: 'button', onclick: () => openOverlay({ kind: 'build' }) }, 'Construire') : null);
 
+  // Avant de réunir l'argent : ce qui sera vendu ou mis en gage, ville par ville.
+  function debtNote(p) {
+    const plan = v.debtPlan ?? [];
+    const line = (x) => {
+      const t = TILES[x.pos];
+      const name = t.short ?? t.name;
+      const got = Math.floor((x.levels * (t.build || 0)) / 2) + (x.mortgage ? mortgageValue(t) : 0);
+      const what = [x.levels ? `${x.levels} niveau${x.levels > 1 ? 'x' : ''} vendu${x.levels > 1 ? 's' : ''}` : null, x.mortgage ? 'mise en gage' : null].filter(Boolean).join(', ');
+      return h('li', h('b', name), ` : ${what} (+${money(got)})`);
+    };
+    return h('div.es-debtplan',
+      h('p.es-note', `Tu as ${money(p.cash)}. « Réunir l'argent » fera ceci :`),
+      h('ul', plan.map(line)),
+      h('p.es-note', 'Une ville en gage ne rapporte plus de loyer. Tu peux aussi choisir toi-même dans Villes.'));
+  }
+
   function promptFor() {
     if (v.over) {
       // Le podium est sur le plateau, en 3D : ici, le classement de tout le monde.
@@ -320,6 +343,7 @@ export function mount(root, api) {
       case 'roll':
         if (p.blocked) {
           return [say(`Retenu à la Douane (essai ${p.blocked} sur 3).`),
+            h('p.es-note', 'Un double te libère. Au 3e essai raté, tu paies 50 € et tu avances.'),
             btn('Tenter un double', { type: 'roll' }),
             p.cash >= 50 ? btn('Payer 50 €', { type: 'payFine' }, '.is-ghost') : null];
         }
@@ -331,7 +355,7 @@ export function mount(root, api) {
             btn('Passer', { type: 'decline' }, '.is-ghost'))];
       case 'debt':
         return [say(`Tu dois ${money(v.debt.amount)} ${v.debt.why}.`),
-          p.cash >= v.debt.amount ? null : h('p.es-note', v.raisable >= v.debt.amount ? `Tu as ${money(p.cash)}. Tes constructions seront vendues, puis tes villes mises en gage : plus de loyer tant que tu ne les récupères pas dans leur fiche.` : `Même en vendant tout, tu n'aurais que ${money(v.raisable ?? p.cash)}. Négocie avec un joueur, ou c'est la faillite.`),
+          p.cash >= v.debt.amount ? null : v.raisable >= v.debt.amount ? debtNote(p) : h('p.es-note', `Même en vendant tout, tu n'aurais que ${money(v.raisable ?? p.cash)}. Négocie avec un joueur, ou c'est la faillite.`),
           p.cash >= v.debt.amount ? btn(`Payer ${money(v.debt.amount)}`, { type: 'pay' })
             : v.raisable >= v.debt.amount ? btn('Réunir l’argent et payer', { type: 'raise' }) : null,
           confirmBankrupt ? btn('Oui, je déclare faillite', { type: 'bankrupt' }, '.is-danger')
@@ -382,6 +406,14 @@ export function mount(root, api) {
     const last = v.log.at(-1);
     const fresh = flashN !== null && last && last.n > flashN;
     flashN = last?.n ?? 0;
+    if (announce && !v.over) {
+      flash.textContent = announce;
+      announce = null;
+      flash.classList.add('is-on', 'is-big');
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => flash.classList.remove('is-on', 'is-big'), 4000);
+      return;
+    }
     // Une fiche à décider cache la ligne, sauf pour la réponse à un échange : elle ne doit pas passer inaperçue.
     if (v.over || (busy && !(fresh && /échange/i.test(last.text)))) {
       flash.classList.remove('is-on');
@@ -389,13 +421,18 @@ export function mount(root, api) {
     }
     if (!fresh || / lance \d/.test(last.text)) return; // les dés se voient sur le plateau
     flash.textContent = spoken(last.text);
+    // Un gros loyer, c'est le moment fort de la partie : il se voit, et il reste plus longtemps.
+    const paid = last.text.match(/ paie ([\d\s\u202f]+) €/);
+    const huge = paid && Number(paid[1].replace(/\D/g, '')) >= 300 && / à /.test(last.text);
     flash.classList.add('is-on');
+    flash.classList.toggle('is-big', Boolean(huge));
     clearTimeout(flashTimer);
-    flashTimer = setTimeout(() => flash.classList.remove('is-on'), 3000);
+    flashTimer = setTimeout(() => flash.classList.remove('is-on', 'is-big'), huge ? 5500 : 3000);
   }
 
   // Au milieu du plateau : le voyageur dont c'est le tour, en grand.
   let turnKey = null;
+  let boardReady = false;
   const whereIs = (p) => {
     const t = TILES[p.pos];
     return t.type === 'city' ? `à ${t.name}` : `sur ${t.name}`;
@@ -424,9 +461,20 @@ export function mount(root, api) {
     }
   }
 
+  let lastAnnounced = false;
+  let announce = null;
   let shownTrades = null;
   function renderAction() {
     round.textContent = v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)}/${v.maxRounds}` : `Tour ${v.round}`;
+    const lastRound = Boolean(v.maxRounds) && v.round >= v.maxRounds && !v.over;
+    round.classList.toggle('is-last', lastRound);
+    under.classList.toggle('is-last', lastRound);
+    under.hidden = v.over;
+    under.textContent = `${lastRound ? 'Dernier tour !' : round.textContent} · Touche une case pour sa fiche`;
+    if (lastRound && !lastAnnounced) {
+      lastAnnounced = true;
+      announce = 'Dernier tour !';
+    }
     const plain = myTurn() && ((v.phase === 'roll' && !v.players[v.cur].blocked) || v.phase === 'end'); // un simple bouton, sans carte autour
     action.classList.toggle('is-plain', plain);
     action.classList.toggle('is-over', v.over);
@@ -446,9 +494,12 @@ export function mount(root, api) {
       }
     }
 
-    action.hidden = !prompt.childElementCount;
+    action.hidden = !prompt.childElementCount || !boardReady; // pas de bouton tant que le plateau n'est pas là
     // Sur téléphone, les outils se posent juste au-dessus de la carte d'action, quelle que soit sa hauteur.
     frame.style.setProperty('--act-h', `${action.hidden ? 0 : action.offsetHeight}px`);
+    // Quand la carte d'action est haute, les outils remontent : la ligne sous le plateau s'efface plutôt que de passer derrière eux.
+    under.hidden = v.over;
+    if (!under.hidden && getComputedStyle(under).display !== 'none' && under.getBoundingClientRect().bottom > tools.getBoundingClientRect().top - 2) under.hidden = true;
     frame.classList.toggle('is-buying', v.phase === 'buy' && myTurn());
     renderTurn(!action.hidden && !plain);
 
@@ -468,9 +519,22 @@ export function mount(root, api) {
   }
 
   function offerText(o) {
-    const parts = o.cities.map((pos) => TILES[pos].short ?? TILES[pos].name);
+    const parts = o.cities.map((pos) => `${TILES[pos].short ?? TILES[pos].name}${TILES[pos].price ? ` (${money(TILES[pos].price)})` : ''}`);
     if (o.cash) parts.push(money(o.cash));
     return parts.join(' + ') || 'rien';
+  }
+
+  // Ce que l'échange change : qui pourrait construire ensuite.
+  function tradeNote(iGet, iGive, other) {
+    const after = (id, plus, minus) => (region) => TILES.filter((x) => x.region === region && x.type === 'city' && ((v.props[x.pos]?.owner === id && !minus.includes(x.pos)) || plus.includes(x.pos))).length;
+    const unlocks = (cities, count, before) => [...new Set(cities.filter((pos) => TILES[pos].type === 'city').map((pos) => TILES[pos].region))].filter((r) => count(r) >= v.majority && before(r) < v.majority).map((r) => REGIONS[r].name);
+    const lines = [];
+    const none = after(meId, [], []);
+    const mine = unlocks(iGet, after(meId, iGet, iGive), none);
+    const theirs = unlocks(iGive, after(other.id, iGive, iGet), after(other.id, [], []));
+    if (mine.length) lines.push(`Tu pourrais construire : ${mine.join(', ')}.`);
+    if (theirs.length) lines.push(`${other.pseudo} pourrait construire : ${theirs.join(', ')}.`);
+    return lines.length ? h('p.es-trade-note', lines.join(' ')) : null;
   }
 
   function tradeCard(t) {
@@ -481,6 +545,7 @@ export function mount(root, api) {
       h('dl.es-trade-sum',
         h('dt', 'Tu reçois'), h('dd', offerText(incoming ? t.give : t.get)),
         h('dt', 'Tu donnes'), h('dd', offerText(incoming ? t.get : t.give))),
+      tradeNote(incoming ? t.give.cities : t.get.cities, incoming ? t.get.cities : t.give.cities, other),
       h('div.es-choice',
         incoming ? btn('Accepter', { type: 'tradeAccept', id: t.id }, '.is-small') : null,
         btn(incoming ? 'Refuser' : 'Retirer', { type: 'tradeReject', id: t.id }, '.is-ghost.is-small')));
@@ -549,7 +614,8 @@ export function mount(root, api) {
         a.build.includes(pos) ? btn(`Construire (${money(v.costs[pos])})`, { type: 'build', pos }) : null,
         a.unmortgage.includes(pos) ? btn(`Récupérer (${money(unmortgageCost(t))})`, { type: 'unmortgage', pos }) : null,
         a.sell.includes(pos) ? btn('Vendre un niveau', { type: 'sell', pos }, '.is-ghost') : null,
-        a.mortgage.includes(pos) ? btn(`Mettre en gage (+${money(mortgageValue(t))})`, { type: 'mortgage', pos }, '.is-ghost') : null));
+        a.mortgage.includes(pos) ? btn(`Mettre en gage (+${money(mortgageValue(t))})`, { type: 'mortgage', pos }, '.is-ghost') : null),
+      a.mortgage.includes(pos) ? h('p.es-note', `En gage : plus de loyer, et ${money(unmortgageCost(t))} pour la récupérer.`) : null);
   }
 
   // Les villes, pays par pays : on voit d'un coup où l'on approche de la majorité. Les pays où l'on a le plus viennent d'abord.
@@ -623,6 +689,11 @@ export function mount(root, api) {
   }
 
   // Construire : les villes possibles, un bouton par ville.
+  const nextRent = (pos) => {
+    const t = TILES[pos];
+    const all = TILES.filter((x) => x.region === t.region && v.props[x.pos]?.owner === v.props[pos].owner).length === 4;
+    return Math.round(t.rent * LEVEL_MULT[v.props[pos].level + 1] * (all ? 1.25 : 1));
+  };
   function buildSheet() {
     const list = v.actions.build;
     return shell('Construire', h('h2', 'Construire'),
@@ -630,7 +701,7 @@ export function mount(root, api) {
         const t = TILES[pos];
         return h('li.es-buildline',
           flagOf(t.region),
-          h('span', h('b', t.short ?? t.name), h('small', LEVEL_NAMES[v.props[pos].level + 1])),
+          h('span', h('b', t.short ?? t.name), h('small', `${LEVEL_NAMES[v.props[pos].level]} → ${LEVEL_NAMES[v.props[pos].level + 1]}`), h('small', `Loyer ${money(v.rents[pos] ?? t.rent)} → ${money(nextRent(pos))}`)),
           btn(`Construire ${money(v.costs[pos])}`, { type: 'build', pos }, '.is-small'));
       })) : h('p.es-note', 'Plus rien à construire pour l’instant.'));
   }

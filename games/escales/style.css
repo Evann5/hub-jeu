@@ -36,7 +36,7 @@
 .g-escales .es { position: relative; flex: 1; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
 .g-escales .es-world { position: absolute; inset: 0; } /* le fond est dans app.css, avec les palettes */
 .g-escales .es-world canvas { display: block; touch-action: manipulation; cursor: pointer; }
-.g-escales .es-no3d, .g-escales .es-loading { position: absolute; inset: 40% 16px auto; margin: 0; color: var(--ink); font-weight: 600; text-align: center; }
+.g-escales .es-no3d, .g-escales .es-loading { position: absolute; inset: 40% 16px auto; margin: 0; color: #FFFFFF; font-weight: 600; text-align: center; }
 
 .g-escales .es-chip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 28px; padding: 0 8px 0 6px; border-radius: 7px; background: color-mix(in srgb, var(--p) 30%, var(--es-panel)); color: var(--ink); font-size: 0.9375rem; font-weight: 700; }
 .g-escales button.es-chip { width: 100%; border: 0; font-family: var(--es-text); text-align: left; cursor: pointer; }
@@ -165,7 +165,8 @@
 .g-escales .es-offer-pic { width: 84px; height: 84px; }
 .g-escales .es-offer-text { position: relative; display: grid; gap: 1px; min-width: 0; }
 .g-escales .es-stamp { position: absolute; top: -4px; right: -2px; padding: 1px 6px; border: 2px solid var(--vermilion); border-radius: 5px; color: var(--vermilion); font: 800 0.6875rem var(--es-display); text-transform: uppercase; opacity: 0.75; transform: rotate(7deg); pointer-events: none; }
-.g-escales .es-offer-text b { font: 800 1.25rem/1.1 var(--es-display); overflow-wrap: anywhere; }
+.g-escales .es-offer-text b { padding-right: 76px; font: 800 1.25rem/1.1 var(--es-display); overflow-wrap: anywhere; } /* le tampon « À vendre » ne coupe jamais le nom */
+.g-escales .es-offer-text small.es-offer-goal.is-low { color: #FF9A5C; font-weight: 700; }
 .g-escales .es-offer-text small { display: flex; align-items: center; gap: 6px; color: var(--soft); font-size: 0.875rem; font-weight: 700; }
 .g-escales .es-offer-text small .es-flag { width: 21px; height: 14px; }
 .g-escales .es-offer-text > span:not(.es-pips-line, .es-stamp) { font-size: 0.9375rem; font-weight: 700; }
@@ -224,6 +225,14 @@
 .g-escales .es-pick { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px 0 7px; border: 0; border-radius: 8px; background: var(--es-panel); color: var(--ink); font: 700 0.875rem var(--es-text); cursor: pointer; }
 .g-escales .es-pick .es-flag { width: 21px; height: 14px; }
 .g-escales .es-pick.is-on { background: var(--es-accent); color: #16142E; }
+.g-escales .es-pick.is-on::before { content: '✓'; font-weight: 800; }
+.g-escales .es-trade-note { margin: 0; color: #FF9A5C; font-size: 0.8125rem; font-weight: 700; }
+.g-escales .es-debtplan { display: grid; gap: 4px; }
+.g-escales .es-debtplan p { margin: 0; }
+.g-escales .es-debtplan ul { display: grid; gap: 2px; max-height: 8.5em; margin: 0; padding: 0; overflow-y: auto; font-size: 0.875rem; list-style: none; }
+.g-escales .es-round.is-last { color: var(--es-accent); }
+.g-escales .es-flash.is-big { padding: 9px 20px; background: var(--es-nav); box-shadow: 0 0 0 2px var(--es-accent), 0 8px 24px rgb(0 0 0 / 0.45); color: var(--es-accent); font-size: 1.25rem; font-weight: 800; } /* jaune sur sombre : il ne se confond pas avec un bouton */
+.g-escales .es-under { display: none; }
 .g-escales .es-gauge-row { display: grid; gap: 4px; }
 .g-escales .es-gauge-head { display: flex; align-items: baseline; justify-content: space-between; color: var(--soft); font-size: 0.875rem; font-weight: 700; }
 .g-escales .es-gauge-value { color: var(--ink); font: 800 1.125rem var(--es-display); font-variant-numeric: tabular-nums; }
@@ -276,7 +285,12 @@
   .g-escales .es-round { display: none; }
   .g-escales .es-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; }
   .g-escales .es-side .es-chip { min-height: 32px; }
-  .g-escales .es-pseudo small { display: none; }
+  .g-escales .es-pseudo { line-height: 1.1; }
+  .g-escales .es-pseudo small { display: block; font-size: 0.625rem; }
+  .g-escales .es-under { position: absolute; top: var(--uy, 70%); right: 8px; left: 8px; z-index: 1; display: block; margin: 0; color: var(--es-inv); font-size: 0.8125rem; font-weight: 600; text-align: center; pointer-events: none; }
+  .g-escales .es-under[hidden] { display: none; }
+  .g-escales .es-under.is-last { color: var(--es-accent); font-weight: 800; }
+  .g-escales .es-flash.is-big { font-size: 1.0625rem; }
   .g-escales .es-link { min-height: 40px; }
   .g-escales .es-tcols { grid-template-columns: minmax(0, 1fr); }
   .g-escales .es-big { font-size: 1.375rem; }
@@ -287,11 +301,10 @@
   .g-escales .es.is-over .es-side { display: none; }
   .g-escales .es-action.is-over { max-height: 62%; transform: none; }
   .g-escales .es-rank li { min-height: 34px; }
-  .g-escales .es-rank-name small { display: none; }
+  .g-escales .es-rank-name small { font-size: 0.6875rem; }
   .g-escales .es-flash { max-width: 92%; font-size: 0.875rem; }
   .g-escales .es-offer-pic { width: 72px; height: 72px; }
   .g-escales .es-chip { min-height: 28px; gap: 5px; padding: 0 6px 0 5px; font-size: 0.8125rem; }
-  .g-escales .es-pseudo small { display: none; }
   .g-escales .es-close { top: 8px; right: 8px; width: 44px; height: 44px; }
   .g-escales .es-standing { grid-column: 1 / -1; }
   .g-escales .es-prompt { gap: 6px; }
