@@ -13,7 +13,7 @@ ROT = math.pi/12
 
 def r_at(y):
     s = min(1.0, max(0.0, (y-Y0)/(Y1-Y0)))
-    return 0.225+0.165*(1-s)**1.8
+    return 0.225+0.12*(1-s)**1.2+0.06*math.sin(math.pi*min(1.0, s/0.6))
 
 
 def build():

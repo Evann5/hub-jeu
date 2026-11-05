@@ -214,7 +214,7 @@ def sag(a, b, drop, n):
 
 def tube(m, pts, w, col, sides=3):
     for i in range(len(pts)-1):
-        m.beam(pts[i], pts[i+1], w, col, sides=sides)
+        m.beam(pts[i], pts[i+1], w, col, sides=sides, caps=True)
 
 # ---------- plaquettes collées sur une façade (face avant = +Z) ----------
 def front(m, z, pts_xy, col, d=1):
@@ -326,7 +326,7 @@ def prang(m, cx, cz, y0, hw, H, n_t, cols, lip='grey', niche='niche', spike='whi
     if n_b == n_t:
         top_w = hw*(1-(n_t-1)/n_t)**0.75+0.02
         cone(m, cx, cz, y, y+H*0.17, top_w*0.8, spike, n=4, rot=math.pi/4)
-        cyl(m, cx, cz, y+H*0.17, y+H*0.3, 0.012, gold, n=4, caps=(False, False))
+        cyl(m, cx, cz, y+H*0.17, y+H*0.3, 0.012, gold, n=4, caps=(False, True))
         cyl(m, cx, cz, y+H*0.22, y+H*0.235, 0.04, gold, n=6)
     elif rubble:
         w = hw*(1-(n_b-1)/n_t)**0.75+0.02

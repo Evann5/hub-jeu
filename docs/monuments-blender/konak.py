@@ -56,7 +56,7 @@ def build():
             cone(m, sx*0.22, sz*0.22, 1.7, 1.78, 0.034, 'teal', n=5)
     m.box(-0.15, 0.15, 1.58, 1.74, -0.15, 0.15, 'teal', skip=('bot',))
     dome(m, 0, 0, 1.74, 0.17, 0.2, 8, 'dome', rows=3)
-    cyl(m, 0, 0, 1.94, 2.12, 0.012, 'gold', n=4, caps=(False, False))
+    cyl(m, 0, 0, 1.94, 2.12, 0.012, 'gold', n=4, caps=(False, True))
     sphere(m, 0, 2.0, 0, 0.03, 'gold', n=6, rows=3)
     for x in (-0.72, 0.72):
         cyl(m, x, 0.62, 0.06, 0.28, 0.025, 'trunk', n=5)

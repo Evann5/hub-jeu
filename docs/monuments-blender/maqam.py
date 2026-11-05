@@ -30,6 +30,7 @@ def blade(m, th, cols):
             j = (i+1) % 4
             m.poly([ra[i], ra[j], rb[j], rb[i]], col, ref)
     m.poly(rings[0], 'c3', centroid(rings[1]))
+    m.poly(rings[-1], 'c2', centroid(rings[-2]))
 
 
 def build():

@@ -12,7 +12,7 @@ def warrior(m, cx, cz, y0, col, headless=False):
     lathe(m, [(0.06, y0+0.03), (0.075, y0+0.25)], 6, col, cx, cz, rot=0.5)
     lathe(m, [(0.09, y0+0.25), (0.1, y0+0.33), (0.092, y0+0.43), (0.05, y0+0.47)], 6, ['band', 'terra_l', col], cx, cz, rot=0.5, cap_top=True)
     for sx in (-1, 1):
-        m.beam((cx+sx*0.108, y0+0.43, cz), (cx+sx*0.112, y0+0.27, cz+0.045), 0.04, col)
+        m.beam((cx+sx*0.108, y0+0.43, cz), (cx+sx*0.112, y0+0.27, cz+0.045), 0.04, col, caps=True)
     if not headless:
         cyl(m, cx, cz, y0+0.47, y0+0.51, 0.026, 'terra_d', n=5)
         sphere(m, cx, y0+0.57, cz, 0.065, 'terra_l', n=7, rows=3)

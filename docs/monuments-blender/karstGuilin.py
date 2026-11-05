@@ -44,7 +44,7 @@ def build():
             cyl(m, x0, cz, 0.075, 0.2, 0.05, 'shirt', 0.04, n=6)
             sphere(m, x0, 0.235, cz, 0.04, 'skin', n=6, rows=3)
             cone(m, x0, cz, 0.245, 0.31, 0.095, 'hat', n=8)
-            m.beam((x0+0.04, 0.17, cz+0.02), (x0+0.32, 0.02, cz+0.1), 0.02, 'bamboo_d')
+            m.beam((x0+0.04, 0.17, cz+0.02), (x0+0.32, 0.02, cz+0.1), 0.02, 'bamboo_d', caps=True)
         if rot_:
             f = rot_y(rot_, cx, cz)
             xform(m, f, s)

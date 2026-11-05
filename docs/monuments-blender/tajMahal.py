@@ -50,7 +50,7 @@ def build():
     cyl(m, CX, CZ, 0.98, 1.2, 0.21, 'marble', n=12)
     cyl(m, CX, CZ, 1.2, 1.23, 0.235, 'edge', n=12)
     onion(m, CX, CZ, 1.2, 0.27, 0.66, 12, 'marble')
-    cyl(m, CX, CZ, 1.86, 1.98, 0.012, 'gold', 0.012, n=4, caps=(False, False))
+    cyl(m, CX, CZ, 1.86, 1.98, 0.012, 'gold', 0.012, n=4, caps=(False, True))
     sphere(m, CX, 1.92, CZ, 0.03, 'gold', n=6, rows=3)
     # quatre minarets aux angles de la terrasse
     for sx in (-1, 1):

@@ -36,6 +36,6 @@ def build():
             m.poly([rings[k][i], rings[k][j], rings[k+1][j], rings[k+1][i]], gores[i % 6], (bx, yb+0.6, bz))
     for sx in (-1, 1):
         for sz in (-1, 1):
-            m.beam((bx+sx*0.09, 0.17, bz+sz*0.09), (bx+sx*0.12, yb+0.02, bz+sz*0.12), 0.016, 'rope')
+            m.beam((bx+sx*0.09, 0.17, bz+sz*0.09), (bx+sx*0.12, yb+0.02, bz+sz*0.12), 0.016, 'rope', caps=True)
     cyl(m, bx, bz, 0.4, 0.5, 0.03, 'burner', n=5)
     return m

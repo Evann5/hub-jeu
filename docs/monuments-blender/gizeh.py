@@ -25,5 +25,9 @@ def build():
     pyramide(m, -0.2, -0.25, 0.42, 1.12)
     pyramide(m, 0.5, 0.0, 0.29, 0.76)
     pyramide(m, -0.22, 0.5, 0.2, 0.5)
+    # petites tombes basses (mastabas) et palmiers
+    for (x, z, w, d, h) in ((-0.68, -0.62, 0.12, 0.08, 0.1), (-0.5, -0.74, 0.1, 0.07, 0.08), (0.62, -0.58, 0.1, 0.08, 0.09), (0.1, -0.74, 0.14, 0.07, 0.09)):
+        tbox(m, x, z, 0.05, 0.05+h, w, d, w*0.85, d*0.8, 'pm', col_top='pl')
+    palm(m, -0.7, 0.6, 0.42, 'trunk', 'leaf', 'leaf2', y0=0.05, lean=0.04, fronds=6, flen=0.22)
     palm(m, 0.62, 0.55, 0.5, 'trunk', 'leaf', 'leaf2', y0=0.05, lean=-0.05, fronds=6, flen=0.28)
     return m

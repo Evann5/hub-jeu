@@ -13,9 +13,9 @@ YA, YB = 0.12, 3.5         # bas et haut des ailes
 def wing_ring(a, t, y):
     d = (math.cos(a), math.sin(a))
     p = (-d[1], d[0])
-    D = 0.42*(1-t)+0.075*t        # distance du centre
-    W = 0.25*(1-t)+0.05*t         # demi-largeur
-    T = 0.15*(1-t)+0.05*t         # demi-épaisseur
+    D = 0.4*(1-t)+0.075*t        # distance du centre
+    W = 0.31*(1-t)+0.06*t         # demi-largeur
+    T = 0.18*(1-t)+0.06*t         # demi-épaisseur
     pts = []
     for (u, v) in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
         pts.append(((D+v*T)*d[0]+u*W*p[0], y, (D+v*T)*d[1]+u*W*p[1]))

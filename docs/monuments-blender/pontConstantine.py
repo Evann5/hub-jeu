@@ -9,10 +9,10 @@ YD = 1.06
 
 
 def falaise(m, sx):
-    cx = sx*0.66
-    tbox(m, cx, 0, 0.05, 0.5, 0.25, 0.7, 0.23, 0.68, 'cl1')
-    tbox(m, cx, 0, 0.5, 0.82, 0.23, 0.68, 0.21, 0.66, 'cl2')
-    tbox(m, cx, 0, 0.82, YD, 0.21, 0.66, 0.2, 0.64, 'cl3', col_top='grass')
+    cx = sx*0.65
+    tbox(m, cx, 0, 0.05, 0.5, 0.23, 0.7, 0.21, 0.68, 'cl1')
+    tbox(m, cx, 0, 0.5, 0.82, 0.21, 0.68, 0.2, 0.66, 'cl2')
+    tbox(m, cx, 0, 0.82, YD, 0.2, 0.66, 0.19, 0.64, 'cl3', col_top='grass')
 
 def build():
     m = Mesh(PAL)
@@ -41,6 +41,6 @@ def build():
         for p in pts[1:-1]:
             m.beam((p[0], YD, z), (p[0], p[1], z), 0.016, 'hang', sides=3, caps=False)
         # haubans vers les falaises
-        cable(m, [(-0.52, TOP+0.02, z), (-0.87, YD+0.02, z)], 0.035, 'cable')
-        cable(m, [(0.52, TOP+0.02, z), (0.87, YD+0.02, z)], 0.035, 'cable')
+        cable(m, [(-0.52, TOP+0.02, z), (-0.85, YD+0.02, z)], 0.035, 'cable')
+        cable(m, [(0.52, TOP+0.02, z), (0.85, YD+0.02, z)], 0.035, 'cable')
     return m

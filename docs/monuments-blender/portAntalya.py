@@ -12,7 +12,7 @@ def boat(m, cx, cz, rot, L, deck, mast=False):
     hull(m, [(-L/2, 0.03, 0.03, 0.075), (-L*0.25, 0.07, 0.025, 0.07), (L*0.2, 0.07, 0.025, 0.07), (L/2, 0.012, 0.05, 0.12)], 'white', deck)
     m.box(-L*0.2, L*0.1, 0.07, 0.15, -0.045, 0.045, deck, skip=('bot',))
     if mast:
-        m.beam((0.0, 0.07, 0), (0.0, 0.42, 0), 0.02, 'stone_d')
+        m.beam((0.0, 0.07, 0), (0.0, 0.42, 0), 0.02, 'stone_d', caps=True)
     xform(m, lambda p: move(cx, 0, cz)(rot_y(rot)(p)), s)
 
 def house(m, cx, cz, hw, hd, h, col, rf=0.14):

@@ -30,6 +30,6 @@ def build():
     cyl(m, 0, 0, 2.27, 2.55, 0.04, 'silver', 0.035, n=6)
     # petite sphère et mât
     sphere(m, 0, 2.6, 0, 0.1, 'pink', n=8, rows=4)
-    cyl(m, 0, 0, 2.69, 3.15, 0.022, 'white', 0.008, n=4, caps=(False, False))
+    cyl(m, 0, 0, 2.69, 3.15, 0.022, 'white', 0.008, n=4, caps=(False, True))
     cyl(m, 0, 0, 2.85, 2.88, 0.045, 'pink_d', n=6)
     return m

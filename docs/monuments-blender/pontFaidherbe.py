@@ -37,8 +37,8 @@ def build():
         x0, x1 = (0.68, 0.88) if sx > 0 else (-0.88, -0.68)
         sbox(m, x0, x1, 0.04, YD, -0.88, 0.88, 'bank', 'grass')
         tbox(m, sx*0.78, 0.0, YD, YD+0.02, 0.1, 0.5, 0.1, 0.5, 'bank2')
-    palm(m, -0.77, 0.6, 0.55, 'trunk', 'leaf', 'leaf2', y0=YD, lean=0.05, fronds=6, flen=0.26)
-    palm(m, 0.76, -0.55, 0.5, 'trunk', 'leaf', 'leaf2', y0=YD, lean=-0.05, fronds=6, flen=0.24)
+    palm(m, -0.7, 0.6, 0.55, 'trunk', 'leaf', 'leaf2', y0=YD, lean=0.05, fronds=6, flen=0.18)
+    palm(m, 0.7, -0.55, 0.5, 'trunk', 'leaf', 'leaf2', y0=YD, lean=-0.05, fronds=6, flen=0.18)
     # piles
     for px in (-0.3, 0.3):
         tbox(m, px, 0, 0.04, YD, 0.09, 0.19, 0.075, 0.17, 'pier', col_top='pier2')

@@ -27,7 +27,7 @@ def build():
     gable(m, -0.3, 0.3, -0.44, 0.34, 0.92, 0.14, 'roof_d', 'gold_l', ridge='z')
     # faîtage : épis dorés aux deux bouts
     for z in (-0.4, 0.32):
-        m.beam((0, 1.04, z), (0, 1.18, z+(0.06 if z > 0 else -0.06)), 0.03, 'gold', w1=0.008)
+        m.beam((0, 1.04, z), (0, 1.18, z+(0.06 if z > 0 else -0.06)), 0.03, 'gold', w1=0.008, caps=True)
     # chédi doré
     cx, cz = -0.58, -0.5
     m.box(cx-0.13, cx+0.13, 0.075, 0.14, cz-0.13, cz+0.13, 'white', skip=('bot',))
@@ -46,7 +46,7 @@ def build():
         for i in range(nl):
             p = pts[1+int((i+0.5)*(len(pts)-2)/nl)]
             blob(m, p[0], p[1]-0.07, p[2], 0.05, 0.065, 0.05, cols[(i+off) % 4], n=6, lats=(-65, 0, 65))
-            m.beam((p[0], p[1], p[2]), (p[0], p[1]-0.03, p[2]), 0.008, 'string')
+            m.beam((p[0], p[1], p[2]), (p[0], p[1]-0.03, p[2]), 0.008, 'string', caps=True)
     string(pa, pb, 0.16, 7)
     string(pa, (-0.5, 0.78, 0.42), 0.12, 3, 1)
     string(pb, (0.5, 0.78, 0.42), 0.12, 3, 2)
