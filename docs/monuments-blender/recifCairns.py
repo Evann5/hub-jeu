@@ -1,4 +1,5 @@
-"""Cairns : un récif de corail coloré en eaux turquoise, un îlot à palmier et un bateau d'excursion."""
+"""Cairns : un récif de corail coloré en eaux turquoise, un îlot à palmier et un bateau d'excursion.
+Passe 2 (05/11/2026) : moins chargé (cinq coraux en moins), les gros coraux restent lisibles."""
 import math
 from lib import Mesh
 from lib_maroc_portugal import *
@@ -58,13 +59,8 @@ def build():
     table(m, -0.05, -0.05, 0.24, 'purple', 'pink')
     stag(m, -0.4, -0.15, 0.32, 'orange', 'yellow')
     stag(m, 0.28, -0.32, 0.36, 'pink', 'purple')
-    stag(m, 0.4, 0.05, 0.26, 'orange')
     dome(m, 0.25, 0.1, 0.17, 'yellow', 'orange')
-    dome(m, -0.35, -0.38, 0.15, 'pink', 'red')
-    dome(m, -0.28, 0.12, 0.13, 'green', 'yellow')
-    table(m, 0.05, -0.38, 0.17, 'green', 'yellow')
     fan(m, -0.5, 0.02, 0.1, 0.28, 'red', 0.4)
-    fan(m, 0.12, 0.2, 0.09, 0.24, 'purple', -0.3)
     # îlot et palmier
     face2d(m, ring_poly([1.0, 0.9, 1.0, 0.92, 1.0, 0.88], 0.17, 0.17, -0.56, -0.56), lambda u, v: (u, 0.07, v), 'foam', (0, 0, 0))
     prism_xz(m, ring_poly([1.0, 0.9, 1.0, 0.92, 1.0, 0.88], 0.14, 0.14, -0.56, -0.56), 0.04, 0.11, 'sand', 'sand')
