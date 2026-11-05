@@ -157,6 +157,8 @@
 .g-un-seul-mot .us-recap li { padding: 4px 0; border-bottom: 2px dashed rgb(255 255 255 / 0.3); }
 .g-un-seul-mot .us-recap small { color: #E4E2FF; font-weight: 700; }
 .g-un-seul-mot .us-card > .us-btn, .g-un-seul-mot .us-card > .us-wait { justify-self: start; }
+/* Tri des indices : le bouton de validation reste collé au bas de la fenêtre, même avec beaucoup de post-it. */
+.g-un-seul-mot .us-card > .us-btn[data-k='done'] { position: sticky; bottom: 10px; z-index: 4; }
 @keyframes us-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.15, 0.9); } 100% { transform: scale(1); } }
 
 /* Confettis */
