@@ -73,23 +73,27 @@ api.post('/register', async (req, res) => {
   if (auth.signupBlocked(req.ip)) throw new ApiError(429, 'Trop d’inscriptions depuis cette connexion. Réessaie dans une heure.');
   const expected = auth.classCode();
   if (!expected) throw new ApiError(503, "Les inscriptions ne sont pas encore ouvertes : aucun code de classe n'est réglé.");
-  if (!auth.codeMatches(code, expected)) {
+  const adminPseudo = auth.isAdminPseudo(pseudo);
+  const adminCodeOk = Boolean(config.adminCode) && auth.codeMatches(code, config.adminCode);
+  if (!adminCodeOk && !auth.codeMatches(code, expected)) {
     auth.recordBadCode(req.ip);
     throw new ApiError(400, 'Ce code de classe ne marche pas. Demande-le à un admin.');
   }
+  // Les pseudos d'admin sont réservés : sinon, le premier élève qui s'inscrit avec le pseudo d'un admin le devient.
+  if (config.adminCode && adminPseudo && !adminCodeOk) throw new ApiError(409, 'Ce pseudo est déjà pris.');
   const pseudoError = auth.validatePseudo(pseudo);
   if (pseudoError) throw new ApiError(400, pseudoError);
   const passError = auth.validatePassword(password, pseudo);
   if (passError) throw new ApiError(400, passError);
   if (req.body.acceptRules !== true) throw new ApiError(400, 'Coche la case pour accepter les règles de Hubuno.');
-  if (auth.findUserByPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
+  if (auth.pseudoTaken(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
 
   auth.recordSignup(req.ip); // compté d'avance (le calcul est asynchrone), rendu si l'inscription échoue
   let user;
   try {
     const passHash = await auth.hashPassword(password);
     // Pendant le calcul, quelqu'un d'autre a pu prendre le pseudo : on revérifie juste avant d'écrire.
-    if (auth.findUserByPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
+    if (auth.pseudoTaken(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
     user = auth.createUser({ pseudo, passHash });
   } catch (err) {
     auth.refundSignup(req.ip);
@@ -147,6 +151,7 @@ api.post('/password', async (req, res) => {
 api.post('/delete-account', async (req, res) => {
   const user = requireUser(req);
   if (!(await auth.checkPassword(str(req.body.password), user.pass_hash))) throw new ApiError(400, 'Mot de passe incorrect.');
+  if (user.role === 'admin' && db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND banned = 0").get().n <= 1) throw new ApiError(400, 'Tu es le dernier admin : nomme d’abord un autre admin.');
   // Supprime le compte, ses sessions, ses messages et ses réactions (clés étrangères en cascade), puis ses messages privés et ses lectures.
   transaction(() => {
     deleteUserData(user.id);

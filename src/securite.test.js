@@ -147,19 +147,21 @@ test('le calcul ne bloque pas la boucle principale', async () => {
   assert.ok(ticks >= 5, `la boucle a continué de tourner (${ticks} battements)`);
 });
 
-test('connexion : clé coupée à 40 caractères, 10 échecs par pseudo, 30 par adresse', () => {
+test('connexion : clé coupée à 40 caractères, 10 échecs par pseudo, 200 par adresse (toute une classe partage souvent la même)', () => {
   const longA = `${'x'.repeat(40)}AAAA`;
   for (let i = 0; i < 10; i++) auth.recordAttempt('1.1.1.1', `${'x'.repeat(40)}${i}`); // pseudos différents après 40 caractères
   assert.equal(auth.tooManyFailures('1.1.1.1', longA), true, 'même clé une fois coupée');
   assert.equal(auth.tooManyFailures('1.1.1.2', longA), false, 'autre adresse');
-  for (let i = 0; i < 30; i++) auth.recordAttempt('2.2.2.2', `pseudo${i}`);
+  for (let i = 0; i < 29; i++) auth.recordAttempt('2.2.2.2', `pseudo${i}`);
+  assert.equal(auth.tooManyFailures('2.2.2.2', 'encore-un-autre'), false, 'un élève seul ne bloque pas la classe');
+  for (let i = 29; i < 200; i++) auth.recordAttempt('2.2.2.2', `pseudo${i}`);
   assert.equal(auth.tooManyFailures('2.2.2.2', 'encore-un-autre'), true, 'compteur par adresse seule');
   auth.recordSuccess('3.3.3.3', 'zoe');
   assert.equal(auth.tooManyFailures('3.3.3.3', 'zoe'), false);
 });
 
-test('inscription : 10 mauvais codes par adresse, puis refus', () => {
-  for (let i = 0; i < 10; i++) {
+test('inscription : 40 mauvais codes par adresse, puis refus', () => {
+  for (let i = 0; i < 40; i++) {
     assert.equal(auth.badCodeBlocked('4.4.4.4'), false);
     auth.recordBadCode('4.4.4.4');
   }

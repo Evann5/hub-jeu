@@ -20,12 +20,15 @@ const MAX_SOCKETS_PER_USER = 5; // onglets et appareils ouverts en même temps, 
 const MIN_CLASS_CODE = 10;
 // Limite générale : 60 événements par 5 s et par personne (tous appareils confondus). Les coups de jeu ont la leur (play.js).
 const generalLimit = createEventLimiter(60, 5000);
+const hourlyMessages = createEventLimiter(300, 3600_000); // une discussion animée passe, remplir le disque non
+const REFUSED_MAX = 500; // refusés d'affilée : ce n'est plus un humain, on coupe
 // Limites plus strictes pour ce qui ne sert jamais en rafale (chaque minute ou chaque 5 s, par personne).
 const strictLimits = {
   typing: createEventLimiter(10, 5000),
   profile: createEventLimiter(5, 60_000),
   'table:create': createEventLimiter(6, 60_000),
   'table:invite': createEventLimiter(10, 60_000),
+  'table:watch': createEventLimiter(40, 60_000), // chaque entrée diffuse l'état de la table à ceux qui la regardent
 };
 
 function allUsers() {
@@ -102,8 +105,14 @@ function handler(socket, fn, { admin = false, event = null, muteBlocked = false,
     try {
       const userId = socket.data.userId;
       if ((general && generalLimit.hit(userId)) || (event && strictLimits[event].hit(userId))) {
+        socket.data.refused = (socket.data.refused || 0) + 1;
+        if (socket.data.refused > REFUSED_MAX) {
+          socket.disconnect(true);
+          return;
+        }
         throw new chat.ChatError('Doucement : trop d’actions d’un coup, réessaie dans quelques secondes.');
       }
+      socket.data.refused = 0;
       const me = getUser(userId);
       if (!me || me.banned) {
         socket.disconnect(true);
@@ -188,6 +197,7 @@ export function attachRealtime(httpServer) {
       chat.checkScope(scope, me.id);
       assertNotMuted(me);
       if (rateLimited(me.id)) throw new chat.ChatError('Doucement : attends quelques secondes avant le prochain message.');
+      if (hourlyMessages.hit(me.id)) throw new chat.ChatError('Tu as envoyé beaucoup de messages : réessaie dans un moment.');
       const message = chat.postMessage(scope, me.id, body);
       emitToScope(scope, 'message', message);
       return { message };
@@ -245,7 +255,7 @@ export function attachRealtime(httpServer) {
     }, { admin: true }));
 
     socket.on('admin:mute', handler(socket, ({ userId, minutes }, me) => {
-      const user = targetUser(userId, me);
+      const user = notOwner(targetUser(userId, me), 'mettre en sourdine le propriétaire du hub');
       const m = Number(minutes);
       if (!(m >= 0 && m <= 60 * 24 * 30)) throw new chat.ChatError('Durée invalide.');
       const until = m === 0 ? 0 : Date.now() + m * 60_000;

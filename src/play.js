@@ -133,6 +133,7 @@ export function registerPlay(socket, handler) {
 
   socket.on('table:create', handler(socket, ({ game }, me) => {
     const t = tables.createTable(String(game), me.id);
+    for (const id of tables.trimFinished(me.id)) changed(null, id);
     changed(t);
     return { id: t.id };
   }, { event: 'table:create', muteBlocked: true }));

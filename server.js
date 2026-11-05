@@ -55,6 +55,14 @@ if (config.basePath) {
 }
 app.use(config.basePath || '/', router);
 
+// Une adresse mal formée ou un fichier absent : jamais de trace technique, quel que soit le réglage de NODE_ENV.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err.status >= 400 && err.status < 500 ? err.status : 500;
+  if (status === 500) console.error(err);
+  return res.status(status).type('text/plain').send(status === 404 ? 'Introuvable.' : status === 500 ? 'Erreur du serveur.' : 'Requête invalide.');
+});
+
 const server = createServer(app);
 attachRealtime(server);
 
@@ -71,5 +79,7 @@ setInterval(housekeeping, 3600_000).unref();
 
 server.listen(config.port, config.host, () => {
   console.log(`Hubuno écoute sur le port ${config.port}${config.basePath ? `, sous ${config.basePath}` : ''}.`);
+  if (process.env.NODE_ENV === 'production' && !config.host) console.warn('HOST est vide : sans proxy devant, X-Forwarded-For permet de contourner les limites. Sur un VPS, mettre HOST=127.0.0.1.');
+  if (process.env.NODE_ENV === 'production' && config.admins.length && !config.adminCode) console.warn('ADMIN_CODE est vide : le premier élève qui prend un pseudo de ADMINS devient admin.');
   if (!classCode()) console.warn('Aucun code de classe : réglez CLASS_CODE pour ouvrir les inscriptions.');
 });

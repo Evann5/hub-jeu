@@ -18,6 +18,8 @@ export const config = {
   classCode: process.env.CLASS_CODE || '',
   // Pseudos qui deviennent admins à l'inscription, séparés par des virgules.
   admins: (process.env.ADMINS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
+  // Le code qui protège ces pseudos : à donner à la place du code de classe pour créer un compte admin. Vide : le code de classe suffit (en local).
+  adminCode: process.env.ADMIN_CODE || '',
   messageRetentionDays: 365,
   sessionDays: 60,
 };

@@ -7,7 +7,7 @@ Pour l'ami de Minh qui gère le VPS. Compter 30 minutes. Écrit pour Debian ou U
 - Node.js 22.13 ou plus, à cause de la base SQLite intégrée à Node. Aucun module natif à compiler.
 - Un sous-domaine qui pointe vers le VPS, par exemple `jeux.exemple.fr`, de préférence à un sous-dossier.
 - 200 Mo de mémoire libre et 100 Mo de disque suffisent pour une classe.
-- De Minh : le code de classe (10 caractères au moins, c'est la seule barrière à l'inscription) et son pseudo d'admin.
+- De Minh : le code de classe (10 caractères au moins, c'est la seule barrière à l'inscription), son pseudo d'admin et un code admin, différent du code de classe.
 
 ## 1. Les fichiers
 
@@ -33,6 +33,7 @@ PORT=3000
 DATA_DIR=/opt/hubuno/data
 CLASS_CODE=le-code-de-la-classe
 ADMINS=pseudo-de-minh
+ADMIN_CODE=un-code-connu-de-minh-seul
 ```
 
 `/etc/systemd/system/hubuno.service` :
@@ -97,12 +98,14 @@ sudo certbot --nginx -d jeux.exemple.fr   # HTTPS obligatoire : le cookie de ses
 **À ne pas oublier :**
 
 - Hubuno fait confiance à un seul proxy devant lui. `X-Forwarded-For` doit donc être remplacé par nginx, comme ci-dessus, et `HOST=127.0.0.1` empêche d'atteindre l'appli sans lui. Sinon, les limites d'essais de mot de passe se contournent.
-- Hubuno compresse déjà ses fichiers. Rien à régler dans nginx.
+- Hubuno compresse déjà ses fichiers et pose ses en-têtes de sécurité. Rien à régler dans nginx, et pas de `add_header` qui les écraserait.
+- Sur un port non standard, remplacer `$host` par `$http_host` : le contrôle d'origine du temps réel compare l'hôte avec son port.
+- Avec un autre proxy devant nginx (Cloudflare…), toute la classe aurait la même adresse : le dire à Minh avant, il y a un réglage à changer (`trust proxy` dans `server.js`).
 - Dans un sous-dossier, ajouter `BASE_PATH=/hubuno` dans `/etc/hubuno.env` et `location /hubuno/` dans nginx, avec `proxy_pass http://127.0.0.1:3000;` sans barre finale.
 
 ## 4. Les premiers comptes
 
-**Minh crée son compte avant de donner le code de classe à qui que ce soit** : le premier inscrit avec un pseudo de `ADMINS` devient admin.
+Minh crée son compte avec son pseudo et le **code admin** à la place du code de classe. Grâce à ce code, aucun élève ne peut prendre un pseudo de `ADMINS`, même avant lui. Le dernier admin ne peut pas supprimer son compte.
 
 ## 5. L'essai avant d'inviter la classe
 
@@ -111,7 +114,7 @@ sudo certbot --nginx -d jeux.exemple.fr   # HTTPS obligatoire : le cookie de ses
 3. Partie à 10 joueurs sur de vrais téléphones, dont un iPhone.
 4. Test de sécurité (agent `securite`) sur la vraie adresse : ce sera la première fois que Hubuno est public.
 
-Une classe entière partage souvent la même adresse sur le Wi-Fi de l'école. Limites par adresse : 60 inscriptions par heure, 30 échecs de connexion et 10 mauvais codes de classe (15 minutes). Redémarrer le service les remet à zéro.
+Une classe entière partage souvent la même adresse sur le Wi-Fi de l'école. Limites par adresse : 60 inscriptions par heure, 200 échecs de connexion et 40 mauvais codes de classe (15 minutes). Redémarrer le service les remet à zéro.
 
 ## 6. Sauvegarder
 

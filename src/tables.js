@@ -298,6 +298,14 @@ export function dropUser(userId, { deleted = false } = {}) {
 }
 
 // Ménage : salons inactifs depuis 12 h, parties terminées depuis 3 jours, parties abandonnées depuis 14 jours.
+// Les parties terminées d'un hôte ne s'accumulent pas dans la liste de toute la classe : on garde les 5 dernières.
+export function trimFinished(hostId) {
+  const over = [...tables.values()].filter((t) => t.hostId === hostId && t.status === 'over').sort((a, b) => b.updatedAt - a.updatedAt);
+  const removed = over.slice(5);
+  removed.forEach(remove);
+  return removed.map((t) => t.id);
+}
+
 export const lobbies = () => [...tables.values()].filter((t) => t.status === 'lobby');
 export function dropLobby(t) {
   remove(t);

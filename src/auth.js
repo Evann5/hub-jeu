@@ -7,7 +7,9 @@ import { COLORS, AVATARS, LIMITS } from './options.js';
 import { createLimiter, passwordProblem, safeEqual, PASSWORD_MAX } from './securite.js';
 
 export const COOKIE = 'hubuno_session';
-const PSEUDO_RE = new RegExp(`^[\\p{L}\\p{N}_.-]{${LIMITS.pseudoMin},${LIMITS.pseudoMax}}$`, 'u');
+// Alphabet latin seulement : sinon un « а » cyrillique permet d'imiter le pseudo d'un admin.
+const PSEUDO_RE = new RegExp(`^[\\p{Script=Latin}0-9_.-]{${LIMITS.pseudoMin},${LIMITS.pseudoMax}}$`, 'u');
+const plainPseudo = (pseudo) => pseudo.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 // scrypt tourne dans le pool de threads de Node (la boucle principale n'est jamais bloquée), mais on limite les calculs en parallèle :
 // 2 à la fois, 100 en attente au plus, le reste est refusé (un déluge de connexions ne doit pas saturer le serveur).
@@ -94,7 +96,7 @@ export function createUser({ pseudo, passHash }) {
     pass_hash: passHash,
     avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
     color: colors[Math.floor(Math.random() * colors.length)],
-    role: config.admins.includes(pseudo.toLowerCase()) ? 'admin' : 'membre',
+    role: isAdminPseudo(pseudo) ? 'admin' : 'membre',
   };
   const { lastInsertRowid } = db
     .prepare('INSERT INTO users (pseudo, pass_hash, avatar, color, role, created_at) VALUES (?, ?, ?, ?, ?, ?)')
@@ -104,6 +106,16 @@ export function createUser({ pseudo, passHash }) {
 
 export function getUser(id) {
   return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+}
+
+// Élodie, élodie et Elodie sont le même pseudo pour un lecteur : un seul compte.
+export function pseudoTaken(pseudo) {
+  const wanted = plainPseudo(pseudo);
+  return db.prepare('SELECT pseudo FROM users').all().some((u) => plainPseudo(u.pseudo) === wanted);
+}
+
+export function isAdminPseudo(pseudo) {
+  return config.admins.includes(plainPseudo(pseudo)) || config.admins.includes(pseudo.toLowerCase());
 }
 
 export function findUserByPseudo(pseudo) {
@@ -156,7 +168,7 @@ export function readCookie(header, name) {
 // Les tables sont plafonnées à 10 000 entrées : une fois pleines, les nouvelles clés sont refusées (429).
 const WINDOW = 15 * 60_000;
 const failuresByKey = createLimiter({ max: 10, windowMs: WINDOW });
-const failuresByIp = createLimiter({ max: 30, windowMs: WINDOW });
+const failuresByIp = createLimiter({ max: 200, windowMs: WINDOW }); // large : toute une classe partage souvent la même adresse
 const loginKey = (ip, pseudo) => `${ip}|${String(pseudo).toLowerCase().slice(0, 40)}`;
 
 export function tooManyFailures(ip, pseudo) {
@@ -178,7 +190,7 @@ export function recordSuccess(ip, pseudo) {
 }
 
 // Inscriptions : 10 mauvais codes de classe par 15 minutes et 60 inscriptions par heure, par adresse.
-const badCodes = createLimiter({ max: 10, windowMs: WINDOW });
+const badCodes = createLimiter({ max: 40, windowMs: WINDOW });
 const signups = createLimiter({ max: 60, windowMs: 3600_000 }); // large : toute une classe peut s'inscrire d'un coup depuis le même Wi-Fi
 
 export const badCodeBlocked = (ip) => badCodes.blocked(ip);
