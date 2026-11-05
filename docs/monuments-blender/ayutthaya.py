@@ -29,7 +29,7 @@ def build():
     # briques éboulées et grand arbre
     for (x, z, w) in ((0.3, 0.7, 0.06), (-0.2, 0.62, 0.05), (0.62, 0.68, 0.07), (-0.5, 0.74, 0.05)):
         m.box(x-w, x+w, 0.05, 0.05+w*1.2, z-w, z+w, 'brick_d', skip=('bot',))
-    tx, tz = 0.62, -0.55
+    tx, tz = 0.55, -0.55
     cyl(m, tx, tz, 0.17, 0.62, 0.05, 'trunk', 0.035, n=6)
     for (dx, dz, dy, r) in ((0, 0, 0.78, 0.26), (-0.15, 0.08, 0.66, 0.18), (0.14, 0.06, 0.7, 0.19)):
         blob(m, tx+dx, dy, tz+dz, r, r*0.75, r, 'leaf' if dx == 0 else 'leaf2', n=7)

@@ -539,7 +539,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const spots = [-3.4, 3.5];
     PROPS_OF[reg.id].forEach((name, i) => {
       const p = center.clone().addScaledVector(U, spots[i]);
-      items.push({ object: buildProp(name), matrix: placed(p.x, p.z, Math.atan2(U.x, U.z) + 1.1, 1.05).setPosition(p.x, BANNER_H, p.z), ao: BANNER_H });
+      // En haut du plateau, le décor passe devant les noms de la rangée du dessus : il reste petit.
+      items.push({ object: buildProp(name), matrix: placed(p.x, p.z, Math.atan2(U.x, U.z) + 1.1, r < 2 ? 0.6 : 1.05).setPosition(p.x, BANNER_H, p.z), ao: BANNER_H });
     });
     const pole = new THREE.Group();
     const steel = new THREE.MeshBasicMaterial({ color: '#E7EBF0' });
