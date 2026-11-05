@@ -1,10 +1,13 @@
-"""Chiang Mai (Thaïlande) : temple du nord (Lanna) aux toits rouges superposés, chédi doré, guirlandes de lanternes entre deux mâts."""
+"""Chiang Mai (Thaïlande) : temple du nord (Lanna) aux toits rouges superposés, chédi doré, et la fête des lanternes (Yi Peng) :
+trois guirlandes de grosses lanternes vives entre deux hauts mâts, et des lanternes volantes qui montent au-dessus du temple.
+Passe 2 (05/11/2026) : lanternes quatre fois plus grosses, couleurs saturées, temple assombri pour qu'elles ressortent."""
 import math
 from lib import Mesh
 from lib_asie_turquie import *
 
-PAL = {'ground': '#D9C08E', 'court': '#EBDDB8', 'wall': '#F6EEDC', 'roof': '#B73A2E', 'roof_d': '#8C2A22', 'gold': '#E5B53A', 'gold_l': '#F2D06A',
-       'wood': '#7A4A2E', 'dark': '#3B2A22', 'l1': '#F7B93C', 'l2': '#E9603C', 'l3': '#F5EBCB', 'l4': '#E8498A', 'string': '#6B5A48', 'white': '#F6EEDC'}
+PAL = {'ground': '#8A7553', 'court': '#BCA578', 'wall': '#EFE3C8', 'roof': '#9A3027', 'roof_d': '#6F211D', 'gold': '#E5B53A', 'gold_l': '#F2D06A',
+       'wood': '#6A3F28', 'dark': '#3B2A22', 'l1': '#FFC928', 'l2': '#FF6A2B', 'l3': '#FFF1C4', 'l4': '#F23D8E', 'l5': '#34C2D0', 'string': '#4A3A2E', 'white': '#F6EEDC',
+       'glow': '#FFE9A8', 'glow2': '#FFC46B'}
 
 def build():
     m = Mesh(PAL)
@@ -35,23 +38,28 @@ def build():
     lathe(m, [(0.13, 0.2), (0.15, 0.3), (0.13, 0.42), (0.09, 0.54), (0.06, 0.68), (0.035, 0.84), (0.02, 0.98), (0, 1.08)], 8, 'gold', cx, cz)
     for yb in (0.34, 0.5, 0.66):
         cyl(m, cx, cz, yb, yb+0.025, 0.12-0.2*(yb-0.34)*0.32, 'gold_l', n=8)
-    # deux mâts, guirlandes et lanternes
-    pa, pb = (-0.8, 0.9, 0.66), (0.8, 0.9, 0.66)
+    # deux hauts mâts, trois guirlandes de grosses lanternes
+    H = 1.32
+    pa, pb = (-0.8, H, 0.66), (0.8, H, 0.66)
     for p in (pa, pb):
-        cyl(m, p[0], p[2], 0.06, p[1], 0.022, 'wood', 0.015, n=5)
-    cols = ['l1', 'l2', 'l3', 'l4']
-    def string(a, b, drop, nl, off=0):
+        cyl(m, p[0], p[2], 0.06, p[1], 0.026, 'wood', 0.017, n=5)
+    cols = ['l1', 'l2', 'l3', 'l4', 'l5']
+    def string(a, b, drop, nl, off=0, size=1.0):
         pts = sag(a, b, drop, 10)
         tube(m, pts, 0.012, 'string')
         for i in range(nl):
             p = pts[1+int((i+0.5)*(len(pts)-2)/nl)]
-            blob(m, p[0], p[1]-0.08, p[2], 0.065, 0.085, 0.065, cols[(i+off) % 4], n=6, lats=(-65, 0, 65))
-            m.beam((p[0], p[1], p[2]), (p[0], p[1]-0.03, p[2]), 0.008, 'string', caps=True)
-    string(pa, pb, 0.16, 7)
-    string(pa, (-0.5, 0.78, 0.42), 0.12, 3, 1)
-    string(pb, (0.5, 0.78, 0.42), 0.12, 3, 2)
-    string((-0.8, 0.9, 0.66), (-0.78, 0.7, -0.3), 0.1, 3, 3)
-    string((0.8, 0.9, 0.66), (0.78, 0.7, -0.3), 0.1, 3, 0)
-    cyl(m, -0.78, -0.3, 0.075, 0.7, 0.018, 'wood', 0.014, n=5)
-    cyl(m, 0.78, -0.3, 0.075, 0.7, 0.018, 'wood', 0.014, n=5)
+            r, h = 0.085*size, 0.115*size
+            m.beam((p[0], p[1], p[2]), (p[0], p[1]-0.03, p[2]), 0.008, 'string', caps=False, sides=3)
+            blob(m, p[0], p[1]-0.03-h, p[2], r, h, r, cols[(i+off) % 5], n=6, lats=(-62, 0, 62))
+    string(pa, pb, 0.2, 9, 0)
+    string((-0.8, H-0.2, 0.66), (0.8, H-0.2, 0.66), 0.16, 8, 2, 0.9)
+    string((-0.8, H-0.4, 0.66), (0.8, H-0.4, 0.66), 0.12, 7, 4, 0.8)
+    string(pa, (-0.78, 1.0, -0.3), 0.14, 4, 3)
+    string(pb, (0.78, 1.0, -0.3), 0.14, 4, 1)
+    cyl(m, -0.78, -0.3, 0.075, 1.0, 0.02, 'wood', 0.015, n=5)
+    cyl(m, 0.78, -0.3, 0.075, 1.0, 0.02, 'wood', 0.015, n=5)
+    # lanternes volantes (Yi Peng) qui montent au-dessus du temple
+    for (x, y, z, k) in ((-0.2, 1.52, 0.12, 1.0), (0.3, 1.78, -0.2, 1.15), (0.02, 2.1, 0.0, 1.0), (-0.52, 1.82, 0.3, 0.9), (0.58, 1.56, 0.34, 0.85), (-0.35, 2.3, -0.3, 0.85), (0.5, 2.25, 0.1, 0.8)):
+        blob(m, x, y, z, 0.075*k, 0.11*k, 0.075*k, 'glow', n=6, lats=(-60, 0, 60))
     return m
