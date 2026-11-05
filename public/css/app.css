@@ -1333,3 +1333,14 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
 @media (max-width: 760px) {
   .app { padding-right: env(safe-area-inset-right); }
 }
+
+/* Téléphone en paysage : le menu perd ses libellés pour tenir en hauteur (les noms restent lus par les lecteurs d'écran). */
+@media (max-height: 500px) and (min-width: 561px) {
+  .app { grid-template-columns: 68px minmax(0, 1fr); padding: 4px 4px 4px 0; }
+  .navbar { gap: 4px; padding: 2px 0; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 11px; font-size: 1rem; }
+  .nav-items { gap: 0; }
+  .nav-link { width: 60px; padding: 1px 0; font-size: 0; gap: 0; }
+  .nav-icon { width: 40px; height: 34px; border-radius: 11px; }
+  .nav-icon svg { width: 20px; height: 20px; }
+}

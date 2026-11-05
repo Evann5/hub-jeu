@@ -104,6 +104,7 @@ export function toast(text, { error = false, ms = 3500, action = false } = {}) {
   else box.style.removeProperty('--toast-top');
   box.append(el);
   setTimeout(() => el.remove(), ms);
+  return el;
 }
 
 const timeFmt = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });

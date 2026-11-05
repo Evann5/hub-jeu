@@ -277,6 +277,27 @@
 .g-escales .es-note { color: var(--soft); font-size: 0.8125rem; }
 .g-escales .es-list { display: grid; margin: 0; padding: 0; list-style: none; }
 
+.g-escales .es-outnote { position: absolute; bottom: 12px; left: var(--cx, 50%); z-index: 2; margin: 0; padding: 6px 14px; border-radius: 999px; background: var(--es-nav); box-shadow: inset 0 0 0 1px var(--es-nav4); color: #FFFFFF; font-size: 0.875rem; font-weight: 600; text-align: center; white-space: nowrap; pointer-events: none; transform: translateX(-50%); }
+.g-escales .es-outnote[hidden] { display: none; }
+/* Téléphone en paysage : le bouton ne cache plus le plateau, et les outils restent en haut de la colonne, les joueurs défilent dessous. */
+@media (max-height: 500px) and (min-width: 561px) {
+  .g-escales .es-side { display: flex; flex-direction: column; width: 216px; top: 6px; max-height: calc(100% - 12px); }
+  .g-escales .es-tools { order: -1; flex: none; }
+  .g-escales .es-link { min-height: 36px; font-size: 0.875rem; }
+  .g-escales .es-panel { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 4px; }
+  .g-escales .es-side .es-chip { min-height: 30px; }
+  .g-escales .es-pseudo small { display: none; }
+  .g-escales .es-round { font-size: 0.8125rem; }
+  .g-escales .es-flash { top: calc(var(--by, 70%) - 44px); padding: 3px 12px; font-size: 0.8125rem; } /* au-dessus de la barre de temps */
+  .g-escales .es-action.is-plain { width: min(230px, 42%); }
+  .g-escales .es-action.is-plain .es-btn { min-height: 40px; font-size: 0.9375rem; box-shadow: 0 3px 0 var(--es-primary-edge); }
+  .g-escales .es-action.is-plain .es-prompt .es-btn.is-ghost { min-height: 40px; }
+  .g-escales .es-action.is-plain .es-btn:active:not(:disabled) { box-shadow: 0 1px 0 var(--es-primary-edge); transform: translateY(2px); }
+  .g-escales .es-action:not(.is-plain, .is-over) { width: min(380px, 62%); max-height: 92%; padding: 8px 10px; top: 50%; gap: 6px; }
+  .g-escales .es-offer-pic { width: 52px; height: 52px; }
+  .g-escales .es-btn { min-height: 40px; }
+}
+
 @media (max-width: 760px) {
   .g-escales .es-world { background-position: right -55vw bottom -30vw, 0 0; background-size: 175vw auto, auto; }
   .g-escales .es-focus { position: fixed; right: 6px; bottom: 8px; left: 6px; z-index: 4; max-height: 42%; overflow-y: auto; }

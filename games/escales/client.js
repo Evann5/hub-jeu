@@ -63,7 +63,8 @@ export function mount(root, api) {
   const turnBox = h('div.es-turn', { hidden: true, 'aria-hidden': 'true' }); // le bandeau du hub et la liste des joueurs le disent déjà aux lecteurs d'écran
   // Sur téléphone, sous le plateau : où en est la partie, et le rappel que les cases se touchent.
   const under = h('p.es-under');
-  const frame = h('div.es', stage, loading, tip, turnBox, under, side, flash, action, layer);
+  const outNote = h('p.es-outnote', { hidden: true }, 'Tu es éliminé : tu regardes la fin de la partie.');
+  const frame = h('div.es', stage, loading, tip, turnBox, under, outNote, side, flash, action, layer);
   api.gateTurn();
   root.append(frame);
 
@@ -358,7 +359,7 @@ export function mount(root, api) {
           p.cash >= v.debt.amount ? null : v.raisable >= v.debt.amount ? debtNote(p) : h('p.es-note', `Même en vendant tout, tu n'aurais que ${money(v.raisable ?? p.cash)}. Négocie avec un joueur, ou c'est la faillite.`),
           p.cash >= v.debt.amount ? btn(`Payer ${money(v.debt.amount)}`, { type: 'pay' })
             : v.raisable >= v.debt.amount ? btn('Réunir l’argent et payer', { type: 'raise' }) : null,
-          confirmBankrupt ? btn('Oui, je déclare faillite', { type: 'bankrupt' }, '.is-danger')
+          confirmBankrupt ? h('div.es-choice', btn('Oui, je déclare faillite', { type: 'bankrupt' }, '.is-danger'), h('button.es-btn.is-ghost', { type: 'button', onclick: () => { confirmBankrupt = false; promptKey = null; renderAction(); } }, 'Annuler'))
             : h('button.es-btn.is-danger', { type: 'button', onclick: () => { confirmBankrupt = true; promptKey = null; renderAction(); } }, 'Déclarer faillite')];
       case 'end':
         return [btn('Terminer mon tour', { type: 'endTurn' }), buildLink()];
@@ -437,6 +438,11 @@ export function mount(root, api) {
     const t = TILES[p.pos];
     return t.type === 'city' ? `à ${t.name}` : `sur ${t.name}`;
   };
+  // Quand la carte d'action est haute, les outils remontent : la ligne sous le plateau s'efface plutôt que de passer derrière eux.
+  function fitUnder() {
+    under.hidden = v.over;
+    if (!under.hidden && getComputedStyle(under).display !== 'none' && under.getBoundingClientRect().bottom > tools.getBoundingClientRect().top - 2) under.hidden = true;
+  }
   function renderTurn(covered) {
     const p = v.players[v.cur];
     // Sur ordinateur, une fiche à décider prend le milieu du plateau ; sur téléphone, elle est en bas et le milieu reste libre.
@@ -461,6 +467,16 @@ export function mount(root, api) {
     }
   }
 
+  // Sur téléphone, les outils se posent au-dessus de la carte d'action. Écran caché (onglet Chat), elle mesure 0 : on remesure à son retour.
+  function syncActionHeight() {
+    frame.style.setProperty('--act-h', `${action.hidden ? 0 : action.offsetHeight}px`);
+  }
+  const actionSize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+    syncActionHeight();
+    if (v) fitUnder();
+  }) : null;
+  actionSize?.observe(action);
+  actionSize?.observe(root);
   let lastAnnounced = false;
   let announce = null;
   let shownTrades = null;
@@ -496,11 +512,10 @@ export function mount(root, api) {
 
     action.hidden = !prompt.childElementCount || !boardReady; // pas de bouton tant que le plateau n'est pas là
     // Sur téléphone, les outils se posent juste au-dessus de la carte d'action, quelle que soit sa hauteur.
-    frame.style.setProperty('--act-h', `${action.hidden ? 0 : action.offsetHeight}px`);
-    // Quand la carte d'action est haute, les outils remontent : la ligne sous le plateau s'efface plutôt que de passer derrière eux.
-    under.hidden = v.over;
-    if (!under.hidden && getComputedStyle(under).display !== 'none' && under.getBoundingClientRect().bottom > tools.getBoundingClientRect().top - 2) under.hidden = true;
+    syncActionHeight();
+    fitUnder();
     frame.classList.toggle('is-buying', v.phase === 'buy' && myTurn());
+    outNote.hidden = v.over || !me()?.out;
     renderTurn(!action.hidden && !plain);
 
     renderTrades();
@@ -853,6 +868,17 @@ export function mount(root, api) {
   }
 
   const onKey = (e) => {
+    if (e.key === 'Tab' && overlay) { // le clavier reste dans la fiche ouverte
+      const inside = [...layer.querySelectorAll('button:not(:disabled), input:not(:disabled), a[href]')];
+      if (inside.length) {
+        const at = inside.indexOf(document.activeElement);
+        const next = e.shiftKey ? (at <= 0 ? inside.length - 1 : at - 1) : (at === inside.length - 1 ? 0 : at + 1);
+        if (at === -1 || (e.shiftKey ? at === 0 : at === inside.length - 1)) {
+          e.preventDefault();
+          inside[next].focus();
+        }
+      }
+    }
     if (e.key === 'Escape') {
       if (overlay) closeOverlay();
       else if (focusId !== null) setFocus(null);
@@ -935,6 +961,7 @@ export function mount(root, api) {
     clearInterval(tick);
     clearTimeout(flashTimer);
     clearTimeout(uiTimer);
+    actionSize?.disconnect();
     document.removeEventListener('keydown', onKey);
     document.title = pageTitle;
     sound.destroy();

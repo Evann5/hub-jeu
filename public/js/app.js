@@ -165,7 +165,7 @@ function startRealtime() {
   socket.on('invite', ({ tableId, game, from }) => {
     const g = gameOf(game);
     const who = state.users.get(from)?.pseudo || 'Quelqu’un';
-    toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}` }, 'Rejoindre')], { ms: 12000, action: true });
+    toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}`, onclick: (e) => e.currentTarget.closest('.toast')?.remove() }, 'Rejoindre')], { ms: 12000, action: true });
   });
 }
 

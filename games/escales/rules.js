@@ -381,12 +381,15 @@ function liquidate(s, p, needed) {
       p.cash += Math.floor(TILES[pos].build / 2);
     }
   }
-  for (const pos of owned) {
-    if (p.cash >= needed) break;
-    if (!s.props[pos].mortgaged && s.props[pos].level === 0) {
-      s.props[pos].mortgaged = true;
-      p.cash += mortgageValue(TILES[pos]);
-    }
+  // Au plus juste : la plus petite ville qui suffit, sinon la plus grosse, et on recommence. Jamais une ville en gage de trop.
+  while (p.cash < needed) {
+    const free = owned.filter((pos) => !s.props[pos].mortgaged && s.props[pos].level === 0);
+    if (!free.length) break;
+    const missing = needed - p.cash;
+    const byValue = free.sort((a, b) => mortgageValue(TILES[a]) - mortgageValue(TILES[b]));
+    const pos = byValue.find((x) => mortgageValue(TILES[x]) >= missing) ?? byValue.at(-1);
+    s.props[pos].mortgaged = true;
+    p.cash += mortgageValue(TILES[pos]);
   }
 }
 
