@@ -39,3 +39,13 @@ test("l'abandon donne la victoire à l'autre", () => {
   const s = leave(setup(players), 1).state;
   assert.deepEqual(status(s).winners, [2]);
 });
+
+// Audit des coups forgés : le hub filtre déjà par `turn`, mais move() doit refuser seul un coup hors tour.
+test('un joueur ne joue pas pendant le tour de l’autre, ni après la fin', () => {
+  const s = setup(players);
+  assert.throws(() => move(s, 2, { cell: 0 }), /pas ton tour/);
+  assert.throws(() => move(s, 99, { cell: 0 }), /pas ton tour/);
+  let fin = setup(players);
+  for (const [id, c] of [[1, 0], [2, 3], [1, 1], [2, 4], [1, 2]]) fin = play(fin, id, c);
+  assert.throws(() => move(fin, 2, { cell: 8 }), /terminée/);
+});

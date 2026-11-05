@@ -22,6 +22,9 @@ export function setup(players) {
 
 // Un coup : { cell: 0..8 }. On renvoie un nouvel état, ou on lève une Error avec un message pour le joueur.
 export function move(state, playerId, { cell }) {
+  // Le hub filtre déjà par `turn`, mais les règles refusent seules un coup hors tour ou après la fin.
+  if (state.winner !== null || state.draw || state.forfeit !== null) throw new Error('La partie est terminée.');
+  if (state.players[state.turn] !== playerId) throw new Error("Ce n'est pas ton tour.");
   const i = Number(cell);
   if (!Number.isInteger(i) || i < 0 || i > 8) throw new Error('Case inconnue.');
   if (state.board[i] !== null) throw new Error('Cette case est déjà prise.');

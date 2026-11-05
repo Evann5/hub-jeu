@@ -1,11 +1,13 @@
-"""Lubumbashi (RD Congo) : la grande cheminée de fonderie en brique, son panache, le terril de scories et les lingots de cuivre."""
+"""Lubumbashi (RD Congo) : la grande cheminée de fonderie en brique, son panache, le terril de scories et les lingots de cuivre.
+Passe 3 (05/11/2026) : panache rond et clair comme la fumée de Naples (plus de cubes gris)."""
 import math
 from lib import Mesh
 from lib_ico import *
+from lib_mexique_italie import blob as ico_blob      # boules à facettes de la fumée de Naples
 
 PAL = {'soil': '#C58A5B', 'soil2': '#B27547', 'brick': '#B5543A', 'brick2': '#9A4530', 'band': '#F1ECE2', 'iron': '#7B8087', 'shed': '#A8ADB3', 'shed_d': '#7C828A',
        'roof': '#5A6068', 'slag': '#2E2A2B', 'slag2': '#4A4143', 'cu': '#E0762E', 'cu2': '#F5A05A', 'mal': '#2FA58A', 'dark': '#2A211C',
-       's0': '#6A6664', 's1': '#8B8785', 's2': '#ABA8A6', 's3': '#CAC8C6', 's4': '#E6E4E2'}
+       's0': '#4F4945', 's1': '#6E6862', 's2': '#928D87', 's3': '#B9B5B0', 's4': '#D8D5D1', 's5': '#ECEAE7'}
 
 TX, TZ = -0.27, -0.28        # terril
 CHX, CHZ = 0.46, -0.4       # cheminée
@@ -17,6 +19,17 @@ def tcol(k, i):
     if k == 2 and i % 4 == 1:
         return 'cu'
     return 'slag' if (k + i) % 2 == 0 else 'slag2'
+
+
+def fumee(m, puffs):
+    """Fumée ronde et claire, comme celle du Vésuve de Naples (volcan.py) : boules à facettes, plus claires vers le haut.
+    puffs : [(x, y, z, rayon, couleur de départ 's0'..'s5')]."""
+    for (x, y, z, r, c) in puffs:
+        def colfn(pts, c=c, r=r, y=y):
+            yy = sum(p[1] for p in pts)/len(pts)
+            lvl = int(c[1])+(1 if yy > y+r*0.25 else 0)-(1 if yy < y-r*0.45 else 0)
+            return 's%d' % max(0, min(5, lvl))
+        ico_blob(m, x, y, z, r*1.05, r*0.82, r*1.05, c, 1 if r >= 0.16 else 0, colfn)
 
 
 def build():
@@ -32,9 +45,9 @@ def build():
     cyl(m, CHX, CHZ, 0.12, 2.45, 0.14, 'brick', 0.075, n=10, caps=(False, False))
     for (ya, yb, r) in ((1.95, 2.05, 0.087), (2.2, 2.28, 0.0795)):
         cyl(m, CHX, CHZ, ya, yb, r, 'band', n=10, caps=(False, False))
-    cyl(m, CHX, CHZ, 2.45, 2.52, 0.09, 'dark', 0.085, n=10, caps=(False, False))
-    smoke(m, [(CHX+0.0, 2.6, CHZ, 0.1), (CHX+0.04, 2.78, CHZ, 0.14), (CHX+0.1, 2.98, CHZ, 0.16), (CHX+0.18, 3.14, CHZ, 0.15), (CHX+0.27, 3.26, CHZ, 0.12)],
-          ['s0', 's1', 's2', 's3', 's4'])
+    cyl(m, CHX, CHZ, 2.45, 2.52, 0.09, 'dark', 0.085, n=10, caps=(False, True))     # lèvre fermée en haut : plus de trou dans la cheminée
+    fumee(m, [(CHX+0.0, 2.64, CHZ, 0.11, 's0'), (CHX+0.03, 2.84, CHZ, 0.15, 's1'), (CHX+0.08, 3.06, CHZ, 0.19, 's2'), (CHX+0.15, 3.28, CHZ, 0.2, 's3'),
+              (CHX+0.21, 3.44, CHZ, 0.17, 's4'), (CHX-0.04, 2.9, CHZ-0.04, 0.09, 's1'), (CHX+0.1, 3.0, CHZ+0.04, 0.09, 's2')])
     # halle de fonderie à toit en dents de scie
     m.box(0.02, 0.8, 0.04, 0.4, -0.02, 0.5, 'shed', skip=('bot', 'top'))
     for k in range(3):

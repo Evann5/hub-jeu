@@ -153,6 +153,7 @@ export function mount(root, api) {
         const id = a <= b ? `${a}-${b}` : `${b}-${a}`;
         const slot = h('span.dm-slot', t);
         if (animTile === id && i === (v.lastMove.side === 'left' ? 0 : last)) slot.classList.add('is-new');
+        if (v.lastMove.kind === 'play' && v.lastMove.tile === id) slot.classList.add('is-last'); // le dernier domino posé reste repéré
         if (v.chain.length > 1 && i === 0) slot.append(h('b.dm-flag', 'Début'));
         if (v.chain.length > 1 && i === last) slot.append(h('b.dm-flag', 'Fin'));
         if ((i === 0 && sides.includes('left')) || (i === last && sides.includes('right'))) t.classList.add('is-pick');

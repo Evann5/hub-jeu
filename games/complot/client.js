@@ -187,7 +187,7 @@ export function mount(root, api) {
       const had = e.who === me ? 'avais' : 'avait';
       return e.ok ? `${who} ${had} bien ${CHARS[e.char].the} : le doute était faux.` : `${who} n${e.who === me ? '’avais' : '’avait'} pas ${CHARS[e.char].the} : bluff découvert.`;
     }
-    if (e.t === 'declare' && (e.action === 'coup' || e.action === 'assassinate')) return `${pseudo(e.by)} : ${ACT_NAME[e.action]}.`;
+    if (e.t === 'declare' && (e.action === 'coup' || e.action === 'assassinate')) return `${pseudo(e.by)} utilise ${ACT_NAME[e.action]}.`;
     return '';
   }
 

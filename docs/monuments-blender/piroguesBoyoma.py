@@ -47,7 +47,7 @@ def build():
     right = [(0.62, -0.88), (0.88, -0.88), (0.88, 0.88), (0.62, 0.88), (0.54, -0.1)]
     prism_xz(m, left, 0.05, 0.18, 'grass2', 'grass')
     prism_xz(m, right, 0.05, 0.18, 'grass2', 'grass')
-    lib_ab.palm(m, -0.74, -0.5, 0.95, 'trunk', 'leaf', 'leaf2', y0=0.18, lean=0.1, fronds=6, flen=0.22)
+    lib_ab.palm(m, -0.74, -0.5, 0.95, 'trunk', 'leaf', 'leaf2', y0=0.18, lean=0.1, fronds=6, flen=0.2)
     lib_ab.palm(m, 0.76, 0.3, 0.8, 'trunk', 'leaf', 'leaf2', y0=0.18, lean=-0.1, fronds=6, flen=0.24)
     # la chute : deux bajoues de roche, le fleuve d'amont en haut, une chute d'écume à deux paliers, un bassin d'écume au pied
     for (x0, x1) in ((-0.66, -0.4), (0.4, 0.66)):

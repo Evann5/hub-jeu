@@ -63,6 +63,7 @@
 .g-dominos .dm-row.is-rev .dm-tile.is-h { flex-direction: row-reverse; }
 .g-dominos .dm-slot { position: relative; display: block; flex: none; filter: drop-shadow(2px 2px 0 var(--ink)); }
 .g-dominos .dm-slot.is-new { animation: dm-drop 0.4s var(--pop); }
+.g-dominos .dm-slot.is-last .dm-tile:not(.is-pick) { outline: 3px solid var(--lemon); outline-offset: 2px; } /* dernier domino posé, par l'un ou l'autre */
 .g-dominos .dm-flag {
   position: absolute; z-index: 2; bottom: calc(100% + 1px); left: 50%; translate: -50% 0; padding: 0 7px; border: 2px solid var(--ink); border-radius: 999px;
   background: var(--lemon); font: 800 0.625rem/1.5 'DM Figtree', system-ui, sans-serif; text-transform: uppercase; white-space: nowrap;

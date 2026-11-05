@@ -213,3 +213,39 @@ test('normalize : accents, casse, pluriel', () => {
   assert.equal(normalize('Crêpes'), normalize('crepe'));
   assert.equal(normalize('Pain au Chocolat'), 'pain au chocolat');
 });
+
+// Audit des coups forgés : move() refuse seul ce que le hub filtre déjà par `turn`.
+test('un indice se donne à son tour, pas avant', () => {
+  const s = pastWord(setup(players(5), opts, ctx()));
+  assert.equal(s.phase, 'clues');
+  const turn = status(s).turn;
+  const other = s.order.find((id) => id !== turn);
+  assert.throws(() => move(s, other, { type: 'clue', text: 'bizarre' }, ctx()), /pas à toi/);
+});
+
+test('on ne vote qu’une fois, et pas quand on est éliminé', () => {
+  let s = allClues(pastWord(setup(players(5), { ...opts, mrWhite: false }, ctx())));
+  s = pastWord(s);
+  const [victim, a, b, c, d] = [...byRole(s, 'civil'), byRole(s, 'under')[0]];
+  s = play(s, a, { type: 'vote', target: b });
+  assert.throws(() => move(s, a, { type: 'vote', target: c }, ctx()), /déjà voté/);
+  assert.equal(s.votes[a], b);
+  // Le vote élimine un civil (4 voix sur 5) ; il ne vote plus ensuite.
+  s = play(s, b, { type: 'vote', target: victim });
+  s = play(s, c, { type: 'vote', target: victim });
+  s = play(s, d, { type: 'vote', target: victim });
+  s = play(s, victim, { type: 'vote', target: a });
+  assert.ok(s.out.includes(victim), 'le civil est éliminé');
+  assert.equal(s.phase, 'verdict');
+  assert.throws(() => move(s, victim, { type: 'vote', target: a }, ctx()), /pas le moment de voter|éliminé/);
+});
+
+test('seul Mr. White éliminé propose un mot', () => {
+  let s = allClues(pastWord(setup(players(5), opts, ctx())));
+  s = pastWord(s);
+  const white = byRole(s, 'white')[0];
+  for (const id of s.order) s = play(s, id, { type: 'vote', target: id === white ? s.order.find((x) => x !== white) : white });
+  assert.equal(s.phase, 'white');
+  const other = s.order.find((id) => id !== white);
+  assert.throws(() => move(s, other, { type: 'guess', text: s.words.civil }, ctx()), /Mr. White/);
+});

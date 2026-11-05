@@ -84,3 +84,20 @@ test('abandon pendant l’écriture : on n’attend plus le joueur', () => {
   s = leave(s, 3, ctx(2000)).state;
   assert.equal(s.phase, 'vote');
 });
+
+// Audit des coups forgés : move() refuse seul ce que le hub filtre déjà par `turn`.
+test('une définition ne s’écrit qu’une fois, et pas par un joueur parti', () => {
+  let s = start();
+  s = play(s, 1, { type: 'define', text: 'Un petit chapeau' });
+  assert.throws(() => move(s, 1, { type: 'define', text: 'Un autre texte' }, ctx(1000)), /déjà/);
+  assert.equal(s.defs[1], 'Un petit chapeau');
+  s = leave(s, 3, ctx(1000)).state;
+  assert.throws(() => move(s, 3, { type: 'define', text: 'Je suis parti' }, ctx(1000)), /quitté/);
+});
+
+test('un joueur parti ne vote pas', () => {
+  let s = writeAll(start());
+  s = leave(s, 3, ctx(1000)).state;
+  const of = (id) => s.options.findIndex((o) => o.by === id);
+  assert.throws(() => move(s, 3, { type: 'vote', option: of(1) }, ctx(1000)), /quitté/);
+});

@@ -144,6 +144,7 @@ export function move(s, playerId, action, ctx) {
     }
     case 'clues': {
       if (type !== 'clue') throw new Error('C’est le moment de donner ton indice.');
+      if (nextClueGiver(s) !== playerId) throw new Error('Ce n’est pas à toi de donner un indice : attends ton tour.');
       const text = String(action.text ?? '').replace(/\s+/g, ' ').trim();
       if (!text) throw new Error('Écris un indice.');
       if (text.length > 40) throw new Error('Ton indice est trop long : 40 caractères au plus.');
@@ -155,6 +156,8 @@ export function move(s, playerId, action, ctx) {
     }
     case 'vote': {
       if (type !== 'vote') throw new Error('C’est le moment de voter.');
+      if (!alive(s).includes(playerId)) throw new Error('Tu es éliminé : tu ne votes plus.');
+      if (playerId in s.votes) throw new Error('Tu as déjà voté.');
       const target = Number(action.target);
       const pool = s.candidates || alive(s);
       if (target === playerId) throw new Error('Tu ne peux pas voter pour toi.');
@@ -165,6 +168,7 @@ export function move(s, playerId, action, ctx) {
     }
     case 'white': {
       if (type !== 'guess') throw new Error('Mr. White doit proposer un mot.');
+      if (playerId !== s.verdicts.at(-1).id) throw new Error('Seul Mr. White, éliminé, propose un mot.');
       const guess = String(action.text ?? '').trim().slice(0, 40);
       if (!guess) throw new Error('Propose un mot.');
       return { state: whiteGuessed(s, playerId, guess, ctx) };

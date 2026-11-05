@@ -212,7 +212,7 @@ export function mount(root, api) {
       const waiting = view.players.filter((id, s) => !view.left[s] && !view.picked[s]);
       return waiting.length ? `Carte posée. On attend ${names(waiting)}.` : 'Carte posée.';
     }
-    return 'Choisis une carte, tout le monde joue en même temps. Le moins de têtes gagne.';
+    return 'Choisis une carte, tous jouent ensemble. Le moins de têtes gagne.';
   }
 
   function logText(step) {

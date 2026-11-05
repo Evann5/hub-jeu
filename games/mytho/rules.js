@@ -73,11 +73,13 @@ function reveal(s, ctx) {
 }
 
 export function move(s, playerId, action, ctx) {
+  if (s.phase !== 'over' && (!s.players.includes(playerId) || s.left.includes(playerId))) throw new Error('Tu as quitté la partie.');
   if (s.phase === 'write') {
     if (action?.type !== 'define') throw new Error('Écris ta fausse définition.');
     const text = clean(action.text);
     if (text.length < 3) throw new Error('Ta définition est trop courte.');
     if (text.length > 160) throw new Error('Ta définition est trop longue : 160 caractères au plus.');
+    if (playerId in s.defs) throw new Error('Tu as déjà écrit ta définition.');
     if (same(text, s.words[s.round][1])) throw new Error('C’est… la vraie définition ! Invente autre chose pour piéger les autres.');
     const t = { ...s, defs: { ...s.defs, [playerId]: text } };
     return { state: active(t).every((id) => id in t.defs) ? startVote(t, ctx) : t };
