@@ -16,14 +16,15 @@ def clock(m, b, face, u, v, r):
     decal(m, b, face, rect(u-0.006, u+0.006, v, v+r*0.6), 'black', 0.009)
     decal(m, b, face, rect(u, u+r*0.42, v-0.006, v+0.006), 'black', 0.009)
 
-def bird(m, x, y, z, d):
-    """Oiseau aux ailes déployées, tourné vers d (+1 ou -1 selon x)."""
-    m.beam((x-d*0.07, y+0.01, z), (x+d*0.04, y+0.05, z), 0.055, 'bird', w1=0.04)         # corps
-    m.beam((x+d*0.03, y+0.05, z), (x+d*0.06, y+0.14, z), 0.025, 'bird', w1=0.018)       # cou
-    m.beam((x+d*0.05, y+0.14, z), (x+d*0.11, y+0.13, z), 0.02, 'gold', w1=0.006)        # bec
+def bird(m, x, y, z, d, s=1.7):
+    """Oiseau aux ailes déployées, tourné vers d (+1 ou -1 selon x). s = échelle."""
+    m.beam((x-d*0.07*s, y+0.01*s, z), (x+d*0.04*s, y+0.05*s, z), 0.055*s, 'bird', w1=0.04*s)         # corps
+    m.beam((x+d*0.03*s, y+0.05*s, z), (x+d*0.06*s, y+0.14*s, z), 0.025*s, 'bird', w1=0.018*s)       # cou
+    m.beam((x+d*0.05*s, y+0.14*s, z), (x+d*0.11*s, y+0.13*s, z), 0.02*s, 'gold', w1=0.006*s)        # bec
     for sd in (-1, 1):
-        m.poly([(x-d*0.02, y+0.04, z+sd*0.01), (x-d*0.07, y+0.1, z+sd*0.1), (x+d*0.02, y+0.06, z+sd*0.1)], 'bird', (x, y-1, z))
-        m.poly([(x-d*0.02, y+0.04, z+sd*0.01), (x-d*0.07, y+0.1, z+sd*0.1), (x+d*0.02, y+0.06, z+sd*0.1)], 'bird', (x, y+1, z))
+        pts = [(x-d*0.02*s, y+0.04*s, z+sd*0.01*s), (x-d*0.07*s, y+0.1*s, z+sd*0.1*s), (x+d*0.02*s, y+0.06*s, z+sd*0.1*s)]
+        m.poly(pts, 'bird', (x, y-1, z))
+        m.poly(pts, 'bird', (x, y+1, z))
 
 def tower(m, cx):
     H = 0.15

@@ -280,3 +280,55 @@ def arch_block(m, x0, x1, y0, y1, z0, z1, hw, spring, apex, col, col_in, k=6, po
 # ---------- sol ----------
 def slab(m, col, y1=0.06, x=0.88, z=0.88, x0=None, z0=None):
     m.box(-x if x0 is None else x0, x, 0.0, y1, -z if z0 is None else z0, z, col, skip=('bot',))
+
+# ---------- coque de bateau ----------
+def hull(m, stations, col, col_deck, cx=0.0, cy=0.0, cz=0.0, rot=0.0, col_in=None):
+    """Coque : stations = [(x, demi-largeur, y_fond, y_pont), ...] de l'arrière vers l'avant (x = axe du bateau). rot en degrés autour de la verticale."""
+    start = len(m.faces)
+    rings = []
+    for (x, hw, yb, yt) in stations:
+        ym = yb+(yt-yb)*0.55
+        rings.append([(x, yt, -hw), (x, ym, -hw*0.98), (x, yb, -hw*0.45), (x, yb, hw*0.45), (x, ym, hw*0.98), (x, yt, hw)])
+    for k in range(len(rings)-1):
+        a, b = rings[k], rings[k+1]
+        ref = centroid(a+b)
+        for i in range(5):
+            m.poly([a[i], a[i+1], b[i+1], b[i]], col, ref)
+        m.poly([a[5], a[0], b[0], b[5]], col_deck, ref)
+    m.poly(rings[0], col, centroid(rings[1]))
+    m.poly(rings[-1], col, centroid(rings[-2]))
+    f = rot_y(rot)
+    g = move(cx, cy, cz)
+    xform(m, lambda p: g(f(p)), start)
+
+# ---------- tour à gradins (prang) ----------
+def prang(m, cx, cz, y0, hw, H, n_t, cols, lip='grey', niche='niche', spike='white', gold='gold', build=None, rubble=None):
+    """Tour à gradins (prang thaï) : étages droits de plus en plus étroits, lèvre saillante, petites pointes aux angles, niches sur chaque face.
+    build = nombre d'étages construits (une ruine s'arrête avant le sommet) ; rubble = couleur des blocs éboulés posés sur le dernier étage."""
+    n_b = n_t if build is None else build
+    th = H*0.82/n_t
+    y = y0
+    for i in range(n_b):
+        t = i/n_t
+        w = hw*(1-t)**0.75+0.02
+        h = th*(1.15-0.45*t)
+        m.box(cx-w, cx+w, y, y+h, cz-w, cz+w, cols[i % len(cols)], skip=('bot',))
+        m.box(cx-w-0.016, cx+w+0.016, y+h-0.018, y+h, cz-w-0.016, cz+w+0.016, lip, skip=('bot',))
+        if i < n_t-1 and i % 2 == 0 and w > 0.07:
+            s1 = len(m.faces)
+            front(m, cz+w+0.003, arch2d(cx, y+h*0.12, y+h*0.5, y+h*0.78, w*0.34, 3), niche)
+            sides4(m, s1, cx, cz)
+        if i < n_t-2 and n_b == n_t:
+            for sx in (-1, 1):
+                for sz in (-1, 1):
+                    cone(m, cx+sx*(w+0.004), cz+sz*(w+0.004), y+h, y+h+hw*0.3, hw*0.075, spike, n=4, rot=math.pi/4)
+        y += h
+    if n_b == n_t:
+        top_w = hw*(1-(n_t-1)/n_t)**0.75+0.02
+        cone(m, cx, cz, y, y+H*0.17, top_w*0.8, spike, n=4, rot=math.pi/4)
+        cyl(m, cx, cz, y+H*0.17, y+H*0.3, 0.012, gold, n=4, caps=(False, False))
+        cyl(m, cx, cz, y+H*0.22, y+H*0.235, 0.04, gold, n=6)
+    elif rubble:
+        w = hw*(1-(n_b-1)/n_t)**0.75+0.02
+        for (dx, dz, k, hh) in ((-0.5, -0.4, 0.45, 0.11), (0.45, 0.3, 0.4, 0.07), (0.0, 0.5, 0.35, 0.15), (-0.3, 0.45, 0.3, 0.05)):
+            m.box(cx+dx*w-w*k*0.5, cx+dx*w+w*k*0.5, y, y+hh, cz+dz*w-w*k*0.5, cz+dz*w+w*k*0.5, rubble, skip=('bot',))

@@ -195,7 +195,10 @@ def palm(m, x, z, h, trunk, leaf, leaf2=None, y0=0.0, lean=0.0, fronds=6, flen=0
         mid = (top[0]+dx*flen*0.55, top[1]+flen*0.25, top[2]+dz*flen*0.55)
         tip = (top[0]+dx*flen, top[1]-flen*0.25, top[2]+dz*flen)
         col = leaf if (leaf2 is None or i % 2 == 0) else leaf2
-        m.poly([top, (mid[0]+px*w, mid[1], mid[2]+pz*w), tip, (mid[0]-px*w, mid[1], mid[2]-pz*w)], col, (top[0], top[1]-0.5, top[2]))
+        ma, mb = (mid[0]+px*w, mid[1], mid[2]+pz*w), (mid[0]-px*w, mid[1], mid[2]-pz*w)
+        ref = (top[0], top[1]-0.5, top[2])
+        m.poly([top, ma, mb], col, ref)     # deux triangles plans plutôt qu'un quad gauche
+        m.poly([ma, tip, mb], col, ref)
 
 
 def tree(m, x, z, y0, h, trunk, leaf, leaf2=None, r=0.14):

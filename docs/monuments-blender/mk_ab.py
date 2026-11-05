@@ -44,4 +44,8 @@ def export(name, out_dir, only=None, tag=''):
 if __name__ == '__main__':
     argv = sys.argv[sys.argv.index('--')+1:]
     for n in argv[1:]:
-        export(n, argv[0])
+        try:
+            export(n, argv[0])
+        except Exception as e:      # un monument qui plante ne bloque pas les autres
+            import traceback
+            print('Error', n, repr(e)); traceback.print_exc()

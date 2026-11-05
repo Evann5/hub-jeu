@@ -34,9 +34,9 @@ def build():
     # rive du fond et montagnes
     m.box(-0.88, 0.88, 0.04, 0.12, -0.88, -0.45, 'shore', skip=('bot',))
     m.box(-0.88, 0.88, 0.12, 0.14, -0.88, -0.55, 'grass', skip=('bot',))
-    peak(m, -0.5, -0.62, 0.5, 1.0, 0.14, 0.3)
-    peak(m, 0.12, -0.7, 0.62, 1.45, 0.14, 0.0)
-    peak(m, 0.66, -0.58, 0.42, 0.8, 0.14, 0.5)
+    peak(m, -0.5, -0.5, 0.38, 0.95, 0.14, 0.3)
+    peak(m, 0.05, -0.5, 0.38, 1.3, 0.14, 0.0)
+    peak(m, 0.55, -0.52, 0.33, 0.8, 0.14, 0.5)
     # rocher
     R = [0.66, 0.74, 0.62, 0.72, 0.84, 0.70, 0.60, 0.68, 0.78, 0.70]
     face2d(m, ring_poly(R, 0.55, 0.0, 0.3), lambda u, v: (u, 0.045, v), 'foam', (0, 0, 0))
@@ -44,13 +44,13 @@ def build():
     prism_xz(m, ring_poly(R, 0.4, 0.0, 0.28, 0.2), 0.2, 0.34, 'rock2', 'top')
     # phare rayé
     TX, TZ, Y = 0.0, 0.28, 0.34
-    n, r0, r1, bands, Hh = 8, 0.15, 0.1, 5, 0.95
+    n, r0, r1, bands, Hh = 8, 0.19, 0.12, 5, 1.2
     prof = [(r0-(r0-r1)*k/bands, Y+Hh*k/bands) for k in range(bands+1)]
     lathe(m, prof, n, ['red' if k % 2 == 0 else 'white' for k in range(bands)], TX, TZ)
     yt = Y+Hh
-    lathe(m, [(r1, yt), (0.17, yt+0.04), (0.17, yt+0.07), (0.15, yt+0.07)], n, ['dark', 'dark', 'dark'], TX, TZ)
-    lathe(m, [(0.09, yt+0.07), (0.09, yt+0.22)], n, ['glass'], TX, TZ)
-    lathe(m, [(0.09, yt+0.22), (0.12, yt+0.24), (0.12, yt+0.27), (0.0, yt+0.4)], n, ['dark', 'dark', 'red'], TX, TZ)
-    ball(m, TX, yt+0.43, TZ, 0.025, 'gold')
-    decal(m, B(TX-0.1, TX+0.1, Y, Y+0.2, TZ-0.1, TZ+0.1), 'pz', rect(-0.03, 0.03, Y+0.0, Y+0.1), 'dark', 0.06)
+    lathe(m, [(r1, yt), (0.22, yt+0.04), (0.22, yt+0.08), (0.19, yt+0.08)], n, ['dark', 'dark', 'dark'], TX, TZ)
+    lathe(m, [(0.19, yt+0.08), (0.11, yt+0.08)], n, ['dark'], TX, TZ)
+    lathe(m, [(0.11, yt+0.08), (0.11, yt+0.26)], n, ['glass'], TX, TZ)
+    lathe(m, [(0.11, yt+0.26), (0.15, yt+0.28), (0.15, yt+0.31), (0.0, yt+0.47)], n, ['dark', 'dark', 'red'], TX, TZ)
+    ball(m, TX, yt+0.5, TZ, 0.03, 'gold')
     return m

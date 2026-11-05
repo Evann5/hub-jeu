@@ -23,8 +23,8 @@ def build():
         blob(m, x, 0.17, z, 0.11*s, 0.09*s, 0.11*s, 'tree', n=6, lats=(-50, 0, 50), col2='g3')
     # piédestal et statue
     tbox(m, 0, cz, 1.12, 1.4, 0.14, 0.12, 0.1, 0.09, 'ped', col_top='ped2')
-    cyl(m, 0, cz, 1.4, 1.98, 0.085, 'stat', r1=0.05, n=6, col_top='stat2')       # corps en robe
-    rod(m, (0, 1.9, cz), (-0.5, 1.84, cz), 0.075, 'stat', w1=0.05)                # bras gauche
-    rod(m, (0, 1.9, cz), (0.5, 1.84, cz), 0.075, 'stat2', w1=0.05)                # bras droit
-    ball(m, 0, 2.04, cz, 0.058, 'stat', n=7)
+    cyl(m, 0, cz, 1.4, 1.98, 0.11, 'stat', r1=0.065, n=6, col_top='stat2')       # corps en robe
+    rod(m, (0, 1.92, cz), (-0.5, 1.74, cz), 0.1, 'stat', w1=0.06)                # bras gauche
+    rod(m, (0, 1.92, cz), (0.5, 1.74, cz), 0.1, 'stat2', w1=0.06)                # bras droit
+    ball(m, 0, 2.06, cz, 0.075, 'stat', n=7)
     return m

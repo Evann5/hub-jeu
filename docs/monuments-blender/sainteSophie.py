@@ -20,11 +20,9 @@ def build():
     for x in (-0.3, 0.0, 0.3):
         m.box(x-0.06, x+0.06, 0.04, 0.58, H, H+0.1, 'wall2', skip=('bot',))
         m.box(x-0.07, x+0.07, 0.54, 0.6, H, H+0.11, 'cream', skip=('bot',))
-        # grandes baies entre les contreforts
     for x in (-0.15, 0.15):
         window(m, H+0.001, x, 0.12, 0.38, 0.045, 'win', 'cream', True, 1)
     for x in (-0.3, 0.0, 0.3):
-        window(m, H+0.1, x, 0.1, 0.4, 0.0, 'win') if False else None
     sides4(m, s0)
     # demi-dômes avant et arrière
     for sz in (-1, 1):

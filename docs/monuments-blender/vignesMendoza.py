@@ -24,11 +24,11 @@ def build():
     m = Mesh(PAL)
     m.box(-0.88, 0.88, 0.0, 0.04, -0.88, 0.88, 'soil', skip=('bot',))
     m.box(-0.88, 0.88, 0.04, 0.2, -0.88, -0.5, 'hill', skip=('bot',))
-    peak(m, -0.5, -0.6, 0.55, 1.1, 0.2, 0.2)
-    peak(m, 0.15, -0.68, 0.7, 1.55, 0.2, 0.0)
-    peak(m, 0.7, -0.58, 0.45, 0.9, 0.2, 0.5)
+    peak(m, -0.5, -0.5, 0.38, 1.0, 0.2, 0.2)
+    peak(m, 0.1, -0.48, 0.4, 1.45, 0.2, 0.0)
+    peak(m, 0.55, -0.52, 0.33, 0.85, 0.2, 0.5)
     # rangées de vignes
-    z0, z1 = -0.28, 0.8
+    z0, z1 = -0.1, 0.8
     for i in range(7):
         x = -0.72+i*0.24
         m.box(x-0.06, x+0.06, 0.04, 0.16, z0, z1, 'leaf', skip=('bot',))
@@ -36,7 +36,7 @@ def build():
         m.box(x-0.1, x-0.07, 0.04, 0.05, z0, z1, 'soil2', skip=('bot',))
         for zz in (z0+0.02, z1-0.04):    # poteaux de bout de rang
             m.box(x-0.015, x+0.015, 0.04, 0.3, zz, zz+0.03, 'post', skip=('bot',))
-        for k in range(5):               # grappes
+        for k in range(4):               # grappes
             zz = z0+0.12+k*0.2
             sx = 1 if (i+k) % 2 else -1
             m.box(x+sx*0.06-0.02, x+sx*0.06+0.02, 0.1, 0.17, zz, zz+0.05, 'grape', skip=('bot',))
