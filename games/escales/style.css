@@ -190,6 +190,9 @@
 .g-escales .es-turn.is-in { animation: es-turn-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1); }
 @keyframes es-turn-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(0.96); } }
 @media (prefers-reduced-motion: reduce) { .g-escales .es-turn.is-in { animation: none; } }
+.g-escales .es-here { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; }
+.g-escales .es-here small { color: var(--soft); }
+.g-escales .es-here span { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
 .g-escales .es-flash { text-wrap: balance; } /* sur deux lignes, jamais un « € » tout seul */
 .g-escales .es-flash.is-on { opacity: 1; }
 

@@ -132,12 +132,14 @@ export function mount(root, api) {
     const prop = v.props[pos];
     const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
     const lines = [h('b', t.name)];
+    const here = v.players.filter((p) => !p.out && p.pos === pos).map((p) => (p.id === meId ? 'Toi' : p.pseudo));
     if (t.price) {
       lines.push(h('span', owner
         ? `${owner.id === meId ? 'À toi' : `À ${owner.pseudo}`}${prop.mortgaged ? ', en gage' : `, loyer ${money(v.rents[pos] ?? 0)}`}`
         : `Libre, ${money(t.price)}`));
       if (prop?.level) lines.push(h('span', LEVEL_NAMES[prop.level]));
     }
+    if (here.length) lines.push(h('span', `Ici : ${here.join(', ')}`));
     tip.replaceChildren(...lines);
     tip.style.borderColor = owner ? PAWN_COLORS[owner.seat] : 'transparent';
     tip.style.transform = `translate(${Math.round(x + 14)}px, ${Math.round(y + 14)}px)`;
@@ -394,18 +396,27 @@ export function mount(root, api) {
 
   // Au milieu du plateau : le voyageur dont c'est le tour, en grand.
   let turnKey = null;
+  const whereIs = (p) => {
+    const t = TILES[p.pos];
+    return t.type === 'city' ? `à ${t.name}` : `sur ${t.name}`;
+  };
   function renderTurn(covered) {
     const p = v.players[v.cur];
     // Sur ordinateur, une fiche à décider prend le milieu du plateau ; sur téléphone, elle est en bas et le milieu reste libre.
     turnBox.hidden = v.over || (covered && !window.matchMedia('(max-width: 760px)').matches) || !p || !world;
     if (turnBox.hidden) return;
     const key = p.id;
-    if (key === turnKey && turnBox.childElementCount) return;
+    const mine = p.id === meId;
+    const where = mine ? `Tu es ${whereIs(p)}` : whereIs(p);
+    if (key === turnKey && turnBox.childElementCount) {
+      const line = turnBox.querySelector('small');
+      if (line) line.textContent = where;
+      return;
+    }
     const fresh = turnKey !== null;
     turnKey = key;
-    const mine = p.id === meId;
     turnBox.style.setProperty('--p', PAWN_COLORS[p.seat]);
-    turnBox.replaceChildren(picture(world.portrait(p.seat), '.es-face') ?? h('i.es-dot'), h('p', h('b', mine ? 'À toi !' : p.pseudo), mine ? null : h('small', 'joue')));
+    turnBox.replaceChildren(picture(world.portrait(p.seat), '.es-face') ?? h('i.es-dot'), h('p', h('b', mine ? 'À toi !' : p.pseudo), h('small', where)));
     if (fresh && !QUIET) {
       turnBox.classList.remove('is-in');
       void turnBox.offsetWidth;
@@ -495,10 +506,15 @@ export function mount(root, api) {
         ...body));
   }
 
+  // Qui se tient sur cette case : quand ils sont nombreux, la fiche le dit en toutes lettres.
+  const whoHere = (pos) => {
+    const here = v.players.filter((p) => !p.out && p.pos === pos);
+    return here.length ? h('p.es-here', h('small', 'Ici'), here.map((p) => h('span', picture(world?.portrait(p.seat), '.es-face'), p.id === meId ? 'Toi' : p.pseudo))) : null;
+  };
   function citySheet(pos) {
     const t = TILES[pos];
     if (t.type !== 'city' && t.type !== 'escale') {
-      return shell(t.name, h('h2', t.name), h('p', ABOUT[t.type] ?? ''));
+      return shell(t.name, h('h2', t.name), h('p', ABOUT[t.type] ?? ''), whoHere(pos));
     }
     const prop = v.props[pos];
     const owner = prop ? v.players.find((p) => p.id === prop.owner) : null;
@@ -523,6 +539,7 @@ export function mount(root, api) {
     }
     return shell(t.name, head,
       h('p.es-fact', t.fact ?? 'Le propriétaire encaisse selon le nombre d’escales qu’il possède.'),
+      whoHere(pos),
       t.type === 'city' ? standing(t) : null,
       h('p.es-owner', owner ? `${owner.id === meId ? 'À toi' : `À ${owner.pseudo}`}${prop.mortgaged ? ', en gage' : ''}. Loyer actuel : ${money(v.rents[pos] ?? 0)}.` : `Libre. Prix : ${money(t.price)}.`),
       prop?.level ? h('p', `Niveau : ${LEVEL_NAMES[prop.level]} (${prop.level} sur ${MAX_LEVEL}).`) : null,
@@ -834,7 +851,9 @@ export function mount(root, api) {
     renderTrades();
     if (world?.walking() && !v.over) {
       action.hidden = true; // le bouton sur lequel on vient de cliquer s'en va tout de suite
-      if (!uiTimer) uiTimer = setTimeout(applyUI, 4000); // au cas où l'animation ne tourne pas (onglet caché, écran du chat)
+      const line = turnBox.querySelector('small');
+      if (line) line.textContent = 'avance…';
+      if (!uiTimer) uiTimer = setTimeout(applyUI, 5000); // au cas où l'animation ne tourne pas (onglet caché, écran du chat)
       return;
     }
     applyUI();

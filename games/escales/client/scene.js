@@ -22,7 +22,7 @@ const BANNER_D = 1.8;
 const BANNER_H = 0.1; // les bandeaux sont des plaques en relief
 const DICE_Z = -7.15; // la piste des dés, en haut de la zone centrale
 const BOTTOM_LIFT = 1.2; // les bandeaux du bas remontent : les monuments de la rangée du bas, debout devant eux, ne cachent plus leur nom
-const PAWN_SCALE = 2.25;
+const PAWN_SCALE = Math.min(window.innerWidth, window.innerHeight) < 520 ? 2 : 1.75; // tient sur sa case ; un peu plus grand sur téléphone, où tout est petit
 
 const SIDE_H = 2.15; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
 const SIDE_HEROES = { eiffel: 3.7, empire: 3.1, gratteCiel2: 3 }; // sauf ceux qu'on doit reconnaître de loin
@@ -797,29 +797,55 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const blobGeo = new THREE.CircleGeometry(0.4, 16);
   blobGeo.rotateX(-Math.PI / 2);
   const blobMat = new THREE.MeshBasicMaterial({ color: '#05060A', transparent: true, opacity: 0.42, depthWrite: false });
-  // Le joueur qui joue : une pastille lumineuse à ses pieds, et son nom en bulle au-dessus de sa tête.
-  const ring = (() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const c = canvas.getContext('2d');
-    const g = c.createRadialGradient(128, 128, 30, 128, 128, 128);
-    g.addColorStop(0, 'rgba(255,214,102,0.95)');
-    g.addColorStop(0.62, 'rgba(255,201,60,0.55)');
-    g.addColorStop(0.72, 'rgba(255,240,190,1)');
-    g.addColorStop(0.8, 'rgba(255,201,60,0.6)');
-    g.addColorStop(1, 'rgba(255,201,60,0)');
-    c.fillStyle = g;
-    c.fillRect(0, 0, 256, 256);
-    const t = new THREE.CanvasTexture(canvas);
+  // Chaque personnage a son socle, à sa couleur : on voit d'un coup sur quelle case il se tient.
+  const SOCLE_Y = PLATE_H + 0.02;
+  const SOCLE_SIZE = 1.05;
+  const socleMat = (seat) => {
+    const c = document.createElement('canvas');
+    c.width = 96;
+    c.height = 96;
+    const g = c.getContext('2d');
+    g.fillStyle = '#FFFFFF';
+    g.beginPath();
+    g.arc(48, 48, 46, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = PAWN_COLORS[seat];
+    g.beginPath();
+    g.arc(48, 48, 37, 0, Math.PI * 2);
+    g.fill();
+    const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }));
-    m.rotation.x = -Math.PI / 2;
-    m.position.y = 0.03;
-    m.renderOrder = 3;
-    scene.add(m);
-    return m;
-  })();
+    return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false });
+  };
+  const socleGeo = new THREE.PlaneGeometry(1, 1);
+  socleGeo.rotateX(-Math.PI / 2);
+  // La case de celui qui joue : elle monte un peu et s'encadre à sa couleur. Pendant la marche, elle suit ses pas.
+  const frameGeometry = (w, d, t, r) => {
+    const round = (path, x, y, ww, dd, rr) => {
+      path.moveTo(x + rr, y);
+      path.lineTo(x + ww - rr, y);
+      path.quadraticCurveTo(x + ww, y, x + ww, y + rr);
+      path.lineTo(x + ww, y + dd - rr);
+      path.quadraticCurveTo(x + ww, y + dd, x + ww - rr, y + dd);
+      path.lineTo(x + rr, y + dd);
+      path.quadraticCurveTo(x, y + dd, x, y + dd - rr);
+      path.lineTo(x, y + rr);
+      path.quadraticCurveTo(x, y, x + rr, y);
+      return path;
+    };
+    const shape = round(new THREE.Shape(), -w / 2, -d / 2, w, d, r);
+    shape.holes.push(round(new THREE.Path(), -w / 2 + t, -d / 2 + t, w - t * 2, d - t * 2, Math.max(0.02, r - t)));
+    const geo = new THREE.ShapeGeometry(shape, 6);
+    geo.rotateX(-Math.PI / 2);
+    return geo;
+  };
+  const hereGeo = { side: frameGeometry(TILE_W - 0.04, TILE_D - 0.04, 0.15, 0.17), corner: frameGeometry(TILE_D - 0.04, TILE_D - 0.04, 0.17, 0.2) };
+  const hereFrame = new THREE.Mesh(hereGeo.side, new THREE.MeshBasicMaterial({ color: '#FFFFFF', depthWrite: false, toneMapped: false, transparent: true }));
+  hereFrame.renderOrder = 3;
+  hereFrame.visible = false;
+  scene.add(hereFrame);
+  const HERE_LIFT = 0.28;
+  let hereTile = null;
   const bubbleCanvas = document.createElement('canvas');
   bubbleCanvas.width = 512;
   bubbleCanvas.height = 148;
@@ -863,37 +889,35 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const FACING = 0.3; // vue de trois quarts, face à la caméra
   const LEAN = -0.3; // un peu penché en arrière : vu d'en haut, le visage reste visible sous le chapeau
 
-  const CROWD = 5; // à partir de là, les voyageurs se serrent pour ne pas cacher le nom des cases
-  const peopleOn = (pos) => [...pawns.values()].filter((x) => !x.gone && x.goal === pos).sort((a, b) => a.player.seat - b.player.seat);
-  const inCrowd = (pos) => peopleOn(pos).length >= CROWD && !tileFrame(pos).corner;
+  // Qui se tient sur une case. Celui qui arrive n'y compte qu'une fois arrivé, sauf pour calculer sa propre place.
+  const peopleOn = (pos, self) => [...pawns.values()]
+    .filter((x) => !x.gone && x.goal === pos && (x === self || (!x.to && !x.queue.length)))
+    .sort((a, b) => a.player.seat - b.player.seat);
+  const CROWD_SCALE = [1, 1, 0.94, 0.88, 0.82, 0.74];
+  const crowdScale = (n) => CROWD_SCALE[Math.min(n, 5)];
   function pawnSpot(p, pos) {
     const f = tileFrame(pos);
-    if (!f.corner && inCrowd(pos)) { // en deux rangs serrés, côté monument, à l'opposé du nom
-      const rank = Math.max(0, peopleOn(pos).findIndex((x) => x.player.id === p.id));
-      const col = (rank % 5) - 2;
-      const row = rank >= 5 ? 1 : 0;
-      if (!f.flat) return new THREE.Vector3(f.x + Math.sign(f.x) * 0.95 + col * 0.15, 0, f.z + 0.25 + row * 0.42);
-      const oz = f.flip ? 0.42 + row * 0.36 : -0.15 - row * 0.42;
-      const c = Math.cos(f.rot);
-      const s = Math.sin(f.rot);
-      const ox = col * 0.32;
-      return new THREE.Vector3(f.x + ox * c + oz * s, 0, f.z - ox * s + oz * c);
+    const self = pawns.get(p.id);
+    const list = peopleOn(pos, self);
+    const n = list.includes(self) ? list.length : 1;
+    const rank = Math.max(0, list.indexOf(self));
+    // En un rang jusqu'à 4, en deux rangs au-delà, toujours centrés sur la case. Le second rang se tient derrière le premier, côté monument.
+    const perRow = n <= 4 ? n : Math.ceil(n / 2);
+    const row = n <= 4 ? 0 : rank >= perRow ? 1 : 0;
+    const inRow = row ? n - perRow : perRow;
+    const col = (row ? rank - perRow : rank) - (inRow - 1) / 2;
+    if (f.corner) { // au milieu de la case d'angle, juste au-dessus de son nom
+      const step = Math.min(0.62, 2.1 / Math.max(1, perRow - 1));
+      const x = f.flip ? f.x : f.x + Math.sign(f.x) * 0.5;
+      return new THREE.Vector3(x + col * step * (f.flip ? 1 : 0.75), 0, f.z + (f.flip ? -0.35 : -0.1) - row * 0.5);
     }
-    const i = p.seat;
-    const ox = ((i % 5) - 2) * 0.5;
-    if (f.corner) { // sur un coin, tout le monde attend en rang dans l'espace libre à côté de la case : aucun nom n'est caché
-      const row = i >= 5 ? 0.45 : 0;
-      return new THREE.Vector3(f.x - Math.sign(f.x) * (TILE_D / 2 + 1) + ((i % 5) - 2) * 0.42, 0, (f.z < 0 ? -8.75 : 10.7) + row); // devant le drapeau, pas derrière
+    if (f.flat) { // haut et bas du plateau : sur la case, juste au-dessus de l'étiquette
+      const step = Math.min(0.6, 1.62 / Math.max(1, perRow - 1));
+      return new THREE.Vector3(f.x + col * step, 0, f.z - 0.08 - row * 0.5);
     }
-    // Le pion se tient sur sa case, juste devant le monument : il ne cache ni le nom de la ville, ni celui du pays.
-    const second = i >= 5 ? 0.3 : 0;
-    if (!f.flat) { // sur les côtés, le nom est vers le centre : le pion reste côté monument, et ne déborde pas sur le nom de la case d'au-dessus
-      return new THREE.Vector3(f.x + Math.sign(f.x) * 0.45 + ((i % 5) - 2) * 0.28, 0, f.z + 0.9 + second);
-    }
-    const oz = f.flip ? -0.4 - second : 0.32 + second;
-    const c = Math.cos(f.rot);
-    const s = Math.sin(f.rot);
-    return new THREE.Vector3(f.x + ox * c + oz * s, 0, f.z - ox * s + oz * c);
+    // Côtés du plateau : au milieu de la moitié extérieure de la case, l'étiquette reste libre côté centre.
+    const step = Math.min(0.46, 1.2 / Math.max(1, perRow - 1));
+    return new THREE.Vector3(f.x + Math.sign(f.x) * 0.72 + col * step, 0, f.z + 0.42 - row * 0.5);
   }
 
   // ——— Le podium, à la fin de la partie : trois marches au milieu du plateau, et les trois premiers dessus ———
@@ -937,7 +961,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       pawn.goal = p.pos;
       pawn.react = null;
       pawn.blob.visible = false;
-      pawn.mesh.scale.setScalar(PAWN_SCALE * 1.3);
+      pawn.mesh.scale.setScalar(2.9); // sur le podium, ils sont grands
       pawn.mesh.rotation.set(LEAN, FACING, 0);
       pawn.mesh.position.set(x, instant ? h : 0, PODIUM_Z + 0.1);
       pawn.standY = instant ? h : 0;
@@ -1064,7 +1088,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pawn.to = pawnSpot(pawn.player, step.pos);
         pawn.jump = step.jump;
         pawn.t = 0;
-        pawn.dur = step.jump > 2 ? 0.8 : 0.17;
+        pawn.dur = step.jump > 2 ? 0.8 : 0.26; // assez lent pour suivre chaque case du regard
         pawn.toPos = step.pos;
         pawn.fromRot = pawn.mesh.rotation.y;
         // Il regarde où il va en marchant, puis se tourne vers nous à l'arrivée.
@@ -1076,8 +1100,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         busy = true;
         pawn.t = Math.min(1, pawn.t + dt / pawn.dur);
         pawn.mesh.position.lerpVectors(pawn.from, pawn.to, ease(pawn.t));
-        pawn.blob.position.set(pawn.mesh.position.x, 0.02, pawn.mesh.position.z);
-        pawn.mesh.position.y = Math.sin(pawn.t * Math.PI) * pawn.jump;
+        pawn.blob.position.set(pawn.mesh.position.x, SOCLE_Y, pawn.mesh.position.z);
+        pawn.mesh.position.y = Math.sin(pawn.t * Math.PI) * pawn.jump + focusU.lift.value[pawn.toPos] * pawn.t;
         pawn.mesh.rotation.y = pawn.fromRot + (pawn.toRot - pawn.fromRot) * Math.min(1, pawn.t * 2.5);
         if (pawn.t >= 1) {
           pawn.shown = pawn.toPos;
@@ -1104,7 +1128,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       for (const pawn of pawns.values()) {
         if (pawn.gone || pawn.to || pawn.queue.length) continue;
         const target = pawnSpot(pawn.player, pawn.shown);
-        const scale = PAWN_SCALE * (inCrowd(pawn.shown) ? 0.76 : 1);
+        const scale = PAWN_SCALE * crowdScale(peopleOn(pawn.shown, pawn).length);
         const k = 1 - Math.exp(-dt * 10);
         if (pawn.mesh.position.distanceToSquared(target) > 0.0004 || Math.abs(pawn.mesh.scale.x - scale) > 0.002) {
           crowdMoving = true;
@@ -1113,7 +1137,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
           pawn.mesh.position.z += (target.z - pawn.mesh.position.z) * k;
           pawn.size = pawn.mesh.scale.x + (scale - pawn.mesh.scale.x) * k;
           pawn.mesh.scale.setScalar(pawn.size);
-          pawn.blob.position.set(pawn.mesh.position.x, 0.02, pawn.mesh.position.z);
+          pawn.blob.scale.setScalar((pawn.size / PAWN_SCALE) * SOCLE_SIZE);
+          pawn.blob.position.set(pawn.mesh.position.x, SOCLE_Y, pawn.mesh.position.z);
         }
       }
       if (walking()) crowdMoving = true;
@@ -1123,14 +1148,21 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const curPawn = view && pawns.get(ringId);
     const ringPlayer = view?.players.find((p) => p.id === ringId);
     if (ringPlayer && !view.over) drawBubble(ringPlayer.pseudo, PAWN_COLORS[ringPlayer.seat]);
+    hereTile = curPawn && !view.over && !focusSpec ? (curPawn.to ? curPawn.toPos : curPawn.shown) : null;
+    if (hereTile !== null) {
+      const f = tileFrame(hereTile);
+      hereFrame.geometry = f.corner ? hereGeo.corner : hereGeo.side;
+      hereFrame.position.set(f.x, PLATE_H + 0.016 + focusU.lift.value[hereTile], f.z);
+      hereFrame.rotation.y = f.rot;
+      hereFrame.material.color.set(PAWN_COLORS[ringPlayer?.seat ?? 0]);
+    }
+    hereFrame.visible = hereTile !== null;
     if (curPawn) {
-      ring.position.x = curPawn.mesh.position.x;
-      ring.position.z = curPawn.mesh.position.z;
-      ring.visible = !view.over;
       const narrow = size.w < size.h;
       bubble.visible = !view.over;
       bubble.scale.set(narrow ? 6.4 : 4.2, narrow ? 1.85 : 1.21, 1);
-      bubble.position.set(curPawn.mesh.position.x, curPawn.mesh.position.y + PAWN_SCALE * 1.2 + (narrow ? 1 : 0.65), curPawn.mesh.position.z);
+      const reach = HALF + 0.6 - bubble.scale.x / 2; // la bulle reste à l'écran, même au bord du plateau
+      bubble.position.set(Math.max(-reach, Math.min(reach, curPawn.mesh.position.x)), curPawn.mesh.position.y + PAWN_SCALE * 1.2 + (narrow ? 1 : 0.65), curPawn.mesh.position.z);
     }
 
     if (diceAnim) {
@@ -1162,7 +1194,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       let moving = false;
       const k = reduced ? 1 : 1 - Math.exp(-dt * 9);
       for (let i = 0; i < 48; i += 1) {
-        const target = focusTo.lift[i];
+        const target = focusTo.lift[i] + (i === hereTile ? HERE_LIFT : 0);
         focusU.lift.value[i] += (target - focusU.lift.value[i]) * k;
         focusU.dim.value[i] += (focusTo.dim[i] - focusU.dim.value[i]) * k;
         if (Math.abs(target - focusU.lift.value[i]) > 0.003 || Math.abs(focusTo.dim[i] - focusU.dim.value[i]) > 0.003) moving = true;
@@ -1185,7 +1217,11 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       }
       if (!view?.over) {
         for (const pawn of pawns.values()) {
-          if (!pawn.to && !pawn.react && !pawn.gone) pawn.mesh.position.y = focusU.lift.value[pawn.shown] ?? 0;
+          if (!pawn.to && !pawn.react && !pawn.gone) {
+            const up = focusU.lift.value[pawn.shown] ?? 0;
+            pawn.mesh.position.y = up;
+            pawn.blob.position.y = SOCLE_Y + up;
+          }
         }
       }
       if (moving && !reduced) busy = true;
@@ -1272,9 +1308,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     // Le monde vit doucement : les drapeaux flottent, les bateaux avancent, le repère rebondit.
     if (lifeOn()) {
       const time = now / 1000;
-      if (ring.visible) {
-        const pulse = 1 + Math.sin(time * 3.4) * 0.07;
-        ring.scale.set(pulse, pulse, 1);
+      {
         if (view && !view.over) {
           for (const pawn of pawns.values()) { // celui qui joue respire, les autres restent droits
             if (!pawn.gone) pawn.mesh.scale.y = (pawn.size ?? PAWN_SCALE) * (pawn === curPawn && !pawn.to && !pawn.react ? 1 + Math.sin(time * 3.4) * 0.025 : 1);
@@ -1410,12 +1444,13 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         const mesh = new THREE.Mesh(bake([{ object: buildCharacter(p.seat, PAWN_COLORS[p.seat]) }], { fullColor: true }), personMat);
         mesh.scale.setScalar(PAWN_SCALE);
         mesh.rotation.set(LEAN, FACING, 0);
-        const blob = new THREE.Mesh(blobGeo, blobMat);
-        blob.scale.setScalar(PAWN_SCALE * 0.8);
+        const blob = new THREE.Mesh(socleGeo, socleMat(p.seat));
+        blob.scale.setScalar(SOCLE_SIZE);
+        blob.renderOrder = 2;
         scene.add(mesh, blob);
         pawn = { mesh, blob, shown: p.pos, goal: p.pos, queue: [], t: 0, from: null, to: null, player: p, turning: false };
         mesh.position.copy(pawnSpot(p, p.pos));
-        blob.position.set(mesh.position.x, 0.02, mesh.position.z);
+        blob.position.set(mesh.position.x, SOCLE_Y, mesh.position.z);
         pawns.set(p.id, pawn);
       }
       pawn.player = p;
@@ -1436,7 +1471,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         pawn.shown = p.pos;
         pawn.to = null;
         pawn.mesh.position.copy(pawnSpot(p, p.pos));
-        pawn.blob.position.set(pawn.mesh.position.x, 0.02, pawn.mesh.position.z);
+        pawn.blob.position.set(pawn.mesh.position.x, SOCLE_Y, pawn.mesh.position.z);
       } else if (forward <= 14) {
         for (let i = 1; i <= forward; i += 1) pawn.queue.push({ pos: (base + i) % 48, jump: 0.42 });
       } else {
