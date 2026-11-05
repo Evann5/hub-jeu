@@ -116,11 +116,9 @@ export function mount(root, api) {
     if (drawnRot === rot) return;
     drawnRot = rot;
     gTrack.replaceChildren();
-    const defs = svgEl('defs',
-      svgEl('radialGradient', { id: 'pc-disc', cx: '50%', cy: '45%', r: '60%' },
-        svgEl('stop', { offset: '0%', 'stop-color': '#5A27D9' }), svgEl('stop', { offset: '100%', 'stop-color': '#2A0F7A' })));
-    gTrack.append(defs);
-    gTrack.append(svgEl('circle', { cx: C, cy: C, r: RING + 30, fill: 'url(#pc-disc)', stroke: INK, 'stroke-width': 6 }));
+    // Deux aplats plutôt qu'un dégradé SVG, que WebKit dessinait en noir.
+    gTrack.append(svgEl('circle', { cx: C, cy: C, r: RING + 30, fill: '#2A0F7A', stroke: INK, 'stroke-width': 6 }));
+    gTrack.append(svgEl('circle', { cx: C, cy: C - 8, r: RING - 40, fill: '#5A27D9' }));
     gTrack.append(svgEl('circle', { cx: C, cy: C, r: RING, fill: 'none', stroke: '#1B0A52', 'stroke-width': 44 }));
     // guirlande d'ampoules autour du manège
     for (let i = 0; i < 56; i++) {
@@ -330,7 +328,7 @@ export function mount(root, api) {
         h('span.pc-chip', { style: `--c:${COLORS[v.colors[seat]].fill}`, 'aria-hidden': 'true' },
           svgEl('svg', { viewBox: '-20 -20 40 40', width: 26, height: 26 }, svgEl('g', { fill: COLORS[v.colors[seat]].fill, stroke: INK, 'stroke-width': 3.4, 'stroke-linejoin': 'round' }, tokenShape(v.colors[seat], 15)))),
         api.token(api.user(id), { size: 's' }),
-        h('span.pc-pname', h('b', api.user(id).pseudo + (seat === v.you ? ' (toi)' : '')),
+        h('span.pc-pname', h('b', api.user(id).pseudo, seat === v.you ? h('span.pc-you', ' (toi)') : null),
           h('small', left ? 'a quitté la partie' : `${COLORS[v.colors[seat]].name} · ${stable} à l’écurie`)),
         left ? null : h('b.pc-score', { title: `${home} cheval${home > 1 ? 'x' : ''} arrivé${home > 1 ? 's' : ''} sur 4` }, `${home}/4`),
         turn ? h('span.pc-turn', seat === v.you ? 'à toi' : 'joue') : null);

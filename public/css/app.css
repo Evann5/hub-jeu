@@ -1301,7 +1301,7 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .endbar { flex-wrap: nowrap; gap: 8px; padding: 8px 8px 8px 14px; }
   .endbar > p { flex: 1; min-width: 0; font-size: 0.875rem; line-height: 1.3; }
   .endbar-actions { flex: none; flex-wrap: nowrap; }
-  .endbar-actions .btn-ghost { display: none; }
+  .endbar-actions .btn-ghost, .endbar-note { display: none; }
   .member-card { padding: 14px; }
   .search { width: 100%; }
 }

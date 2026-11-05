@@ -170,7 +170,7 @@ export function leave(s, playerId, ctx) {
 }
 
 export function status(s) {
-  if (s.phase === 'over') return { over: true, turn: null, winners: s.result === 'won' ? active(s) : [] };
+  if (s.phase === 'over') return { over: true, turn: null, winners: s.result === 'won' ? active(s) : [], ...(s.result === 'won' ? {} : { label: 'Le fil s\'est rompu' }) };
   const turn = s.phase === 'focus' ? active(s).filter((id) => !s.ready.includes(id)) : active(s);
   return { over: false, turn, winners: [] };
 }

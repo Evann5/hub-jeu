@@ -143,3 +143,8 @@
   .g-quatre .fx-confetti { display: none; }
   .g-quatre .q-timer-fill, .g-quatre .q-player { transition: none; }
 }
+
+/* Téléphone : le statut sous le plateau dit déjà qui gagne, la pastille reste sur une ligne. */
+@media (max-width: 480px) {
+  .g-quatre .q-won { display: none; }
+}

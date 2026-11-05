@@ -142,3 +142,8 @@
   .g-dames .fx-confetti { display: none; }
   .g-dames .d-piece, .g-dames .d-player, .g-dames .d-timer-fill { transition: none; }
 }
+
+/* Téléphone : le statut sous le plateau dit déjà qui gagne, la pastille reste sur une ligne. */
+@media (max-width: 480px) {
+  .g-dames .d-won { display: none; }
+}

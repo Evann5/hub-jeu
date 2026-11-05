@@ -131,7 +131,7 @@ export function mount(root, api) {
         api.token(api.user(id), { size: 's' }),
         h('span.q-who',
           h('span.q-name', api.user(id).pseudo),
-          h('span.q-tag', `${COLOR_NAMES[seat]}${id === api.me.id ? ' · toi' : ''}${won ? ' · gagne' : ''}`)));
+          h('span.q-tag', `${COLOR_NAMES[seat]}${id === api.me.id ? ' · toi' : ''}`, won ? h('span.q-won', ' · gagne') : null)));
     }));
   }
 

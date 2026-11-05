@@ -195,7 +195,7 @@ export function mount(root, api) {
       return h(`div.d-player.s${seat}${turn ? '.is-turn' : ''}${won ? '.is-won' : ''}`,
         h('span.d-token', { 'aria-hidden': 'true' }),
         api.token(api.user(id), { size: 's' }),
-        h('span.d-who', h('span.d-name', api.user(id).pseudo), h('span.d-side', `${SIDE[seat]}${won ? ' · gagne' : ''}`)),
+        h('span.d-who', h('span.d-name', api.user(id).pseudo), h('span.d-side', SIDE[seat], won ? h('span.d-won', ' · gagne') : null)),
         h('span.d-count', { 'aria-label': `${left} ${left > 1 ? 'pièces' : 'pièce'}` }, String(left)));
     }));
   }

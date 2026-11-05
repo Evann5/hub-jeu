@@ -246,7 +246,10 @@ export function leave(s, playerId, ctx) {
 }
 
 export function status(s) {
-  if (s.phase === 'over') return { over: true, turn: null, winners: s.score >= Math.ceil(s.rounds / 2) ? active(s) : [] };
+  if (s.phase === 'over') {
+    const won = s.score >= Math.ceil(s.rounds / 2);
+    return { over: true, turn: null, winners: won ? active(s) : [], ...(won ? {} : { label: `${s.score} sur ${s.rounds} : c'est raté cette fois` }) };
+  }
   let turn;
   if (s.phase === 'pick' || s.phase === 'guess') turn = [s.active];
   else if (s.phase === 'write') turn = writers(s).filter((id) => !(id in s.clues));

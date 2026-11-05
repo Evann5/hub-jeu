@@ -209,7 +209,10 @@ export function leave(s, playerId, ctx) {
 }
 
 export function status(s) {
-  if (s.phase === 'over') return { over: true, turn: null, winners: winnersOf(s) };
+  if (s.phase === 'over') {
+    const failed = s.mode === 'coop' && s.scores[0] < s.target;
+    return { over: true, turn: null, winners: winnersOf(s), ...(failed ? { label: `${s.scores[0]} points sur ${s.target} : objectif manqué` } : {}) };
+  }
   let turn;
   if (s.phase === 'clue') turn = [s.leader];
   else if (s.phase === 'guess') turn = guessers(s);

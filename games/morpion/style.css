@@ -1,7 +1,7 @@
 /* Morpion : le style du hub (Néon), en grand. Fond presque noir, cases en cartes de couleur vive (violet pour les croix,
    orange pour les ronds), citron vert pour le tour et la victoire. Toutes les règles commencent par .g-morpion. */
 .g-morpion { background: var(--bg-2); }
-.g-morpion .mp { flex: 1; display: grid; place-content: center; justify-items: center; gap: 18px; padding: 16px 14px 20px; }
+.g-morpion .mp { flex: 1; display: grid; grid-template-columns: minmax(0, 420px); place-content: center; justify-items: center; gap: 18px; padding: 16px 14px 20px; }
 
 /* Joueurs : un signe de sa couleur, l'avatar, le pseudo. Celui qui joue passe en citron vert. */
 .g-morpion .mp-players { display: flex; justify-content: center; gap: 8px; width: min(420px, 100%); }

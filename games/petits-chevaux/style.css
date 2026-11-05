@@ -167,7 +167,8 @@
   .g-petits-chevaux .pc-action:has(.pc-choice) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .g-petits-chevaux .pc-choice { min-height: 52px; padding: 4px 10px 4px 6px; gap: 8px; }
   .g-petits-chevaux .pc-choice small { font-size: 0.72rem; }
-  .g-petits-chevaux .pc-player { padding: 4px 8px; }
+  .g-petits-chevaux .pc-player { flex: 1 1 40%; padding: 4px 8px; }
+  .g-petits-chevaux .pc-you { display: none; }
 }
 
 /* Ordinateur : le plateau à gauche, tout le reste à droite */

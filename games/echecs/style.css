@@ -140,7 +140,8 @@
 
 /* Fin de partie sur téléphone : le résultat passe au-dessus du plateau, sinon il reste hors de l'écran. */
 @container (max-width: 859px) {
-  .g-echecs .eq-status.is-over { order: -1; margin: 0; }
+  .g-echecs .eq-stage { --bs: min(calc(100cqw - 2 * var(--pad) - 2 * var(--frame) - 2px), max(240px, calc(100cqh - 236px)), 600px); }
+  .g-echecs .eq-status.is-over { order: -1; margin: 0; padding: 6px 10px; font-size: 0.95rem; }
 }
 /* Le dernier coup reste visible sur les cases claires comme sur les cases foncées. */
 .g-echecs .eq-sq.is-last::before { background: rgb(255 90 31 / 0.55); }
