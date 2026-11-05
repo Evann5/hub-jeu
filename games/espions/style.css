@@ -103,6 +103,9 @@
 .g-espions .es-clue.t-blue { border-color: var(--blue); box-shadow: 0 0 26px rgb(61 139 255 / 0.4); }
 .g-espions .es-clue-label { flex: 1 1 100%; color: var(--ink-2); font: 600 0.8125rem var(--sans); }
 .g-espions .es-clue-word { flex: 1 1 auto; min-width: 0; font: 800 clamp(1.25rem, 5.5cqi, 1.9rem)/1.1 var(--display); text-transform: uppercase; overflow-wrap: anywhere; }
+/* Long mot : police plus étroite, taille calculée sur le nombre de lettres (--n), jamais coupé en pleine lettre. */
+.g-espions .es-clue-word { font-size: min(clamp(1.25rem, 5.5cqi, 1.9rem), calc(78cqi / var(--n, 8) / 1.25)); }
+.g-espions .es-clue-word.is-long { font-family: var(--sans); letter-spacing: 0.01em; font-size: min(clamp(1.25rem, 5.5cqi, 1.9rem), calc(78cqi / var(--n, 8) / 0.72)); }
 .g-espions .es-clue.t-red .es-clue-word { color: #FF8CA0; text-shadow: 0 0 18px rgb(255 59 92 / 0.9); }
 .g-espions .es-clue.t-blue .es-clue-word { color: #9CC4FF; text-shadow: 0 0 18px rgb(61 139 255 / 0.9); }
 .g-espions .es-clue-num { display: grid; place-items: center; width: 2.2em; height: 2.2em; border: 2px solid currentColor; border-radius: 50%; font: 800 1.3rem/1 var(--sans); }
@@ -214,11 +217,11 @@
 .g-espions .es-roster-actions .es-btn { width: 100%; }
 
 /* ——— Journal ——— */
-.g-espions .es-log ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; max-height: 280px; overflow-y: auto; }
-.g-espions .es-log li { display: grid; gap: 4px; padding: 8px 12px; border-radius: 12px; background: rgb(255 255 255 / 0.05); }
+.g-espions .es-log ol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; max-height: 280px; overflow-y: auto; }
+.g-espions .es-log li { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 4px; padding: 8px 12px; border-radius: 12px; background: rgb(255 255 255 / 0.05); }
 .g-espions .es-log-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
 .g-espions .es-log-head .es-dot { margin-right: 2px; }
-.g-espions .es-hand { font: 800 1rem var(--display); text-transform: uppercase; }
+.g-espions .es-hand { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 1rem var(--display); text-transform: uppercase; }
 .g-espions .es-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .g-espions .es-chip { padding: 1px 9px; border-radius: 6px; font: 700 0.75rem var(--sans); text-transform: uppercase; }
 .g-espions .es-chip.is-red { background: var(--red-d); color: #fff; }
@@ -254,7 +257,15 @@
   .g-espions .es-folder { margin-top: 18px; }
   .g-espions .es-btn { flex: 1 1 auto; }
   /* L'action des agents reste collée en bas : on choisit un mot, le bouton est toujours là. */
-  .g-espions .es[data-phase='guess'] .es-side-panel { position: sticky; bottom: 6px; z-index: 5; }
+  .g-espions .es[data-phase='guess'] .es-side-panel, .g-espions .es[data-phase='clue'] .es-side-panel { position: sticky; bottom: 6px; z-index: 5; }
+  /* Indice du chef : champ et bouton sur une ligne, les nombres dessous, le tout collé en bas. */
+  .g-espions .es-form { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'label label' 'input send' 'nums nums'; gap: 6px 8px; padding: 8px 10px 10px; border-radius: 16px; background: rgb(8 12 28 / 0.94); border-color: var(--cyan); box-shadow: 0 8px 26px rgb(0 0 0 / 0.6), 0 0 16px rgb(92 242 255 / 0.25); }
+  .g-espions .es-form label { grid-area: label; font-size: 0.8125rem; }
+  .g-espions .es-form .es-input { grid-area: input; min-height: 48px; font-size: 1.1rem; }
+  .g-espions .es-form .es-hint { display: none; }
+  .g-espions .es-form .es-btn { grid-area: send; flex: none; padding: 0 14px; }
+  .g-espions .es-form .es-numbers { grid-area: nums; flex-wrap: nowrap; gap: 4px; }
+  .g-espions .es-form .es-num { flex: 1 1 0; min-width: 0; width: auto; height: 40px; }
   .g-espions .es-note.is-pick { background: rgb(8 12 28 / 0.92); border-color: var(--cyan); box-shadow: 0 8px 26px rgb(0 0 0 / 0.6), 0 0 16px rgb(92 242 255 / 0.25); }
 }
 

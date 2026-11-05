@@ -254,14 +254,15 @@ export function mount(root, api) {
     clueBox.hidden = false;
     const A = view.active;
     if (view.phase === 'clue') {
-      clueBox.replaceChildren(h(`p.es-turn.t-${A}`, h('i.es-dot', { 'aria-hidden': 'true' }), `Le chef de l’${TEAM[A].agency.toLowerCase()} prépare un indice`));
+      const mine = me()?.role === 'chef' && me().team === A;
+      clueBox.replaceChildren(h(`p.es-turn.t-${A}`, h('i.es-dot', { 'aria-hidden': 'true' }), mine ? 'À toi de donner un indice' : `Le chef de l’${TEAM[A].agency.toLowerCase()} prépare un indice`));
       return;
     }
     const c = view.clue;
     const left = view.max === null ? null : view.max - view.guesses;
     clueBox.replaceChildren(h(`div.es-clue.t-${A}`,
       h('span.es-clue-label', `Indice de l’${TEAM[A].agency.toLowerCase()}`),
-      h('span.es-clue-word', c.word),
+      h(`span.es-clue-word${c.word.length > 12 ? '.is-long' : ''}`, { style: `--n:${c.word.length}`, title: c.word.length > 12 ? c.word : undefined }, c.word),
       h('span.es-clue-num', { 'aria-label': c.number === 0 ? 'nombre illimité' : `nombre ${c.number}` }, c.number === 0 ? '∞' : String(c.number)),
       left === null ? null : h('span.es-tries', { 'aria-label': `${left} essai${left > 1 ? 's' : ''} possible${left > 1 ? 's' : ''}` }, Array.from({ length: view.max }, (_, i) => h(`i${i < left ? '.is-on' : ''}`)), h('span', `${left} essai${left > 1 ? 's' : ''}`))));
   }
@@ -274,7 +275,7 @@ export function mount(root, api) {
     }
     log.hidden = false;
     const rows = [...view.log].reverse().map((e) => h(`li.t-${e.team}`,
-      h('p.es-log-head', h('i.es-dot', { 'aria-hidden': 'true' }), h('b', TEAM[e.team].agency), e.word ? [' · ', h('span.es-hand', e.word), ` · ${e.number === 0 ? '∞' : e.number}`] : ' · pas d’indice'),
+      h('p.es-log-head', h('i.es-dot', { 'aria-hidden': 'true' }), h('b', TEAM[e.team].agency), e.word ? [' · ', h('span.es-hand', { title: e.word.length > 12 ? e.word : undefined }, e.word), ` · ${e.number === 0 ? '∞' : e.number}`] : ' · pas d’indice'),
       e.guesses.length ? h('p.es-chips', e.guesses.map((g) => h(`span.es-chip.is-${g.kind}`, view.cards[g.card].word))) : null,
       e.ended ? h('p.es-log-end', `${e.ended === 'skipped' ? 'L’agence' : 'Elle'} ${ENDED[e.ended]}`) : null));
     log.replaceChildren(h('h3', 'Journal de l’opération'), rows.length ? h('ol', rows) : h('p.es-empty', 'Aucun indice pour l’instant.'));
