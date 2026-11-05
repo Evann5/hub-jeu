@@ -54,7 +54,7 @@ def build():
             m.poly(pts, 'dark', (0, 0.15, 0))
             m.poly(pts[::-1], 'dark', (r*px*3, 0.15, r*pz*3)) if False else None
     for k in range(3):
-        blade(m, math.pi/2+2*math.pi*k/3)
+        blade(m, -math.pi/2+2*math.pi*k/3)
     cyl(m, 0, 0, Y0, Y0+0.16, 0.06, 'flame', r1=0.0, n=6, bot=True)
     cyl(m, 0, 0, Y0, Y0+0.09, 0.035, 'flame2', r1=0.0, n=6)
     return m

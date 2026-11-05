@@ -45,10 +45,10 @@ def build():
         m.box(-0.56-0.05*k, 0.56+0.05*k, Y0, PY-0.045*(k+1), 0.5+0.06*k, 0.5+0.06*(k+1), 'step', skip=('bot', 'nz'))
     m.box(-0.84, 0.84, PY, PY+0.03, -0.62, -0.58, 'plat2', skip=('bot',))
     # deux groupes de trois voiles emboîtées : la plus grande derrière, les petites devant, toutes penchées pareil
-    for (gx, sc) in ((-0.84, 1.0), (0.04, 1.06)):
-        sail(m, gx+0.0, 0.78*sc, -0.56, 1.22*sc, 0.42*sc)
-        sail(m, gx+0.07, 0.66*sc, -0.32, 1.0*sc, 0.36*sc)
-        sail(m, gx+0.14, 0.54*sc, -0.08, 0.78*sc, 0.3*sc)
-        sail(m, gx+0.22, 0.4*sc, 0.16, 0.54*sc, 0.24*sc)
-        m.box(gx+0.0, gx+0.0+0.74*sc, PY, PY+0.09, 0.4, 0.49, 'glass', skip=('bot',))   # foyer vitré au pied du groupe
+    for (gx, sc) in ((-0.84, 1.0), (0.04, 1.0)):
+        # voiles emboîtées en escalier : la plus haute à gauche, les suivantes plus basses et décalées vers l'avant, lisibles de face
+        sail(m, gx+0.0, 0.6*sc, -0.46, 1.25*sc, 0.4*sc)
+        sail(m, gx+0.24, 0.48*sc, -0.22, 0.94*sc, 0.32*sc)
+        sail(m, gx+0.46, 0.36*sc, 0.02, 0.66*sc, 0.26*sc)
+        m.box(gx+0.0, gx+0.82, PY, PY+0.09, 0.3, 0.4, 'glass', skip=('bot',))   # foyer vitré au pied du groupe
     return m
