@@ -158,7 +158,7 @@ function adminTools(u, close) {
           await call(state.socket, 'admin:mute', { userId: u.id, minutes });
           toast(minutes ? `${u.pseudo} est en sourdine.` : `${u.pseudo} peut de nouveau écrire.`);
         }),
-      }, 'Appliquer')),
+      }, 'Mettre en sourdine')),
     h('div.dlg-actions.start',
       h('button.btn.btn-ghost', {
         type: 'button',

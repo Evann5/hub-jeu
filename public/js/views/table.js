@@ -108,15 +108,15 @@ function renderHead() {
     onclick: () => setTab(key),
   }, text, extra);
   cur.ui.head.replaceChildren(...[
-    h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux' }, icon('back', 'Retour aux jeux')),
+    h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux', onclick: () => { if (t.status === 'lobby' && seated()) toast('Ta place reste gardée. Un salon vide se ferme au bout de 5 minutes.'); } }, icon('back', 'Retour aux jeux')),
     h('span.table-emoji', gameLogo(g)),
     h('div.table-title', h('h1', g.name), h('p', `Table de ${userOf(t.hostId).pseudo}`)),
     h(`span.table-pill${t.status === 'playing' && myTurn ? '.is-turn' : ''}`, label),
     cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, icon('eye'), String(cur.watchers)) : null,
-    seated() ? null : h('span.table-pill.is-watch', 'Spectateur'),
+    seated() || t.status === 'lobby' ? null : h('span.table-pill.is-watch', 'Spectateur'),
     h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
       tab('game', 'Partie'),
-      tab('chat', isWide() && !mobile() ? 'Joueurs et chat' : 'Chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null)),
+      tab('chat', 'Joueurs et chat', cur.chatUnread ? h('span.badge', String(cur.chatUnread)) : null)),
   ].filter(Boolean));
 }
 
@@ -204,6 +204,7 @@ function renderLobby() {
       actions.push(h('button.btn.btn-dark', { type: 'button', disabled: missing > 0, onclick: (e) => act(e, 'table:start') }, icon('dice'), 'Lancer la partie'));
     }
     actions.push(h('button.btn.btn-outline-dark', { type: 'button', onclick: openInvite }, icon('users'), 'Inviter'));
+    actions.push(h('button.btn.btn-outline-dark', { type: 'button', onclick: leaveTable }, icon('logout'), 'Quitter'));
   }
   const hint = missing > 0
     ? `Encore ${count(missing, 'joueur', 'joueurs')} pour lancer.`

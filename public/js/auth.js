@@ -51,7 +51,24 @@ function clearPasswordFlag(form, input) {
   form.querySelector('small.is-error')?.classList.remove('is-error');
 }
 
-export function renderAuth(root, { mode = 'login', onDone }) {
+const SEEN_KEY = 'hubuno-compte';
+const hasAccountHere = () => {
+  try {
+    return localStorage.getItem(SEEN_KEY) === 'oui';
+  } catch {
+    return true;
+  }
+};
+
+export function renderAuth(root, { mode = 'login', onDone: done }) {
+  // Sur un appareil jamais connecté, on arrive avec un lien et un code : on crée d'abord son compte.
+  if (mode === 'login' && !hasAccountHere()) mode = 'register';
+  const onDone = (res) => {
+    try {
+      localStorage.setItem(SEEN_KEY, 'oui');
+    } catch { /* pas de stockage : on reverra l'inscription */ }
+    done(res);
+  };
   const panel = h('div.auth-card');
   const tabs = h('div.switch', { role: 'tablist', 'aria-label': 'Connexion ou inscription' });
 
@@ -105,7 +122,7 @@ export function renderAuth(root, { mode = 'login', onDone }) {
         h('small', 'De 3 à 20 caractères. Les autres te verront sous ce nom.')),
       h('label.field', h('span', 'Mot de passe'),
         h('input.input', { name: 'reg_password', type: 'password', autocomplete: 'new-password', required: true, 'aria-describedby': 'reg-password-hint' }),
-        h('small', { id: 'reg-password-hint' }, 'Au moins 10 caractères.')),
+        h('small', { id: 'reg-password-hint' }, 'Au moins 10 caractères, sans ton pseudo.')),
       h('div.check',
         h('input', { type: 'checkbox', id: 'reg-rules', name: 'reg_rules', required: true }),
         h('label', { htmlFor: 'reg-rules' }, "J'accepte les ",
@@ -116,7 +133,17 @@ export function renderAuth(root, { mode = 'login', onDone }) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       showError(form, null);
+      const missing = [['reg_code', 'Entre le code de la classe : un admin te le donne.'], ['reg_pseudo', 'Choisis un pseudo.']].find(([name]) => !form.elements[name].value.trim());
+      if (missing) {
+        showError(form, missing[1]);
+        form.elements[missing[0]].focus();
+        return;
+      }
       if (!passwordLongEnough(form, 'reg_password', 'reg-password-hint')) return;
+      if (!form.elements.reg_rules.checked) {
+        showError(form, 'Coche la case pour accepter les règles.');
+        return;
+      }
       submitting(form, true);
       try {
         const res = await api('register', {

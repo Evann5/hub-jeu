@@ -13,10 +13,11 @@ export function leave() {
 export function render(container) {
   const codeBox = h('div.code-box', h('span', '…'));
   const codeInput = h('input.input', { name: 'class_code', autocomplete: 'off', spellcheck: false, minlength: 10, maxlength: 40, required: true });
-  const codeForm = asyncForm(h('form.stack',
+  const codeForm = asyncForm(h('form.stack', { novalidate: true },
     h('label.field', h('span', 'Nouveau code'), codeInput, h('small', 'Au moins 10 caractères. Les comptes existants ne sont pas touchés : le code sert seulement à s’inscrire.')),
     h('div.card-actions', h('button.btn.btn-ghost', { type: 'submit' }, 'Changer le code'))),
   async () => {
+    if (codeInput.value.trim().length < 10) throw new Error('Le code doit faire au moins 10 caractères.');
     const { classCode } = await call(state.socket, 'admin:setClassCode', { code: codeInput.value });
     codeBox.replaceChildren(h('span', classCode));
     codeInput.value = '';

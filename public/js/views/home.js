@@ -60,7 +60,7 @@ export function render(container) {
       h('div', h('h2', turns ? 'À toi de jouer' : 'Jouer'), h('p.card-text', playText))),
 
     h('section.card.card-online',
-      h('div.card-top', h('h2', 'En ligne'), h('span.big-num', String(online.length))),
+      h('div.card-top', h('h2', 'En ligne'), online.length ? h('span.big-num', String(online.length)) : h('span.card-text', 'Personne')),
       online.length
         ? h('ul.online-tokens', online.slice(0, 12).map((u) => h('li', h('button.token-btn', {
           type: 'button',

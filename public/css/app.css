@@ -612,7 +612,7 @@ body:has(.table-view[data-game='escales']) { --bg-0: var(--es-nav); --bg-1: var(
 .table-seats .more { margin-left: 4px; color: var(--ink-3); font-size: 0.8125rem; font-weight: 650; }
 .table-action { padding: 6px 12px; border-radius: 999px; background: var(--bg-3); font-size: 0.8125rem; font-weight: 700; white-space: nowrap; }
 .table-row.is-turn .table-action { background: var(--accent); color: var(--on-color); }
-.badge-turn { background: var(--accent); color: var(--on-color); }
+.badge.badge-turn { background: var(--accent); color: var(--on-color); }
 
 /* Une table : en-tête, puis le jeu (ou le salon) et la colonne joueurs + chat */
 .view-table { display: flex; flex-direction: column; overflow: hidden; }
@@ -983,6 +983,10 @@ body:has(.table-view[data-game='escales']) { --bg-0: var(--es-nav); --bg-1: var(
   color: color-mix(in srgb, var(--ink) 94%, var(--ink-2));
 }
 .msg.pending .msg-body { opacity: 0.55; }
+.msg.pending .msg-body::after { content: ' · en attente'; font-size: 0.75rem; }
+.new-line { display: flex; align-items: center; gap: 10px; margin: 10px 0 6px; color: var(--accent); font-size: 0.75rem; font-weight: 750; }
+.new-line::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: 0.5; }
+.conn-banner { position: fixed; top: 0; right: 0; left: 0; z-index: 60; }
 .msg.failed .msg-body { color: var(--danger); }
 .msg-fail { grid-column: 2; font-size: 0.8125rem; color: var(--danger); }
 .msg-fail button { margin-left: 6px; }
@@ -1262,7 +1266,7 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .game-card .game-logo { --ls: 34px; }
   .game-card h2 { font-size: 1.05rem; }
   .game-card .game-meta { margin-top: 2px; }
-  .game-tagline { display: none; }
+  .game-tagline { display: -webkit-box; margin-top: 3px; overflow: hidden; font-size: 0.8125rem; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .game-open { width: 40px; min-height: 40px; padding: 0; }
   .game-open span { display: none; }
   .table-seats { display: none; }
@@ -1344,4 +1348,11 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .nav-link { width: 60px; padding: 1px 0; font-size: 0; gap: 0; }
   .nav-icon { width: 40px; height: 34px; border-radius: 11px; }
   .nav-icon svg { width: 20px; height: 20px; }
+}
+
+/* Zones de toucher : les petits liens et la flèche de retour, sans changer leur dessin. */
+@media (pointer: coarse) {
+  .link-btn { position: relative; }
+  .link-btn::after { content: ''; position: absolute; inset: -11px -2px; }
+  .table-back::after { content: ''; position: absolute; inset: -4px; }
 }

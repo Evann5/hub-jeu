@@ -1,7 +1,7 @@
 {
   "name": "Morpion",
   "tagline": "Trois à la suite, en duel.",
-  "description": "Le jeu d'exemple du hub : chacun son tour, le premier qui aligne trois symboles gagne.",
+  "description": "Chacun son tour : le premier qui aligne trois symboles gagne.",
   "minPlayers": 2,
   "maxPlayers": 2,
   "duration": "2 min",

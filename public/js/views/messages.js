@@ -121,14 +121,22 @@ function openConversation(scope) {
     ui.messages,
     h('div.composer-wrap', ui.typing, ui.composer),
   );
+  let atBottom = true;
   ui.messages.addEventListener('scroll', () => {
-    if (nearBottom()) markRead();
+    atBottom = nearBottom();
+    if (atBottom) markRead();
   });
+  // Le clavier du téléphone réduit la liste : si on lisait la fin, on la garde sous les yeux.
+  if (typeof ResizeObserver === 'function') {
+    const box = ui.messages;
+    new ResizeObserver(() => { if (atBottom) box.scrollTop = box.scrollHeight; }).observe(box);
+  }
   renderComposer();
   renderTyping();
 
   const conv = state.convs.get(scope);
   if (conv?.loaded) {
+    placeNewLine(scope);
     renderMessages({ toBottom: true });
     markRead();
   } else {
@@ -152,12 +160,21 @@ async function loadHistory(scope, before) {
       renderMessages();
       ui.messages.scrollTop = ui.messages.scrollHeight - fromBottom;
     } else {
+      placeNewLine(scope);
       renderMessages({ toBottom: true });
       markRead();
     }
   } catch (err) {
     toast(err.message, { error: true });
   }
+}
+
+// Le repère « Nouveaux messages » : avant le premier message reçu depuis la dernière visite.
+function placeNewLine(scope) {
+  const conv = state.convs.get(scope);
+  const n = state.unread[scope] || 0;
+  const others = conv.messages.filter((m) => m.id > 0 && m.userId !== state.me.id);
+  conv.newFrom = n ? (others.at(-n) ?? others[0])?.id ?? null : null;
 }
 
 function nearBottom() {
@@ -227,11 +244,14 @@ function renderMessages({ toBottom = false } = {}) {
   let prev = null;
   for (const m of conv.messages) {
     if (!prev || dayKey(prev.createdAt) !== dayKey(m.createdAt)) nodes.push(h('div.day', { role: 'separator' }, dayLabel(m.createdAt)));
+    if (m.id === conv.newFrom) nodes.push(h('div.new-line', { role: 'separator' }, 'Nouveaux messages'));
     nodes.push(messageEl(m, startsGroup(prev, m)));
     prev = m;
   }
   ui.messages.replaceChildren(...nodes);
   if (stick) ui.messages.scrollTop = ui.messages.scrollHeight;
+  // À l'ouverture, s'il y a beaucoup de nouveaux messages, on commence par le premier.
+  if (toBottom) ui.messages.querySelector('.new-line')?.scrollIntoView({ block: 'nearest' });
 }
 
 function messageEl(m, first) {

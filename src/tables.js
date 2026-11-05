@@ -298,6 +298,11 @@ export function dropUser(userId, { deleted = false } = {}) {
 }
 
 // Ménage : salons inactifs depuis 12 h, parties terminées depuis 3 jours, parties abandonnées depuis 14 jours.
+export const lobbies = () => [...tables.values()].filter((t) => t.status === 'lobby');
+export function dropLobby(t) {
+  remove(t);
+}
+
 export function purgeStaleTables() {
   const now = Date.now();
   const limits = { lobby: 12 * 3600_000, over: 3 * 86400_000, playing: 14 * 86400_000 };

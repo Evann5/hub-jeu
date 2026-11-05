@@ -18,8 +18,28 @@ function tooFast(userId) {
   return times.length > 40;
 }
 
+// Un salon que plus personne ne regarde se ferme au bout de 5 minutes : sinon, la liste se remplit de salons vides où personne ne répond.
+const LOBBY_GRACE = 5 * 60_000;
+const emptySince = new Map();
+function sweepLobbies() {
+  const now = Date.now();
+  for (const t of tables.lobbies()) {
+    if (io.sockets.adapter.rooms.get(`t:${t.id}`)?.size) {
+      emptySince.delete(t.id);
+      continue;
+    }
+    if (!emptySince.has(t.id)) emptySince.set(t.id, now);
+    if (now - emptySince.get(t.id) >= LOBBY_GRACE) {
+      emptySince.delete(t.id);
+      tables.dropLobby(t);
+      changed(null, t.id);
+    }
+  }
+}
+
 export function initPlay(server) {
   io = server;
+  setInterval(sweepLobbies, 30_000).unref();
   for (const t of tables.loadTables()) schedule(t);
 }
 

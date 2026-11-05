@@ -55,9 +55,10 @@ function afterLogin({ mustChangePassword }) {
 }
 
 actions.logout = (message) => {
+  const wasOn = Boolean(state.socket); // la déconnexion par le serveur peut suivre celle de l'écran : un seul message
   state.socket?.disconnect();
   state.socket = null;
-  if (message) toast(message, { ms: 6000 });
+  if (message && wasOn) toast(message, { ms: 6000 });
   showAuth('login');
 };
 
@@ -243,7 +244,7 @@ function buildShell() {
   ui = {
     nav: h('nav.navbar', { 'aria-label': 'Navigation principale' }),
     content: h('main.view', { id: 'contenu', tabindex: '-1' }),
-    banner: h('div.banner', { hidden: true, role: 'status' }),
+    banner: h('div.banner.conn-banner', { hidden: true, role: 'status' }),
   };
   root.replaceChildren(
     h('a.skip-link', { href: '#contenu', onclick: (e) => { e.preventDefault(); ui.content.focus(); } }, 'Aller au contenu'),
