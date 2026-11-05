@@ -187,7 +187,7 @@ function startRealtime() {
   socket.on('invite', ({ tableId, game, from }) => {
     const g = gameOf(game);
     const who = state.users.get(from)?.pseudo || 'Quelqu’un';
-    toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}`, onclick: (e) => e.currentTarget.closest('.toast')?.remove() }, 'Rejoindre')], { ms: 30000, action: true });
+    toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}`, onclick: (e) => { table.wantJoin(tableId); e.currentTarget.closest('.toast')?.remove(); } }, 'Rejoindre')], { ms: 30000, action: true });
   });
 }
 
@@ -316,7 +316,7 @@ function renderNav() {
     h('a.nav-brand', { href: '#/', 'aria-label': 'Hubuno, accueil' }, h('span.brand-mark', 'H'), h('span.brand-name', 'Hubuno')),
     h('ul.nav-items',
       item('home', '#/', 'Accueil', icon('home')),
-      item('games', '#/jouer', 'Jouer', icon('dice'), turnBadge, turns ? `, à toi de jouer sur ${count(turns, 'table', 'tables')}` : null),
+      item('games', '#/jouer', 'Jouer', icon('dice'), turnBadge, turns ? `, à toi de jouer sur ${count(turns, 'partie', 'parties')}` : null),
       item('messages', '#/messages', 'Messages', icon('chat'), badge, unreadText),
       item('members', '#/membres', 'Membres', icon('users')),
       isAdmin() ? item('admin', '#/admin', 'Admin', icon('shield')) : null,

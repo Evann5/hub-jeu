@@ -38,6 +38,7 @@ function showError(form, message, field) {
     form.querySelector('button[type=submit]').before(box);
   }
   box.textContent = message;
+  box.scrollIntoView({ block: 'center' }); // sur téléphone, le bas du formulaire peut être sous le bord de l'écran
   if (field) {
     field.dataset.erreur = '1';
     field.setAttribute('aria-invalid', 'true');

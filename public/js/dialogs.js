@@ -55,6 +55,7 @@ export function errorBox(form, message) {
     form.querySelector('button[type=submit]').closest('.dlg-actions, .card-actions, button').before(box);
   }
   box.textContent = message;
+  box.scrollIntoView({ block: 'nearest' });
 }
 
 // Formulaire dont l'envoi est asynchrone : bouton désactivé pendant l'envoi, erreur affichée sans perdre la saisie.

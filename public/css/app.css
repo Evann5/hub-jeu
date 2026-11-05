@@ -577,6 +577,10 @@ body:has(.table-view[data-game='escales']) { --bg-0: var(--es-nav); --bg-1: var(
 .game-card .game-meta { margin: 4px 0 0; font-size: 0.8125rem; font-weight: 650; opacity: 0.9; }
 .game-tagline { margin: 8px 0 0; font-size: 0.9375rem; line-height: 1.35; opacity: 0.88; }
 .game-open { justify-self: start; }
+.game-card { cursor: pointer; }
+.online-name { display: block; max-width: 64px; margin-top: 4px; overflow: hidden; font-size: 0.75rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.share-copy { justify-self: start; }
+.share-line { margin: 0; word-break: break-all; font-weight: 650; }
 .game-meta { padding: 4px 10px; border-radius: 999px; background: rgb(0 0 0 / 0.12); font-size: 0.8125rem; font-weight: 650; }
 .game-card .game-meta { padding: 0; background: none; }
 

@@ -27,15 +27,35 @@ export function render(container) {
   channelList = h('ul.row-list');
   renderChannels();
   const bannedList = h('ul.row-list', h('li', h('span.label', 'Chargement…')));
-  const websocket = state.socket.io.engine?.transport?.name === 'websocket';
+  const address = `${location.origin}${location.pathname}`;
+  const copyInvite = async () => {
+    const text = `Rejoins Hubuno, les jeux de la classe : ${address}\nCode de la classe : ${codeBox.textContent}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Message copié : colle-le dans le groupe de la classe.');
+    } catch {
+      toast('Copie impossible ici : recopie l’adresse et le code.', { error: true });
+    }
+  };
+  const engine = state.socket.io.engine;
+  const connection = h('p.card-text');
+  const showConnection = () => {
+    connection.textContent = engine?.transport?.name === 'websocket'
+      ? 'Connexion directe : tout est en temps réel.'
+      : 'Connexion de secours active : tout marche, avec un peu de retard.';
+  };
+  showConnection();
+  engine?.once('upgrade', showConnection); // la connexion démarre en secours, puis passe en directe
 
   container.replaceChildren(h('div.page',
     h('div.view-head.page-head', h('div', h('h1', 'Administration'), h('p.view-sub', 'Réservé aux admins.'))),
     h('div.page-grid',
       h('section.card.card-panel',
-        h('h2', 'Code de la classe'),
-        h('p.card-text', 'À donner aux élèves pour qu’ils créent leur compte.'),
+        h('h2', 'À donner à la classe'),
+        h('p.card-text', 'Cette adresse et ce code suffisent pour créer un compte.'),
+        h('p.share-line', address),
         codeBox,
+        h('button.btn.share-copy', { type: 'button', onclick: copyInvite }, 'Copier le message pour la classe'),
         codeForm),
       h('section.card.card-panel',
         h('div.card-top', h('h2', 'Canaux'),
@@ -47,9 +67,7 @@ export function render(container) {
         h('p.card-text', 'Pour agir sur un membre (sourdine, mot de passe, blocage, rôle admin), ouvre sa fiche depuis Membres.')),
       h('section.card.card-panel',
         h('h2', 'Connexion en direct'),
-        h('p.card-text', websocket
-          ? 'WebSocket : la connexion directe fonctionne.'
-          : 'Long-polling : la connexion de secours est utilisée. Hubuno marche, avec un peu plus de délai. Voir le guide de mise en ligne.')))));
+        connection))));
 
   Promise.all([call(state.socket, 'admin:getClassCode'), call(state.socket, 'admin:bannedList')])
     .then(([{ classCode }, { users }]) => {

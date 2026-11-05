@@ -20,7 +20,7 @@ export function checkScope(scope, userId) {
   if (!m || canonical !== scope) throw new ChatError('Conversation introuvable.');
   if (m[1] === 't') {
     // Chat d'une table : ouvert aux joueurs et aux spectateurs (toute la classe peut regarder).
-    if (!tableExists(m[2])) throw new ChatError("Cette table n'existe plus.");
+    if (!tableExists(m[2])) throw new ChatError("Cette partie n'existe plus.");
     return { kind: 'table', tableId: Number(m[2]) };
   }
   if (m[1] === 'c') {

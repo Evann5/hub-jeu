@@ -48,7 +48,7 @@ function remove(t) {
 
 export function getTable(id) {
   const t = tables.get(Number(id));
-  if (!t) throw new ChatError("Cette table n'existe plus.");
+  if (!t) throw new ChatError("Cette partie n'existe plus.");
   return t;
 }
 
@@ -108,7 +108,7 @@ function players(t) {
 }
 
 function mustHost(t, userId) {
-  if (t.hostId !== userId) throw new ChatError("Seul l'hôte de la table peut faire ça.");
+  if (t.hostId !== userId) throw new ChatError("Seul l'hôte de la partie peut faire ça.");
 }
 
 function mustLobby(t) {
@@ -130,7 +130,7 @@ export function createTable(gameId, userId) {
   const game = games.get(gameId);
   if (!game) throw new ChatError('Jeu inconnu.');
   const open = [...tables.values()].filter((t) => t.hostId === userId && t.status !== 'over').length;
-  if (open >= MAX_OPEN_PER_HOST) throw new ChatError(`Tu as déjà ${MAX_OPEN_PER_HOST} tables ouvertes : termines-en ou ferme-en une.`);
+  if (open >= MAX_OPEN_PER_HOST) throw new ChatError(`Tu as déjà ${MAX_OPEN_PER_HOST} parties ouvertes : termines-en ou ferme-en une.`);
   const now = Date.now();
   const options = cleanOptions(game, {});
   const id = Number(db.prepare(
@@ -146,8 +146,8 @@ export function joinTable(id, userId) {
   const t = getTable(id);
   mustLobby(t);
   if (t.seats.includes(userId)) return t;
-  if (t.kicked?.includes(userId)) throw new ChatError('L’hôte t’a retiré de cette table.');
-  if (t.seats.length >= gameOf(t).maxPlayers) throw new ChatError('La table est complète. Tu peux regarder la partie.');
+  if (t.kicked?.includes(userId)) throw new ChatError('L’hôte t’a retiré de cette partie.');
+  if (t.seats.length >= gameOf(t).maxPlayers) throw new ChatError('La partie est complète. Tu peux la regarder.');
   t.seats.push(userId);
   persist(t);
   return t;
@@ -182,7 +182,7 @@ export function kickPlayer(id, userId, targetId) {
   const t = getTable(id);
   mustHost(t, userId);
   mustLobby(t);
-  if (targetId === userId) throw new ChatError('Pour partir, utilise « Quitter la table ».');
+  if (targetId === userId) throw new ChatError('Pour partir, utilise « Quitter ».');
   t.seats = t.seats.filter((x) => x !== targetId);
   t.kicked = [...(t.kicked ?? []), targetId]; // gardé en mémoire : le salon ne dure pas
   persist(t);
@@ -253,7 +253,7 @@ export function restartTable(id, userId) {
 
 export function closeTable(id, user) {
   const t = getTable(id);
-  if (t.hostId !== user.id && user.role !== 'admin') throw new ChatError("Seul l'hôte ou un admin peut fermer la table.");
+  if (t.hostId !== user.id && user.role !== 'admin') throw new ChatError("Seul l'hôte ou un admin peut fermer la partie.");
   remove(t);
 }
 

@@ -2,6 +2,7 @@
 import { h, icon, token, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
 import { call } from '../net.js';
 import { modal } from '../dialogs.js';
+import { wantJoin } from './table.js';
 import { state, go, gameOf, myTurnTables } from '../store.js';
 
 let container = null;
@@ -48,7 +49,7 @@ function openGameSheet(g) {
         open.disabled = false;
       }
     },
-  }, icon('plus'), 'Ouvrir une table');
+  }, icon('plus'), 'Créer une partie');
   const dlg = modal(g.name,
     h('div.game-sheet', { 'data-game': g.id, style: `--g:${g.color};--g-ink:${g.ink}` },
       gameLogo(g),
@@ -57,9 +58,9 @@ function openGameSheet(g) {
         h('p.game-sheet-text', g.description || g.tagline))),
     g.how?.length ? h('details.game-sheet-how', h('summary', 'Comment on joue ?'), h('ol.how', g.how.map((line) => h('li', line)))) : null,
     waiting.length ? h('div.game-sheet-tables',
-      h('h3', count(waiting.length, 'table attend', 'tables attendent'), ' des joueurs'),
-      h('ul.table-list', waiting.map((t) => h('li', h('a.game-sheet-table', { href: `#/t/${t.id}`, onclick: () => dlg.close() },
-        h('span', `Table de ${state.users.get(t.hostId)?.pseudo ?? '…'}, ${t.seats.length}/${g.maxPlayers}`),
+      h('h3', count(waiting.length, 'partie attend', 'parties attendent'), ' des joueurs'),
+      h('ul.table-list', waiting.map((t) => h('li', h('a.game-sheet-table', { href: `#/t/${t.id}`, onclick: () => { if (!t.seats.includes(state.me.id)) wantJoin(t.id); dlg.close(); } },
+        h('span', `Partie de ${state.users.get(t.hostId)?.pseudo ?? '…'}, ${t.seats.length}/${g.maxPlayers}`),
         h('b', t.seats.includes(state.me.id) ? 'Y retourner' : 'Rejoindre')))))) : null,
     problem,
     h('div.dlg-actions', h('button.btn.btn-ghost', { type: 'button', onclick: () => dlg.close() }, 'Annuler'), open));
@@ -72,7 +73,7 @@ function gameCard(g) {
     'aria-label': `Jouer à ${g.name}`,
     onclick: () => openGameSheet(g),
   }, 'Jouer');
-  return h('article.game-card', { style: `--g:${g.color};--g-ink:${g.ink}` },
+  return h('article.game-card', { style: `--g:${g.color};--g-ink:${g.ink}`, onclick: (e) => { if (!e.target.closest('button')) openGameSheet(g); } }, // le bouton reste l'accès au clavier
     gameLogo(g),
     h('div.game-card-body',
       h('h3', g.name),
@@ -86,7 +87,7 @@ function featuredCard(g) {
   const live = state.tables.filter((t) => t.game === g.id && t.status !== 'over');
   const waiting = live.filter((t) => t.status === 'lobby').length;
   const playing = live.length - waiting;
-  const news = [waiting ? count(waiting, 'table ouverte', 'tables ouvertes') : null, playing ? count(playing, 'partie en cours', 'parties en cours') : null].filter(Boolean).join(', ');
+  const news = [waiting ? count(waiting, 'partie en attente', 'parties en attente') : null, playing ? count(playing, 'partie en cours', 'parties en cours') : null].filter(Boolean).join(', ');
   return h('section.game-hero', { 'data-game': g.id, style: `--g:${g.color};--g-ink:${g.ink}` },
     gameLogo(g),
     h('div.game-hero-text',
@@ -112,11 +113,11 @@ function tableRow(t) {
     ? (seated ? 'Ouvrir' : t.seats.length < g.maxPlayers ? 'Rejoindre' : 'Regarder')
     : seated && t.status === 'playing' ? 'Reprendre' : 'Regarder';
   const mine = t.status === 'playing' && t.turn.includes(state.me.id);
-  return h('li', h(`a.table-row${mine ? '.is-turn' : ''}`, { href: `#/t/${t.id}`, style: `--g:${g.color};--g-ink:${g.ink}` },
+  return h('li', h(`a.table-row${mine ? '.is-turn' : ''}`, { href: `#/t/${t.id}`, onclick: () => { if (action === 'Rejoindre') wantJoin(t.id); }, style: `--g:${g.color};--g-ink:${g.ink}` },
     h('span.table-chip', gameLogo(g)),
     h('span.table-info',
       h('b', g.name),
-      h('span', host ? `Table de ${host.pseudo}` : 'Table', ' · ', statusLabel(t, g))),
+      h('span', host ? `Partie de ${host.pseudo}` : 'Partie', ' · ', statusLabel(t, g))),
     h('span.table-seats', { 'aria-label': count(t.seats.length, 'joueur', 'joueurs') },
       t.seats.slice(0, 5).map((id) => token(state.users.get(id), { size: 's' })),
       t.seats.length > 5 ? h('span.more', `+${t.seats.length - 5}`) : null),
@@ -155,10 +156,10 @@ export function render(el) {
   keepFocus(el, () => el.replaceChildren(h('div.page',
     h('div.view-head.page-head',
       h('div', h('h1', 'Jouer'),
-        h('p.view-sub', turns ? `C’est à toi de jouer sur ${count(turns, 'table', 'tables')}.` : 'Ouvre une table, invite la classe, joue en direct.'))),
+        h('p.view-sub', turns ? `C’est à toi de jouer sur ${count(turns, 'partie', 'parties')}.` : 'Crée une partie, invite la classe, joue en direct.'))),
     hero ? featuredCard(hero) : null,
     open.length || playing.length ? h('div.tables-cols',
-      section('Tables ouvertes', open, 'Aucune table ouverte pour l’instant.'),
+      section('Parties en attente', open, 'Aucune partie en attente pour l’instant.'),
       section('Parties en cours', playing, 'Aucune partie en cours.')) : null,
     h('div.games-head', h('h2.section-title', 'Les jeux', h('span.section-count', String(shown.length))), filters),
     shown.length

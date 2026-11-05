@@ -14,6 +14,7 @@ export const state = {
   convs: new Map(), // scope -> { messages, complete, loaded, pendingRead }
   typing: new Map(), // scope -> Map(userId -> timer)
   games: [], // catalogue : [{ id, name, minPlayers, maxPlayers, color, options… }]
+  joinOnOpen: null, // la partie à rejoindre dès qu'elle s'affiche (bouton Rejoindre, invitation)
   tables: [], // résumés des tables : [{ id, game, hostId, status, seats, turn… }]
 };
 

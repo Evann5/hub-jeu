@@ -35,20 +35,20 @@ export function render(container) {
   const first = state.channels[0];
   const turns = myTurnTables().length;
   const lobbies = state.tables.filter((t) => t.status === 'lobby').length;
-  const playText = turns ? `C’est à toi de jouer sur ${count(turns, 'table', 'tables')}.`
-    : lobbies ? `${count(lobbies, 'table ouverte attend', 'tables ouvertes attendent')} des joueurs.`
-      : `${count(state.games.length, 'jeu', 'jeux')} : ouvre une table et invite la classe.`;
+  const playText = turns ? `C’est à toi de jouer sur ${count(turns, 'partie', 'parties')}.`
+    : lobbies ? `${count(lobbies, 'partie attend', 'parties attendent')} des joueurs.`
+      : `${count(state.games.length, 'jeu', 'jeux')} : crée une partie et invite la classe.`;
 
-  const summary = [
-    online.length ? `${count(online.length, 'personne est', 'personnes sont')} en ligne` : 'Personne d’autre n’est en ligne',
-    total ? `tu as ${count(total, 'message non lu', 'messages non lus')}` : 'tu es à jour',
-  ].join(', et ');
+  const nb = online.length ? `${count(online.length, 'personne est', 'personnes sont')} en ligne` : 'Personne d’autre n’est en ligne';
+  const summary = total ? `${nb}, et tu as ${count(total, 'message non lu', 'messages non lus')}.`
+    : online.length ? `${nb} : lance une partie !`
+      : 'Personne d’autre n’est connecté pour l’instant. Invite un ami avec le code de la classe.';
 
   container.replaceChildren(h('div.home',
     h('section.card.card-hello',
       h('p.card-kicker', dateFmt.format(new Date())),
       h('h1', `${hello()} ${state.me.pseudo}`),
-      h('p.card-text', `${summary}.`),
+      h('p.card-text', summary),
       h('div.card-actions',
         h('a.btn.btn-dark', { href: total && rows[0] ? rows[0].href : first ? `#/c/${first.id}` : '#/messages' },
           icon('chat'), total ? 'Lire mes messages' : 'Ouvrir le chat'),
@@ -66,7 +66,7 @@ export function render(container) {
           type: 'button',
           title: u.pseudo,
           onclick: () => openProfile(u.id),
-        }, token(u), h('span.sr-only', u.pseudo)))))
+        }, token(u), h('span.online-name', u.pseudo)))))
         : h('p.card-text', 'Personne d’autre pour l’instant. Les membres connectés apparaîtront ici.'),
       h('a.card-link', { href: '#/membres' }, 'Voir tous les membres')),
 

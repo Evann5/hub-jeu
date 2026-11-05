@@ -121,7 +121,7 @@ export function purgeTables() {
 export function registerPlay(socket, handler) {
   const tableId = (id) => {
     const n = Number(id);
-    if (!Number.isInteger(n)) throw new ChatError('Table introuvable.');
+    if (!Number.isInteger(n)) throw new ChatError('Partie introuvable.');
     return n;
   };
 
@@ -202,7 +202,7 @@ export function registerPlay(socket, handler) {
   // Invitation : une notification chez chaque personne choisie, avec un bouton pour rejoindre.
   socket.on('table:invite', handler(socket, ({ id, userIds }, me) => {
     const t = tables.getTable(tableId(id));
-    if (!t.seats.includes(me.id)) throw new ChatError('Assieds-toi à la table pour inviter.');
+    if (!t.seats.includes(me.id)) throw new ChatError('Rejoins la partie pour inviter.');
     const targets = [...new Set([].concat(userIds || []).map(Number))]
       .filter((uid) => uid !== me.id && getUser(uid) && !getUser(uid).banned)
       .slice(0, 40);

@@ -27,7 +27,7 @@
     {
       "key": "bots",
       "label": "Robots",
-      "help": "Ils complètent la table, 10 joueurs au plus. Seul à la table, 3 robots s'ajoutent d'office.",
+      "help": "Ils complètent la partie, 10 joueurs au plus. Si tu es seul, 3 robots s'ajoutent d'office.",
       "type": "choice",
       "default": 0,
       "choices": [

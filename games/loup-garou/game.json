@@ -5,7 +5,7 @@
   "how": [
     "Chacun reçoit en secret un rôle : villageois, loup-garou, ou un rôle spécial (Voyante, Sorcière, Chasseur, Cupidon).",
     "La nuit, les loups choisissent ensemble une victime. La Voyante découvre le rôle d'un joueur, Cupidon unit deux amoureux la première nuit, la Sorcière peut sauver la victime ou empoisonner quelqu'un (une fois chacune).",
-    "Le jour, on annonce les morts (leur rôle est révélé), on débat dans le chat de la table, puis le village vote : le plus voté est éliminé, une égalité n'élimine personne.",
+    "Le jour, on annonce les morts (leur rôle est révélé), on débat dans le chat de la partie, puis le village vote : le plus voté est éliminé, une égalité n'élimine personne.",
     "Le Chasseur, en mourant, tire sur quelqu'un. Si l'un des amoureux meurt, l'autre le suit.",
     "Le village gagne quand tous les loups sont morts. Les loups gagnent quand ils sont au moins aussi nombreux que les autres. Deux amoureux (un loup et un villageois) gagnent seuls s'ils restent les deux derniers."
   ],

@@ -17,7 +17,7 @@ export function render(container) {
   leave();
   const id = state.route.id;
   cur = { id, el: container, table: null, view: null, watchers: 0, offset: 0, listeners: new Set(), tab: 'game', chatUnread: 0, chat: [] };
-  container.replaceChildren(h('div.table-loading', 'Ouverture de la table…'));
+  container.replaceChildren(h('div.table-loading', 'Ouverture de la partie…'));
   call(state.socket, 'table:watch', { id }).catch((err) => {
     if (cur?.id !== id) return;
     toast(err.message, { error: true });
@@ -45,6 +45,7 @@ export function onTable(payload) {
   cur.watchers = watchers;
   cur.events = events || [];
   cur.game = gameOf(table.game);
+  joinIfWanted();
   if (!cur.ui) buildShell();
   renderHead();
   renderSide();
@@ -58,15 +59,29 @@ export function onTable(payload) {
   }
 }
 
+// Rejoindre depuis la liste ou une invitation : on s'assoit en arrivant, sans second clic.
+export function wantJoin(id) {
+  state.joinOnOpen = Number(id);
+  if (cur?.id === Number(id) && cur.table) joinIfWanted();
+}
+
+function joinIfWanted() {
+  if (state.joinOnOpen !== cur?.id) return;
+  state.joinOnOpen = null;
+  const t = cur.table;
+  if (t.status !== 'lobby' || t.seats.includes(state.me.id) || t.kicked?.includes(state.me.id) || t.seats.length >= cur.game.maxPlayers) return;
+  call(state.socket, 'table:join', { id: t.id }).catch((err) => toast(err.message, { error: true }));
+}
+
 export function onKicked({ id }) {
   if (cur?.id !== id) return;
-  toast('L’hôte t’a retiré de cette table.');
+  toast('L’hôte t’a retiré de cette partie.');
   go('#/jouer');
 }
 
 export function onClosed({ id }) {
   if (cur?.id !== id) return;
-  toast('La table a été fermée.');
+  toast('La partie a été fermée.');
   unmountGame(); // sinon la 3D, le son et les écouteurs du jeu continuent de tourner
   cur = null;
   go('#/jouer');
@@ -81,7 +96,7 @@ function buildShell() {
     main: h('div.table-main'),
     side: h('aside.table-side', { 'aria-label': 'Joueurs et chat' }),
     players: h('section.table-players'),
-    chat: h('section.table-chat', { 'aria-label': 'Chat de la table' }),
+    chat: h('section.table-chat', { 'aria-label': 'Chat de la partie' }),
   };
   cur.ui.side.append(cur.ui.players, cur.ui.chat);
   cur.ui.root = h(`div.${viewClass().replaceAll(' ', '.')}`, { 'data-game': g.id, style: `--g:${g.color};--g-ink:${g.ink}` },
@@ -130,7 +145,7 @@ function renderHead() {
   keepFocus(cur.ui.head, () => cur.ui.head.replaceChildren(...[
     h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux', onclick: () => { if (t.status === 'lobby' && seated()) toast('Ta place reste gardée. Un salon vide se ferme au bout de 5 minutes.'); } }, icon('back', 'Retour aux jeux')),
     h('span.table-emoji', gameLogo(g)),
-    h('div.table-title', h('h1', g.name), h('p', `Table de ${userOf(t.hostId).pseudo}`)),
+    h('div.table-title', h('h1', g.name), h('p', `Partie de ${userOf(t.hostId).pseudo}`)),
     h(`span.table-pill${t.status === 'playing' && myTurn ? '.is-turn' : ''}`, label),
     cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, icon('eye'), String(cur.watchers)) : null,
     seated() || t.status === 'lobby' ? null : h('span.table-pill.is-watch', 'Spectateur'),
@@ -161,8 +176,8 @@ function renderSide() {
   const actions = [];
   if (seated() && !inLobby) actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: openInvite }, icon('users'), 'Inviter'));
   if (seated() && t.status === 'playing' && !t.left.includes(state.me.id)) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: forfeit }, 'Abandonner'));
-  if (seated() && t.status === 'over') actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: leaveTable }, icon('logout'), 'Quitter la table'));
-  if (isHost() || isAdmin()) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: closeTable }, icon('trash'), 'Fermer la table'));
+  if (seated() && t.status === 'over') actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: leaveTable }, icon('logout'), 'Quitter la partie'));
+  if (isHost() || isAdmin()) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: closeTable }, icon('trash'), 'Fermer la partie'));
   keepFocus(cur.ui.players, () => cur.ui.players.replaceChildren(
     h('h2', 'Joueurs', h('span.section-count', `${t.seats.length}/${g.maxPlayers}`)),
     ...(inLobby ? [] : [h('ul.seat-list', rows)]),
@@ -235,7 +250,7 @@ function renderLobby() {
       id === t.hostId ? h('span.tag-host', 'hôte') : null,
       isHost() && id !== state.me.id ? h('button.icon-btn.sm', {
         type: 'button',
-        title: `Retirer ${u.pseudo} de la table`,
+        title: `Retirer ${u.pseudo} de la partie`,
         onclick: () => call(state.socket, 'table:kick', { id: cur.id, userId: id }).catch((err) => toast(err.message, { error: true })),
       }, icon('x', `Retirer ${u.pseudo}`)) : null);
   });
@@ -244,10 +259,10 @@ function renderLobby() {
   const actions = [];
   if (!seated()) {
     actions.push(t.kicked?.includes(state.me.id)
-      ? h('p.lobby-note', 'L’hôte t’a retiré de cette table : tu peux regarder la partie quand elle commence.')
+      ? h('p.lobby-note', 'L’hôte t’a retiré de cette partie : tu peux regarder la partie quand elle commence.')
       : full
-      ? h('p.lobby-note', 'La table est complète : tu peux regarder la partie quand elle commence.')
-      : h('button.btn.btn-dark', { type: 'button', onclick: (e) => act(e, 'table:join') }, icon('plus'), 'Rejoindre la table'));
+      ? h('p.lobby-note', 'La partie est complète : tu peux regarder la partie quand elle commence.')
+      : h('button.btn.btn-dark', { type: 'button', onclick: (e) => act(e, 'table:join') }, icon('plus'), 'Rejoindre la partie'));
   } else {
     const waiting = missing > 0; // tant qu'on ne peut pas lancer, le bouton principal, c'est Inviter
     const invite = h(`button.btn.${waiting ? 'btn-dark' : 'btn-outline-dark'}`, { type: 'button', onclick: openInvite }, icon('users'), 'Inviter');
@@ -317,7 +332,7 @@ async function forfeit() {
 }
 
 async function closeTable() {
-  const ok = await confirmDialog('Fermer la table', 'La table et son chat disparaissent pour tout le monde, partie comprise.', { confirmLabel: 'Fermer', danger: true });
+  const ok = await confirmDialog('Fermer la partie', 'La partie et son chat disparaissent pour tout le monde, partie comprise.', { confirmLabel: 'Fermer la partie', danger: true });
   if (!ok || !cur) return;
   try {
     await call(state.socket, 'table:close', { id: cur.id });
@@ -337,9 +352,9 @@ function openInvite() {
     token(u, { size: 's', online: state.online.has(u.id) }),
     h('span.label', u.pseudo),
     h('small', state.online.has(u.id) ? 'en ligne' : 'hors ligne')))));
-  const dlg = modal('Inviter à la table',
+  const dlg = modal('Inviter à la partie',
     h('p', 'Les personnes choisies reçoivent une notification pour rejoindre.'),
-    people.length ? list : h('p', 'Tout le monde est déjà à la table.'),
+    people.length ? list : h('p', 'Tout le monde est déjà dans la partie.'),
     h('div.dlg-actions',
       h('button.btn.btn-ghost', { type: 'button', onclick: () => dlg.close() }, 'Annuler'),
       h('button.btn', {
@@ -485,7 +500,7 @@ function renderChat() {
   if (!cur?.ui) return;
   cur.ui.chatList = h('ol.tchat-list');
   const muted = state.mutedUntil > Date.now();
-  const input = h('input.input', { type: 'text', placeholder: 'Écrire à la table', 'aria-label': 'Écrire à la table', maxlength: 500, enterkeyhint: 'send', autocomplete: 'off' });
+  const input = h('input.input', { type: 'text', placeholder: 'Écrire aux joueurs', 'aria-label': 'Écrire aux joueurs', maxlength: 500, enterkeyhint: 'send', autocomplete: 'off' });
   const form = h('form.tchat-form', input, h('button.btn', { type: 'submit', title: 'Envoyer' }, icon('send', 'Envoyer')));
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -499,7 +514,7 @@ function renderChat() {
       toast(err.message, { error: true });
     }
   });
-  cur.ui.chat.replaceChildren(h('h2', 'Chat de la table'), h('div.tchat-log', { role: 'log', 'aria-live': 'off', 'aria-label': 'Messages de la table' }, cur.ui.chatList), muted ? h('p.composer-note', 'Tu es en sourdine.') : form);
+  cur.ui.chat.replaceChildren(h('h2', 'Chat de la partie'), h('div.tchat-log', { role: 'log', 'aria-live': 'off', 'aria-label': 'Messages de la partie' }, cur.ui.chatList), muted ? h('p.composer-note', 'Tu es en sourdine.') : form);
   renderChatList();
 }
 
@@ -507,7 +522,7 @@ function renderChatList() {
   if (!cur?.ui?.chatList) return;
   cur.ui.chatList.replaceChildren(...(cur.chat.length
     ? cur.chat.map(chatMessage)
-    : [h('li.tchat-empty', 'Le chat de la table. Joueurs et spectateurs peuvent écrire ici.')]));
+    : [h('li.tchat-empty', 'Le chat de la partie. Joueurs et spectateurs peuvent écrire ici.')]));
   scrollChat();
 }
 
