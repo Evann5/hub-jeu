@@ -1,12 +1,13 @@
-"""Dakar : la colline des Mamelles, le monument de la Renaissance africaine vu comme une forme abstraite (trois fûts de bronze vert de hauteurs
-différentes devant un grand disque de soleil, sur un socle de pierre à baies, grand escalier devant), le phare des Mamelles sur la petite colline
-voisine et un baobab. Aucun personnage. Passe 2 (05/11/2026) : sol beige et collines sèches, socle avec fenêtres, phare et baobab de Dakar."""
+"""Dakar : la colline des Mamelles, le monument de la Renaissance africaine vu comme une forme abstraite : une grande lame élancée de bronze,
+légèrement penchée, flanquée d'une lame plus courte, sur un socle de pierre à baies au sommet de la colline, grand escalier devant ; le phare des
+Mamelles sur la petite colline voisine et un baobab. Aucun personnage. Passe 3 (05/11/2026) : plus de sommet vert ni de disque orange, du bronze
+(brun doré) seulement, un seul étage de socle."""
 import math
 from lib import Mesh
 from lib_ab import *
 
 PAL = {'ground': '#E3D2A8', 'g1': '#B68F58', 'g2': '#C8A56B', 'g3': '#D9BF86', 'scrub': '#8AA05A', 'trunk': '#8A7358', 'trunk2': '#6E5A44', 'dark': '#4A3A32', 'white': '#F4F1EA', 'red': '#C9503A', 'stone': '#D6CDB9', 'stone2': '#B5AB95', 'step': '#EFE6CF',
-       'b1': '#3FA68C', 'b2': '#2B7F6C', 'b3': '#6CC7AE', 'sun': '#F6A93A', 'sun2': '#E9792F'}
+       'b1': '#9A6230', 'b2': '#6A4120', 'b3': '#C8954F'}
 
 
 def lean(m, c0, c1, hw0, hd0, hw1, hd1, col, col_top=None, col_side=None):
@@ -21,15 +22,26 @@ def lean(m, c0, c1, hw0, hd0, hw1, hd1, col, col_top=None, col_side=None):
     m.poly(rb, col_top or col, centroid(ra))
 
 
-def disc_xy(m, cx, cy, cz, r, th, col, col2, n=12):
-    f = [(cx+r*math.cos(2*math.pi*i/n), cy+r*math.sin(2*math.pi*i/n), cz+th/2) for i in range(n)]
-    b = [(p[0], p[1], cz-th/2) for p in f]
-    c = (cx, cy, cz)
-    for i in range(n):
-        j = (i+1) % n
-        m.poly([f[i], f[j], b[j], b[i]], col2, c)
-    m.poly(f, col, c)
-    m.poly(b, col2, c)
+def blade(m, cx, cz, y0, H, hw, hd, drift, n=8, slant=0.2):
+    """Lame de bronze qui s'amincit à peine en se penchant de `drift` vers la droite ; face avant claire, flancs sombres,
+    sommet coupé en biais (le coin arrière gauche monte de `slant`)."""
+    rings = []
+    for k in range(n+1):
+        t = k/n
+        s = 1-0.5*t**1.2
+        x = cx+drift*t**1.6
+        w, d = hw*s, hd*s
+        ring = [(x-w, y0+H*t, cz-d), (x+w, y0+H*t, cz-d), (x+w, y0+H*t, cz+d), (x-w, y0+H*t, cz+d)]
+        if k == n:
+            ring = [(px, py+slant*(1-(px-x)/w)/2*0.8+slant*(1-(pz-cz)/d)/2*0.2, pz) for (px, py, pz) in ring]
+        rings.append(ring)
+    for k in range(n):
+        ra, rb = rings[k], rings[k+1]
+        ref = centroid(ra+rb)
+        for i, col in enumerate(('b2', 'b2', 'b1', 'b3')):     # nz, px, pz, nx
+            j = (i+1) % 4
+            m.poly([ra[i], ra[j], rb[j], rb[i]], col, ref)
+    m.poly(rings[-1], 'b3', centroid(rings[-2]))
 
 
 def build():
@@ -45,23 +57,20 @@ def build():
         y = 0.05+0.13*k
         z = CZ+0.86-0.1*k
         m.box(CX-0.11, CX+0.11, y, y+0.05, z-0.05, z+0.02, 'step', skip=('bot',))
-    # socle de pierre : deux étages octogonaux, baies sombres sur les quatre faces
+    # socle de pierre : un étage octogonal, baies sombres sur les quatre faces
     cyl(m, CX, CZ, 0.82, 1.04, 0.33, 'stone', r1=0.29, n=8, col_top='stone2', rot=math.pi/8)
-    cyl(m, CX, CZ, 1.04, 1.22, 0.25, 'stone', r1=0.22, n=8, col_top='stone2', rot=math.pi/8)
     for a in range(4):
         ang = a*math.pi/2
         px, pz = math.cos(ang), math.sin(ang)
         tx, tz = -pz, px
-        for (ya, yb, rr, ws) in ((0.88, 1.0, 0.315*math.cos(math.pi/8)+0.004, (-0.1, 0.0, 0.1)), (1.07, 1.16, 0.24*math.cos(math.pi/8)+0.004, (-0.06, 0.06))):
-            for u in ws:
-                pts = [(CX+rr*px+tx*(u-0.032), ya, CZ+rr*pz+tz*(u-0.032)), (CX+rr*px+tx*(u+0.032), ya, CZ+rr*pz+tz*(u+0.032)),
-                       (CX+rr*px+tx*(u+0.032), yb-0.02, CZ+rr*pz+tz*(u+0.032)), (CX+rr*px+tx*u, yb+0.01, CZ+rr*pz+tz*u), (CX+rr*px+tx*(u-0.032), yb-0.02, CZ+rr*pz+tz*(u-0.032))]
-                m.poly(pts, 'dark', (CX, (ya+yb)/2, CZ))
-    # trois fûts de bronze vert, hauteurs inégales, et le disque de soleil derrière le plus haut
-    lean(m, (CX, 1.22, CZ), (CX-0.03, 2.3, CZ), 0.16, 0.1, 0.07, 0.06, 'b1', 'b3', 'b2')
-    lean(m, (CX+0.21, 1.22, CZ+0.02), (CX+0.36, 1.85, CZ+0.02), 0.085, 0.08, 0.045, 0.045, 'b1', 'b3', 'b2')
-    lean(m, (CX-0.2, 1.22, CZ+0.02), (CX-0.33, 1.65, CZ+0.02), 0.075, 0.07, 0.04, 0.04, 'b1', 'b3', 'b2')
-    disc_xy(m, CX-0.03, 2.1, CZ-0.14, 0.3, 0.07, 'sun', 'sun2')
+        rr = 0.315*math.cos(math.pi/8)+0.004
+        for u in (-0.1, 0.0, 0.1):
+            pts = [(CX+rr*px+tx*(u-0.032), 0.88, CZ+rr*pz+tz*(u-0.032)), (CX+rr*px+tx*(u+0.032), 0.88, CZ+rr*pz+tz*(u+0.032)),
+                   (CX+rr*px+tx*(u+0.032), 0.98, CZ+rr*pz+tz*(u+0.032)), (CX+rr*px+tx*u, 1.01, CZ+rr*pz+tz*u), (CX+rr*px+tx*(u-0.032), 0.98, CZ+rr*pz+tz*(u-0.032))]
+            m.poly(pts, 'dark', (CX, 0.95, CZ))
+    # le monument : une grande lame de bronze et une lame plus courte, penchées du même côté
+    blade(m, CX+0.04, CZ, 1.035, 1.5, 0.15, 0.1, 0.1)
+    blade(m, CX-0.2, CZ+0.02, 1.035, 0.95, 0.075, 0.07, 0.06, slant=0.12)
     # petite colline voisine et phare des Mamelles
     cyl(m, -0.62, 0.52, 0.05, 0.3, 0.27, 'g1', r1=0.17, n=9, col_top='g2')
     lathe(m, -0.62, 0.52, [(0.075, 0.3), (0.06, 0.62), (0.055, 0.8)], 8, lambda k, i: 'white' if k == 0 else 'red', cap='white')

@@ -71,6 +71,14 @@ export function cardName(code) {
   return `${COLOR_NAMES[code[0]]} ${v === 'X' ? 'passe' : v === 'I' ? 'sens inverse' : v}`;
 }
 
+// Ce que le joueur peut poser : la couleur demandée, la même valeur que la carte du dessus, ou un joker.
+function topHint(view) {
+  const color = COLOR_NAMES[view.color];
+  const v = view.top && view.top[0] !== 'W' ? view.top.slice(1) : null;
+  const value = v === null ? null : v === 'X' ? 'un « passe »' : v === 'I' ? 'un « sens inverse »' : `un ${v}`;
+  return `À toi : joue du ${color ? color.toLowerCase() : 'même couleur'}${value ? `, ${value}` : ''} ou un joker.`;
+}
+
 export function mount(root, api) {
   const { h } = api;
   let view = null;
@@ -245,7 +253,7 @@ export function mount(root, api) {
     } else if (view.turn && view.stack) text = `${api.user(view.turn).pseudo} doit renchérir ou piocher ${view.stack} cartes…`;
     else if (view.turn === api.me.id) {
       text = view.drawn ? `Tu as pioché ${cardName(view.drawn)} : joue-la ou passe.`
-        : view.playable.length ? 'À toi de jouer.'
+        : view.playable.length ? topHint(view)
           : 'Aucune carte ne va : pioche !';
     } else if (view.turn) text = `${api.user(view.turn).pseudo} réfléchit…`;
     else text = '';

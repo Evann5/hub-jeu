@@ -81,6 +81,7 @@
 
 /* Vote : des bulles numérotées */
 .g-mytho .my-ask { margin: 12px 0 6px; font-weight: 800; }
+.g-mytho .my-ask.is-wait { margin-top: 26px; }
 .g-mytho .my-senses { display: grid; gap: 12px; margin: 6px 0 0; padding: 0; list-style: none; }
 .g-mytho .my-sense {
   position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;

@@ -37,6 +37,7 @@
 .g-onde .on-bar-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; width: 100%; }
 .g-onde .on-chip { padding: 4px 14px; border-radius: 999px; background: rgb(255 255 255 / 0.1); box-shadow: inset 0 0 0 2px var(--violet); font-size: 0.8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
 .g-onde .on-chip.is-live { background: var(--coral); box-shadow: 0 0 14px rgb(255 77 126 / 0.8); color: #fff; }
+.g-onde .on-chip.is-goal { background: var(--lemon); box-shadow: none; color: #12052E; }
 .g-onde .on-chip.is-live::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #fff; animation: on-blink 1.4s ease-in-out infinite; }
 @keyframes on-blink { 50% { opacity: 0.25; } }
 .g-onde .on-time { min-width: 3em; font: 800 1rem/1 'ON Syne', sans-serif; font-variant-numeric: tabular-nums; }

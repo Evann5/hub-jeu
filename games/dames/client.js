@@ -176,7 +176,8 @@ export function mount(root, api) {
     if (s.forfeit) return `${api.user(s.forfeit).pseudo} a abandonné. ${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} !`;
     if (s.winner) return `${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} : plus de coup possible pour l’adversaire.`;
     if (s.draw) return `Partie nulle : 25 coups de dame chacun, sans prise ni pion.`;
-    const slow = s.last?.auto ? `${s.last.by === api.me.id ? "Tu n'as" : `${api.user(s.last.by).pseudo} n'a`} pas joué à temps : coup joué au hasard. ` : '';
+    const took = info.isPlayer && !info.over && s.last?.taken.length && s.last.by !== api.me.id && !sel.length ? `${api.user(s.last.by).pseudo} a pris ${s.last.taken.length > 1 ? `${s.last.taken.length} de tes pièces` : 'une de tes pièces'}. ` : '';
+    const slow = took + (s.last?.auto ? `${s.last.by === api.me.id ? "Tu n'as" : `${api.user(s.last.by).pseudo} n'a`} pas joué à temps : coup joué au hasard. ` : '');
     if (myTurn()) {
       const take = s.moves[0]?.taken.length || 0;
       if (sel.length > 1) return `${slow}Continue ta prise : touche la case suivante.`;
@@ -215,6 +216,7 @@ export function mount(root, api) {
     }
     const ghostAt = sel.length > 1 ? sel[sel.length - 1] : -1;
     const last = new Set(animMove && !sel.length ? [animMove.path[0], animMove.path[animMove.path.length - 1]] : []);
+    const gone = new Set(animMove && !sel.length ? animMove.taken : []); // pièces prises au dernier coup : une case fantôme montre où elles étaient
     for (const [i, sq] of squares) {
       const v = s.board[i];
       const piece = pieces.get(i);
@@ -228,6 +230,7 @@ export function mount(root, api) {
       sq.classList.toggle('is-selected', isStart);
       sq.classList.toggle('is-target', next.has(i));
       sq.classList.toggle('is-last', last.has(i));
+      sq.classList.toggle('is-gone', gone.has(i) && v === 0);
       sq.classList.toggle('is-step', sel.indexOf(i) > 0);
       const step = sel.indexOf(i);
       sq.lastChild.textContent = step > 0 && step < sel.length ? String(step) : '';

@@ -115,7 +115,7 @@ export function mount(root, api) {
     return h('section.tp-pile', { 'aria-label': 'Pile commune' },
       h('div.tp-halo'),
       top ? orb(top.card, `.tp-top${isNew ? '.is-new' : ''}`) : h('span.tp-orb.is-empty', { 'aria-label': 'Aucune carte posée' }, h('b', '0')),
-      h('p.tp-pile-info', top ? `Posé par ${isMe(top.by) ? 'toi' : name(top.by)}` : 'Rien n’est posé : la pile attend la première carte.'),
+      h('p.tp-pile-info', top ? `Posé par ${isMe(top.by) ? 'toi' : name(top.by)}` : 'Rien n’est posé. Pose ta carte quand tu sens que personne n’en a de plus petite.'),
       trail.length ? h('ol.tp-trail', { 'aria-label': 'Cartes déjà posées' }, trail.map((p) => h('li', orb(p.card, '.is-mini')))) : null);
   }
 
@@ -180,7 +180,7 @@ export function mount(root, api) {
         h('div.tp-breath', { 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
         h('h2', 'Concentration'),
         prev ? h('p.tp-notice', prev) : null,
-        h('p', first ? 'Chacun va recevoir une carte.' : `Niveau ${v.level} : chacun va recevoir ${v.level} cartes.`),
+        h('p', first ? 'Chacun va recevoir une carte. But : les poser ensemble dans l’ordre croissant, sans parler.' : `Niveau ${v.level} : chacun va recevoir ${v.level} cartes.`),
         h('p.tp-silence', 'Respire. Dès que les cartes sont distribuées, plus un mot : pas de chat pendant le niveau.'),
         me && !ready
           ? h('button.tp-btn.is-main', { type: 'button', dataset: { k: 'ready' }, onclick: () => api.sendMove({ type: 'ready' }).catch(() => {}) }, 'Prêt')

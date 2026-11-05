@@ -200,4 +200,6 @@
 /* .bn est lui-même le conteneur : son espacement passe par une media query. */
 @media (max-width: 739px) {
   .g-bataille-navale .bn { gap: 10px; padding-bottom: 20px; }
+  /* Le statut passe de 2 lignes (ton tour, en bulle jaune) à 1 ligne (celui de l'autre) : on réserve la hauteur pour que le radar ne saute pas. */
+  .g-bataille-navale .bn[data-phase='firing'][data-role='player'] .bn-top { min-height: 4.4rem; }
 }

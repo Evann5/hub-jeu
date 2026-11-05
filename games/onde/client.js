@@ -210,7 +210,7 @@ export function mount(root, api) {
     const who = v.mode === 'teams' ? ` · ${teamName(v.playing)}` : '';
     const lead = isMe(v.leader) ? 'toi' : name(v.leader);
     const bits = [h('div.on-bar-top', h('span.on-chip', v.phase === 'over' ? 'Fin de partie' : `Manche ${v.round + 1}${who}`),
-      v.phase === 'over' ? null : h('span.on-chip.is-live', 'En direct'), h('span.on-time', { 'aria-label': 'Temps restant' })), scoreboard()];
+      v.phase === 'over' ? null : v.mode === 'teams' ? h('span.on-chip.is-goal', `Premier à ${v.target}`) : h('span.on-chip.is-live', 'En direct'), h('span.on-time', { 'aria-label': 'Temps restant' })), scoreboard()];
     if (v.mode === 'coop' && v.wantedTeams) bits.push(h('p.on-hint', 'Moins de 4 joueurs : on joue tous ensemble.'));
     if (v.phase !== 'over') {
       if (v.clue) bits.push(h('blockquote.on-clue', h('span.on-clue-label', isMe(v.leader) ? 'Ton indice' : `Indice de ${lead}`), v.clue));

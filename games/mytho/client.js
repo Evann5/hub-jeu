@@ -39,7 +39,9 @@ export function mount(root, api) {
 
   function screenWrite() {
     const nodes = [head('Invente'), roster(v.written), entry()];
+    const waiting = v.players.filter((id) => !v.left.includes(id) && !v.written.includes(id)).length;
     if (isPlayer() && v.mine === null) {
+      nodes.push(h('p.my-ask', 'Invente une fausse définition qui sonne vraie : les autres devront trouver la vraie.'));
       const area = h('textarea', {
         rows: 3, maxlength: 160, placeholder: 'Ta définition, crédible comme un dictionnaire…', 'aria-label': 'Ta fausse définition',
         value: draft, oninput: (e) => { draft = e.target.value; },
@@ -64,6 +66,9 @@ export function mount(root, api) {
       setTimeout(() => matchMedia('(hover: hover)').matches && area.focus({ preventScroll: true }));
     } else if (v.mine) {
       nodes.push(h('blockquote.my-mine', h('span', 'Ta définition'), v.mine));
+      nodes.push(h('p.my-ask.is-wait', waiting ? `Envoyée. On attend ${waiting} joueur${waiting > 1 ? 's' : ''}.` : 'Envoyée. Le vote arrive.'));
+    } else if (!isPlayer()) {
+      nodes.push(h('p.my-ask', 'Les joueurs inventent une fausse définition de ce mot.'));
     }
     return nodes;
   }

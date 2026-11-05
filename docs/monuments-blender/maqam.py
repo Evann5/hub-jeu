@@ -10,6 +10,7 @@ PAL = {'ground': '#E3D2A8', 'step': '#E2DACA', 'step2': '#C3B9A3', 'c1': '#F4EFE
 Y0 = 0.36
 H = 2.0
 NS = 11
+WK = float(__import__('os').environ.get('MQ_W','1'))
 
 
 def blade(m, th):
@@ -21,7 +22,7 @@ def blade(m, th):
         t = s/(NS-1)
         y = Y0+H*t
         r = 0.02+0.47*(1-t)**1.05
-        w = 0.012+0.06*(1-t)+0.13*math.sin(math.pi*t**0.8)**0.9
+        w = WK*(0.012+0.06*(1-t)+0.13*math.sin(math.pi*t**0.8)**0.9)
         e = 0.05*(1-0.55*t)
         c = (r*ux, y, r*uz)
         rings.append([(c[0]+tx*w, y, c[2]+tz*w), (c[0]+ux*e, y, c[2]+uz*e), (c[0]-tx*w, y, c[2]-tz*w), (c[0]-ux*e, y, c[2]-uz*e)])
@@ -54,7 +55,7 @@ def build():
             m.poly(pts, 'dark', (0, 0.15, 0))
             m.poly(pts[::-1], 'dark', (r*px*3, 0.15, r*pz*3)) if False else None
     for k in range(3):
-        blade(m, -math.pi/2+2*math.pi*k/3)
+        blade(m, math.radians(float(__import__('os').environ.get('MQ_ROT','-90')))+2*math.pi*k/3)
     cyl(m, 0, 0, Y0, Y0+0.16, 0.06, 'flame', r1=0.0, n=6, bot=True)
     cyl(m, 0, 0, Y0, Y0+0.09, 0.035, 'flame2', r1=0.0, n=6)
     return m

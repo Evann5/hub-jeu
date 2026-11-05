@@ -101,7 +101,7 @@ test('indice : seulement le meneur, un texte sans chiffre', () => {
 test('l’aiguille est commune : la dernière position compte, déplacer efface les verrous', () => {
   let s = setup(mk(4), teamsOpts, ctx());
   s = play(s, s.leader, { type: 'clue', text: 'indice' });
-  const [g1, g2] = status(s).turn;
+  const [g1, g2 = g1] = status(s).turn; // à 4 joueurs, une seule personne cherche par équipe
   assert.ok(!status(s).turn.includes(s.leader), 'le meneur ne déplace pas l’aiguille');
   s = play(s, g1, { type: 'aim', angle: 40 });
   s = play(s, g2, { type: 'aim', angle: 120.4 });
@@ -136,6 +136,23 @@ test('verrouillage : toute l’équipe doit verrouiller (sauf le meneur) puis l�
   assert.throws(() => move(s, bettors[0], { type: 'bet', side: 'L' }, ctx()), /déjà parié/);
   assert.equal(view(s, bettors[0]).myBet, 'R');
   assert.equal(view(s, guessers[0]).bets, null, 'paris cachés');
+});
+test('seuls les chercheurs règlent l’aiguille, seule l’autre équipe parie (le meneur connaît la zone)', () => {
+  let s = withSecret(setup(mk(5), teamsOpts, ctx()), 100);
+  s = play(s, s.leader, { type: 'clue', text: 'indice' });
+  const guessers = status(s).turn;
+  const outsiders = s.players.filter((id) => !guessers.includes(id));
+  for (const id of outsiders) {
+    assert.throws(() => move(s, id, { type: 'aim', angle: 100 }, ctx()), /équipe qui cherche/);
+    assert.throws(() => move(s, id, { type: 'lock' }, ctx()), /équipe qui cherche/);
+  }
+  s = play(s, guessers[0], { type: 'aim', angle: 100 });
+  for (const id of guessers) s = play(s, id, { type: 'lock' });
+  assert.equal(s.phase, 'bet');
+  const bettors = status(s).turn;
+  for (const id of s.players.filter((x) => !bettors.includes(x))) {
+    assert.throws(() => move(s, id, { type: 'bet', side: 'L' }, ctx()), /autre équipe/);
+  }
 });
 const teamsLen = (s, t) => Object.values(s.teams).filter((x) => x === t).length;
 

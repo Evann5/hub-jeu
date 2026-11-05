@@ -156,6 +156,7 @@ export function move(s, playerId, action, ctx) {
       return { state: { ...s, phase: 'guess', clue, needle: DIAL / 2, locks: [], deadline: due(s, ctx.now, s.timer * 1000) } };
     }
     case 'guess': {
+      if ((type === 'aim' || type === 'lock') && !guessers(s).includes(playerId)) throw new Error('Seuls les joueurs de l’équipe qui cherche (hors meneur) règlent l’aiguille.');
       if (type === 'aim') {
         const angle = Math.round(Number(action.angle));
         if (!Number.isFinite(angle)) throw new Error('Position d’aiguille invalide.');
@@ -173,6 +174,7 @@ export function move(s, playerId, action, ctx) {
     }
     case 'bet': {
       if (type !== 'bet' || !['L', 'R'].includes(action.side)) throw new Error('Choisis : la zone est plus à gauche ou plus à droite.');
+      if (!bettors(s).includes(playerId)) throw new Error('Seule l’autre équipe parie.');
       if (playerId in s.bets) throw new Error('Tu as déjà parié.');
       const t = { ...s, bets: { ...s.bets, [playerId]: action.side } };
       return { state: bettors(t).every((id) => id in t.bets) ? reveal(t, ctx) : t };

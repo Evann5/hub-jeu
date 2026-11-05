@@ -123,10 +123,13 @@ export function mount(root, api) {
     }
     const name = iPlay() ? (mineBoard ? 'Mes essais' : `Essais de ${pseudo(seat)}`) : `Essais de ${pseudo(seat)}`;
     const sub = mineBoard ? `Tu cherches le code de ${pseudo(1 - seat)}` : `${pseudo(seat)} cherche le code de ${pseudo(1 - seat)}`;
+    // Ma grille : la légende des voyants juste sous le titre (en bas de 10 lignes, elle restait hors de l'écran du téléphone).
+    const legend = h(`p.cs-legend${mineBoard ? '.is-top' : ''}`, h('i.cs-fb-peg.is-placed'), ' couleur bien placée', h('i.cs-fb-peg.is-misplaced'), ' bonne couleur, mal placée');
     return h(`section.cs-board${mineBoard ? '.is-mine' : ''}`,
       h('div.cs-board-head', h('h3', name), h('p', sub)),
+      mineBoard ? legend : null,
       h('div.cs-rows', rows),
-      h('p.cs-legend', h('i.cs-fb-peg.is-placed'), ' couleur bien placée', h('i.cs-fb-peg.is-misplaced'), ' bonne couleur, mal placée'));
+      mineBoard ? null : legend);
   }
 
   // ——— La zone de saisie : palette et boutons ———
@@ -210,7 +213,7 @@ export function mount(root, api) {
     }
     if (!iPlay()) return view.phase === 'coding' ? `${pseudo(0)} et ${pseudo(1)} composent leur code…` : `Manche ${view.guesses[0].length + 1} : ${pseudo(0)} et ${pseudo(1)} cherchent…`;
     if (view.phase === 'coding') {
-      return view.codeSet[me()] ? `Code enregistré. ${opp} compose encore le sien…` : `Compose ton code secret : ${view.holes} couleurs${view.doubles ? ', doublons permis' : ' différentes'}.`;
+      return view.codeSet[me()] ? `Code enregistré. ${opp} compose encore le sien…` : `Compose le code que ${opp} devra trouver : ${view.holes} couleurs${view.doubles ? ', doublons permis' : ' différentes'}.`;
     }
     const round = view.guesses[me()].length + 1;
     if (view.myPending) return `Essai ${round} joué. On attend ${opp}…`;
