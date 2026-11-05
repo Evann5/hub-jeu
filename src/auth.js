@@ -12,7 +12,7 @@ const PSEUDO_RE = new RegExp(`^[\\p{Script=Latin}0-9_.-]{${LIMITS.pseudoMin},${L
 const FOLD = { ı: 'i', ł: 'l', ø: 'o', đ: 'd', ð: 'd', ħ: 'h', ŧ: 't', ß: 'ss', æ: 'ae', œ: 'oe', ſ: 's' };
 const plainPseudo = (pseudo) => pseudo.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[ıłøđðħŧßæœſ]/g, (c) => FOLD[c]);
 // Pour comparer ce que l'œil confond : MINH et MlNH, Olivia et 0livia.
-const lookalike = (pseudo) => plainPseudo(pseudo).replace(/[il1]/g, 'l').replace(/0/g, 'o');
+const lookalike = (pseudo) => plainPseudo(pseudo).replace(/[._-]/g, '').replace(/rn/g, 'm').replace(/vv/g, 'w').replace(/[il1]/g, 'l').replace(/0/g, 'o');
 
 // scrypt tourne dans le pool de threads de Node (la boucle principale n'est jamais bloquée), mais on limite les calculs en parallèle :
 // 2 à la fois, 100 en attente au plus, le reste est refusé (un déluge de connexions ne doit pas saturer le serveur).
@@ -178,11 +178,24 @@ export function readCookie(header, name) {
 // Les tables sont plafonnées à 10 000 entrées : une fois pleines, les nouvelles clés sont refusées (429).
 const WINDOW = 15 * 60_000;
 const failuresByKey = createLimiter({ max: 10, windowMs: WINDOW });
-const failuresByIp = createLimiter({ max: 200, windowMs: WINDOW }); // large : toute une classe partage souvent la même adresse
+const failuresByIp = createLimiter({ max: 500, windowMs: WINDOW }); // large : toute une classe partage souvent la même adresse ; un pseudo inventé n'y compte pas
+const SLOW_TRY = 60_000; // une fois bloqué, un essai par minute reste permis : un camarade ne peut pas enfermer quelqu'un dehors
+const slowTries = new Map(); // clé -> dernier essai accordé
 const loginKey = (ip, pseudo) => `${ip}|${String(pseudo).toLowerCase().slice(0, 40)}`;
 
-export function tooManyFailures(ip, pseudo) {
-  return failuresByIp.blocked(ip) || failuresByKey.blocked(loginKey(ip, pseudo));
+export function tooManyFailures(ip, pseudo, now = Date.now()) {
+  if (failuresByIp.blocked(ip, now)) return true;
+  const key = loginKey(ip, pseudo);
+  if (!failuresByKey.blocked(key, now)) return false;
+  if (now - (slowTries.get(key) ?? -Infinity) < SLOW_TRY) return true;
+  if (slowTries.size >= 10_000) slowTries.clear();
+  slowTries.set(key, now);
+  return false;
+}
+
+// Un pseudo qui n'existe pas ne compte pas pour l'adresse : sinon, 500 pseudos inventés bloqueraient toute la classe.
+export function forgiveAddress(ip) {
+  failuresByIp.undo(ip);
 }
 
 // On compte l'essai AVANT de vérifier le mot de passe (le calcul est asynchrone : une rafale en parallèle passerait sinon toute entière

@@ -30,7 +30,7 @@ app.use((req, res, next) => {
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
   });
   // HSTS seulement en HTTPS (le navigateur l'ignore en HTTP, et il bloquerait un test en local si on l'envoyait par erreur).
-  if (req.secure) res.set('Strict-Transport-Security', 'max-age=15552000');
+  if (req.secure) res.set('Strict-Transport-Security', 'max-age=31536000');
   next();
 });
 

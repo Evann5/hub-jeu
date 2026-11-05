@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { COLORS, AVATARS, REACTIONS, LIMITS } from './options.js';
 import * as auth from './auth.js';
 import { markAllChannelsRead, deleteUserData } from './chat.js';
+import { createLimiter } from './securite.js';
 import { broadcastUser, disconnectUser, disconnectOtherSessions, disconnectSession, removeUser } from './realtime.js';
 import { sameOrigin } from './securite.js';
 
@@ -108,13 +109,14 @@ api.post('/register', async (req, res) => {
 api.post('/login', async (req, res) => {
   const pseudo = str(req.body.pseudo).trim().normalize('NFC'); // même écriture quel que soit le clavier
   const password = str(req.body.password);
-  if (auth.tooManyFailures(req.ip, pseudo)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans 15 minutes, ou demande à un admin.');
+  if (auth.tooManyFailures(req.ip, pseudo)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans une minute, ou demande à un admin.');
 
   auth.recordAttempt(req.ip, pseudo); // compté d'avance, rendu si le mot de passe est bon
   // Le calcul se fait aussi quand le pseudo n'existe pas : même durée dans les deux cas.
   const user = auth.findUserByPseudo(pseudo);
   const ok = await auth.checkPassword(password, user?.pass_hash);
   if (!user || !ok) {
+    if (!user) auth.forgiveAddress(req.ip);
     throw new ApiError(400, 'Pseudo ou mot de passe incorrect.');
   }
   if (user.banned) throw new ApiError(403, 'Ce compte a été bloqué par un admin.');
@@ -131,12 +133,21 @@ api.post('/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// Le mot de passe actuel, redemandé pour changer de mot de passe ou supprimer le compte : 5 erreurs en 15 minutes par compte.
+const wrongCurrent = createLimiter({ max: 5, windowMs: 15 * 60_000 });
+async function checkCurrent(user, given, message) {
+  if (wrongCurrent.blocked(user.id)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans 15 minutes.');
+  if (!(await auth.checkPassword(str(given), user.pass_hash))) {
+    wrongCurrent.hit(user.id);
+    throw new ApiError(400, message);
+  }
+  wrongCurrent.clear(user.id);
+}
+
 api.post('/password', async (req, res) => {
   const user = requireUser(req);
   const password = str(req.body.password);
-  if (!user.must_change_password && !(await auth.checkPassword(str(req.body.current), user.pass_hash))) {
-    throw new ApiError(400, 'Le mot de passe actuel est incorrect.');
-  }
+  if (!user.must_change_password) await checkCurrent(user, req.body.current, 'Le mot de passe actuel est incorrect.');
   const passError = auth.validatePassword(password, user.pseudo);
   if (passError) throw new ApiError(400, passError);
   const passHash = await auth.hashPassword(password);
@@ -150,7 +161,7 @@ api.post('/password', async (req, res) => {
 
 api.post('/delete-account', async (req, res) => {
   const user = requireUser(req);
-  if (!(await auth.checkPassword(str(req.body.password), user.pass_hash))) throw new ApiError(400, 'Mot de passe incorrect.');
+  await checkCurrent(user, req.body.password, 'Mot de passe incorrect.');
   if (user.role === 'admin' && db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND banned = 0").get().n <= 1) throw new ApiError(400, 'Tu es le dernier admin : nomme d’abord un autre admin.');
   // Supprime le compte, ses sessions, ses messages et ses réactions (clés étrangères en cascade), puis ses messages privés et ses lectures.
   transaction(() => {

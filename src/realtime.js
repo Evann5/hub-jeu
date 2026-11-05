@@ -114,12 +114,12 @@ function assertNotMuted(me) {
 // Enveloppe un gestionnaire : limite le rythme, relit l'utilisateur à jour, transmet les erreurs en français.
 // Options : admin (réservé aux admins), event (limite stricte nommée dans strictLimits), muteBlocked (refusé en sourdine),
 // generalLimit: false (l'événement a sa propre limite, comme les coups de jeu).
-function handler(socket, fn, { admin = false, event = null, muteBlocked = false, generalLimit: general = true } = {}) {
+function handler(socket, fn, { admin = false, event = null, muteBlocked = false, generalLimit: general = true, ownLimit = null } = {}) {
   return async (payload, ack) => {
     const reply = typeof ack === 'function' ? ack : () => {};
     try {
       const userId = socket.data.userId;
-      if ((general && generalLimit.hit(userId)) || (event && strictLimits[event].hit(userId))) {
+      if ((general && generalLimit.hit(userId)) || (event && strictLimits[event].hit(userId)) || ownLimit?.(userId)) {
         socket.data.refused = (socket.data.refused || 0) + 1;
         if (socket.data.refused > REFUSED_MAX) {
           socket.disconnect(true);
@@ -133,6 +133,7 @@ function handler(socket, fn, { admin = false, event = null, muteBlocked = false,
         socket.disconnect(true);
         return;
       }
+      if (me.must_change_password) throw new chat.ChatError('Choisis d’abord ton nouveau mot de passe.'); // sinon le mot de passe provisoire resterait valable
       if (admin && me.role !== 'admin') throw new chat.ChatError('Réservé aux admins.');
       if (muteBlocked) assertNotMuted(me);
       reply({ ok: true, ...(await fn(payload ?? {}, me)) });

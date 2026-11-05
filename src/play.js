@@ -13,9 +13,10 @@ const moveTimes = new Map(); // userId -> horodatages des derniers coups
 function tooFast(userId) {
   const now = Date.now();
   const times = (moveTimes.get(userId) || []).filter((t) => now - t < 5000);
-  times.push(now);
   moveTimes.set(userId, times);
-  return times.length > 40;
+  if (times.length >= 40) return true; // un coup refusé n'est pas retenu : sinon une rafale ferait grossir ce tableau et gèlerait le serveur
+  times.push(now);
+  return false;
 }
 
 // Un salon que plus personne ne regarde se ferme au bout de 5 minutes : sinon, la liste se remplit de salons vides où personne ne répond.
@@ -181,11 +182,10 @@ export function registerPlay(socket, handler) {
   }));
 
   socket.on('table:move', handler(socket, ({ id, action }, me) => {
-    if (tooFast(me.id)) throw new ChatError('Doucement : trop de coups d’un coup, réessaie dans un instant.');
     const { table, events } = tables.playMove(tableId(id), me.id, action);
     changed(table, table.id, events);
     return {};
-  }, { generalLimit: false })); // les coups ont leur propre limite (tooFast)
+  }, { generalLimit: false, ownLimit: tooFast })); // les coups ont leur propre limite ; un refus compte pour couper la prise
 
   socket.on('table:restart', handler(socket, ({ id }, me) => {
     changed(tables.restartTable(tableId(id), me.id));
