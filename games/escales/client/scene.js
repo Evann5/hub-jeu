@@ -25,8 +25,8 @@ const BOTTOM_LIFT = 1.2; // les bandeaux du bas remontent : les monuments de la 
 const PAWN_SCALE = Math.min(window.innerWidth, window.innerHeight) < 520 ? 2 : 1.75; // tient sur sa case ; un peu plus grand sur téléphone, où tout est petit
 
 const SIDE_BACK = 0.18;
-const SIDE_H = 2.15; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
-const SIDE_HEROES = { eiffel: 3.7, empire: 3.1, gratteCiel2: 3 }; // sauf ceux qu'on doit reconnaître de loin
+const SIDE_H = 1.85; // sur les côtés, les cases se suivent de haut en bas : au-delà, les monuments se marchent dessus
+const SIDE_HEROES = { eiffel: 3.1, empire: 2.6, gratteCiel2: 2.5 }; // sauf ceux qu'on doit reconnaître de loin
 const BOTTOM_CORNER_H = 1.7; // au-delà, ce qui est posé sur un coin du bas cacherait le nom de la ville juste derrière
 const SPECIAL_COLOR = { start: '#34D399', customs: '#60A5FA', festival: '#F472B6', control: '#FB7185', escale: '#CBD5E1', telex: '#FBBF24', tax: '#F59E0B', chantier: '#94A3B8' };
 // Les monuments qui doivent impressionner sont un peu plus grands que les autres.

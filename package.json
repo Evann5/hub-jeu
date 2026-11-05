@@ -1,6 +1,6 @@
 {
   "name": "hubuno",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Hub de jeux de société en ligne pour la classe, avec messagerie.",
   "type": "module",

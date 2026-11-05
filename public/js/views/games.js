@@ -1,6 +1,7 @@
 // Écran Jouer : les jeux de la classe (ouvrir une table) et les tables en cours (rejoindre, reprendre, regarder).
-import { h, icon, token, toast, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
+import { h, icon, token, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
 import { call } from '../net.js';
+import { modal } from '../dialogs.js';
 import { state, go, gameOf, myTurnTables } from '../store.js';
 
 let container = null;
@@ -28,23 +29,49 @@ export function leave() {
 
 const playersLabel = (g) => (g.minPlayers === g.maxPlayers ? `${g.minPlayers} joueurs` : `${g.minPlayers} à ${g.maxPlayers} joueurs`);
 
-async function openTable(game, btn) {
-  btn.disabled = true;
-  try {
-    const { id } = await call(state.socket, 'table:create', { game: game.id });
-    go(`#/t/${id}`);
-  } catch (err) {
-    toast(err.message, { error: true });
-    btn.disabled = false;
-  }
+// La fiche d'un jeu : on voit de quoi il s'agit et qui attend déjà, avant d'ouvrir une table visible par toute la classe.
+function openGameSheet(g) {
+  const waiting = state.tables.filter((t) => t.game === g.id && t.status === 'lobby');
+  const problem = h('p.form-error', { role: 'alert', hidden: true });
+  const open = h('button.btn', {
+    type: 'button',
+    onclick: async () => {
+      open.disabled = true;
+      problem.hidden = true;
+      try {
+        const { id } = await call(state.socket, 'table:create', { game: g.id });
+        dlg.close();
+        go(`#/t/${id}`);
+      } catch (err) {
+        problem.textContent = err.message; // dans la fenêtre : une notification passerait dessous
+        problem.hidden = false;
+        open.disabled = false;
+      }
+    },
+  }, icon('plus'), 'Ouvrir une table');
+  const dlg = modal(g.name,
+    h('div.game-sheet', { 'data-game': g.id, style: `--g:${g.color};--g-ink:${g.ink}` },
+      gameLogo(g),
+      h('div',
+        h('p.game-meta', playersLabel(g), g.duration ? `, ${g.duration}` : ''),
+        h('p.game-sheet-text', g.description || g.tagline))),
+    g.how?.length ? h('details.game-sheet-how', h('summary', 'Comment on joue ?'), h('ol.how', g.how.map((line) => h('li', line)))) : null,
+    waiting.length ? h('div.game-sheet-tables',
+      h('h3', count(waiting.length, 'table attend', 'tables attendent'), ' des joueurs'),
+      h('ul.table-list', waiting.map((t) => h('li', h('a.game-sheet-table', { href: `#/t/${t.id}`, onclick: () => dlg.close() },
+        h('span', `Table de ${state.users.get(t.hostId)?.pseudo ?? '…'}, ${t.seats.length}/${g.maxPlayers}`),
+        h('b', t.seats.includes(state.me.id) ? 'Y retourner' : 'Rejoindre')))))) : null,
+    problem,
+    h('div.dlg-actions', h('button.btn.btn-ghost', { type: 'button', onclick: () => dlg.close() }, 'Annuler'), open));
+  dlg.querySelector('.dlg-actions .btn:last-child').focus();
 }
 
 function gameCard(g) {
   const btn = h('button.btn.btn-sm.btn-dark.game-open', {
     type: 'button',
-    'aria-label': `Ouvrir une table de ${g.name}`,
-    onclick: (e) => openTable(g, e.currentTarget),
-  }, icon('plus'), h('span', 'Ouvrir', h('span.game-open-more', ' une table')));
+    'aria-label': `Jouer à ${g.name}`,
+    onclick: () => openGameSheet(g),
+  }, 'Jouer');
   return h('article.game-card', { style: `--g:${g.color};--g-ink:${g.ink}` },
     gameLogo(g),
     h('div.game-card-body',
@@ -67,7 +94,7 @@ function featuredCard(g) {
       h('h2', g.name),
       h('p.game-tagline', g.tagline),
       h('p.game-meta', playersLabel(g), g.duration ? `, ${g.duration}` : '', news ? `. ${news}.` : '')),
-    h('button.btn.btn-dark', { type: 'button', onclick: (e) => openTable(g, e.currentTarget) }, icon('plus'), 'Ouvrir une table'));
+    h('button.btn.btn-dark', { type: 'button', onclick: () => openGameSheet(g) }, 'Jouer à ' + g.name));
 }
 
 function statusLabel(t, g) {

@@ -215,7 +215,7 @@ textarea.input { resize: vertical; min-height: 80px; border-radius: var(--radius
 .bento {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: 1.5fr 1fr;
+  grid-template-rows: 2fr 0.8fr; /* la grande carte du nom d'abord : les petites restent courtes */
   gap: 12px;
   min-height: calc(100dvh - 24px);
 }
@@ -1106,6 +1106,19 @@ dialog[open] { animation: pop 0.18s var(--ease-out); }
 .dlg-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .dlg-actions select.input { flex: 1; width: auto; min-width: 160px; }
 .dlg-actions.start { justify-content: flex-start; }
+.dlg-sub .dlg-actions.start > * { flex: 1 1 200px; } /* les outils d'un admin s'alignent au lieu de faire des largeurs au hasard */
+.game-sheet { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; padding: 16px; border-radius: var(--radius-m); background: var(--g); color: var(--g-ink); }
+.game-sheet .game-logo { --ls: 44px; }
+.game-sheet .game-meta { margin: 0 0 6px; font-size: 0.8125rem; font-weight: 700; }
+.game-sheet-text { margin: 0; line-height: 1.45; }
+.game-sheet-how summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.game-sheet-how .how { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 6px; color: var(--ink-2); }
+.game-sheet-tables { display: grid; gap: 8px; }
+.game-sheet-tables h3 { margin: 0; font-size: 0.9375rem; }
+.game-sheet-table { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 8px 14px; border-radius: var(--radius-s); background: var(--bg-3); color: var(--ink); text-decoration: none; }
+.game-sheet-table:hover { background: var(--bg-4); }
+.game-sheet-table b { color: var(--accent); }
+dialog .form-error[hidden] { display: none; }
 .dlg-sub { display: grid; gap: 14px; }
 .dlg p { margin: 0; color: var(--ink-2); }
 .dlg h3 { margin: 6px 0 0; font-size: 1rem; font-weight: 700; }
@@ -1211,7 +1224,7 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
 
 @media (max-width: 1100px) {
   .table-body { grid-template-columns: minmax(0, 1fr) 260px; }
-  .home { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'hello hello' 'inbox online' 'play me'; grid-template-rows: none; min-height: 0; }
+  .home { min-height: 100%; grid-template-rows: auto 1fr 1fr; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'hello hello' 'inbox online' 'play me'; grid-template-rows: none; min-height: 0; }
   .page-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -1283,8 +1296,7 @@ body:has(.view-table) #toasts { top: var(--toast-top, max(12px, env(safe-area-in
   .game-card h3 { font-size: 1.05rem; }
   .game-card .game-meta { margin-top: 2px; }
   .game-tagline { display: -webkit-box; margin-top: 3px; overflow: hidden; font-size: 0.8125rem; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-  .game-open { width: auto; min-height: 44px; padding: 0 14px; }
-  .game-open-more { display: none; } /* « Ouvrir », en toutes lettres : on sait ce que le bouton fait */
+  .game-open { width: auto; min-height: 44px; padding: 0 18px; }
   .table-seats { display: none; }
   .view-table { padding-bottom: 0; }
   .app:has(.view-table) .navbar { display: none; }
