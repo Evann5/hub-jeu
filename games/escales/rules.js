@@ -468,7 +468,7 @@ function botManage(s, p) {
     log(s, `${p.pseudo} récupère ${TILES[again].name}.`);
     return true;
   }
-  const spot = owned.filter((pos) => canBuildAt(s, p.id, pos) && p.cash >= buildCost(s, pos) + 300).sort((a, b) => s.props[b].level - s.props[a].level)[0];
+  const spot = owned.filter((pos) => canBuildAt(s, p.id, pos) && p.cash >= buildCost(s, pos) + 150).sort((a, b) => s.props[b].level - s.props[a].level)[0];
   if (spot === undefined) return false;
   p.cash -= buildCost(s, spot);
   s.props[spot].level += 1;

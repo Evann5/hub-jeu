@@ -27,7 +27,7 @@ Sources du constat : [richup.io](https://richup.itch.io/richupio), [Monopoly: Th
 - **Tour** : on lance deux dés. Un passage au Départ rapporte 200 €. Un double fait rejouer ; le troisième à la suite envoie à la Douane.
 - **Ville libre** : on l'achète ou on passe. Si on passe, elle reste libre pour le suivant.
 - **Loyer** : 10 % du prix. Majorité de la région : × 2. Région complète : × 3.
-- **Construire** : il faut la majorité d'une région (3 villes sur 4, ou 2 à 2 ou 3 joueurs). Quatre niveaux : Quartier × 4, Quartier animé × 10, Tours × 22, Skyline × 32 ; 25 % de plus si la région est complète. Revente à moitié prix.
+- **Construire** : il faut la majorité d'une région (3 villes sur 4, ou 2 à 2 ou 3 joueurs). Quatre niveaux : Quartier × 5, Quartier animé × 13, Tours × 26, Skyline × 40 ; 25 % de plus si la région est complète. Revente à moitié prix.
 - **Escales** : loyer de 25, 50, 100 ou 200 € selon le nombre possédé.
 - **Festival** : on gagne 100 €. **Chantier** : on paie 50 €.
 - **Télex** : une carte au hasard parmi 14, bonne ou mauvaise.
@@ -42,14 +42,14 @@ Moyennes sur 200 parties par nombre de joueurs, en 20 tours, avec les règles ac
 
 | Joueurs | 1re construction | Parties sans construction | Parties avec une faillite | Écart entre le 1er et le 2e | Lancers de dés |
 |---|---|---|---|---|---|
-| 2 | tour 4 | 1 % | 3,5 % | × 1,6 | 47 |
-| 3 | tour 2,5 | 0 % | 24,5 % | × 1,7 | 67 |
-| 4 | tour 9 | 6,5 % | 4 % | × 1,3 | 94 |
-| 6 | tour 9 | 2 % | 8 % | × 1,4 | 140 |
-| 8 | tour 8 | 4 % | 14 % | × 1,7 | 185 |
-| 10 | tour 7 | 11 % | 22,5 % | × 1,7 | 226 |
+| 2 | tour 4 | 0 % | 10 % | × 1,95 | 46 |
+| 3 | tour 2,5 | 0 % | 50 % | × 2,1 | 61 |
+| 4 | tour 8,5 | 4 % | 14 % | × 1,5 | 92 |
+| 6 | tour 8 | 2 % | 33 % | × 1,7 | 133 |
+| 8 | tour 7,5 | 3 % | 44 % | × 1,85 | 168 |
+| 10 | tour 7,5 | 10 % | 48 % | × 1,9 | 207 |
 
-À partir de 4 joueurs, construire arrive tard, vers le milieu de la partie, et les faillites sont rares : on gagne surtout au décompte du dernier tour. À 2 ou 3 joueurs, 2 villes suffisent et on construit très tôt. À regarder lors des premières vraies parties : des joueurs négocient sans doute plus que des robots.
+À partir de 4 joueurs, on construit vers le tour 8, car réunir 3 villes sur 4 d'un pays prend du temps (règle gardée à la demande de Minh). Les faillites deviennent courantes à partir de 6 joueurs. À 3 joueurs, 2 villes suffisent : on construit très tôt et une partie sur deux connaît une faillite, c'est le réglage à regarder en premier si de vraies parties semblent trop brutales.
 
 ## Les monuments sculptés
 

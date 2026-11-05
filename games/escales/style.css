@@ -174,6 +174,22 @@
 .g-escales .es-offer-text em { color: #4ADE9A; font-size: 0.875rem; font-style: normal; font-weight: 700; }
 .g-escales .es-choice { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .g-escales .es-flash { position: absolute; top: var(--fy, 70%); left: var(--cx, 50%); z-index: 1; max-width: min(460px, 80%); margin: 0; padding: 5px 14px; border-radius: 999px; background: color-mix(in srgb, var(--es-nav) 90%, transparent); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); color: var(--cream); font-size: 0.9375rem; font-weight: 700; text-align: center; opacity: 0; transform: translate(-50%, -50%); transition: opacity 0.25s; pointer-events: none; }
+/* Au milieu du plateau : le voyageur dont c'est le tour. Il ne capte aucun clic. */
+.g-escales .es-turn { position: absolute; top: var(--ty, 45%); left: var(--cx, 50%); z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 46%; pointer-events: none; transform: translate(-50%, -50%); }
+.g-escales .es-turn[hidden] { display: none; }
+.g-escales .es-turn .es-face { width: min(92px, calc(var(--tspan, 200px) * 0.48)); height: min(92px, calc(var(--tspan, 200px) * 0.48)); box-shadow: 0 0 0 3px var(--p), 0 10px 24px rgb(0 0 0 / 0.4); }
+.g-escales .es-turn p { display: grid; justify-items: center; min-width: 0; max-width: 100%; margin: 0; color: #fff; line-height: 1.1; }
+.g-escales .es-turn b { max-width: 100%; overflow: hidden; font: 800 1.75rem/1.15 var(--es-display); text-overflow: ellipsis; white-space: nowrap; }
+.g-escales .es-turn small { color: var(--es-inv); font: 500 0.9375rem var(--es-text); }
+.g-escales .es-turn.is-row { flex-direction: row; gap: 10px; max-width: 58%; }
+.g-escales .es-turn.is-row .es-face { flex: none; width: 36px; height: 36px; box-shadow: 0 0 0 2px var(--p); }
+.g-escales .es-turn.is-row p { justify-items: start; }
+.g-escales .es-turn.is-row b { font-size: 1.125rem; }
+.g-escales .es-turn.is-row small { font-size: 0.75rem; }
+.g-escales .es-turn.is-tiny { display: none; }
+.g-escales .es-turn.is-in { animation: es-turn-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes es-turn-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(0.96); } }
+@media (prefers-reduced-motion: reduce) { .g-escales .es-turn.is-in { animation: none; } }
 .g-escales .es-flash { text-wrap: balance; } /* sur deux lignes, jamais un « € » tout seul */
 .g-escales .es-flash.is-on { opacity: 1; }
 

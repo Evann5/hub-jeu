@@ -15,7 +15,9 @@ export function createSound() {
       if (!Ctx) return;
       ctx = new Ctx();
       out = ctx.createDynamicsCompressor();
-      out.connect(ctx.destination);
+      const master = ctx.createGain();
+      master.gain.value = 2.6; // mesuré : sans ça, les sons plafonnent à 18 % du maximum, presque rien sur un haut-parleur de téléphone
+      out.connect(master).connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   };
@@ -63,11 +65,11 @@ export function createSound() {
 
   return {
     dice: play(() => [0, 0.09, 0.17, 0.27, 0.4, 0.56].forEach((at, i) => { knock(at, 0.2 - i * 0.022, 1500 + i * 180); tone(240 - i * 12, at, 0.05, { vol: 0.05 }); })),
-    step: play(() => knock(0, 0.05, 900)),
+    step: play(() => knock(0, 0.16, 900)),
     buy: play(() => { tone(880, 0, 0.09, { type: 'triangle' }); tone(1320, 0.08, 0.22, { type: 'triangle' }); }),
     gain: play(() => { tone(1046, 0, 0.1, { vol: 0.07 }); tone(1568, 0.07, 0.2, { vol: 0.07 }); }),
-    pay: play(() => tone(320, 0, 0.2, { type: 'triangle', vol: 0.1, to: 170 })),
-    build: play(() => { knock(0, 0.18, 500); tone(180, 0, 0.14, { vol: 0.14, to: 90 }); knock(0.1, 0.12, 700); }),
+    pay: play(() => tone(320, 0, 0.24, { type: 'triangle', vol: 0.2, to: 170 })),
+    build: play(() => { knock(0, 0.32, 500); tone(180, 0, 0.2, { vol: 0.28, to: 90 }); knock(0.1, 0.22, 700); }),
     turn: play(() => { tone(587, 0, 0.12, { vol: 0.08 }); tone(784, 0.1, 0.2, { vol: 0.08 }); }),
     // Les pièces qui volent : une par pièce, au même rythme que l'animation.
     coins: play(() => [0, 0.07, 0.14, 0.21, 0.28, 0.35, 0.42].forEach((at, i) => { tone(2600 + (i % 3) * 700, 0.5 + at, 0.09, { vol: 0.035 }); tone(4100 + (i % 2) * 500, 0.5 + at, 0.05, { vol: 0.018 }); })),

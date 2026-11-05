@@ -277,6 +277,31 @@
   .g-menteur .mt-btn-liar { font-size: 1.05rem; }
 }
 
+/* Écran court (navigateur avec ses barres, environ 664 px de haut) : à partir de 5 joueurs, les sièges passent sur deux colonnes pour que
+   8 joueurs tiennent sans défiler. Pendant les annonces, chaque siège tient sur une ligne (pseudo, gobelet, compte), sans avatar (le gobelet
+   porte la couleur du joueur) et sans le mot « parle » à l'écran (le siège jaune suffit, le texte reste lu par les lecteurs d'écran).
+   À la révélation, deux lignes : pseudo avec avatar, puis dés et compte. Sur un écran plus haut, la liste en une colonne tient déjà jusqu'à 8. */
+@media (max-width: 480px) and (max-height: 830px) {
+  .g-menteur .mt-seats:has(> li:nth-child(5)) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 6px; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-seat { grid-template-columns: minmax(0, 1fr) auto auto; gap: 5px; padding: 1px 6px 1px 1px; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-nameplate { padding: 1px 8px; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-nameplate .token { display: none; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-name { font-size: 0.8rem; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-stage { height: 24px; min-width: 40px; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-cup { width: 40px; height: 22px; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-seatfoot { font-size: 0.7rem; }
+  .g-menteur .mt-seats:has(> li:nth-child(5)) .mt-seatfoot .mt-turn { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* Hors annonces : deux lignes par siège. */
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-seat { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; padding: 1px 6px 3px 1px; }
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-nameplate { grid-column: 1 / -1; padding: 1px 8px 1px 2px; }
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-nameplate .token { display: block; }
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-stage { justify-items: start; min-width: 0; height: 24px; padding-left: 4px; }
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-under { gap: 2px; }
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-under .mt-die { --s: 18px; }
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-seatfoot { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; gap: 0 5px; }
+  .g-menteur .mt:not(.phase-bid) .mt-seats:has(> li:nth-child(5)) .mt-seatfoot .mt-turn { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .g-menteur *, .g-menteur::before, .g-menteur::after { animation: none !important; transition: none !important; }
   .g-menteur .mt-confetti { display: none; }

@@ -60,7 +60,9 @@ export function mount(root, api) {
   const side = h('aside.es-side', h('div.es-panel', round, players), tools, trades, focusCard);
   const layer = h('div.es-layer');
   const loading = h('p.es-loading', 'Le plateau arrive…');
-  const frame = h('div.es', stage, loading, tip, side, flash, action, layer);
+  const turnBox = h('div.es-turn', { hidden: true, 'aria-hidden': 'true' }); // le bandeau du hub et la liste des joueurs le disent déjà aux lecteurs d'écran
+  const frame = h('div.es', stage, loading, tip, turnBox, side, flash, action, layer);
+  api.gateTurn();
   root.append(frame);
 
   // ——— Le monde 3D. Les étiquettes des cases sont dessinées avec la police du jeu : on l'attend d'abord. ———
@@ -83,7 +85,12 @@ export function mount(root, api) {
         },
         topInset: () => Math.max(6, Math.max(players.getBoundingClientRect().bottom, tools.hidden || getComputedStyle(tools).position === 'fixed' ? 0 : tools.getBoundingClientRect().bottom) - stage.getBoundingClientRect().top + 6), // jamais négatif : à la fin de partie, le panneau disparaît sur téléphone
         rightInset: () => side.offsetWidth + 12,
-        onFit: ([cx, cy], [, fy], [, oy], [, by]) => {
+        onFit: ([cx, cy], [, fy], [, oy], [, by], [, dy]) => {
+          // À mi-chemin entre les dés et la ligne de ce qui vient de se passer ; quand la place manque, collé sous les dés : le message peut prendre deux lignes.
+          frame.style.setProperty('--ty', `${Math.round(fy - dy < 140 ? dy + 23 : (dy + fy) / 2)}px`);
+          frame.style.setProperty('--tspan', `${Math.round(fy - dy)}px`);
+          turnBox.classList.toggle('is-row', fy - dy < 140);
+          turnBox.classList.toggle('is-tiny', fy - dy < 52);
           frame.style.setProperty('--by', `${Math.round(by)}px`);
           frame.style.setProperty('--oy', `${Math.round(oy)}px`);
           frame.style.setProperty('--cx', `${Math.round(cx)}px`);
@@ -385,6 +392,27 @@ export function mount(root, api) {
     flashTimer = setTimeout(() => flash.classList.remove('is-on'), 3000);
   }
 
+  // Au milieu du plateau : le voyageur dont c'est le tour, en grand.
+  let turnKey = null;
+  function renderTurn(covered) {
+    const p = v.players[v.cur];
+    // Sur ordinateur, une fiche à décider prend le milieu du plateau ; sur téléphone, elle est en bas et le milieu reste libre.
+    turnBox.hidden = v.over || (covered && !window.matchMedia('(max-width: 760px)').matches) || !p || !world;
+    if (turnBox.hidden) return;
+    const key = p.id;
+    if (key === turnKey && turnBox.childElementCount) return;
+    const fresh = turnKey !== null;
+    turnKey = key;
+    const mine = p.id === meId;
+    turnBox.style.setProperty('--p', PAWN_COLORS[p.seat]);
+    turnBox.replaceChildren(picture(world.portrait(p.seat), '.es-face') ?? h('i.es-dot'), h('p', h('b', mine ? 'À toi !' : p.pseudo), mine ? null : h('small', 'joue')));
+    if (fresh && !QUIET) {
+      turnBox.classList.remove('is-in');
+      void turnBox.offsetWidth;
+      turnBox.classList.add('is-in');
+    }
+  }
+
   let shownTrades = null;
   function renderAction() {
     round.textContent = v.maxRounds ? `Tour ${Math.min(v.round, v.maxRounds)}/${v.maxRounds}` : `Tour ${v.round}`;
@@ -411,6 +439,7 @@ export function mount(root, api) {
     // Sur téléphone, les outils se posent juste au-dessus de la carte d'action, quelle que soit sa hauteur.
     frame.style.setProperty('--act-h', `${action.hidden ? 0 : action.offsetHeight}px`);
     frame.classList.toggle('is-buying', v.phase === 'buy' && myTurn());
+    renderTurn(!action.hidden && !plain);
 
     renderTrades();
     tools.hidden = v.over;
@@ -593,7 +622,8 @@ export function mount(root, api) {
     return shell('Historique', h('h2', 'Historique'), h('ol.es-history', [...v.log].reverse().map((l) => h('li', spoken(l.text, true)))));
   }
 
-  // L'échange a des jauges : on ne le redessine pas à chaque changement d'état.
+  // L'échange a des jauges : on ne le redessine pas à chaque changement d'état. Seules les jauges et les listes se remettent à jour, sans perdre ce qui est saisi.
+  let tradeLive = null;
   function openTrade() {
     const others = v.players.filter((p) => !p.out && p.id !== meId);
     if (!others.length) return;
@@ -603,7 +633,7 @@ export function mount(root, api) {
 
   // L'argent se règle avec une jauge, de 0 à tout ce que le joueur possède.
   function moneyGauge(label, max, value, onChange) {
-    const top = Math.floor(max / 10) * 10;
+    let top = Math.floor(max / 10) * 10;
     const shown = h('output.es-gauge-value');
     const input = h('input.es-gauge', { type: 'range', min: 0, max: top, step: 10, 'aria-label': label });
     input.value = String(Math.min(value, top));
@@ -612,12 +642,23 @@ export function mount(root, api) {
       shown.textContent = money(n);
       input.style.setProperty('--fill', `${top ? (n / top) * 100 : 0}%`);
     };
+    // L'argent du joueur a changé : le maximum suit, et une somme devenue trop grande redescend.
+    const setMax = (next) => {
+      const asked = Number(input.value); // à lire avant : le navigateur ramène la valeur au nouveau maximum, sans rien signaler
+      top = Math.floor(next / 10) * 10;
+      input.max = String(top);
+      if (asked > top) {
+        input.value = String(top);
+        onChange(top);
+      }
+      paint();
+    };
     input.addEventListener('input', () => {
       paint();
       onChange(Number(input.value));
     });
     paint();
-    return h('div.es-gauge-row', h('div.es-gauge-head', h('span', 'Argent'), shown), input);
+    return Object.assign(h('div.es-gauge-row', h('div.es-gauge-head', h('span', 'Argent'), shown), input), { setMax });
   }
 
   function tradeSheet() {
@@ -649,10 +690,30 @@ export function mount(root, api) {
         return el;
       }));
     };
-    const column = (p, title, set, cash, onCash) => h('section.es-tcol', { style: `--p:${PAWN_COLORS[p.seat]}` },
-      h('header.es-tcol-head', picture(world?.portrait(p.seat), '.es-face'), h('b', title), h('small', money(p.cash))),
-      picker(p.id, set),
-      moneyGauge(`Argent : ${title}`, p.cash, cash, (n) => { onCash(n); update(); }));
+    const live = [];
+    const column = (p, title, set, cash, onCash) => {
+      const wallet = h('small', money(p.cash));
+      let list = picker(p.id, set);
+      let listKey = null;
+      const gauge = moneyGauge(`Argent : ${title}`, p.cash, cash, (n) => { onCash(n); update(); });
+      const keyOf = () => Object.keys(v.props).map(Number).filter((pos) => v.props[pos].owner === p.id && !v.props[pos].level).join();
+      listKey = keyOf();
+      live.push(() => {
+        const now = v.players.find((x) => x.id === p.id);
+        if (!now) return;
+        wallet.textContent = money(now.cash);
+        gauge.setMax(now.cash);
+        const key = keyOf();
+        if (key === listKey) return;
+        listKey = key;
+        for (const pos of [...set]) if (v.props[pos]?.owner !== p.id || v.props[pos]?.level) set.delete(pos);
+        const next = picker(p.id, set);
+        list.replaceWith(next);
+        list = next;
+        update();
+      });
+      return h('section.es-tcol', { style: `--p:${PAWN_COLORS[p.seat]}` }, h('header.es-tcol-head', picture(world?.portrait(p.seat), '.es-face'), h('b', title), wallet), list, gauge);
+    };
     send.addEventListener('click', () => {
       send.disabled = true;
       api.sendMove({ type: 'trade', to: target().id, give: { cash: draft.giveCash, cities: [...draft.give] }, get: { cash: draft.getCash, cities: [...draft.get] } })
@@ -674,6 +735,10 @@ export function mount(root, api) {
         column(target(), `${target().pseudo} donne`, draft.get, draft.getCash, (n) => { draft.getCash = n; })),
       h('footer.es-tfoot', recap, send));
     el.firstChild.classList.add('is-trade');
+    tradeLive = () => {
+      if (target().out || !others.some((p) => p.id === draft.to)) return;
+      live.forEach((fn) => fn());
+    };
     return el;
   }
 
@@ -755,7 +820,9 @@ export function mount(root, api) {
     before.cash = new Map(v.players.map((p) => [p.id, p.cash]));
     renderAction();
     renderFocus();
-    if (overlay && overlay.kind !== 'trade') renderOverlay();
+    api.showTurn();
+    if (overlay?.kind === 'trade') tradeLive?.();
+    else if (overlay) renderOverlay();
   }
 
   api.onState((view, st) => {

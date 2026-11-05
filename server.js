@@ -9,6 +9,7 @@ import { purgeOldMessages } from './src/chat.js';
 import { purgeExpiredSessions, classCode } from './src/auth.js';
 import { loadGames, gamesDir } from './src/games.js';
 import { purgeTables } from './src/play.js';
+import { gzipped } from './src/gzip.js';
 
 // Filet de sécurité : une erreur imprévue est écrite dans le journal, sans arrêter le serveur (et donc sans déconnecter toute la classe).
 process.on('uncaughtException', (err) => console.error('Erreur non rattrapée :', err));
@@ -41,11 +42,11 @@ router.use('/api', (req, res, next) => {
 }, api);
 // maxAge 0 : le navigateur revérifie chaque fichier (un 304 ne coûte rien). Avec un cache, une mise à jour qui ajoute un export casserait
 // le chargement chez qui garde l'ancien module, car les imports d'un module ne portent pas le ?v= de la page.
-router.use(express.static(join(config.root, 'public'), { maxAge: 0 }));
+router.use(gzipped(join(config.root, 'public')), express.static(join(config.root, 'public'), { maxAge: 0 }));
 // Fichiers des jeux pour le navigateur : client.js, style.css, client/ et assets/ seulement (jamais rules.js).
 router.use('/games', (req, res, next) => (
   /^\/[a-z0-9-]+\/(client\.js|style\.css|(client|assets)\/[\w./-]+)$/.test(req.path) && !req.path.includes('..') ? next() : res.sendStatus(404)
-), express.static(gamesDir, { maxAge: 0, index: false, fallthrough: false }));
+), gzipped(gamesDir), express.static(gamesDir, { maxAge: 0, index: false, fallthrough: false }));
 // Les écrans de l'appli passent par l'ancre (#/c/1) : toute autre adresse renvoie à l'accueil.
 router.get('/{*rest}', (req, res) => res.redirect(`${config.basePath}/`));
 if (config.basePath) {

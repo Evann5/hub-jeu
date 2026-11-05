@@ -61,7 +61,7 @@ const PRICES = [
 const BUILD = [50, 50, 100, 100, 150, 150, 200, 200];
 
 // Loyer d'une ville selon son niveau : multiplie le loyer de base (10 % du prix).
-export const LEVEL_MULT = [1, 4, 10, 22, 32];
+export const LEVEL_MULT = [1, 5, 13, 26, 40];
 export const LEVEL_NAMES = ['Ville nue', 'Quartier', 'Quartier animé', 'Tours', 'Skyline'];
 export const MAX_LEVEL = 4;
 export const ESCALE_PRICE = 200;

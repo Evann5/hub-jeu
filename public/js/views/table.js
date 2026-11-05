@@ -99,7 +99,8 @@ function setTab(tab) {
 function renderHead() {
   const { table: t, game: g } = cur;
   cur.ui.root.className = viewClass();
-  const label = t.status === 'lobby' ? 'Salon' : t.status === 'over' ? 'Terminée' : t.turn.includes(state.me.id) ? 'À toi de jouer' : 'En cours';
+  const myTurn = cur.turnGated ? cur.turnShown : t.turn.includes(state.me.id); // un jeu peut retenir l'annonce jusqu'à la fin de son animation (api.showTurn)
+  const label = t.status === 'lobby' ? 'Salon' : t.status === 'over' ? 'Terminée' : myTurn ? 'À toi de jouer' : 'En cours';
   const tab = (key, text, extra) => h('button.table-tab', {
     type: 'button',
     role: 'tab',
@@ -110,7 +111,7 @@ function renderHead() {
     h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux' }, icon('back', 'Retour aux jeux')),
     h('span.table-emoji', gameLogo(g)),
     h('div.table-title', h('h1', g.name), h('p', `Table de ${userOf(t.hostId).pseudo}`)),
-    h(`span.table-pill${t.status === 'playing' && t.turn.includes(state.me.id) ? '.is-turn' : ''}`, label),
+    h(`span.table-pill${t.status === 'playing' && myTurn ? '.is-turn' : ''}`, label),
     cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, icon('eye'), String(cur.watchers)) : null,
     seated() ? null : h('span.table-pill.is-watch', 'Spectateur'),
     h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
@@ -351,6 +352,8 @@ async function mountGame() {
     },
     now: () => Date.now() + mine.offset,
     openChat: () => setTab('chat'),
+    gateTurn() { mine.turnGated = true; mine.turnShown = mine.table.turn.includes(state.me.id); },
+    showTurn() { if (cur !== mine || !mine.turnGated) return; const now = mine.table.turn.includes(state.me.id); if (now !== mine.turnShown) { mine.turnShown = now; renderHead(); } },
     asset: (path) => `games/${g.id}/assets/${path}`,
     h,
     token,

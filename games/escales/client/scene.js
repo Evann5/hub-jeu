@@ -122,6 +122,8 @@ function buildPrint(focusU) {
   const ROWS = 8;
   const CW = 340;
   const CH = 170;
+  // Sur téléphone, une case fait moins de 30 px : le prix y serait illisible, il reste dans la fiche, et le nom prend toute la place.
+  const NAMES_ONLY = Math.min(window.innerWidth, window.innerHeight) < 520;
   const canvas = document.createElement('canvas');
   canvas.width = COLS * CW;
   canvas.height = ROWS * CH;
@@ -139,6 +141,7 @@ function buildPrint(focusU) {
     const name = t.short ?? t.name;
     // L'étiquette crème : le nom et le prix se lisent quelle que soit la couleur de la case.
     const LW = CW - 26;
+    const nameOnly = !t.price || NAMES_ONLY;
     const LH = t.price ? CH - 24 : 92;
     const lx = cx - LW / 2;
     c.fillStyle = '#FFFFFF';
@@ -148,15 +151,15 @@ function buildPrint(focusU) {
     c.strokeStyle = 'rgba(18,21,31,0.2)';
     c.lineWidth = 2;
     c.stroke();
-    let size = 72;
+    let size = t.price && NAMES_ONLY ? 124 : 72;
     do {
       c.font = `800 ${size}px "ES Barlow", system-ui, sans-serif`;
       size -= 2;
-    } while (c.measureText(name).width > CW - 48 && size > 28);
+    } while (c.measureText(name).width > CW - (NAMES_ONLY ? 40 : 48) && size > 28);
     c.fillStyle = INK;
     c.textAlign = 'center';
-    c.fillText(name, cx, t.price ? cy - 32 : cy + 3);
-    if (t.price) {
+    c.fillText(name, cx, nameOnly ? cy + 3 : cy - 32);
+    if (!nameOnly) {
       // Le prix à gauche : à droite, la place est gardée pour le visage du propriétaire.
       const label = `${t.price.toLocaleString('fr-FR')} €`;
       c.font = '700 50px "ES Barlow", system-ui, sans-serif';
@@ -620,7 +623,9 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       part.badge = new THREE.Mesh(badgeGeo);
       // Dans le coin de l'étiquette, à droite du prix : il ne cache jamais le nom.
       const { w, h, center } = labelFrame(part.f);
-      part.badge.position.set(center.x + w / 2 - 0.3, center.y + 0.012, center.z + h / 2 - 0.26);
+      // Sur téléphone, le nom occupe toute l'étiquette : le visage se pose dans le coin, au-dessus, pour ne pas le cacher.
+      const up = Math.min(window.innerWidth, window.innerHeight) < 520 ? h / 2 + 0.2 : 0.26 - h / 2;
+      part.badge.position.set(center.x + w / 2 - 0.3, center.y + 0.012, center.z - up);
       part.badge.renderOrder = 4;
       scene.add(part.badge);
     }
@@ -858,8 +863,22 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   const FACING = 0.3; // vue de trois quarts, face à la caméra
   const LEAN = -0.3; // un peu penché en arrière : vu d'en haut, le visage reste visible sous le chapeau
 
+  const CROWD = 5; // à partir de là, les voyageurs se serrent pour ne pas cacher le nom des cases
+  const peopleOn = (pos) => [...pawns.values()].filter((x) => !x.gone && x.goal === pos).sort((a, b) => a.player.seat - b.player.seat);
+  const inCrowd = (pos) => peopleOn(pos).length >= CROWD && !tileFrame(pos).corner;
   function pawnSpot(p, pos) {
     const f = tileFrame(pos);
+    if (!f.corner && inCrowd(pos)) { // en deux rangs serrés, côté monument, à l'opposé du nom
+      const rank = Math.max(0, peopleOn(pos).findIndex((x) => x.player.id === p.id));
+      const col = (rank % 5) - 2;
+      const row = rank >= 5 ? 1 : 0;
+      if (!f.flat) return new THREE.Vector3(f.x + Math.sign(f.x) * 0.95 + col * 0.15, 0, f.z + 0.25 + row * 0.42);
+      const oz = f.flip ? 0.42 + row * 0.36 : -0.15 - row * 0.42;
+      const c = Math.cos(f.rot);
+      const s = Math.sin(f.rot);
+      const ox = col * 0.32;
+      return new THREE.Vector3(f.x + ox * c + oz * s, 0, f.z - ox * s + oz * c);
+    }
     const i = p.seat;
     const ox = ((i % 5) - 2) * 0.5;
     if (f.corner) { // sur un coin, tout le monde attend en rang dans l'espace libre à côté de la case : aucun nom n'est caché
@@ -997,7 +1016,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       v.set(0, 0, z).project(camera);
       return [((v.x + 1) / 2) * size.w, ((1 - v.y) / 2) * size.h];
     };
-    onFit?.(onScreen(0.4), onScreen(2.75), onScreen(-1.1), onScreen(5.35));
+    onFit?.(onScreen(0.4), onScreen(2.75), onScreen(-1.1), onScreen(5.35), onScreen(DICE_Z + 1.45));
   }
 
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
@@ -1025,6 +1044,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let lifeTimer = 0;
   const lifeOn = () => !reduced && quality.step < 2;
 
+  let crowdMoving = true;
   let ringId = null;
   const walking = () => [...pawns.values()].some((pawn) => pawn.to || pawn.queue.length);
   let wasWalking = false;
@@ -1077,6 +1097,26 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
           busy = true;
         }
       }
+    }
+    // Ceux qui attendent se serrent quand la case se remplit, et reprennent leur place quand elle se vide.
+    if (crowdMoving && view && !view.over) {
+      crowdMoving = false;
+      for (const pawn of pawns.values()) {
+        if (pawn.gone || pawn.to || pawn.queue.length) continue;
+        const target = pawnSpot(pawn.player, pawn.shown);
+        const scale = PAWN_SCALE * (inCrowd(pawn.shown) ? 0.76 : 1);
+        const k = 1 - Math.exp(-dt * 10);
+        if (pawn.mesh.position.distanceToSquared(target) > 0.0004 || Math.abs(pawn.mesh.scale.x - scale) > 0.002) {
+          crowdMoving = true;
+          busy = true;
+          pawn.mesh.position.x += (target.x - pawn.mesh.position.x) * k;
+          pawn.mesh.position.z += (target.z - pawn.mesh.position.z) * k;
+          pawn.size = pawn.mesh.scale.x + (scale - pawn.mesh.scale.x) * k;
+          pawn.mesh.scale.setScalar(pawn.size);
+          pawn.blob.position.set(pawn.mesh.position.x, 0.02, pawn.mesh.position.z);
+        }
+      }
+      if (walking()) crowdMoving = true;
     }
     // L'anneau et la bulle restent sur celui qui marche, jusqu'à son arrivée.
     if (view && (ringId === null || !walking())) ringId = view.players[view.cur]?.id ?? null;
@@ -1237,7 +1277,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         ring.scale.set(pulse, pulse, 1);
         if (view && !view.over) {
           for (const pawn of pawns.values()) { // celui qui joue respire, les autres restent droits
-            if (!pawn.gone) pawn.mesh.scale.y = PAWN_SCALE * (pawn === curPawn && !pawn.to && !pawn.react ? 1 + Math.sin(time * 3.4) * 0.025 : 1);
+            if (!pawn.gone) pawn.mesh.scale.y = (pawn.size ?? PAWN_SCALE) * (pawn === curPawn && !pawn.to && !pawn.react ? 1 + Math.sin(time * 3.4) * 0.025 : 1);
           }
         }
       }
@@ -1385,8 +1425,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         if (firstUpdate || reduced) pawn.mesh.visible = false;
         else fades.push({ pawn, t: 0 });
       }
+      if (p.out) crowdMoving = true;
       if (p.out || pawn.goal === p.pos) continue;
       pawn.goal = p.pos;
+      crowdMoving = true;
       const base = pawn.to ? pawn.toPos : pawn.shown; // relancé en pleine marche : on repart de la case qu'il est en train d'atteindre
       const forward = (p.pos - base + 48) % 48;
       pawn.queue = [];
