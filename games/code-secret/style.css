@@ -120,6 +120,7 @@
 .g-code-secret .cs-fb-peg.is-placed { background: radial-gradient(circle at 35% 30%, #fff, var(--cs-mint) 40%, #1fc46a); box-shadow: 0 0 0 2px var(--cs-ink), 0 0 8px 1px rgb(98 240 160 / 0.8); }
 .g-code-secret .cs-fb-peg.is-misplaced { background: radial-gradient(circle, #2b1596 0 32%, transparent 34%), var(--cs-lemon); box-shadow: 0 0 0 2px var(--cs-ink), 0 0 8px 1px rgb(255 231 74 / 0.8); }
 .g-code-secret .cs-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 10px 6px 0; color: #e1d6ff; font-size: 0.75rem; font-weight: 700; }
+.g-code-secret .cs-legend.is-top { margin: 0 6px 10px; }
 .g-code-secret .cs-legend .cs-fb-peg { --peg: 28px; display: inline-block; vertical-align: middle; }
 .g-code-secret .cs-legend .cs-fb-peg:not(:first-child) { margin-left: 6px; }
 

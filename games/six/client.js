@@ -212,7 +212,7 @@ export function mount(root, api) {
       const waiting = view.players.filter((id, s) => !view.left[s] && !view.picked[s]);
       return waiting.length ? `Carte posée. On attend ${names(waiting)}.` : 'Carte posée.';
     }
-    return 'Choisis une carte, tout le monde joue en même temps.';
+    return 'Choisis une carte, tout le monde joue en même temps. Le moins de têtes gagne.';
   }
 
   function logText(step) {
@@ -229,7 +229,7 @@ export function mount(root, api) {
     status.textContent = statusText();
     // The hub banner already says the game is over: no duplicate chip.
     roundChip.hidden = view.phase === 'over';
-    roundChip.textContent = view.phase === 'over' ? '' : `Manche ${view.round} · tour ${view.turnNo}/10 · fin à ${view.target}`;
+    roundChip.textContent = view.phase === 'over' ? '' : `Manche ${view.round} · tour ${view.turnNo}/10 · fin à ${view.target} têtes`;
     paintTimer();
   }
 

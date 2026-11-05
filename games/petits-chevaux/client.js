@@ -210,6 +210,7 @@ export function mount(root, api) {
         rec.g.classList.toggle('is-choice', choosable);
         rec.g.classList.toggle('is-preview', choosable && preview === horse);
         rec.g.classList.toggle('is-done', v.pos[seat][horse] === TOP);
+        rec.g.classList.toggle('is-last', key === moved && !choosable && v.phase !== 'over'); // anneau citron : le cheval qui vient de jouer
         if (choosable && !rec.raised) {
           gTokens.append(rec.g); // au premier plan, une seule fois (déplacer un nœud casse sa transition)
           rec.raised = true;

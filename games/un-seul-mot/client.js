@@ -126,9 +126,9 @@ export function mount(root, api) {
         c.auto ? h('small.us-why', REASONS[c.auto]) : c.cancelled ? h('small.us-why', REASONS.vote) : null,
         !c.auto && !me ? h('button.us-mini', {
           type: 'button', disabled: mineDone, 'aria-pressed': String(voted), dataset: { k: `cancel${c.by}` },
-          'aria-label': `${voted ? 'Garder' : 'Annuler'} l’indice de ${name(c.by)}`,
+          'aria-label': `${voted ? 'Retirer ton vote contre' : 'Annuler'} l’indice de ${name(c.by)}`,
           onclick: () => send({ type: 'cancel', target: c.by }),
-        }, voted ? 'Garder' : 'Annuler', h('span', ` ${c.votes.length}/${c.need}`)) : (!c.auto && c.votes.length ? h('small', `${c.votes.length}/${c.need} veulent l’annuler`) : null));
+        }, voted ? 'Retirer mon vote' : 'Annuler', h('span', ` ${c.votes.length}/${c.need}`)) : (!c.auto && c.votes.length ? h('small', `${c.votes.length}/${c.need} veulent l’annuler`) : null));
     });
     return [head('Trier les indices'), wordCard(),
       h('section.us-card', h('h2', 'Garde les bons indices'),

@@ -144,7 +144,7 @@ export function mount(root, api) {
     s.board.forEach((v, i) => {
       const d = discs[i];
       d.hidden = v === null;
-      d.className = `q-disc${v === null ? '' : ` d${v}`}${s.line?.includes(i) ? ' is-win' : ''}${i === animCell ? ' is-new' : ''}`;
+      d.className = `q-disc${v === null ? '' : ` d${v}`}${s.line?.includes(i) ? ' is-win' : ''}${i === animCell ? ' is-new' : ''}${s.last && i === s.last.cell && !s.line ? ' is-last' : ''}`;
     });
     const line = s.line;
     winSvg.style.display = line ? '' : 'none';

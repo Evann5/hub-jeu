@@ -1,4 +1,5 @@
-"""Kinshasa (RD Congo) : la tour de l'échangeur de Limete, fût élancé à plateau tournant, au centre d'un rond-point."""
+"""Kinshasa (RD Congo) : la tour de l'échangeur de Limete, fût élancé à plateau tournant, au centre d'un rond-point.
+Passe 3 (05/11/2026) : fût plus épais, plateau plus large, rond-point plus grand et planté d'herbe (il remplit mieux la dalle, sans la dépasser)."""
 import math
 from lib import Mesh
 from lib_ico import *
@@ -15,29 +16,30 @@ def build():
     m.box(-H, H, 0.03, 0.04, -0.15, 0.15, 'asphalt', skip=('bot',))
     m.box(-0.15, 0.15, 0.03, 0.04, -H, H, 'asphalt', skip=('bot',))
     for k in range(4):
-        c = 0.6+0.08*k
+        c = 0.7+0.05*k
         for s in (-1, 1):
             m.box(s*c-0.03, s*c+0.03, 0.04, 0.043, -0.008, 0.008, 'line', skip=('bot',))
             m.box(-0.008, 0.008, 0.04, 0.043, s*c-0.03, s*c+0.03, 'line', skip=('bot',))
     # rond-point : anneau d'asphalte, bordure, îlot d'herbe
-    outer = circle(0, 0, 0.041, 0.5, 20)
-    inner = circle(0, 0, 0.041, 0.3, 20)
-    for i in range(20):
-        j = (i+1) % 20
+    RO, RI, RC = 0.66, 0.4, 0.41
+    outer = circle(0, 0, 0.041, RO, 24)
+    inner = circle(0, 0, 0.041, RI, 24)
+    for i in range(24):
+        j = (i+1) % 24
         m.poly([outer[i], outer[j], inner[j], inner[i]], 'asphalt', (0, -3, 0))
-    cyl(m, 0, 0, 0.03, 0.1, 0.31, 'curb', n=20, caps=(False, False))
-    m.poly(circle(0, 0, 0.1, 0.31, 20), 'grass', (0, -1, 0))
-    m.poly(circle(0, 0, 0.101, 0.2, 20), 'grass2', (0, -1, 0))
-    # tour : fût, plateau, couronne, antenne
-    lathe(m, [(0.14, 0.1), (0.1, 0.35), (0.075, 1.0), (0.065, 2.4), (0.06, 3.05)], 8, ['tower', 'tower_d', 'tower', 'tower_d'], 0, 0)
-    lathe(m, [(0.06, 3.05), (0.1, 3.12), (0.26, 3.25), (0.26, 3.4), (0.15, 3.52)], 8, ['pod2', 'pod', 'glass', 'pod2'], 0, 0)
-    lathe(m, [(0.15, 3.52), (0.15, 3.62), (0.08, 3.68), (0.0, 3.7)], 8, ['glass', 'tower', 'tower_d'], 0, 0, cap_bot=False)
-    spire(m, 0, 0, 3.68, 4.2, 0.02, 'steel', 0.005, n=4)
+    cyl(m, 0, 0, 0.03, 0.1, RC, 'curb', n=24, caps=(False, False))
+    m.poly(circle(0, 0, 0.1, RC, 24), 'grass', (0, -1, 0))
+    m.poly(circle(0, 0, 0.101, 0.3, 24), 'grass2', (0, -1, 0))
+    # tour : fût épais, plateau large, couronne, antenne
+    lathe(m, [(0.24, 0.1), (0.19, 0.4), (0.15, 1.2), (0.125, 2.5), (0.115, 3.0)], 8, ['tower', 'tower_d', 'tower', 'tower_d'], 0, 0)
+    lathe(m, [(0.115, 3.0), (0.17, 3.08), (0.4, 3.22), (0.4, 3.4), (0.24, 3.54)], 8, ['pod2', 'pod', 'glass', 'pod2'], 0, 0)
+    lathe(m, [(0.24, 3.54), (0.24, 3.64), (0.12, 3.72), (0.0, 3.74)], 8, ['glass', 'tower', 'tower_d'], 0, 0, cap_bot=False)
+    spire(m, 0, 0, 3.72, 4.2, 0.03, 'steel', 0.006, n=4)
     # voitures et arbres
-    for (x, z, c, w, d) in ((-0.72, 0.06, 'car1', 0.14, 0.07), (0.62, -0.06, 'car2', 0.14, 0.07), (0.07, 0.65, 'car3', 0.07, 0.14), (-0.07, -0.62, 'car4', 0.07, 0.14)):
+    for (x, z, c, w, d) in ((-0.77, 0.06, 'car1', 0.14, 0.07), (0.74, -0.06, 'car2', 0.14, 0.07), (0.07, 0.77, 'car3', 0.07, 0.14), (-0.07, -0.74, 'car4', 0.07, 0.14)):
         m.box(x-w/2, x+w/2, 0.04, 0.09, z-d/2, z+d/2, c, skip=('bot',))
         m.box(x-w/3.2, x+w/3.2, 0.09, 0.115, z-d/3.2, z+d/3.2, 'glass', skip=('bot',))
-    for (x, z) in ((-0.6, -0.55), (0.62, 0.58), (-0.62, 0.6), (0.6, -0.6)):
+    for (x, z) in ((-0.68, -0.68), (0.7, 0.7), (-0.7, 0.7), (0.68, -0.68)):
         cyl(m, x, z, 0.03, 0.12, 0.012, 'tower_d', n=4, caps=(False, False))
         blob(m, x, 0.2, z, 0.1, 0.1, 0.1, 'tree', n=6, lats=(-50, 10, 60))
     return m

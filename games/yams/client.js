@@ -290,7 +290,10 @@ export function mount(root, api) {
     animate = !first && rollKey !== null && nextRollKey !== rollKey && v.rolls > 0;
     rollKey = nextRollKey;
     renderAll();
-    if (v.over && !first && !wasOver) confetti();
+    if (v.over && !first && !wasOver) {
+      page.scrollTop = 0; // le vainqueur s'affiche en haut : on y remonte, sinon il reste hors de l'écran, sous la feuille
+      confetti();
+    }
     animate = false; // les rendus suivants (garder un dé, choisir une case) ne rejouent pas l'animation
   });
 

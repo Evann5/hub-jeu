@@ -96,7 +96,7 @@
 .g-complot .cp-card-name { position: absolute; left: 0; right: 0; bottom: 30px; padding: 4px 6px; font: 800 clamp(0.8rem, 0.5rem + 1.1vw, 0.95rem)/1.1 var(--cp-display); background: rgb(14 7 34 / 0.72); }
 .g-complot .cp-card-power { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; display: grid; place-items: center; padding: 0 6px; font-size: 0.72rem; font-weight: 600; background: rgb(14 7 34 / 0.9); color: var(--gold-hi); }
 .g-complot .cp-card-mini { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 2px; font-size: 0.62rem; font-weight: 800; background: rgb(14 7 34 / 0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.g-complot .cp-seat-cards .cp-card.is-sm.is-dead { width: 66px; }
+.g-complot .cp-seat-cards .cp-card.is-sm.is-dead, .g-complot .cp-seat-cards .cp-card.is-sm.is-shown { width: 66px; }
 .g-complot .cp-card.is-dead { filter: grayscale(0.85) brightness(0.65); border-color: rgb(255 255 255 / 0.3); box-shadow: none; }
 .g-complot .cp-card-lost { position: absolute; top: 8px; left: -28px; right: -28px; transform: rotate(-14deg); background: var(--rose); color: #1A0F33; font: 800 0.8rem var(--cp-display); text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 0; }
 .g-complot .cp-card.is-sm .cp-card-lost { display: none; }
@@ -185,7 +185,7 @@
   .g-complot .cp-seat-cards { min-height: 0; gap: 5px; }
   .g-complot .cp-tags { grid-column: 1 / -1; }
   .g-complot .cp-seat-cards .cp-card.is-sm { width: 22px; border-radius: 6px; }
-  .g-complot .cp-seat-cards .cp-card.is-sm.is-dead { width: 68px; height: 31px; aspect-ratio: auto; }
+  .g-complot .cp-seat-cards .cp-card.is-sm.is-dead, .g-complot .cp-seat-cards .cp-card.is-sm.is-shown { width: 68px; height: 31px; aspect-ratio: auto; }
   .g-complot .cp-coins svg { width: 20px; height: 20px; }
   .g-complot .cp-coins b { font-size: 1rem; }
   .g-complot .cp-panel { padding: 10px; }

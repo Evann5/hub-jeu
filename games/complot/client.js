@@ -105,11 +105,11 @@ export function mount(root, api) {
   // ——— Cartes ———
 
   // Une carte de personnage : face visible (c connu) ou dos. size : lg (mes cartes), sm (adversaires).
-  function card(c, { size = 'lg', up = false, onclick, selected = false, label, key } = {}) {
+  function card(c, { size = 'lg', up = false, shown = false, onclick, selected = false, label, key } = {}) {
     const kind = c ?? 'back';
     const [c1, c2] = SKIN[kind];
     const tag = onclick ? 'button' : 'div';
-    const node = h(`${tag}.cp-card.is-${size}${kind === 'back' ? '.is-back' : ''}${up ? '.is-dead' : ''}${selected ? '.is-selected' : ''}`, {
+    const node = h(`${tag}.cp-card.is-${size}${kind === 'back' ? '.is-back' : ''}${up ? '.is-dead' : ''}${shown ? '.is-shown' : ''}${selected ? '.is-selected' : ''}`, {
       type: onclick ? 'button' : null,
       style: `--c1:${c1};--c2:${c2}`,
       onclick,
@@ -166,7 +166,7 @@ export function mount(root, api) {
     return h(`li.cp-seat${isActor || losing ? '.is-turn' : ''}${waiting ? '.is-wait' : ''}${!q.alive ? '.is-out' : ''}${target && v.phase !== 'action' ? '.is-target' : ''}`,
       h('div.cp-seat-top', api.token(api.user(id), { size: 's' }), h('span.cp-name', pseudo(id)), coins(q.coins)),
       h('div.cp-seat-cards', q.cards.length
-        ? q.cards.map((c, i) => card(c.c, { size: 'sm', up: c.up, label: c.up ? `Influence perdue : ${CHARS[c.c].name}` : `Carte cachée ${i + 1}` }))
+        ? q.cards.map((c, i) => card(c.c, { size: 'sm', up: c.up, shown: v.phase === 'over' && !c.up && c.c !== null, label: c.up ? `Influence perdue : ${CHARS[c.c].name}` : `Carte cachée ${i + 1}` }))
         : h('span.cp-gone', 'plus de cartes')),
       tags.length ? h('div.cp-tags', tags) : null);
   }
@@ -176,6 +176,19 @@ export function mount(root, api) {
   function actionText(a) {
     const t = a.target !== null && a.target !== undefined ? ` sur ${name(a.target)}` : '';
     return `${ACT_NAME[a.type]}${t}`;
+  }
+
+  // Pourquoi une influence est perdue : le doute qui a tranché, ou l'attaque reçue.
+  function loseWhy() {
+    const e = v.log[v.log.length - 1];
+    if (!e) return '';
+    if (e.t === 'reveal') {
+      const who = e.who === me ? 'Tu' : pseudo(e.who);
+      const had = e.who === me ? 'avais' : 'avait';
+      return e.ok ? `${who} ${had} bien ${CHARS[e.char].the} : le doute était faux.` : `${who} n${e.who === me ? '’avais' : '’avait'} pas ${CHARS[e.char].the} : bluff découvert.`;
+    }
+    if (e.t === 'declare' && (e.action === 'coup' || e.action === 'assassinate')) return `${pseudo(e.by)} : ${ACT_NAME[e.action]}.`;
+    return '';
   }
 
   function banner() {
@@ -199,10 +212,12 @@ export function mount(root, api) {
         return canAct()
           ? [`${pseudo(v.block.by)} contre avec ${CHARS[v.block.char].the}.`, 'Il bluffe peut-être : mets en doute, ou laisse passer.']
           : [`${name(v.block.by) === 'Toi' ? 'Tu contres' : `${pseudo(v.block.by)} contre`} avec ${CHARS[v.block.char].the}.`, `En attente de : ${waitNames.join(', ') || '…'}`];
-      case 'lose':
+      case 'lose': {
+        const why = loseWhy();
         return v.lose.player === me
-          ? ['Tu perds une influence.', 'Touche la carte que tu abandonnes.']
-          : [`${pseudo(v.lose.player)} perd une influence…`, 'Il choisit la carte à retourner.'];
+          ? ['Tu perds une influence.', `${why} Touche la carte que tu abandonnes.`.trim()]
+          : [`${pseudo(v.lose.player)} perd une influence…`, why || 'Il choisit la carte à retourner.'];
+      }
       case 'exchange':
         return v.actor === me || a.by === me
           ? ['Échange : garde tes cartes.', `Retiens ${plural(v.exch?.keep ?? 0, 'carte', 'cartes')} parmi ${v.exch?.options.length ?? 0}.`]

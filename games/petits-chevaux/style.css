@@ -68,6 +68,7 @@
 @keyframes pc-pop { 0% { transform: scale(1.4, 0.65); } 45% { transform: scale(0.85, 1.25); } 100% { transform: scale(1); } }
 @keyframes pc-wobble { 25% { transform: rotate(-25deg); } 60% { transform: rotate(18deg); } }
 .g-petits-chevaux .pc-pulse { display: none; stroke: #fff; stroke-width: 3.5; stroke-dasharray: 7 6; }
+.g-petits-chevaux .pc-tok.is-last .pc-pulse { display: block; stroke: var(--lemon); stroke-width: 4; stroke-dasharray: none; }
 .g-petits-chevaux .pc-tok.is-choice { cursor: pointer; }
 .g-petits-chevaux .pc-tok.is-choice .pc-pulse { display: block; animation: pc-spin 4s linear infinite; transform-box: fill-box; transform-origin: center; }
 .g-petits-chevaux .pc-tok.is-choice .pc-tok-body { animation: pc-bob 0.9s ease-in-out infinite; }
