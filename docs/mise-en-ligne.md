@@ -2,6 +2,8 @@
 
 Pour la personne qui gère le compte O2Switch. Compter environ 30 minutes la première fois, puis une minute par mise à jour.
 
+Avec Claude pour se faire guider pas à pas : copier le texte de `docs/installation-avec-claude.md` dans une conversation avec Claude.
+
 ## Ce qu'il faut avant de commencer
 
 - Un accès au cPanel O2Switch, avec le **Terminal** (cPanel > Avancé > Terminal, ou une connexion SSH).
@@ -27,13 +29,13 @@ Envoyer à Minh la ligne affichée (elle commence par `ssh-ed25519`). Ce n'est p
 Une fois la clé ajoutée par Minh :
 
 ```sh
-printf 'Host github.com\n  IdentityFile ~/.ssh/hubuno_github\n  IdentitiesOnly yes\n' >> ~/.ssh/config
+printf 'Host github.com\n  HostName ssh.github.com\n  Port 443\n  User git\n  IdentityFile ~/.ssh/hubuno_github\n  IdentitiesOnly yes\n' >> ~/.ssh/config
 chmod 600 ~/.ssh/config
 git clone git@github.com:minh54500/hub-jeu.git ~/hubuno
 ls ~/hubuno   # on doit voir server.js, package.json, src, public, games
 ```
 
-À la première connexion, `git` demande s'il faut faire confiance à `github.com` : répondre `yes`.
+La connexion passe par le port 443 de GitHub, ouvert partout. À la première connexion, `git` demande s'il faut faire confiance à `github.com` : répondre `yes`.
 Le dossier `hubuno` est **à côté** de `public_html`, pas dedans : les données ne sont pas visibles sur le web.
 
 *Sans Terminal* : sur GitHub, *Code* > *Download ZIP*, puis cPanel > Gestionnaire de fichiers, créer `hubuno` à côté de `public_html`, y charger le zip et l'extraire (on doit voir `server.js` directement dans `hubuno`). Ça marche, mais chaque mise à jour se fera aussi à la main.
