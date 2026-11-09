@@ -1,17 +1,17 @@
 {
   "name": "Poker",
   "tagline": "Bluffe, relance, fais tapis.",
-  "description": "Le Texas Hold'em sans limite, avec des jetons virtuels : deux cartes en main, cinq au milieu, la meilleure combinaison ramasse le pot.",
+  "description": "Le Texas Hold’em sans limite, avec des jetons virtuels : deux cartes en main, cinq au milieu, la meilleure combinaison ramasse le pot.",
   "how": [
-    "Chacun reçoit deux cartes cachées. Cinq cartes communes sont dévoilées au fil de la main : le flop (3), le turn (1) et la river (1).",
-    "À ton tour : parole (ne rien miser), suivre la mise, relancer (au moins autant que la dernière relance) ou te coucher. Tapis = tous tes jetons.",
-    "À la fin, la meilleure main de 5 cartes parmi tes 2 cartes et les 5 communes gagne le pot. Un joueur à tapis ne peut gagner que ce qu'il a pu suivre : le reste va dans un pot secondaire.",
+    "Chacun reçoit deux cartes cachées. Cinq cartes communes sont dévoilées au fil de la main : le flop (3 cartes), le turn (1) et la river (1).",
+    "À ton tour : parole (ne rien miser), suivre la mise, relancer (au moins autant que la dernière relance) ou te coucher. Tapis = tous tes jetons.",
+    "À la fin, la meilleure main de 5 cartes parmi tes 2 cartes et les 5 communes gagne le pot. Un joueur à tapis ne peut gagner que ce qu’il a pu suivre : le reste va dans un pot secondaire.",
     "Le donneur change à chaque main. Les deux joueurs à sa gauche posent les blindes, des mises obligatoires qui montent au fil de la partie.",
     "Un joueur sans jetons est éliminé. Le dernier avec des jetons gagne la partie."
   ],
   "minPlayers": 2,
   "maxPlayers": 9,
-  "duration": "30 min",
+  "duration": "30 min",
   "emoji": "🃏",
   "family": "cartes",
   "color": "#7A2BFF",
@@ -19,10 +19,10 @@
   "order": 60,
   "options": [
     { "key": "stack", "label": "Jetons de départ", "type": "choice", "default": 1000,
-      "choices": [{ "value": 1000, "label": "1 000" }, { "value": 2000, "label": "2 000" }, { "value": 5000, "label": "5 000" }] },
+      "choices": [{ "value": 1000, "label": "1 000" }, { "value": 2000, "label": "2 000" }, { "value": 5000, "label": "5 000" }] },
     { "key": "levelEvery", "label": "Les blindes montent", "help": "Toutes les N mains, pour que la partie finisse", "type": "choice", "default": 8,
       "choices": [{ "value": 0, "label": "Jamais" }, { "value": 5, "label": "Toutes les 5 mains" }, { "value": 8, "label": "Toutes les 8 mains" }, { "value": 12, "label": "Toutes les 12 mains" }] },
-    { "key": "timer", "label": "Temps pour jouer", "help": "À la fin du temps : parole si possible, sinon tu te couches", "type": "choice", "default": 30,
-      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 20, "label": "20 s" }, { "value": 30, "label": "30 s" }, { "value": 45, "label": "45 s" }, { "value": 60, "label": "1 min" }] }
+    { "key": "timer", "label": "Temps pour jouer", "help": "À la fin du temps : parole si possible, sinon tu te couches", "type": "choice", "default": 30,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 20, "label": "20 s" }, { "value": 30, "label": "30 s" }, { "value": 45, "label": "45 s" }, { "value": 60, "label": "1 min" }] }
   ]
 }

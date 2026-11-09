@@ -1,22 +1,22 @@
 {
   "name": "Président",
   "tagline": "Vide ta main, grimpe dans la hiérarchie.",
-  "description": "Le jeu de cartes des soirées : pose plus fort que le précédent, vide ta main avant les autres et deviens Président. À chaque manche, le Pauvre donne ses meilleures cartes.",
+  "description": "Le jeu de cartes des soirées : pose plus fort que le précédent, vide ta main avant les autres et deviens Président. À chaque manche, le Pauvre donne ses meilleures cartes.",
   "how": [
-    "Jeu de 52 cartes, distribuées en entier. Ordre croissant : 3, 4, 5, 6, 7, 8, 9, 10, valet, dame, roi, as, 2. Le 2 est la plus forte carte.",
-    "Celui qui ouvre pose 1 à 4 cartes de même valeur. Les suivants doivent poser le même nombre de cartes, d'une valeur plus forte ou égale, ou passer.",
+    "Jeu de 52 cartes, distribuées en entier. Ordre croissant : 3, 4, 5, 6, 7, 8, 9, 10, valet, dame, roi, as, 2. Le 2 est la plus forte carte.",
+    "Celui qui ouvre pose 1 à 4 cartes de même valeur. Les suivants doivent poser le même nombre de cartes, d’une valeur plus forte ou égale, ou passer.",
     "Poser une valeur égale fait sauter le joueur suivant. La plus forte valeur (le 2, ou le 3 pendant une révolution) ramasse le pli tout de suite et tu rouvres. Quand tout le monde a passé, celui qui a posé en dernier ramasse le pli et rouvre.",
-    "Révolution (activée par défaut) : poser un carré (4 cartes identiques) inverse l'ordre jusqu'à la fin de la manche : le 3 devient la plus forte et le 2 la plus faible, il faut alors poser plus faible ou égal. Un autre carré remet l'ordre normal.",
-    "Passer ne t'exclut pas : tu peux rejouer au tour de table suivant, tant que le pli continue.",
+    "Révolution (activée par défaut) : poser un carré (4 cartes identiques) inverse l’ordre jusqu’à la fin de la manche : le 3 devient la plus forte et le 2 la plus faible, il faut alors poser plus faible ou égal. Un autre carré remet l’ordre normal.",
+    "Passer ne t’exclut pas : tu peux rejouer quand le tour revient à toi, tant que le pli continue.",
     "Le premier sans carte est Président, puis Vice-président, Neutre(s), Vice-pauvre, et le dernier est Pauvre. Chaque manche rapporte autant de points que de joueurs derrière toi.",
-    "À la manche suivante, le Pauvre donne ses 2 meilleures cartes au Président, qui lui rend 2 cartes de son choix. Entre Vice-pauvre et Vice-président (à partir de 4 joueurs), l'échange d'une carte est automatique : la meilleure contre la plus faible. Le Pauvre ouvre.",
+    "À la manche suivante, le Pauvre donne ses 2 meilleures cartes au Président, qui lui rend 2 cartes de son choix. Entre Vice-pauvre et Vice-président (à partir de 4 joueurs), l’échange d’une carte est automatique : la meilleure contre la plus faible. Le Pauvre ouvre.",
     "Au bout des manches choisies, le meilleur total gagne (à égalité, le mieux classé à la dernière manche).",
     "Avec le minuteur, si tu ne joues pas à temps, tu passes (ou tu poses ta carte la plus faible si tu ouvres le pli).",
-    "Si quelqu'un abandonne, ses cartes sortent du jeu, il finit dernier de la manche et la partie continue."
+    "Si quelqu’un abandonne, ses cartes sortent du jeu, il finit dernier de la manche et la partie continue."
   ],
   "minPlayers": 3,
   "maxPlayers": 8,
-  "duration": "15 min",
+  "duration": "15 min",
   "emoji": "👑",
   "family": "cartes",
   "color": "#D12BFF",
@@ -35,7 +35,7 @@
     {
       "key": "timer",
       "label": "Minuteur par tour",
-      "help": "Temps écoulé : tu passes",
+      "help": "Temps écoulé : tu passes",
       "type": "choice",
       "default": 0,
       "choices": [
@@ -45,22 +45,22 @@
         },
         {
           "value": 20,
-          "label": "20 s"
+          "label": "20 s"
         },
         {
           "value": 30,
-          "label": "30 s"
+          "label": "30 s"
         },
         {
           "value": 60,
-          "label": "60 s"
+          "label": "60 s"
         }
       ]
     },
     {
       "key": "revolution",
       "label": "Révolution",
-      "help": "Un carré inverse l'ordre des cartes",
+      "help": "Un carré inverse l’ordre des cartes",
       "type": "bool",
       "default": true
     }

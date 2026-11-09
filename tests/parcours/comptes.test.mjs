@@ -123,3 +123,25 @@ S.it('mot de passe : le changer ne déconnecte pas cet appareil, mais déconnect
     await jusque(async () => (await page2.locator('main.auth').count()) === 1, 'l’autre appareil est renvoyé à la connexion');
   } finally { await ctx2.close(); }
 });
+
+S.it('mot de passe actuel : 5 erreurs dans Profil, puis refus clair, sans déconnecter', async ({ ouvrir }) => {
+  const p = await ouvrir();
+  const codes = [];
+  for (let i = 0; i < 6; i++) codes.push((await post(p, 'password', { current: `faux-mot-de-passe-${i}`, password: 'Un-nouveau-mot-2026' })).status());
+  if (codes.slice(0, 5).some((c) => c !== 400) || codes[5] !== 429) throw new Error(`codes reçus : ${codes.join(',')}`);
+  await p.page.reload();
+  await p.page.locator('.navbar').waitFor();
+});
+
+S.it('connexion avec un pseudo sans compte : message clair, et aucun blocage de la classe', async () => {
+  const ctx = await S.nav.newContext({ baseURL: S.serveur.url });
+  try {
+    const page = await ctx.newPage();
+    await page.goto(S.serveur.url);
+    await page.getByRole('tab', { name: 'Se connecter' }).click();
+    await page.locator('[name=login_pseudo]').fill('personne-ici');
+    await page.locator('[name=login_password]').fill('Un-mot-de-passe-2026');
+    await page.locator('form button[type=submit]').click();
+    await page.getByText('Pseudo ou mot de passe incorrect.').waitFor();
+  } finally { await ctx.close(); }
+});

@@ -134,7 +134,7 @@ export function move(state, playerId, action, ctx) {
   const type = action?.type;
 
   if (state.phase === 'placing') {
-    if (state.ready[seat]) throw new Error('Ta flotte est prête : attends ton adversaire.');
+    if (state.ready[seat]) throw new Error('Ta flotte est prête : attends ton adversaire.');
     if (type === 'random') {
       const fleets = state.fleets.map((f, i) => (i === seat ? randomFleet(ctx.random) : f));
       return { state: { ...state, fleets } };
@@ -152,7 +152,7 @@ export function move(state, playerId, action, ctx) {
 
   // Phase de tirs.
   if (type !== 'fire') throw new Error('C’est le moment de tirer.');
-  if (state.turn !== seat) throw new Error("Ce n'est pas ton tour.");
+  if (state.turn !== seat) throw new Error("Ce n’est pas ton tour.");
   const cell = Number(action.cell);
   if (!Number.isInteger(cell) || cell < 0 || cell >= SIZE * SIZE) throw new Error('Cette case n’existe pas.');
   if (state.shots[seat].some((s) => s.cell === cell)) throw new Error('Tu as déjà tiré sur cette case.');

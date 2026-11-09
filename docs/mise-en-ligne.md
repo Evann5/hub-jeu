@@ -1,19 +1,42 @@
 # Mettre Hubuno en ligne sur O2Switch
 
-Pour la personne qui gère le compte O2Switch. Compter environ 20 minutes la première fois.
+Pour la personne qui gère le compte O2Switch. Compter environ 30 minutes la première fois, puis une minute par mise à jour.
 
 ## Ce qu'il faut avant de commencer
 
-- Un accès au cPanel O2Switch.
-- L'adresse choisie pour Hubuno : un sous-domaine (`jeux.votre-domaine.fr`) ou un sous-dossier (`votre-domaine.fr/hubuno`).
-- Le code de la classe (choisi par Minh) et les pseudos des admins de départ (Minh et l'élève des jeux).
+- Un accès au cPanel O2Switch, avec le **Terminal** (cPanel > Avancé > Terminal, ou une connexion SSH).
+- L'adresse choisie pour Hubuno : un sous-domaine (`jeux.votre-domaine.fr`, le plus simple) ou un sous-dossier (`votre-domaine.fr/hubuno`).
+- De Minh, par message privé (jamais sur GitHub) :
+  - le **code de la classe** : au moins 10 caractères, c'est la seule barrière à l'inscription ;
+  - son **pseudo** d'admin ;
+  - un **code admin**, différent du code de classe, connu de lui seul.
+- L'accès au dépôt GitHub de Minh (`minh54500/hub-jeu`, privé) : l'étape 1 explique comment, avec une clé en lecture seule.
 
-## 1. Envoyer les fichiers
+## 1. Récupérer le code depuis GitHub
 
-1. Dans cPanel, ouvrir **Gestionnaire de fichiers**.
-2. Créer un dossier `hubuno` **à côté** de `public_html`, pas dedans (les données ne doivent pas être visibles sur le web).
-3. Entrer dans `hubuno`, cliquer sur **Charger** et envoyer `hubuno-a-mettre-en-ligne.zip`.
-4. Revenir dans `hubuno`, clic droit sur le zip > **Extraire**. On doit voir `server.js`, `package.json` et les dossiers `src`, `public` et `games` directement dans `hubuno`. Supprimer ensuite le zip.
+Dans le Terminal du cPanel :
+
+```sh
+ssh-keygen -t ed25519 -f ~/.ssh/hubuno_github -N "" -C "o2switch-hubuno"
+cat ~/.ssh/hubuno_github.pub
+```
+
+Envoyer à Minh la ligne affichée (elle commence par `ssh-ed25519`). Ce n'est pas un secret : c'est la partie publique de la clé.
+**Minh** l'ajoute dans GitHub : son dépôt > *Settings* > *Deploy keys* > *Add deploy key*, un titre (« O2Switch »), la ligne collée, **sans** cocher *Allow write access*. Le serveur pourra lire le code, jamais le modifier.
+
+Une fois la clé ajoutée par Minh :
+
+```sh
+printf 'Host github.com\n  IdentityFile ~/.ssh/hubuno_github\n  IdentitiesOnly yes\n' >> ~/.ssh/config
+chmod 600 ~/.ssh/config
+git clone git@github.com:minh54500/hub-jeu.git ~/hubuno
+ls ~/hubuno   # on doit voir server.js, package.json, src, public, games
+```
+
+À la première connexion, `git` demande s'il faut faire confiance à `github.com` : répondre `yes`.
+Le dossier `hubuno` est **à côté** de `public_html`, pas dedans : les données ne sont pas visibles sur le web.
+
+*Sans Terminal* : sur GitHub, *Code* > *Download ZIP*, puis cPanel > Gestionnaire de fichiers, créer `hubuno` à côté de `public_html`, y charger le zip et l'extraire (on doit voir `server.js` directement dans `hubuno`). Ça marche, mais chaque mise à jour se fera aussi à la main.
 
 ## 2. Créer l'application Node.js
 
@@ -28,32 +51,42 @@ Pour la personne qui gère le compte O2Switch. Compter environ 20 minutes la pre
 
 | Nom | Valeur | À quoi ça sert |
 |---|---|---|
-| `CLASS_CODE` | le code de la classe | Sans lui, personne ne peut s'inscrire. Les admins peuvent le changer ensuite dans Hubuno (10 caractères au moins pour un code choisi dans Hubuno ; choisis-en un long, car le code est la seule barrière à l'inscription). |
-| `ADMINS` | `minh,pseudo-eleve-jeux` | Ces pseudos deviennent admins en créant leur compte. **Règle : Minh et l'élève des jeux créent leur compte avant que le code de la classe soit donné à qui que ce soit** (sinon un autre élève pourrait prendre leur pseudo et devenir admin à leur place). Minh s'inscrit en premier : le premier admin créé est le propriétaire du hub, et aucun autre admin ne peut lui changer son mot de passe, son rôle ni le bloquer. |
+| `CLASS_CODE` | le code de la classe | Sans lui, personne ne peut s'inscrire. Les admins peuvent le changer ensuite dans Hubuno. |
+| `ADMINS` | le pseudo de Minh | Ce pseudo devient admin en créant son compte. |
+| `ADMIN_CODE` | le code admin de Minh | Minh s'inscrit avec ce code à la place du code de classe. Grâce à lui, aucun élève ne peut prendre le pseudo de Minh, même s'il s'inscrit avant lui. |
 | `BASE_PATH` | `/hubuno` | **Seulement** si Hubuno est dans un sous-dossier. Pour un sous-domaine, ne pas l'ajouter. |
 
 4. **Create**, puis **Run NPM Install**, puis **Restart**.
 
 ## 3. Vérifier
 
-1. Ouvrir l'adresse de Hubuno : l'écran avec les piles de jetons doit s'afficher.
-2. Minh crée son compte avec le code de la classe. Il doit voir l'icône de bouclier (administration) en haut à gauche.
-3. Dans **Administration**, en bas, la rubrique **Connexion en direct** indique :
+1. Ouvrir l'adresse de Hubuno : l'écran de connexion doit s'afficher, avec le cadenas HTTPS. S'il n'y a pas de cadenas : cPanel > **SSL/TLS Status** > lancer AutoSSL pour ce domaine.
+2. Minh crée son compte avec son pseudo et le **code admin**. Il doit voir l'écran **Admin** dans le menu. Le premier admin est le propriétaire du hub : aucun autre admin ne peut lui changer son mot de passe, son niveau ni le bloquer.
+3. Dans **Admin**, la rubrique **Connexion en direct** indique :
    - « Connexion directe » : parfait.
-   - « Connexion de secours » : Hubuno marche quand même, avec un peu plus de délai. Prévenir Minh : c'est la question encore ouverte sur O2Switch.
+   - « Connexion de secours » : Hubuno marche quand même, avec un peu plus de délai. Le dire à Minh.
 4. Test à deux : deux téléphones connectés à deux comptes. Un message envoyé par l'un doit apparaître chez l'autre en une seconde environ.
+5. Ensuite, tout se fait dans Hubuno : Minh nomme les modérateurs et les admins depuis la fiche d'un membre (écran Membres), crée les rôles colorés dans Admin, et donne l'adresse et le code à la classe avec « Copier le message pour la classe ».
 
 ## Si ça ne marche pas
 
-- **Page d'erreur Passenger** : dans Setup Node.js App, vérifier la version de Node (22.13 ou plus) et relancer **Run NPM Install**, puis **Restart**. Les erreurs sont écrites dans le fichier `stderr.log` du dossier `hubuno`.
-- **« Les inscriptions ne sont pas encore ouvertes »** : la variable `CLASS_CODE` manque. L'ajouter, puis faire **Restart**.
+- **Page d'erreur Passenger** : dans Setup Node.js App, vérifier la version de Node (22.13 ou plus), relancer **Run NPM Install**, puis **Restart**. Les erreurs sont écrites dans le fichier `stderr.log` du dossier `hubuno`.
+- **« Les inscriptions ne sont pas encore ouvertes »** : la variable `CLASS_CODE` manque. L'ajouter, puis **Restart**.
+- **`git clone` répond « Permission denied (publickey) »** : la clé n'est pas encore dans les *Deploy keys* du dépôt, ou `~/.ssh/config` n'a pas été écrit.
 - **Des gens apparaissent hors ligne alors qu'ils sont connectés, ou des messages arrivent en double** : O2Switch fait sans doute tourner plusieurs copies de l'appli en même temps. Hubuno doit tourner en **une seule instance** : demander au support O2Switch de limiter l'application à une instance.
 
 ## Mettre à jour
 
-1. Remplacer les fichiers `src`, `public`, `games`, `server.js`, `package.json` et `package-lock.json`. **Ne jamais toucher au dossier `data`** : il contient les comptes et les messages.
-2. **Run NPM Install** si `package.json` a changé, puis **Restart**.
+Quand Minh a poussé une nouvelle version sur GitHub, dans le Terminal :
+
+```sh
+cd ~/hubuno && git pull
+```
+
+Puis cPanel > Setup Node.js App > Hubuno > **Run NPM Install** (seulement si `package.json` a changé) et **Restart**. Le serveur lit les règles des jeux au démarrage : le **Restart** est toujours nécessaire.
+
+Les comptes et les messages ne bougent pas : ils sont dans `hubuno/data/`, que `git pull` ne touche jamais. Les élèves connectés voient « Hubuno a été mis à jour » avec un bouton pour recharger. De préférence hors des heures de cours.
 
 ## Sauvegarder
 
-Toutes les données tiennent dans `hubuno/data/` (fichiers `hubuno.sqlite*`). Une copie de ce dossier une fois par mois suffit. Les sauvegardes automatiques d'O2Switch (JetBackup) le couvrent aussi.
+Toutes les données tiennent dans `hubuno/data/` (fichiers `hubuno.sqlite*`). Les sauvegardes automatiques d'O2Switch (JetBackup) les couvrent. Avant une grosse mise à jour, une copie de ce dossier ne coûte rien : `cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)`.

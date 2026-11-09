@@ -278,7 +278,7 @@ export function mount(root, api) {
     } else if (v.phase === 'drawing') {
       wordBox.replaceChildren(
         h('span.cr-word-label', 'Mot à deviner'),
-        h('span.cr-mask', { role: 'img', 'aria-label': `Mot de ${v.length} caractères : ${v.mask.map((c) => (c === '_' ? 'lettre cachée' : c)).join(' ')}` },
+        h('span.cr-mask', { role: 'img', 'aria-label': `Mot de ${v.length} caractères : ${v.mask.map((c) => (c === '_' ? 'lettre cachée' : c)).join(' ')}` },
           maskWords(v.mask).map((word) => h('span.cr-w', { 'aria-hidden': 'true' },
             word.map((c) => h(`span.cr-cell${c === '_' ? '' : '.is-shown'}`, c === '_' ? '' : c.toUpperCase()))))));
     } else if (v.phase === 'reveal') {
@@ -307,8 +307,8 @@ export function mount(root, api) {
       overlay.hidden = false;
       if (v.choices) {
         overlay.replaceChildren(
-          h('p.cr-overlay-title', 'À toi de dessiner !'),
-          h('p.cr-overlay-sub', 'Choisis un mot. Sans choix, le premier sera pris.'),
+          h('p.cr-overlay-title', 'À toi de dessiner !'),
+          h('p.cr-overlay-sub', 'Choisis un mot. Si tu ne choisis pas à temps, le premier mot sera pris.'),
           h('div.cr-choices', v.choices.map((w, i) => h(`button.cr-choice.c${i}`, {
             type: 'button',
             onclick: () => api.sendMove({ type: 'choose', index: i }).catch(() => {}),
@@ -317,7 +317,7 @@ export function mount(root, api) {
       } else {
         overlay.replaceChildren(
           h('p.cr-overlay-title', `${name(v.drawer)} prépare son dessin`),
-          h('p.cr-overlay-sub', 'Prépare-toi à deviner !'));
+          h('p.cr-overlay-sub', 'Prépare-toi à deviner !'));
       }
     } else {
       overlay.hidden = true;
@@ -329,7 +329,7 @@ export function mount(root, api) {
       reveal.replaceChildren(
         gains.length
           ? h('ul.cr-gains', gains.map((id) => h('li', api.token(api.user(id), { size: 's' }), h('span', name(id)), h('b', `+${v.gained[id]}`))))
-          : h('p.cr-reveal-none', 'Personne n’a trouvé… dommage !'));
+          : h('p.cr-reveal-none', 'Personne n’a trouvé… dommage !'));
     } else {
       reveal.hidden = true;
       reveal.replaceChildren();
@@ -347,7 +347,7 @@ export function mount(root, api) {
       return h(`li.cr-player${isDrawer ? '.is-drawer' : ''}${found ? '.is-found' : ''}${p.gone ? '.is-gone' : ''}`,
         api.token(api.user(p.id), { size: 's' }),
         h('span.cr-player-name', name(p.id), tag ? h('small', tag) : null),
-        h('span.cr-score', { 'aria-label': `${p.score} points` }, String(p.score)));
+        h('span.cr-score', { 'aria-label': `${p.score} point${p.score > 1 ? 's' : ''}` }, String(p.score)));
     }));
   }
 
@@ -355,8 +355,8 @@ export function mount(root, api) {
     const v = view;
     const stick = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 30;
     feed.replaceChildren(...(v.feed || []).map((e) => {
-      if (e.kind === 'found') return h('li.cr-feed-found', `★ ${e.id === api.me.id ? 'Tu as trouvé' : `${api.user(e.id).pseudo} a trouvé`} !`);
-      return h(`li.cr-feed-${e.kind}`, h('b', `${name(e.id)} : `), e.text, e.kind === 'close' ? h('em', ' (presque !)') : null);
+      if (e.kind === 'found') return h('li.cr-feed-found', `★ ${e.id === api.me.id ? 'Tu as trouvé' : `${api.user(e.id).pseudo} a trouvé`} !`);
+      return h(`li.cr-feed-${e.kind}`, h('b', `${name(e.id)} : `), e.text, e.kind === 'close' ? h('em', ' (presque !)') : null);
     }));
     if (stick) feed.scrollTop = feed.scrollHeight;
   }
@@ -375,8 +375,8 @@ export function mount(root, api) {
     const mine = (v.feed || []).filter((e) => e.id === api.me.id);
     if (spectator) msg = 'Tu regardes la partie.';
     else if (v.phase === 'choosing') msg = isDrawer ? '' : 'Le dessin commence bientôt.';
-    else if (found) msg = 'Bien joué, tu as trouvé ! Attends les autres.';
-    else if (mine.length && mine[mine.length - 1].kind === 'close') msg = 'Presque ! Tu y es presque…';
+    else if (found) msg = 'Bien joué, tu as trouvé ! Attends les autres.';
+    else if (mine.length && mine[mine.length - 1].kind === 'close') msg = 'Presque ! Tu es tout près…';
     guessMsg.textContent = msg;
     guessMsg.classList.toggle('is-close', msg.startsWith('Presque'));
     guessMsg.classList.toggle('is-found', found);
@@ -394,7 +394,7 @@ export function mount(root, api) {
       h('ol.cr-podium', list.map((p, i) => h(`li${win.has(p.id) ? '.is-winner' : ''}`,
         h('span.cr-podium-rank', String(i + 1)),
         api.token(api.user(p.id), { size: 's' }),
-        h('span.cr-podium-name', name(p.id), p.gone ? ' (parti)' : '', win.has(p.id) ? h('span.cr-medal', 'Champion !') : null),
+        h('span.cr-podium-name', name(p.id), p.gone ? ' (parti)' : '', win.has(p.id) ? h('span.cr-medal', 'Champion !') : null),
         h('b.cr-podium-score', `${p.score} pts`)))));
     if (win.has(api.me.id)) confetti();
   }
@@ -413,7 +413,7 @@ export function mount(root, api) {
     cr.classList.toggle('is-drawing', drawer);
     for (const b of tools.querySelectorAll('button')) b.disabled = !drawer;
     canvas.classList.toggle('is-drawable', drawer);
-    canvas.setAttribute('aria-label', drawer ? `Ta feuille de dessin : ${v.word}` : 'Le dessin en cours');
+    canvas.setAttribute('aria-label', drawer ? `Ta feuille de dessin : ${v.word}` : 'Le dessin en cours');
     const showMain = v.phase !== 'over';
     timer.hidden = !showMain;
     feedBox.hidden = !showMain;
@@ -428,9 +428,9 @@ export function mount(root, api) {
       local = null;
       pending = [];
       if (v.phase === 'choosing') {
-        live.textContent = v.drawer === api.me.id ? 'À toi de dessiner : choisis un mot.' : `${name(v.drawer)} choisit un mot.`;
+        live.textContent = v.drawer === api.me.id ? 'À toi de dessiner : choisis un mot.' : `${name(v.drawer)} choisit un mot.`;
       } else if (v.phase === 'drawing') {
-        live.textContent = v.drawer === api.me.id ? `Dessine : ${v.word}.` : `${name(v.drawer)} dessine. À toi de deviner !`;
+        live.textContent = v.drawer === api.me.id ? `Dessine : ${v.word}.` : `${name(v.drawer)} dessine. À toi de deviner !`;
       } else if (v.phase === 'reveal') {
         live.textContent = `Le mot était ${v.word}.`;
       }

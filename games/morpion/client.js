@@ -68,11 +68,11 @@ export function mount(root, api) {
     });
     prev = s.board.slice();
     const name = (id) => (id === api.me.id ? 'Tu' : api.user(id).pseudo);
-    status.textContent = s.forfeit ? `${api.user(s.forfeit).pseudo} a abandonné. ${name(s.winner)} ${s.winner === api.me.id ? 'gagnes' : 'gagne'} !`
-      : s.winner ? `${name(s.winner)} ${s.winner === api.me.id ? 'gagnes' : 'gagne'} !`
+    status.textContent = s.forfeit ? `${api.user(s.forfeit).pseudo} a abandonné. ${name(s.winner)} ${s.winner === api.me.id ? 'gagnes' : 'gagne'} !`
+      : s.winner ? `${name(s.winner)} ${s.winner === api.me.id ? 'gagnes' : 'gagne'} !`
         : s.draw ? 'Match nul.'
-          : myTurn ? 'À toi : choisis une case.'
+          : myTurn ? 'À toi : choisis une case.'
             : info.isPlayer ? `${api.user(s.players[s.turn]).pseudo} réfléchit…`
-              : `Au tour de ${api.user(s.players[s.turn]).pseudo}.`;
+              : `À ${api.user(s.players[s.turn]).pseudo} de jouer.`;
   });
 }

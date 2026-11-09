@@ -1,19 +1,19 @@
 {
   "name": "Menteur",
   "tagline": "Des dés sous un gobelet, des annonces, et un gros bluff.",
-  "description": "Chacun cache cinq dés sous son gobelet. À tour de rôle, on annonce combien de dés d'une valeur il y a sur toute la table, ou on crie « Menteur ! ». Celui qui se trompe perd un dé. Le dernier avec des dés a gagné.",
+  "description": "Chacun cache cinq dés sous son gobelet. À tour de rôle, on annonce combien de dés d’une valeur il y a sur toute la table, ou on crie « Menteur ! ». Celui qui se trompe perd un dé. Le dernier qui a encore des dés gagne.",
   "how": [
     "Chacun a 5 dés cachés sous son gobelet. Tu ne vois que les tiens.",
-    "À ton tour, annonce un nombre de dés et une valeur (« au moins 7 dés de 4 sur toute la table »), ou dis « Menteur ! » sur l'annonce précédente.",
-    "Chaque annonce doit surenchérir : plus de dés, ou autant de dés avec une valeur plus haute.",
-    "Les 1 sont des jokers : ils comptent pour toutes les valeurs, sauf quand l'annonce porte sur les 1. Pour passer aux 1, il suffit de la moitié des dés (arrondie au-dessus). Pour quitter les 1, il faut le double plus un.",
-    "Menteur ! : on soulève tous les gobelets et on compte. Si l'annonce est juste, celui qui a crié perd un dé. Sinon, c'est l'auteur de l'annonce qui le perd.",
-    "Tout pile (si l'hôte l'a activé) : tu penses que l'annonce est exacte, au dé près. Si tu as raison, tu regagnes un dé (5 au maximum). Sinon, tu en perds un.",
+    "À ton tour, annonce un nombre de dés et une valeur (« au moins 7 dés de 4 sur toute la table »), ou dis « Menteur ! » sur l’annonce précédente.",
+    "Chaque annonce doit surenchérir : plus de dés, ou autant de dés avec une valeur plus haute.",
+    "Les 1 sont des jokers : ils comptent pour toutes les valeurs, sauf quand l’annonce porte sur les 1. Pour passer aux 1, annonce la moitié du nombre précédent (arrondi au-dessus). Pour quitter les 1, annonce le double plus un.",
+    "Quand quelqu’un crie « Menteur ! », on soulève tous les gobelets et on compte. Si l’annonce est juste, celui qui a crié perd un dé. Sinon, c’est l’auteur de l’annonce qui le perd.",
+    "Tout pile (si l’hôte l’a activé) : tu penses que l’annonce est exacte, au dé près. Si tu as raison, tu regagnes un dé (5 au maximum). Sinon, tu en perds un.",
     "Celui qui perd un dé ouvre la manche suivante. À 0 dé, tu es éliminé. Le dernier joueur avec des dés gagne."
   ],
   "minPlayers": 2,
   "maxPlayers": 8,
-  "duration": "15 min",
+  "duration": "15 min",
   "emoji": "🎲",
   "family": "bluff",
   "color": "#D9A441",
@@ -21,17 +21,17 @@
   "order": 20,
   "options": [
     {
-      "key": "turnTime", "label": "Temps par tour", "help": "Si le temps est écoulé : « Menteur ! » s'il y a une annonce, sinon une annonce minimale.",
+      "key": "turnTime", "label": "Temps par tour", "help": "Si le temps est écoulé : « Menteur ! » s’il y a une annonce, sinon une annonce minimale.",
       "type": "choice", "default": 60,
       "choices": [
         { "value": 0, "label": "Sans" },
-        { "value": 30, "label": "30 s" },
-        { "value": 60, "label": "1 min" },
-        { "value": 90, "label": "1 min 30" }
+        { "value": 30, "label": "30 s" },
+        { "value": 60, "label": "1 min" },
+        { "value": 90, "label": "1 min 30" }
       ]
     },
     {
-      "key": "exact", "label": "Tout pile", "help": "On peut parier qu'une annonce est exacte, au dé près.",
+      "key": "exact", "label": "Tout pile", "help": "On peut parier qu’une annonce est exacte, au dé près.",
       "type": "bool", "default": true
     }
   ]

@@ -101,7 +101,7 @@ export function mount(root, api) {
   function onCell(i) {
     if (!state || info.over || busy) return;
     if (!myTurn()) {
-      if (info.isPlayer) api.toast("Ce n'est pas ton tour.");
+      if (info.isPlayer) api.toast("Ce n’est pas ton tour.");
       return;
     }
     const can = movable();
@@ -110,7 +110,7 @@ export function mount(root, api) {
         sel = [i];
         render();
       } else if (state.board[i] !== 0 && Math.sign(state.board[i]) === (mySeat() === 0 ? 1 : -1)) {
-        api.toast(state.moves[0]?.taken.length ? 'Prise obligatoire : joue une des pièces cerclées de jaune.' : 'Cette pièce ne peut pas bouger.');
+        api.toast(state.moves[0]?.taken.length ? 'Prise obligatoire : joue une des pièces cerclées de jaune.' : 'Cette pièce ne peut pas bouger.');
       }
       return;
     }
@@ -138,7 +138,7 @@ export function mount(root, api) {
       }
       return;
     }
-    api.toast(sel.length > 1 ? 'Continue ta prise : touche une case marquée d’un point.' : 'Choisis une case marquée d’un point, ou une autre pièce.');
+    api.toast(sel.length > 1 ? 'Continue ta prise : touche une case marquée d’un point.' : 'Choisis une case marquée d’un point, ou une autre pièce.');
   }
 
   // Clavier : flèches pour se déplacer de case foncée en case foncée, Entrée/Espace pour choisir, Échap pour annuler.
@@ -173,19 +173,19 @@ export function mount(root, api) {
   const count = (board, side) => board.filter((p) => p !== 0 && (p > 0 ? 0 : 1) === side).length;
 
   function statusText(s) {
-    if (s.forfeit) return `${api.user(s.forfeit).pseudo} a abandonné. ${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} !`;
-    if (s.winner) return `${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} : plus de coup possible pour l’adversaire.`;
-    if (s.draw) return `Partie nulle : 25 coups de dame chacun, sans prise ni pion.`;
+    if (s.forfeit) return `${api.user(s.forfeit).pseudo} a abandonné. ${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} !`;
+    if (s.winner) return `${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} : plus de coup possible pour l’adversaire.`;
+    if (s.draw) return `Partie nulle : 25 coups de dame chacun, sans prise ni pion.`;
     const took = info.isPlayer && !info.over && s.last?.taken.length && s.last.by !== api.me.id && !sel.length ? `${api.user(s.last.by).pseudo} a pris ${s.last.taken.length > 1 ? `${s.last.taken.length} de tes pièces` : 'une de tes pièces'}. ` : '';
-    const slow = took + (s.last?.auto ? `${s.last.by === api.me.id ? "Tu n'as" : `${api.user(s.last.by).pseudo} n'a`} pas joué à temps : coup joué au hasard. ` : '');
+    const slow = took + (s.last?.auto ? `${s.last.by === api.me.id ? "Tu n’as" : `${api.user(s.last.by).pseudo} n’a`} pas joué à temps : coup joué au hasard. ` : '');
     if (myTurn()) {
       const take = s.moves[0]?.taken.length || 0;
-      if (sel.length > 1) return `${slow}Continue ta prise : touche la case suivante.`;
+      if (sel.length > 1) return `${slow}Continue ta prise : touche la case suivante.`;
       if (sel.length === 1) return `${slow}Touche une case d’arrivée marquée d’un point.`;
-      return `${slow}${take ? `À toi : prise obligatoire${take > 1 ? ` de ${take} pièces` : ''}.` : 'À toi : touche une pièce cerclée de jaune.'}`;
+      return `${slow}${take ? `À toi : prise obligatoire${take > 1 ? ` de ${take} pièces` : ''}.` : 'À toi : touche une pièce cerclée de jaune.'}`;
     }
     if (info.isPlayer) return `${slow}${api.user(s.players[s.turn]).pseudo} réfléchit…`;
-    return `${slow}Au tour de ${api.user(s.players[s.turn]).pseudo}.`;
+    return `${slow}À ${api.user(s.players[s.turn]).pseudo} de jouer.`;
   }
 
   function renderPlayers(s) {
@@ -263,7 +263,7 @@ export function mount(root, api) {
   let wasOver = null; // null tant qu'aucun état n'a été reçu : pas de confettis en rechargeant une partie finie
   api.onState((s, i) => {
     const wasBoard = state?.board;
-    if (wasOver === false && i.over && s.winner && !s.forfeit && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // pas de confettis sur l'écran de celui qui perd
+    if (wasOver === false && i.over && s.winner && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // le gagnant, même par abandon ; jamais celui qui perd
     wasOver = i.over;
     state = s;
     info = i;

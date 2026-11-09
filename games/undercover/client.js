@@ -114,7 +114,7 @@ export function mount(root, api) {
         h('div',
           h('div.uc-avatar-big', api.user(id).avatar),
           h('div.uc-role', ROLE[role]),
-          h('div.uc-role-sub', role === 'white' ? 'Aucun mot' : `Son mot : ${word}`))),
+          h('div.uc-role-sub', role === 'white' ? 'Aucun mot' : `Son mot : ${word}`))),
       h('span.uc-corner.br', ROLE[role][0]));
   }
 
@@ -168,7 +168,7 @@ export function mount(root, api) {
       nodes.push(h('div.uc-grow'));
       if (v.ready.includes(api.me.id)) nodes.push(h('div.uc-wait', 'C’est noté. En attente des autres', dots(v.ready.length, v.alive.length)));
       else nodes.push(btn(m.white ? 'J’ai compris' : 'C’est mémorisé', () => send({ type: 'ready' })));
-      nodes.push(note(m.white ? 'Tu n’as aucun mot : écoute les indices et bluffe.' : 'Maintiens la carte pour la retourner. Civil ou Undercover ? Ta carte ne le dit pas.'));
+      nodes.push(note(m.white ? 'Tu n’as aucun mot : écoute les indices et bluffe.' : 'Maintiens la carte pour la retourner. Civil ou Undercover ? Ta carte ne le dit pas.'));
     } else {
       nodes.push(h('div.uc-card.uc-back.is-deco', h('span.uc-logo', eye())), h('div.uc-grow'), note('Chaque joueur découvre sa carte en secret.'));
     }
@@ -193,7 +193,7 @@ export function mount(root, api) {
     const nodes = [bar(), h('h2.uc-title', mine ? 'Ton indice' : 'Tour des indices')];
     if (mine && me() && !me().out) nodes.push(h('div.uc-mine', input('Ton indice', (text) => ({ type: 'clue', text }), { label: 'Ton indice' }), note('Un mot ou une courte expression, jamais ton mot.')));
     nodes.push(rows);
-    if (v.round > 1) nodes.push(h('p.uc-sub', 'Les indices des manches précédentes :'), chips());
+    if (v.round > 1) nodes.push(h('p.uc-sub', 'Les indices des manches précédentes :'), chips());
     nodes.push(h('div.uc-grow'));
     if (me() && !me().out) nodes.push(h('div.uc-peek', h('span', 'Maintiens pour voir ton mot'), holdCard({ small: true })));
     return nodes;
@@ -201,7 +201,7 @@ export function mount(root, api) {
 
   function screenDebate() {
     const m = me();
-    const nodes = [bar(), h('h2.uc-title', 'Débat'), h('p.uc-sub', 'Qui a un indice suspect ? Discutez dans le chat de la table.'), chips()];
+    const nodes = [bar(), h('h2.uc-title', 'Débat'), h('p.uc-sub', 'Qui a un indice suspect ? On en parle dans le chat de la partie.'), chips()];
     nodes.push(h('div.uc-grow'));
     nodes.push(btn('Ouvrir le chat', () => api.openChat(), '.is-dark.uc-chat-btn'));
     if (m && !m.out) {
@@ -232,8 +232,8 @@ export function mount(root, api) {
         av(id), h('span.uc-name', name(id), clue ? h('small', ` · ${clue}`) : null),
         chosen ? h('em', m?.voted ? 'Ton vote' : 'Choisi') : h('span'));
     });
-    const nodes = [bar(), h('h2.uc-title', v.candidates ? 'Égalité : on revote' : 'Qui est l’intrus ?')];
-    if (v.candidates) nodes.push(h('p.uc-sub', `Second vote entre ${v.candidates.map(name).join(' et ')}. En cas de nouvelle égalité, tirage au sort.`));
+    const nodes = [bar(), h('h2.uc-title', v.candidates ? 'Égalité : on revote' : 'Qui est l’intrus ?')];
+    if (v.candidates) nodes.push(h('p.uc-sub', `Second vote entre ${v.candidates.map(name).join(', ').replace(/, ([^,]*)$/, ' et $1')}. En cas de nouvelle égalité, tirage au sort.`));
     nodes.push(rows, note(`${v.voted.length} sur ${v.alive.length} ont voté.`), h('div.uc-grow'));
     if (voting) {
       const b = btn(picked ? `Voter contre ${name(picked)}` : 'Choisis un joueur', () => picked && send({ type: 'vote', target: picked }));
@@ -256,9 +256,9 @@ export function mount(root, api) {
     const nodes = [bar()];
     if (v.whiteGuess && !v.whiteGuess.right && vd?.role === 'white' && vd.round === v.round) {
       nodes.push(h('h2.uc-title', 'Raté pour Mr. White'),
-        h('p.uc-sub', v.whiteGuess.text ? `${name(v.whiteGuess.id)} a proposé « ${v.whiteGuess.text} ». Ce n’était pas ça : la partie continue.` : `${name(v.whiteGuess.id)} n’a rien proposé à temps. La partie continue.`));
+        h('p.uc-sub', v.whiteGuess.text ? `${name(v.whiteGuess.id)} a proposé « ${v.whiteGuess.text} ». Ce n’était pas ça : la partie continue.` : `${name(v.whiteGuess.id)} n’a rien proposé à temps. La partie continue.`));
     } else if (!vd || vd.id === null) {
-      nodes.push(h('h2.uc-title', 'Personne n’est éliminé'), h('p.uc-sub', 'Aucun vote : on repart pour une manche.'));
+      nodes.push(h('h2.uc-title', 'Personne n’est éliminé'), h('p.uc-sub', 'Aucun vote : on repart pour une manche.'));
     } else {
       const how = vd.by === 'départ' ? `${name(vd.id)} a quitté la partie` : vd.by === 'tirage' ? `Le sort désigne ${name(vd.id)}` : `Le vote désigne ${name(vd.id)}`;
       nodes.push(h('h2.uc-title', how), roleCard(vd.id, vd.role, v.revealedWords[vd.id]), tally());
@@ -294,8 +294,8 @@ export function mount(root, api) {
     return [
       bar(h('span', `${v.round} manche${v.round > 1 ? 's' : ''}`)),
       h('h2.uc-title.uc-winners', title),
-      r.winner === 'white' ? h('p.uc-sub', `${name(v.whiteGuess.id)} a trouvé « ${v.words.civil} ».`) : null,
-      h('div.uc-words', h('span.w-civil', `Civils : ${v.words.civil}`), h('span.w-under', `Undercover : ${v.words.under}`)),
+      r.winner === 'white' ? h('p.uc-sub', `${name(v.whiteGuess.id)} a trouvé « ${v.words.civil} ».`) : null,
+      h('div.uc-words', h('span.w-civil', `Civils : ${v.words.civil}`), h('span.w-under', `Undercover : ${v.words.under}`)),
       roster,
     ].filter(Boolean);
   }
@@ -307,8 +307,8 @@ export function mount(root, api) {
     const phaseClass = v.phase === 'over' ? `ph-over-${v.result.winner}` : `ph-${v.phase}`;
     root.className = root.className.replace(/\bph-[\w-]+/g, '').trim();
     root.classList.add(phaseClass);
-    const out = me()?.out && v.phase !== 'over' ? h('p.uc-out', 'Tu es éliminé : regarde la suite, et n’aide personne !') : null;
-    const spectator = !me() && v.phase !== 'over' ? h('p.uc-out', 'Tu regardes la partie : les mots restent secrets jusqu’à la fin.') : null;
+    const out = me()?.out && v.phase !== 'over' ? h('p.uc-out', 'Tu es éliminé : regarde la suite, et n’aide personne !') : null;
+    const spectator = !me() && v.phase !== 'over' ? h('p.uc-out', 'Tu regardes la partie : les mots restent secrets jusqu’à la fin.') : null;
     el.replaceChildren(h('div.uc-screen', out, spectator, ...SCREENS[v.phase]()));
     tick();
   }

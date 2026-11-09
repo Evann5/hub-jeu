@@ -132,7 +132,7 @@ test('lancer : refus du mauvais joueur, des indices faux, de « tout garder »',
   assert.throws(() => move(s, 1, { type: 'roll', keep: [7] }, ctxOf()), /Dé inconnu/);
   assert.throws(() => move(s, 1, { type: 'roll', keep: [-1] }, ctxOf()), /Dé inconnu/);
   assert.throws(() => move(s, 1, { type: 'roll', keep: ['a'] }, ctxOf()), /Dé inconnu/);
-  assert.throws(() => move(s, 1, { type: 'roll', keep: [0, 1, 2, 3, 4] }, ctxOf()), /relâche-en au moins un/);
+  assert.throws(() => move(s, 1, { type: 'roll', keep: [0, 1, 2, 3, 4] }, ctxOf()), /relâches-en au moins un/);
   assert.throws(() => move(s, 1, { type: 'tricher' }, ctxOf()), /Action inconnue/);
   // keep absent ou mal formé : on relance tout
   const t = move(s, 1, { type: 'roll', keep: 'oui' }, ctxOf([6, 6, 6, 6, 6])).state;

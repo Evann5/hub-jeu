@@ -88,7 +88,7 @@ export function mount(root, api) {
     const flipping = v.phase === 'flip' && canAct() && v.challenger === me;
     const ownDone = v.piles[me]?.every((d) => d.up);
     const canTake = flipping && id !== me ? ownDone && nextIdx >= 0 : flipping && id === me && nextIdx >= 0;
-    const row = h('div.cr-pile', { 'aria-label': `Pile de ${name(id)} : ${plural(n, 'disque', 'disques')}` });
+    const row = h('div.cr-pile', { 'aria-label': `Pile (${name(id)}) : ${plural(n, 'disque', 'disques')}` });
     if (!n) row.append(h('span.cr-empty', 'aucun disque posé'));
     for (let i = n - 1, z = n; i >= 0; i--, z--) {
       const d = items[i];
@@ -101,7 +101,7 @@ export function mount(root, api) {
           type: 'button',
           dataset: { key: `flip-${id}` },
           style: `z-index:${z}`,
-          'aria-label': id === me ? 'Retourner ta pile' : `Retourner le disque du dessus de la pile de ${name(id)}`,
+          'aria-label': id === me ? 'Retourner ta pile' : `Retourner le disque du dessus de la pile (${name(id)})`,
           onclick: () => send({ type: 'flip', target: id }),
         }, art(face))
         : h(`span.cr-disc${mine ? '.is-mine' : ''}${d.up ? '.is-up' : ''}`, { role: 'img', 'aria-label': label, style: `z-index:${z}` }, art(face));
@@ -119,8 +119,8 @@ export function mount(root, api) {
     const pips = h('span.cr-pips', { 'aria-label': `${v.score[id]} point${v.score[id] > 1 ? 's' : ''} sur 2` },
       [0, 1].map((i) => h(`i${i < v.score[id] ? '.on' : ''}`, art('star'))));
     const tags = [];
-    if (v.challenger === id && ['flip'].includes(v.phase)) tags.push(h('span.cr-tag.is-hot', `Défi : ${v.bid.n}`));
-    else if (v.bid && v.bid.by === id && v.phase === 'bid') tags.push(h('span.cr-tag.is-hot', `Enchère : ${v.bid.n}`));
+    if (v.challenger === id && ['flip'].includes(v.phase)) tags.push(h('span.cr-tag.is-hot', `Défi : ${v.bid.n}`));
+    else if (v.bid && v.bid.by === id && v.phase === 'bid') tags.push(h('span.cr-tag.is-hot', `Enchère : ${v.bid.n}`));
     if (v.passed.includes(id) && v.phase === 'bid') tags.push(h('span.cr-tag', 'a passé'));
     if (out) tags.push(h('span.cr-tag.is-out', v.left.includes(id) ? 'a quitté' : 'éliminé'));
     if (v.phase === 'over' && v.winner === id) tags.push(h('span.cr-tag.is-win', 'gagne'));
@@ -146,16 +146,16 @@ export function mount(root, api) {
         const done = v.order.filter((id) => !v.out.includes(id) && v.piles[id].length > 0).length;
         const all = v.order.filter((id) => !v.out.includes(id)).length;
         return actor === me
-          ? ['À toi : pose un disque.', 'Rose ou crâne, face cachée.']
+          ? ['À toi : pose un disque.', 'Rose ou crâne, face cachée.']
           : [`${name(actor)} pose son disque…`, `${done} sur ${all} ont posé.`];
       }
       case 'choose':
         return actor === me
-          ? ['À toi : pose ou défie.', 'Ajoute un disque, ou parie combien de roses tu retournes.']
+          ? ['À toi : pose ou défie.', 'Ajoute un disque, ou parie combien de roses tu retournes.']
           : [`${name(actor)} réfléchit…`, `${plural(v.total, 'disque', 'disques')} sur la table.`];
       case 'bid':
         return actor === me
-          ? [`Défi à ${v.bid.n} : surenchéris ou passe.`, `${v.bid.by === me ? 'Tu paries' : `${name(v.bid.by)} parie`} ${plural(v.bid.n, 'disque', 'disques')} sur ${v.total}.`]
+          ? [`Défi à ${v.bid.n} : surenchéris ou passe.`, `${v.bid.by === me ? 'Tu paries' : `${name(v.bid.by)} parie`} ${plural(v.bid.n, 'disque', 'disques')} sur ${v.total}.`]
           : [`${name(actor)} hésite…`, `${v.bid.by === me ? 'Tu paries' : `${name(v.bid.by)} parie`} ${plural(v.bid.n, 'disque', 'disques')} sur ${v.total}.`];
       case 'flip': {
         const own = v.piles[v.challenger].some((d) => !d.up);
@@ -169,13 +169,13 @@ export function mount(root, api) {
       }
       case 'result': {
         const r = v.result;
-        if (r.kind === 'success') return [`${cName} réussit son défi !`, `${r.challenger === me ? 'Tu marques' : 'Il marque'} un point (${v.score[r.challenger]} sur 2).`];
+        if (r.kind === 'success') return [`${cName} réussit son défi !`, `${r.challenger === me ? 'Tu marques' : 'Il marque'} un point (${v.score[r.challenger]} sur 2).`];
         const lost = v.lost ? ` Tu as perdu ${v.lost === 'skull' ? 'ton crâne' : 'une rose'}.` : ' Personne ne sait quel disque il perd.';
-        const who = r.skullOwner === r.challenger ? (r.challenger === me ? 'ton propre crâne' : 'son propre crâne') : `le crâne de ${name(r.skullOwner)}`;
-        return [`Crâne ! ${r.challenger === me ? 'Tu perds' : `${cName} perd`} un disque.`, `${r.challenger === me ? 'Tu es tombé' : `${cName} est tombé`} sur ${who}.${r.eliminated ? ` ${r.challenger === me ? 'Tu es éliminé.' : 'Il est éliminé.'}` : ''}${r.challenger === me ? lost : ''}`];
+        const who = r.skullOwner === r.challenger ? (r.challenger === me ? 'ton propre crâne' : 'son propre crâne') : `le crâne posé par ${name(r.skullOwner)}`;
+        return [`Crâne ! ${r.challenger === me ? 'Tu perds' : `${cName} perd`} un disque.`, `${r.challenger === me ? 'Tu es tombé' : `${cName} est tombé`} sur ${who}.${r.eliminated ? ` ${r.challenger === me ? 'Tu es éliminé.' : 'Il est éliminé.'}` : ''}${r.challenger === me ? lost : ''}`];
       }
       case 'over':
-        return [v.winner === me ? 'Tu gagnes la partie !' : `${name(v.winner)} gagne la partie !`, 'Tous les disques sont retournés.'];
+        return [v.winner === me ? 'Tu gagnes la partie !' : `${name(v.winner)} gagne la partie !`, 'Tous les disques sont retournés.'];
       default:
         return ['', ''];
     }
@@ -195,7 +195,7 @@ export function mount(root, api) {
       h('div.cr-hand', { role: 'group', 'aria-label': 'Ta main' },
         roses.map((i) => btn('rose', `Poser une rose (${hd.roses} en main)`, () => send({ type: 'place', disc: 'rose' }), `rose-${i}`)),
         hd.skull ? btn('skull', 'Poser le crâne', () => send({ type: 'place', disc: 'skull' }), 'skull') : null,
-        !hd.roses && !hd.skull ? h('span.cr-empty', 'Tout est posé : lance un défi.') : null));
+        !hd.roses && !hd.skull ? h('span.cr-empty', 'Tout est posé : lance un défi.') : null));
   }
 
   function bidPanel() {
@@ -206,16 +206,16 @@ export function mount(root, api) {
     return h('div.cr-bid',
       h('div.cr-stepper',
         h('button.cr-step', { type: 'button', disabled: bidDraft <= min, 'aria-label': 'Moins', dataset: { key: 'minus' }, onclick: () => set(bidDraft - 1) }, '−'),
-        h('output', { 'aria-live': 'polite', 'aria-label': `${bidDraft} disques` }, String(bidDraft)),
+        h('output', { 'aria-live': 'polite', 'aria-label': plural(bidDraft, 'disque', 'disques') }, String(bidDraft)),
         h('button.cr-step', { type: 'button', disabled: bidDraft >= max, 'aria-label': 'Plus', dataset: { key: 'plus' }, onclick: () => set(bidDraft + 1) }, '+')),
       h('button.cr-btn.is-main', { type: 'button', dataset: { key: 'bid' }, onclick: () => send({ type: 'bid', n: bidDraft }) },
-        v.phase === 'choose' ? `Défier : ${plural(bidDraft, 'disque', 'disques')}` : `Monter à ${bidDraft}`),
+        v.phase === 'choose' ? `Défier : ${plural(bidDraft, 'disque', 'disques')}` : `Monter à ${bidDraft}`),
       v.phase === 'bid' ? h('button.cr-btn.is-quiet', { type: 'button', dataset: { key: 'pass' }, onclick: () => send({ type: 'pass' }) }, 'Passer') : null);
   }
 
   function action() {
     if (v.me === null) return h('p.cr-note', 'Tu regardes la partie.');
-    if (v.out.includes(me)) return h('p.cr-note', 'Tu es éliminé : tu regardes la fin de la partie.');
+    if (v.out.includes(me)) return h('p.cr-note', 'Tu es éliminé : tu regardes la fin de la partie.');
     if (v.phase === 'over') return null;
     if (v.phase === 'result') {
       const waiting = v.order.filter((id) => !v.out.includes(id) && !v.ready.includes(id)).length;
@@ -239,13 +239,13 @@ export function mount(root, api) {
       case 'place': return `${n(e.who)} pose un disque.`;
       case 'bid': return `${n(e.who)} parie ${e.n}.`;
       case 'pass': return `${n(e.who)} passe.`;
-      case 'challenge': return `${n(e.who)} tient le défi : ${e.n}.`;
-      case 'flip': return e.of === e.who ? `${n(e.who)} retourne ${e.disc === 's' ? 'son crâne' : 'une de ses roses'}.` : `${n(e.who)} retourne ${e.disc === 's' ? 'un crâne' : 'une rose'} de ${n(e.of)}.`;
-      case 'success': return `${n(e.who)} réussit son défi de ${e.n} : un point.`;
-      case 'fail': return `Crâne ! ${n(e.who)} perd un disque (crâne de ${n(e.skullOwner)}).`;
+      case 'challenge': return `${n(e.who)} tient le défi : ${e.n}.`;
+      case 'flip': return e.of === e.who ? `${n(e.who)} retourne ${e.disc === 's' ? 'son crâne' : 'une de ses roses'}.` : `${n(e.who)} retourne ${e.disc === 's' ? 'un crâne' : 'une rose'} chez ${n(e.of)}.`;
+      case 'success': return `${n(e.who)} réussit son défi de ${e.n} : un point.`;
+      case 'fail': return `Crâne ! ${n(e.who)} perd un disque (crâne posé par ${n(e.skullOwner)}).`;
       case 'out': return `${n(e.who)} est éliminé.`;
       case 'left': return `${n(e.who)} a quitté la partie.`;
-      case 'cancel': return 'Manche annulée : un joueur est parti.';
+      case 'cancel': return 'Manche annulée : un joueur est parti.';
       case 'win': return `${n(e.who)} gagne la partie.`;
       default: return '';
     }

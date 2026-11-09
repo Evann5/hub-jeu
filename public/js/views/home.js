@@ -37,11 +37,11 @@ export function render(container) {
   const lobbies = state.tables.filter((t) => t.status === 'lobby').length;
   const playText = turns ? `C’est à toi de jouer sur ${count(turns, 'partie', 'parties')}.`
     : lobbies ? `${count(lobbies, 'partie attend', 'parties attendent')} des joueurs.`
-      : `${count(state.games.length, 'jeu', 'jeux')} : crée une partie et invite la classe.`;
+      : `${count(state.games.length, 'jeu', 'jeux')} : crée une partie et invite la classe.`;
 
   const nb = online.length ? `${count(online.length, 'personne est', 'personnes sont')} en ligne` : 'Personne d’autre n’est en ligne';
   const summary = total ? `${nb}, et tu as ${count(total, 'message non lu', 'messages non lus')}.`
-    : online.length ? `${nb} : lance une partie !`
+    : online.length ? `${nb} : lance une partie !`
       : 'Personne d’autre n’est connecté pour l’instant. Invite un ami avec le code de la classe.';
 
   container.replaceChildren(h('div.home',
@@ -67,7 +67,8 @@ export function render(container) {
           title: u.pseudo,
           onclick: () => openProfile(u.id),
         }, token(u), h('span.online-name', u.pseudo)))))
-        : h('p.card-text', 'Personne d’autre pour l’instant. Les membres connectés apparaîtront ici.'),
+        : [h('div.online-ghosts', { 'aria-hidden': 'true' }, [0, 1, 2, 3].map(() => h('span.ghost'))),
+          h('p.card-text', 'Personne d’autre pour l’instant. Les membres connectés apparaîtront ici.')],
       h('a.card-link', { href: '#/membres' }, 'Voir tous les membres')),
 
     h('section.card.card-inbox',
@@ -75,7 +76,8 @@ export function render(container) {
       rows.length
         ? h('ul.inbox', rows.map((r) => h('li', h('a.conv-item', { href: r.href }, r.lead, h('span.label', r.label), h('span.badge', String(r.n))))))
         : h('div.inbox-empty',
-          h('p.card-text', 'Rien de nouveau. Lance la discussion :'),
+          h('span.inbox-glyph', { 'aria-hidden': 'true' }, icon('chat')),
+          h('p.card-text', 'Rien de nouveau. Lance la discussion :'),
           first ? h('a.conv-item', { href: `#/c/${first.id}` }, h('span.conv-icon', icon('hash')), h('span.label', first.name)) : null)),
 
     h('a.card.card-me', { href: '#/profil' },

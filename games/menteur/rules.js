@@ -37,12 +37,12 @@ export function minQuantity(prev, face) {
 export function bidError(prev, qty, face, total) {
   if (!Number.isInteger(qty) || qty < 1) return 'Annonce au moins 1 dé.';
   if (!Number.isInteger(face) || face < 1 || face > 6) return 'Choisis une valeur entre 1 et 6.';
-  if (qty > total) return `Il n'y a que ${plural(total, 'dé', 'dés')} en jeu.`;
+  if (qty > total) return `Il n’y a que ${plural(total, 'dé', 'dés')} en jeu.`;
   const min = minQuantity(prev, face);
   if (qty >= min) return null;
-  if (face === 1 && prev.face !== 1) return `Pour annoncer des 1 (jokers), il faut au moins ${min} dés : la moitié de l'annonce précédente, arrondie au-dessus.`;
-  if (face !== 1 && prev.face === 1) return `Après une annonce de 1, il faut au moins ${min} dés : le double, plus un.`;
-  return `Il faut surenchérir : au moins ${plural(min, 'dé', 'dés')} de ${face}, ou plus de dés, ou une valeur plus haute.`;
+  if (face === 1 && prev.face !== 1) return `Pour annoncer des 1 (jokers), il faut au moins ${min} dés : la moitié de l’annonce précédente, arrondie au-dessus.`;
+  if (face !== 1 && prev.face === 1) return `Après une annonce de 1, il faut au moins ${min} dés : le double, plus un.`;
+  return `Il faut surenchérir : au moins ${plural(min, 'dé', 'dés')} de ${face}, ou plus de dés, ou une valeur plus haute.`;
 }
 
 // Le joueur suivant qui a encore des dés, après la place de `id` (même si `id` n'en a plus).
@@ -157,14 +157,14 @@ export function move(state, playerId, action, ctx) {
   if (state.phase === 'over') throw new Error('La partie est terminée.');
 
   if (state.phase === 'reveal') {
-    if (type !== 'next') throw new Error('La manche est finie : appuie sur « Manche suivante ».');
-    if (!(state.counts[playerId] > 0)) throw new Error('Tu es éliminé : tu regardes la suite.');
+    if (type !== 'next') throw new Error('La manche est finie : appuie sur « Manche suivante ».');
+    if (!(state.counts[playerId] > 0)) throw new Error('Tu es éliminé : tu regardes la suite.');
     const ready = state.ready.includes(playerId) ? state.ready : [...state.ready, playerId];
     const next = { ...state, ready };
     return { state: alive(next).every((id) => ready.includes(id)) ? startRound(next, next.nextStarter, ctx) : next };
   }
 
-  if (state.turn !== playerId) throw new Error("Ce n'est pas ton tour.");
+  if (state.turn !== playerId) throw new Error('Ce n’est pas ton tour.');
 
   if (type === 'bid') {
     const qty = Number(action.qty);
@@ -176,8 +176,8 @@ export function move(state, playerId, action, ctx) {
     return { state: { ...next, deadline: deadlineFor(next, ctx) }, events: [{ type: 'bid', ...bid }] };
   }
   if (type === 'liar' || type === 'exact') {
-    if (!state.bid) throw new Error("Il n'y a encore aucune annonce : fais d'abord la première.");
-    if (type === 'exact' && !state.options.exact) throw new Error("« Tout pile » n'est pas activé sur cette table.");
+    if (!state.bid) throw new Error("Il n’y a encore aucune annonce : fais d'abord la première.");
+    if (type === 'exact' && !state.options.exact) throw new Error("« Tout pile » n’est pas activé dans cette partie.");
     return { state: resolve(state, playerId, type, ctx), events: [{ type }] };
   }
   throw new Error('Action inconnue.');

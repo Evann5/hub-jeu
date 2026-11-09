@@ -1,24 +1,24 @@
 {
   "name": "Télépathie",
-  "tagline": "Sans un mot, dans l'ordre.",
-  "description": "Jeu coopératif et silencieux. Chacun reçoit des cartes de 1 à 100 : tous ensemble, sans parler, il faut les poser dans l'ordre croissant. Seul le sens du temps de l'équipe vous guide.",
+  "tagline": "Sans un mot, dans l’ordre.",
+  "description": "Jeu coopératif et silencieux. Chacun reçoit des cartes de 1 à 100 : tous ensemble, sans parler, il faut les poser dans l’ordre croissant. Seule l’intuition de l’équipe vous guide.",
   "how": [
-    "Au niveau N, chacun reçoit N cartes de 1 à 100. Personne ne montre ses cartes ni ne parle : pas de chat pendant un niveau.",
-    "Pose ta plus petite carte quand tu sens que c'est le bon moment. Il n'y a pas de tour : tout le monde joue en même temps.",
-    "Si quelqu'un a une carte plus petite que celle qui vient d'être posée, l'équipe perd une vie et ces cartes sont défaussées.",
-    "Une étoile filante (si tout le monde est d'accord) fait défausser sa plus petite carte à chaque joueur, sans perdre de vie.",
-    "Entre deux niveaux, un temps de concentration : tout le monde clique « Prêt ». Réussis tous les niveaux avant d'avoir perdu toutes vos vies."
+    "Au niveau N, chacun reçoit N cartes de 1 à 100. Personne ne montre ses cartes ni ne parle : pas de chat pendant un niveau.",
+    "Pose ta plus petite carte quand tu sens que c’est le bon moment. Il n’y a pas de tour : tout le monde joue en même temps.",
+    "Si quelqu’un a une carte plus petite que celle qui vient d’être posée, l’équipe perd une vie et ces cartes sont défaussées.",
+    "Une étoile filante (si tout le monde est d’accord) fait défausser sa plus petite carte à chaque joueur, sans perdre de vie.",
+    "Entre deux niveaux, un temps de concentration : tout le monde appuie sur « Prêt ». Il faut réussir tous les niveaux avant que l’équipe ait perdu toutes ses vies."
   ],
   "minPlayers": 2,
   "maxPlayers": 8,
-  "duration": "15 min",
+  "duration": "15 min",
   "emoji": "🌌",
   "family": "ambiance",
   "color": "#A9F0E4",
   "ink": "#0C1B3A",
   "order": 110,
   "options": [
-    { "key": "levels", "label": "Niveaux à réussir", "help": "Automatique : 12 à 2 joueurs, 10 à 3, 8 à partir de 4", "type": "choice", "default": 0,
+    { "key": "levels", "label": "Niveaux à réussir", "help": "Automatique : 12 niveaux à 2 joueurs, 10 à 3, 8 à partir de 4", "type": "choice", "default": 0,
       "choices": [{ "value": 0, "label": "Auto" }, { "value": 4, "label": "4" }, { "value": 8, "label": "8" }, { "value": 10, "label": "10" }, { "value": 12, "label": "12" }] }
   ]
 }

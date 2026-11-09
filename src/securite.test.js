@@ -159,6 +159,9 @@ test('connexion : clé coupée à 40 caractères, 10 échecs par pseudo puis un 
   assert.equal(auth.tooManyFailures('2.2.2.2', 'encore-un-autre'), false, 'un élève seul ne bloque pas la classe');
   for (let i = 29; i < 500; i++) auth.recordAttempt('2.2.2.2', `pseudo${i}`);
   assert.equal(auth.tooManyFailures('2.2.2.2', 'encore-un-autre'), true, 'compteur par adresse seule');
+  for (let i = 0; i < 1000; i++) assert.equal(auth.unknownPseudoAttempt('4.4.4.4'), true);
+  assert.equal(auth.unknownPseudoAttempt('4.4.4.4'), false, 'pseudos inventés : limités à part');
+  assert.equal(auth.tooManyFailures('4.4.4.4', 'vrai-compte'), false, 'les vrais comptes de cette adresse passent toujours');
   auth.recordSuccess('3.3.3.3', 'zoe');
   assert.equal(auth.tooManyFailures('3.3.3.3', 'zoe'), false);
 });

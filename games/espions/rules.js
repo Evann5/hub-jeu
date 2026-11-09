@@ -183,7 +183,7 @@ export function move(state, playerId, action, ctx) {
       if (a.on === false) {
         if (s.lead[mine] === playerId) s.lead[mine] = null;
       } else if (s.lead[mine] && s.lead[mine] !== playerId) {
-        throw new Error(`L’équipe ${TEAM_NAME[mine]} a déjà un chef : demande-lui de laisser sa place.`);
+        throw new Error(`L’équipe ${TEAM_NAME[mine]} a déjà un chef : demande-lui de laisser sa place.`);
       } else {
         s.lead[mine] = playerId;
       }
@@ -193,25 +193,25 @@ export function move(state, playerId, action, ctx) {
       s.lead = { red: null, blue: null };
     } else if (a.type === 'start') {
       for (const t of TEAMS) {
-        if (!s.lead[t]) throw new Error(`Il manque un chef à l’équipe ${TEAM_NAME[t]} : quelqu’un doit se proposer.`);
+        if (!s.lead[t]) throw new Error(`Il manque un chef à l’équipe ${TEAM_NAME[t]} : quelqu’un doit se proposer.`);
         if (agents(s, t).length < 1) throw new Error(`L’équipe ${TEAM_NAME[t]} a besoin d’au moins un agent en plus de son chef.`);
       }
       startGame(s, ctx);
     } else {
-      throw new Error('Choisis ton équipe, puis « Commencer ».');
+      throw new Error('Choisis ton équipe, puis « Commencer ».');
     }
     return { state: s };
   }
 
   if (s.phase === 'clue') {
     if (playerId !== s.lead[s.active]) throw new Error(`C’est au chef de l’équipe ${TEAM_NAME[s.active]} de donner l’indice.`);
-    if (a.type !== 'clue') throw new Error('Donne un indice : un mot et un nombre.');
+    if (a.type !== 'clue') throw new Error('Donne un indice : un mot et un nombre.');
     const word = String(a.word ?? '').trim();
     if (!word || word.length > 24 || !/^[\p{L}'’-]+$/u.test(word)) throw new Error('Ton indice doit être un seul mot, sans espace ni chiffre.');
     const number = Number(a.number);
     if (!Number.isInteger(number) || number < 0 || number > 9) throw new Error('Le nombre doit être entre 0 et 9.');
     const clash = s.words.find((w, i) => !s.revealed[i] && tooClose(word, w));
-    if (clash) throw new Error(`Ton indice est trop proche du mot « ${clash} » : choisis-en un autre.`);
+    if (clash) throw new Error(`Ton indice est trop proche du mot « ${clash} » : choisis-en un autre.`);
     s.clue = { team: s.active, word, number };
     s.max = number === 0 ? null : number + 1;
     s.log.push({ team: s.active, word, number, guesses: [], ended: null });
@@ -223,7 +223,7 @@ export function move(state, playerId, action, ctx) {
 
   // phase guess
   if (!agents(s, s.active).includes(playerId)) {
-    if (s.lead[s.active] === playerId) throw new Error('Tu es le chef : tes agents cherchent, toi tu ne parles plus.');
+    if (s.lead[s.active] === playerId) throw new Error('Tu es le chef : tes agents cherchent, toi tu ne parles plus.');
     throw new Error(`C’est à l’équipe ${TEAM_NAME[s.active]} de chercher.`);
   }
   if (a.type !== 'pick') throw new Error('Désigne une carte.');

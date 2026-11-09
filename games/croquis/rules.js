@@ -195,7 +195,7 @@ function cleanStroke(action) {
   if (!Number.isInteger(w) || w < 0 || w >= WIDTHS) throw new Error('Épaisseur inconnue.');
   const raw = action.p;
   if (!Array.isArray(raw) || raw.length < 2 || raw.length % 2 !== 0) throw new Error('Trait invalide.');
-  if (raw.length > MAX_POINTS_PER_STROKE * 2) throw new Error('Trait trop long : lève le crayon plus souvent.');
+  if (raw.length > MAX_POINTS_PER_STROKE * 2) throw new Error('Trait trop long : lève le crayon plus souvent.');
   const p = raw.map((v) => {
     const n = Number(v);
     if (!Number.isFinite(n)) throw new Error('Trait invalide.');
@@ -231,15 +231,15 @@ export function move(state, playerId, action, ctx) {
     if (type === 'clear') return { state: { ...state, strokes: [] } };
     const stroke = cleanStroke(action);
     if (state.strokes.length >= MAX_STROKES || pointsOf(state.strokes) + stroke.p.length / 2 > MAX_POINTS_TOTAL) {
-      throw new Error('La feuille est pleine : efface ou annule des traits.');
+      throw new Error('La feuille est pleine : efface ou annule des traits.');
     }
     return { state: { ...state, strokes: [...state.strokes, stroke] } };
   }
 
   if (type === 'guess') {
     if (state.phase !== 'drawing') throw new Error('Attends le prochain dessin pour proposer.');
-    if (isDrawer) throw new Error('Tu dessines : ce sont les autres qui devinent.');
-    if (state.found.includes(playerId)) throw new Error('Tu as déjà trouvé : attends les autres.');
+    if (isDrawer) throw new Error('Tu dessines : ce sont les autres qui devinent.');
+    if (state.found.includes(playerId)) throw new Error('Tu as déjà trouvé : attends les autres.');
     const text = String(action.text ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
     if (!text) throw new Error('Écris une proposition.');
     const verdict = judge(text, state.word);

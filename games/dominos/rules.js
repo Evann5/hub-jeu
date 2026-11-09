@@ -217,7 +217,7 @@ export function move(state, playerId, action, ctx) {
   if (state.phase === 'over') throw new Error('La partie est terminée.');
 
   if (state.phase === 'recap') {
-    if (type !== 'next') throw new Error('La manche est finie : clique sur « Manche suivante ».');
+    if (type !== 'next') throw new Error('La manche est finie : appuie sur « Manche suivante ».');
     const ready = state.ready.slice();
     ready[seat] = true;
     if (ready.every(Boolean)) return { state: nextManche(state, ctx) };
@@ -234,7 +234,7 @@ export function move(state, playerId, action, ctx) {
     const sides = sidesFor(id, state.chain);
     if (!sides.length) {
       const [l, r] = endsOf(state.chain);
-      throw new Error(`Ce domino ne se pose pas : les bouts de la chaîne sont ${l} et ${r}.`);
+      throw new Error(`Ce domino ne se pose pas : les bouts de la chaîne sont ${l} et ${r}.`);
     }
     let side = action.side;
     if (side === undefined || side === null) {
@@ -247,14 +247,14 @@ export function move(state, playerId, action, ctx) {
   }
 
   if (type === 'draw') {
-    if (playable.length) throw new Error('Tu peux jouer : pose un domino.');
-    if (!drawsAllowed(activePlayers(state))) throw new Error('À quatre joueurs il n’y a pas de pioche : passe ton tour.');
-    if (!state.stock.length) throw new Error('La pioche est vide : passe ton tour.');
+    if (playable.length) throw new Error('Tu peux jouer : pose un domino.');
+    if (!drawsAllowed(activePlayers(state))) throw new Error('À quatre joueurs il n’y a pas de pioche : passe ton tour.');
+    if (!state.stock.length) throw new Error('La pioche est vide : passe ton tour.');
     return { state: drawUntilPlayable(state, seat, ctx) };
   }
 
   if (type === 'pass') {
-    if (playable.length) throw new Error('Tu peux jouer : pose un domino.');
+    if (playable.length) throw new Error('Tu peux jouer : pose un domino.');
     if (drawsAllowed(activePlayers(state)) && state.stock.length) throw new Error('Pioche d’abord.');
     return { state: passTurn(state, seat, ctx) };
   }

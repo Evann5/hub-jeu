@@ -1,4 +1,5 @@
 Polices du jeu Loups-garous, toutes sous licence SIL Open Font License 1.1 (texte complet : OFL.txt).
 
-- Unbounded : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
-- Figtree : Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
+- Bricolage Grotesque (titres) : Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
+- Figtree (texte) : Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
+- Unbounded : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded) ; plus utilisée depuis le 09/11/2026.

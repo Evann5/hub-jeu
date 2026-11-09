@@ -150,11 +150,11 @@ export function mount(root, api) {
       case 'play': return `${sub(e.by, 'poses', 'pose')} ${playText(e.cards)}${e.equal ? ' (valeur égale)' : ''}.`;
       case 'skip': return `${sub(e.target, 'sautes', 'saute')} ${poss(e.target)} tour.`;
       case 'pass': return `${sub(e.by, 'passes', 'passe')}.`;
-      case 'clear': return `Le pli est ramassé : ${you(e.next) ? 'tu rouvres' : e.next ? `${api.user(e.next).pseudo} ouvre` : 'à suivre'}.`;
-      case 'two': return 'La plus forte carte ! Elle ramasse le pli.';
-      case 'revolution': return e.on ? `${sub(e.by, 'poses', 'pose')} un carré : révolution, l'ordre s'inverse !` : `${sub(e.by, 'poses', 'pose')} un carré : contre-révolution, l'ordre revient.`;
-      case 'out': return `${sub(e.by, 'as', 'a')} fini ses cartes : ${e.pos + 1}${e.pos === 0 ? 're' : 'e'} place.`;
-      case 'exchange': return `${sub(e.pauvre, 'donnes', 'donne')} ${e.cards.map(cardLabel).join(' et ')} à ${you(e.president) ? 'toi' : api.user(e.president).pseudo}.`;
+      case 'clear': return `Le pli est ramassé : ${you(e.next) ? 'tu rouvres' : e.next ? `${api.user(e.next).pseudo} ouvre` : 'à suivre'}.`;
+      case 'two': return 'La plus forte carte ! Elle ramasse le pli.';
+      case 'revolution': return e.on ? `${sub(e.by, 'poses', 'pose')} un carré : révolution, l’ordre s’inverse !` : `${sub(e.by, 'poses', 'pose')} un carré : contre-révolution, l’ordre revient.`;
+      case 'out': return `${sub(e.by, 'as', 'a')} fini ses cartes : ${e.pos + 1}${e.pos === 0 ? 're' : 'e'} place.`;
+      case 'exchange': return `${sub(e.pauvre, 'donnes', 'donne')} ${e.cards.map(cardLabel).join(', ').replace(/, ([^,]*)$/, ' et $1')} à ${you(e.president) ? 'toi' : api.user(e.president).pseudo}.`;
       case 'given': return `${sub(e.by, 'as', 'a')} rendu 2 cartes à ${you(e.to) ? 'toi' : api.user(e.to).pseudo}.`;
       case 'timeout': return `${sub(e.by, 'as', 'a')} trop tardé.`;
       case 'left': return `${sub(e.by, 'abandonnes', 'abandonne')} la partie.`;
@@ -222,7 +222,7 @@ export function mount(root, api) {
       const ex = view.exchange;
       parts.push(h('div.pr-exchange',
         h('p.pr-ex-title', 'Échange de cartes'),
-        h('p', `${sub(ex.pauvre, 'donnes', 'donne')} ${you(ex.pauvre) ? 'tes' : 'ses'} 2 meilleures cartes à ${you(ex.president) ? 'toi' : api.user(ex.president).pseudo} :`),
+        h('p', `${sub(ex.pauvre, 'donnes', 'donne')} ${you(ex.pauvre) ? 'tes' : 'ses'} 2 meilleures cartes à ${you(ex.president) ? 'toi' : api.user(ex.president).pseudo} :`),
         h('div.pr-ex-cards', ex.received.map((c) => face(c))),
         ex.vice ? h('p.pr-ex-vice', `Vice-pauvre et Vice-président échangent une carte (${api.user(ex.vice.vpauvre).pseudo} ↔ ${api.user(ex.vice.vp).pseudo}).`) : null));
     } else if (view.pli) {
@@ -234,7 +234,7 @@ export function mount(root, api) {
         h('p.pr-pli-cap', `${sub(view.pli.by, 'as posé', 'a posé')} ${playText(view.pli.cards)}`)));
     } else {
       parts.push(h('div.pr-empty',
-        h('p.pr-empty-t', view.phase === 'between' || view.phase === 'over' ? 'Fin de manche' : 'Table vide'),
+        h('p.pr-empty-t', view.phase === 'between' || view.phase === 'over' ? 'Fin de manche' : 'Aucune carte posée'),
         view.turn ? h('p', `${you(view.turn) ? 'Tu ouvres' : `${api.user(view.turn).pseudo} ouvre`}.`) : null));
     }
     els.felt.replaceChildren(...parts);
@@ -248,16 +248,16 @@ export function mount(root, api) {
     else if (view.phase === 'between') text = 'Manche terminée.';
     else if (view.phase === 'exchange') {
       text = you(view.exchange.president)
-        ? 'Tu es Président ! Choisis 2 cartes à rendre au Pauvre (les cartes dorées viennent de lui).'
+        ? 'Tu es Président ! Choisis 2 cartes à rendre au Pauvre (les cartes dorées viennent de lui).'
         : `${api.user(view.exchange.president).pseudo} choisit 2 cartes à rendre au Pauvre.`;
     } else if (myTurn) {
       if (view.pli) {
         text = view.playable.length
-          ? `À toi : ${view.pli.count} carte${view.pli.count > 1 ? 's' : ''} de ${manyOf(RANK_ORDER[view.pli.rank])} ou ${view.revolution ? 'plus faible' : 'plus fort'}.`
-          : 'Tu ne peux rien poser : passe.';
-      } else text = 'À toi d\'ouvrir : 1 à 4 cartes de même valeur.';
+          ? `À toi : ${view.pli.count} carte${view.pli.count > 1 ? 's' : ''} de ${manyOf(RANK_ORDER[view.pli.rank])} ou ${view.revolution ? 'plus faible' : 'plus fort'}.`
+          : 'Tu ne peux rien poser : passe.';
+      } else text = 'À toi d’ouvrir : 1 à 4 cartes de même valeur.';
     } else if (view.turn) text = `${api.user(view.turn).pseudo} réfléchit…`;
-    if (view.revolution && view.phase === 'play') text = `Révolution ! L'ordre est inversé : le 3 est la plus forte. ${text}`;
+    if (view.revolution && view.phase === 'play') text = `Révolution ! L’ordre est inversé : le 3 est la plus forte. ${text}`;
     els.say.textContent = text;
     root.classList.toggle('is-revolution', Boolean(view.revolution) && view.phase === 'play');
     const recent = view.log.filter((e) => e.k !== 'play').slice(-1).map(describe).filter(Boolean);
@@ -353,12 +353,12 @@ export function mount(root, api) {
       h('b.pr-rank-pts', String(view.scores[id] || 0), h('span.sr-only', (view.scores[id] || 0) > 1 ? ' points' : ' point'))));
     let foot = null;
     if (over) {
-      const names = view.winners.map((id) => api.user(id).pseudo).join(' et ');
+      const names = view.winners.map((id) => api.user(id).pseudo).join(', ').replace(/, ([^,]*)$/, ' et $1');
       const best = Math.max(...res.order.map((id) => view.scores[id] || 0));
       const tie = res.order.filter((id) => (view.scores[id] || 0) === best).length > 1;
       foot = h('div.pr-end',
-        h('p.pr-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne la partie !`),
-        tie ? h('p.pr-hint', 'Égalité de points : départage sur la dernière manche.') : null);
+        h('p.pr-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne la partie !`),
+        tie ? h('p.pr-hint', 'Égalité de points : départage sur la dernière manche.') : null);
     } else if (api.seat >= 0) {
       foot = h('div.pr-next',
         h('button.pr-btn.go', { type: 'button', onclick: () => send({ type: 'next' }) }, 'Manche suivante'),
@@ -429,7 +429,7 @@ export function mount(root, api) {
       return;
     }
     if (view.turn !== api.me.id) {
-      api.toast("Ce n'est pas encore ton tour.");
+      api.toast("Ce n’est pas encore ton tour.");
       return;
     }
     const r = rankText(code);

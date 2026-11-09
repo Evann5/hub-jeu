@@ -15,6 +15,7 @@ export const state = {
   typing: new Map(), // scope -> Map(userId -> timer)
   games: [], // catalogue : [{ id, name, minPlayers, maxPlayers, color, options… }]
   joinOnOpen: null, // la partie à rejoindre dès qu'elle s'affiche (bouton Rejoindre, invitation)
+  roles: [], // rôles décoratifs : [{ id, name, color }], dans l'ordre (le premier d'un membre colore son pseudo)
   tables: [], // résumés des tables : [{ id, game, hostId, status, seats, turn… }]
 };
 
@@ -43,6 +44,11 @@ export function unreadTotal() {
 }
 
 export const isAdmin = () => state.me?.role === 'admin';
+// L'équipe : modérateurs (sourdine, messages, parties) et admins (tout).
+export const isStaff = () => state.me?.role === 'admin' || state.me?.role === 'modo';
+export const LEVELS = { membre: 'Membre', modo: 'Modérateur', admin: 'Admin' };
+export const rolesOf = (u) => state.roles.filter((r) => u?.roles?.includes(r.id));
+export const roleColor = (u) => rolesOf(u)[0]?.color ?? null; // clé de la palette, ou null
 
 // Membres triés : en ligne d'abord, puis par pseudo.
 export function sortedUsers() {

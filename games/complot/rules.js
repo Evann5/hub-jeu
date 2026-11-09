@@ -281,7 +281,7 @@ function declare(s, playerId, action, ctx) {
   const a = ACTIONS[type];
   if (!a) throw new Error('Action inconnue.');
   const me = s.p[playerId];
-  if (me.coins >= MUST_COUP && type !== 'coup') throw new Error('Tu as 10 pièces ou plus : tu dois lancer un coup d’État.');
+  if (me.coins >= MUST_COUP && type !== 'coup') throw new Error('Tu as 10 pièces ou plus : tu dois lancer un coup d’État.');
   if (me.coins < a.cost) throw new Error(`Il te faut ${a.cost} pièces pour cette action (tu en as ${me.coins}).`);
   const target = a.target ? targetOf(s, action, playerId) : null;
   if (type === 'steal' && s.p[target].coins === 0) throw new Error('Cette personne n’a aucune pièce à voler.');

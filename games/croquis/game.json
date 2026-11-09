@@ -3,23 +3,23 @@
   "tagline": "Dessine, les autres devinent.",
   "description": "À tour de rôle, une personne dessine un mot secret et les autres le devinent le plus vite possible. Les lettres se dévoilent peu à peu.",
   "how": [
-    "À ton tour, tu choisis un mot parmi trois, puis tu le dessines. Pas de lettres ni de chiffres dans le dessin !",
-    "Les autres tapent leurs propositions dans le jeu (pas dans le chat). Un « presque ! » t'avertit en privé quand tu es tout près.",
+    "À ton tour, tu choisis un mot parmi trois, puis tu le dessines. Pas de lettres ni de chiffres dans le dessin !",
+    "Les autres tapent leurs propositions dans le jeu (pas dans le chat). Un « presque ! » t’avertit en privé quand tu es tout près.",
     "Plus tu trouves tôt, plus tu gagnes de points. Le dessinateur gagne des points pour chaque personne qui trouve.",
     "Des lettres du mot se dévoilent au fil du temps.",
-    "Le tour s'arrête quand tout le monde a trouvé ou quand le temps est écoulé. Chacun dessine plusieurs fois, le plus de points gagne."
+    "Le tour s’arrête quand tout le monde a trouvé ou quand le temps est écoulé. Chacun dessine plusieurs fois, et le plus gros score gagne."
   ],
   "minPlayers": 3,
   "maxPlayers": 12,
-  "duration": "15 min",
+  "duration": "15 min",
   "emoji": "🎨",
   "family": "ambiance",
   "color": "#F7C64B",
   "ink": "#0B0B0D",
   "order": 31,
   "options": [
-    { "key": "seconds", "label": "Durée d'un tour", "type": "choice", "default": 80,
-      "choices": [{ "value": 60, "label": "60 s" }, { "value": 80, "label": "80 s" }, { "value": 100, "label": "100 s" }] },
-    { "key": "turns", "label": "Tours de table", "help": "Chacun dessine une fois par tour de table.", "type": "number", "min": 1, "max": 5, "default": 2 }
+    { "key": "seconds", "label": "Durée d’un tour", "type": "choice", "default": 80,
+      "choices": [{ "value": 60, "label": "60 s" }, { "value": 80, "label": "80 s" }, { "value": 100, "label": "100 s" }] },
+    { "key": "turns", "label": "Dessins par joueur", "help": "Combien de fois chacun dessine.", "type": "number", "min": 1, "max": 5, "default": 2 }
   ]
 }

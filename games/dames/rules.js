@@ -156,13 +156,13 @@ const isOver = (s) => Boolean(s.winner || s.draw || s.forfeit);
 // Un coup : { path: [cases] }. Renvoie { state } ou lève une Error en français qui dit quoi faire.
 export function move(state, playerId, action, ctx) {
   if (isOver(state)) throw new Error('La partie est terminée.');
-  if (state.players[state.turn] !== playerId) throw new Error("Ce n'est pas ton tour.");
+  if (state.players[state.turn] !== playerId) throw new Error("Ce n’est pas ton tour.");
   const path = action?.path;
   if (!Array.isArray(path) || path.length < 2 || path.length > 41 || !path.every((n) => Number.isInteger(n) && n >= 0 && n < SIZE * SIZE)) {
-    throw new Error('Coup incomplet : choisis une pièce puis sa case d’arrivée.');
+    throw new Error('Coup incomplet : choisis une pièce puis sa case d’arrivée.');
   }
   const piece = state.board[path[0]];
-  if (piece === 0 || sideOf(piece) !== state.turn) throw new Error("Cette pièce n'est pas à toi : joue une de tes pièces.");
+  if (piece === 0 || sideOf(piece) !== state.turn) throw new Error("Cette pièce n’est pas à toi : joue une de tes pièces.");
   const moves = legalMoves(state.board, state.turn);
   const found = moves.find((m) => samePath(m.path, path));
   if (found) return apply(state, found, ctx, false);
@@ -171,14 +171,14 @@ export function move(state, playerId, action, ctx) {
   if (mustTake) {
     const n = moves[0].taken.length;
     if (moves.some((m) => m.path.length > path.length && samePath(m.path.slice(0, path.length), path))) {
-      throw new Error('Ta prise n’est pas finie : continue de sauter par-dessus les pièces adverses.');
+      throw new Error('Ta prise n’est pas finie : continue de sauter par-dessus les pièces adverses.');
     }
     if (allCaptures(state.board, state.turn).some((m) => samePath(m.path, path))) {
-      throw new Error(`Prise majoritaire : tu dois prendre le plus de pièces possible (${n} ici).`);
+      throw new Error(`Prise majoritaire : tu dois prendre le plus de pièces possible (${n} ici).`);
     }
-    throw new Error(`Prise obligatoire : tu dois prendre${n > 1 ? ` au moins ${n} pièces` : ''} avec une pièce qui peut sauter.`);
+    throw new Error(`Prise obligatoire : tu dois prendre${n > 1 ? ` au moins ${n} pièces` : ''} avec une pièce qui peut sauter.`);
   }
-  throw new Error('Coup impossible : un pion avance d’une case en diagonale, une dame glisse sur la diagonale.');
+  throw new Error('Coup impossible : un pion avance d’une case en diagonale, une dame glisse sur la diagonale.');
 }
 
 // Tout est public aux dames. On ajoute les coups possibles du joueur dont c'est le tour pour que le client les surligne.

@@ -128,6 +128,8 @@ sudo certbot --nginx -d jeux.exemple.fr   # HTTPS obligatoire : le cookie de ses
 
 Minh crée son compte avec son pseudo et le **code admin** à la place du code de classe. Grâce à ce code, aucun élève ne peut prendre un pseudo de `ADMINS`, même avant lui. Le dernier admin ne peut pas supprimer son compte.
 
+Ensuite, tout se fait dans Hubuno, sans toucher au VPS : depuis la fiche d'un membre (écran Membres), Minh le nomme **Modérateur** (sourdine, messages, parties) ou **Admin** (tout), et lui donne des **rôles colorés** créés dans Admin, section Rôles. Le premier admin, Minh, ne peut être ni rétrogradé ni bloqué par un autre.
+
 ## 5. L'essai avant d'inviter la classe
 
 1. Une partie à plusieurs depuis des connexions différentes (Wi-Fi et 4G). Dans **Admin**, la rubrique « Connexion en direct » doit afficher « Connexion directe » (elle démarre parfois en secours, puis change toute seule en une seconde ou deux).
@@ -166,7 +168,7 @@ cd /opt/hubuno/app && sudo -u hubuno git pull && sudo -u hubuno npm install --om
 sudo systemctl restart hubuno
 ```
 
-Le serveur lit `rules.js` et `game.json` au démarrage : il faut toujours le redémarrer. Les parties en cours reprennent, et les joueurs se reconnectent seuls.
+Le serveur lit `rules.js` et `game.json` au démarrage : il faut toujours le redémarrer. Les parties en cours reprennent, et les joueurs se reconnectent seuls. Ceux qui avaient la page ouverte voient « Hubuno a été mis à jour » avec un bouton pour recharger.
 
 ## Comment vérifier que ça marche
 

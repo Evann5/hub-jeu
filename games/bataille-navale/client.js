@@ -74,7 +74,7 @@ export function mount(root, api) {
   let notice = '';
   let lastReport = '';
 
-  const target = makeBoard('Grille ennemie : choisis une case pour tirer', (i) => fireAt(i));
+  const target = makeBoard('Grille ennemie : choisis une case pour tirer', (i) => fireAt(i));
   const mine = makeBoard('Ta flotte', (i) => clickMine(i), (i) => { hover = i; paintMine(); });
   const status = h('p.bn-status', { 'aria-live': 'polite' });
   const timerEl = h('span.bn-timer', { hidden: true, role: 'timer' });
@@ -123,7 +123,7 @@ export function mount(root, api) {
     if (selected < 0 || draft[selected]) return;
     const ship = shipAt(i, FLEET[selected]);
     if (cellsOf(ship).some((x) => occupied().has(x))) {
-      notice = 'Deux bateaux ne peuvent pas se chevaucher : essaie une autre case.';
+      notice = 'Deux bateaux ne peuvent pas se chevaucher : essaie une autre case.';
       return paint();
     }
     draft[selected] = ship;
@@ -275,8 +275,8 @@ export function mount(root, api) {
     const mineShot = iPlay() && last.by === mySeat();
     const who = !iPlay() ? api.user(view.players[last.by]).pseudo : mineShot ? 'Tu' : api.user(view.players[last.by]).pseudo;
     const verb = !iPlay() || !mineShot ? 'tire' : 'tires';
-    const res = last.result === 'miss' ? 'à l’eau' : last.result === 'hit' ? 'touché !' : `coulé ! (${NAMES[last.size] || `un bateau de ${last.size} cases`})`;
-    return `${who} ${verb} en ${cellName(last.cell)} : ${res}`;
+    const res = last.result === 'miss' ? 'à l’eau' : last.result === 'hit' ? 'touché !' : `coulé ! (${NAMES[last.size] || `un bateau de ${last.size} cases`})`;
+    return `${who} ${verb} en ${cellName(last.cell)} : ${res}`;
   }
 
   function paintDock() {
@@ -293,7 +293,7 @@ export function mount(root, api) {
         type: 'button',
         dataset: { k: `ship${k}` },
         'aria-pressed': k === selected ? 'true' : 'false',
-        'aria-label': `Bateau de ${size} cases${placed ? ', posé : reprendre' : ''}`,
+        'aria-label': `Bateau de ${size} cases${placed ? ', posé : reprendre' : ''}`,
         onclick: () => {
           if (draft[k]) {
             horizontal = draft[k].h;
@@ -313,7 +313,7 @@ export function mount(root, api) {
         h('button.bn-btn', { type: 'button', dataset: { k: 'rotate' }, onclick: rotate, 'aria-label': `Pivoter (actuellement ${horizontal ? 'horizontal' : 'vertical'}), touche R` },
           h(`span.bn-btn-ic.ic-rotate${horizontal ? '' : '.is-v'}`, { 'aria-hidden': 'true' }), 'Pivoter'),
         h('button.bn-btn', { type: 'button', dataset: { k: 'random' }, onclick: randomize, 'aria-label': 'Placer la flotte au hasard' }, h('span.bn-btn-ic.ic-dice', { 'aria-hidden': 'true' }), 'Au hasard'),
-        h('button.bn-btn.bn-btn-quiet', { type: 'button', dataset: { k: 'clear' }, onclick: clear, disabled: !draft.some(Boolean) }, 'Effacer'),
+        h('button.bn-btn.bn-btn-quiet', { type: 'button', dataset: { k: 'clear' }, onclick: clear, disabled: !draft.some(Boolean) }, 'Tout retirer'),
         h('button.bn-btn.bn-btn-go', { type: 'button', dataset: { k: 'go' }, onclick: confirm, disabled: !complete }, 'Prêt'),
       ),
       ...(notice ? [h('p.bn-notice', { role: 'alert' }, notice)] : []),
@@ -327,21 +327,21 @@ export function mount(root, api) {
     let text;
     let tone = '';
     if (view.phase === 'over') {
-      if (!iPlay()) text = view.winner ? `${api.user(view.winner).pseudo} gagne la bataille !` : 'Partie terminée.';
-      else if (view.forfeit) text = view.forfeit === api.me.id ? 'Tu as abandonné.' : `${opp.pseudo} a abandonné : tu gagnes !`;
-      else text = view.winner === api.me.id ? 'Victoire ! La flotte ennemie est au fond.' : 'Défaite… ta flotte est coulée.';
+      if (!iPlay()) text = view.winner ? `${api.user(view.winner).pseudo} gagne la bataille !` : 'Partie terminée.';
+      else if (view.forfeit) text = view.forfeit === api.me.id ? 'Tu as abandonné.' : `${opp.pseudo} a abandonné : tu gagnes !`;
+      else text = view.winner === api.me.id ? 'Victoire ! La flotte ennemie est au fond.' : 'Défaite… ta flotte est coulée.';
       tone = view.winner === api.me.id ? 'win' : 'lose';
     } else if (view.phase === 'placing') {
       if (!iPlay()) text = `${name(0)} et ${name(1)} placent leur flotte…`;
       else if (view.ready[mySeat()]) text = `Flotte prête. ${opp.pseudo} ${view.ready[1 - mySeat()] ? 'est prêt' : 'place encore ses bateaux'}…`;
-      else if (view.fleet?.length && draft.every(Boolean) && selected < 0) text = 'Ta flotte est en place : déplace un bateau si tu veux, puis appuie sur « Prêt ».';
-      else if (selected >= 0) text = `Pose ${NAMES[FLEET[selected]] || 'un bateau'} (${FLEET[selected]} cases) : touche la grille. ${horizontal ? 'À l’horizontale' : 'À la verticale'}.`;
-      else text = 'Ta flotte est en place : appuie sur « Prêt ».';
+      else if (view.fleet?.length && draft.every(Boolean) && selected < 0) text = 'Ta flotte est en place : déplace un bateau si tu veux, puis appuie sur « Prêt ».';
+      else if (selected >= 0) text = `Pose ${NAMES[FLEET[selected]] || 'un bateau'} (${FLEET[selected]} cases) : touche la grille. ${horizontal ? 'À l’horizontale' : 'À la verticale'}.`;
+      else text = 'Ta flotte est en place : appuie sur « Prêt ».';
       if (iPlay() && !view.ready[mySeat()] && view.ready[1 - mySeat()]) text += ` ${opp.pseudo} t’attend.`;
     } else if (!iPlay()) {
       text = `${name(view.turn)} tire…`;
     } else {
-      text = view.turn === mySeat() ? 'À toi de tirer : touche une case du radar ennemi.' : `${opp.pseudo} prend sa visée…`;
+      text = view.turn === mySeat() ? 'À toi de tirer : touche une case du radar ennemi.' : `${opp.pseudo} prend sa visée…`;
       tone = view.turn === mySeat() ? 'turn' : '';
     }
     status.textContent = text;
@@ -366,8 +366,8 @@ export function mount(root, api) {
     const showMine = iPlay() || view.phase !== 'placing';
     minePane.hidden = !showMine;
     if (!iPlay()) {
-      targetPane.querySelector('.bn-title').textContent = `Eaux de ${api.user(view.players[1]).pseudo}`;
-      minePane.querySelector('.bn-title').textContent = `Eaux de ${api.user(view.players[0]).pseudo}`;
+      targetPane.querySelector('.bn-title').textContent = `Eaux : ${api.user(view.players[1]).pseudo}`;
+      minePane.querySelector('.bn-title').textContent = `Eaux : ${api.user(view.players[0]).pseudo}`;
       // Le spectateur voit chaque flotte attaquée par l'autre joueur.
     } else {
       targetPane.querySelector('.bn-title').textContent = `Radar ennemi · ${api.user(view.players[1 - mySeat()]).pseudo}`;
@@ -383,8 +383,8 @@ export function mount(root, api) {
     boards.querySelectorAll('.bn-fleet').forEach((f) => { f.hidden = placing; });
     paintFleet(targetPane.querySelector('.bn-fleet'), shotsByMe, 'Flotte ennemie');
     paintFleet(minePane.querySelector('.bn-fleet'), shotsOnMe, 'Ma flotte');
-    targetPane.querySelector('.bn-fleet-label').textContent = iPlay() ? 'Flotte ennemie' : `Flotte de ${api.user(view.players[1]).pseudo}`;
-    minePane.querySelector('.bn-fleet-label').textContent = iPlay() ? 'Ma flotte' : `Flotte de ${api.user(view.players[0]).pseudo}`;
+    targetPane.querySelector('.bn-fleet-label').textContent = iPlay() ? 'Flotte ennemie' : `Flotte : ${api.user(view.players[1]).pseudo}`;
+    minePane.querySelector('.bn-fleet-label').textContent = iPlay() ? 'Ma flotte' : `Flotte : ${api.user(view.players[0]).pseudo}`;
   }
 
   // ——— Compte à rebours ———

@@ -205,7 +205,7 @@
   /* .sx est lui-même le conteneur : une @container ne peut pas le styler, les tailles de cartes vont donc sur ses enfants. */
   .g-six .sx-lanes { --cw-lane: min(30px, calc((100cqw - 104px) / 5)); }
   .g-six .sx-handbox { --cw-hand: 38px; }
-  .g-six .sx-table { --cw-strip: 34px; min-height: 0; padding: 8px; border-radius: 20px; gap: 4px; }
+  .g-six .sx-table { --cw-strip: 34px; min-height: 88px; padding: 8px; border-radius: 20px; gap: 4px; }
   .g-six .sx-top { gap: 4px 10px; }
   .g-six .sx-status { flex-basis: 100%; font-size: 0.78rem; line-height: 1.2; }
   .g-six .sx-chip, .g-six .sx-timer { padding: 3px 10px; font-size: 0.75rem; }
@@ -223,8 +223,16 @@
   .g-six .sx-handbox { gap: 4px; padding-top: 2px; padding-bottom: 6px; border-radius: 20px 20px 0 0; }
   .g-six .sx-hand { flex-wrap: nowrap; justify-content: safe center; overflow-x: auto; overscroll-behavior-x: contain; gap: 7px; padding: 14px 6px 4px; scrollbar-width: none; scroll-snap-type: x proximity; }
   .g-six .sx-hand::-webkit-scrollbar { display: none; }
+  /* La main défile : le bord droit s'estompe pour montrer qu'il y a d'autres cartes. */
+  .g-six .sx-hand { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
   .g-six .sx-pick { flex: none; scroll-snap-align: center; }
   .g-six .sx-go { min-height: 38px; font-size: 0.9rem; }
+}
+
+/* Téléphone assez haut : la main passe sur deux rangées de 5, toutes les cartes se voient et se touchent sans défiler. */
+@media (max-width: 599px) and (min-height: 780px) {
+  .g-six .sx-handbox { --cw-hand: min(50px, calc((100cqw - 24px - 40px) / 5)); }
+  .g-six .sx-hand { flex-wrap: wrap; justify-content: center; overflow-x: visible; gap: 8px 10px; padding-top: 10px; -webkit-mask-image: none; mask-image: none; }
 }
 
 @media (max-width: 599px) { .g-six .sx { gap: 6px; padding-top: 8px; } }

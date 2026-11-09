@@ -1,24 +1,24 @@
 {
   "name": "Crânes et roses",
-  "tagline": "Une rose, une rose… et si c'était un crâne ?",
-  "description": "Pose tes disques face cachée, parie combien tu peux en retourner sans tomber sur un crâne, et bluffe pour que les autres n'osent pas te suivre. Deux défis réussis et la fête est à toi.",
+  "tagline": "Une rose, une rose… et si c’était un crâne ?",
+  "description": "Pose tes disques face cachée, parie combien tu peux en retourner sans tomber sur un crâne, et bluffe pour que les autres n’osent pas te suivre. Deux défis réussis et la fête est à toi.",
   "how": [
-    "Chacun a 4 disques : 3 roses et 1 crâne. À chaque manche, tout le monde pose un disque face cachée devant soi.",
-    "Chacun son tour, pose un autre disque sur ta pile, ou lance un défi : « je peux retourner N disques sans voir de crâne ».",
+    "Chacun a 4 disques : 3 roses et 1 crâne. À chaque manche, tout le monde pose un disque face cachée devant soi.",
+    "Chacun son tour, pose un autre disque sur ta pile, ou lance un défi : « je peux retourner N disques sans voir de crâne ».",
     "Après un défi, on surenchérit (plus de disques) ou on passe. Quand tous les autres ont passé, le plus haut enchérisseur doit tenir sa promesse.",
-    "Il retourne d'abord toute sa propre pile, puis choisit des disques sur le dessus des piles des autres, jusqu'à en avoir retourné N.",
-    "Que des roses : il marque un point, et deux points font gagner. Un crâne : il perd un disque tiré au hasard, sans que personne sache lequel. Sans disque, tu es éliminé."
+    "Il retourne d’abord toute sa propre pile, puis choisit des disques sur le dessus des piles des autres, jusqu’à en avoir retourné N.",
+    "S’il ne retourne que des roses : il marque un point, et deux points font gagner. S’il tombe sur un crâne : il perd un disque tiré au hasard, sans que personne sache lequel. Sans disque, tu es éliminé."
   ],
   "minPlayers": 3,
   "maxPlayers": 6,
-  "duration": "15 min",
+  "duration": "15 min",
   "emoji": "💀",
   "family": "bluff",
   "color": "#FF2E93",
   "ink": "#061226",
   "order": 55,
   "options": [
-    { "key": "turnTime", "label": "Temps pour jouer", "help": "À la fin, le jeu joue pour toi", "type": "choice", "default": 60,
-      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }] }
+    { "key": "turnTime", "label": "Temps pour jouer", "help": "Quand le temps est écoulé, le jeu joue pour toi", "type": "choice", "default": 60,
+      "choices": [{ "value": 0, "label": "Sans limite" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }] }
   ]
 }

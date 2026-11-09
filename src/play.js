@@ -4,6 +4,7 @@ import * as tables from './tables.js';
 import { catalog } from './games.js';
 import { ChatError } from './chat.js';
 import { getUser } from './auth.js';
+import { logMod } from './journal.js';
 
 let io;
 const timers = new Map(); // tableId -> minuteur en cours
@@ -194,7 +195,9 @@ export function registerPlay(socket, handler) {
 
   socket.on('table:close', handler(socket, ({ id }, me) => {
     const n = tableId(id);
+    const t = tables.getTable(n);
     tables.closeTable(n, me);
+    if (t.hostId !== me.id) logMod(me, 'a fermé la partie de', { target: getUser(t.hostId)?.pseudo ?? '?', detail: catalog().find((g) => g.id === t.game)?.name ?? t.game });
     changed(null, n);
     return {};
   }));

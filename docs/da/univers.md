@@ -31,7 +31,7 @@ Précision de Minh (29/10/2026) : **« un style différent à chaque jeu, pas vi
 | Yams | `games/yams` | Dés géants acidulés sur dégradé pêche-fuchsia, feuille de score en cartes arrondies |
 | Petit Bac | `games/petit-bac` | Bloc de post-it fluo et stickers, chrono bombe cartoon |
 | Croquis | `games/croquis` | Appli de dessin pop : fond bleu ciel, gros pinceaux, palette bonbon |
-| Loups-garous | `games/loup-garou` | Conte cartoon de jeu mobile : nuit violet fluo et lune néon, jour orange vif, rôles en stickers |
+| Loups-garous | `games/loup-garou` | Forêt de minuit (09/11/2026) : nuit vert sapin, lune qui grossit de nuit en nuit, yeux ambrés dans les sapins, débat en plein jour, vote au crépuscule, lune rousse quand les loups gagnent ; carte de rôle façon carte à jouer ; Bricolage Grotesque + Figtree |
 | Espions | `games/espions` | Interface d'espionnage futuriste : HUD, scan, cartes en verre, rouge et bleu lumineux |
 | Bataille navale | `games/bataille-navale` | Bateaux jouets dans une baignoire turquoise, éclaboussures cartoon |
 | Code secret | `games/code-secret` | Coffre-fort cartoon de jeu mobile, pions gélatine brillants |

@@ -49,7 +49,7 @@ function currentUser(req) {
 
 function requireUser(req) {
   const user = currentUser(req);
-  if (!user) throw new ApiError(401, 'Ta session a expiré : reconnecte-toi.');
+  if (!user) throw new ApiError(401, 'Ta session a expiré : reconnecte-toi.');
   return user;
 }
 
@@ -73,7 +73,7 @@ api.post('/register', async (req, res) => {
   if (auth.badCodeBlocked(req.ip)) throw new ApiError(429, 'Trop de codes de classe ratés depuis cette connexion. Réessaie dans 15 minutes.');
   if (auth.signupBlocked(req.ip)) throw new ApiError(429, 'Trop d’inscriptions depuis cette connexion. Réessaie dans une heure.');
   const expected = auth.classCode();
-  if (!expected) throw new ApiError(503, "Les inscriptions ne sont pas encore ouvertes : aucun code de classe n'est réglé.");
+  if (!expected) throw new ApiError(503, "Les inscriptions ne sont pas encore ouvertes : aucun code de classe n’est réglé.");
   const adminPseudo = auth.isAdminPseudo(pseudo);
   const adminCodeOk = Boolean(config.adminCode) && auth.codeMatches(code, config.adminCode);
   if (!adminCodeOk && !auth.codeMatches(code, expected)) {
@@ -114,9 +114,9 @@ api.post('/login', async (req, res) => {
   auth.recordAttempt(req.ip, pseudo); // compté d'avance, rendu si le mot de passe est bon
   // Le calcul se fait aussi quand le pseudo n'existe pas : même durée dans les deux cas.
   const user = auth.findUserByPseudo(pseudo);
+  if (!user && !auth.unknownPseudoAttempt(req.ip)) throw new ApiError(429, 'Trop d’essais ratés. Réessaie dans 15 minutes.');
   const ok = await auth.checkPassword(password, user?.pass_hash);
   if (!user || !ok) {
-    if (!user) auth.forgiveAddress(req.ip);
     throw new ApiError(400, 'Pseudo ou mot de passe incorrect.');
   }
   if (user.banned) throw new ApiError(403, 'Ce compte a été bloqué par un admin.');
@@ -155,14 +155,14 @@ api.post('/password', async (req, res) => {
   // Les autres appareils sont déconnectés ; celui-ci garde sa session et ses onglets ouverts.
   const token = auth.readCookie(req.headers.cookie, auth.COOKIE);
   auth.deleteOtherSessions(user.id, token);
-  disconnectOtherSessions(user.id, token, 'Ton mot de passe a changé : reconnecte-toi.');
+  disconnectOtherSessions(user.id, token, 'Ton mot de passe a changé : reconnecte-toi.');
   res.json({ ok: true });
 });
 
 api.post('/delete-account', async (req, res) => {
   const user = requireUser(req);
   await checkCurrent(user, req.body.password, 'Mot de passe incorrect.');
-  if (user.role === 'admin' && db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND banned = 0").get().n <= 1) throw new ApiError(400, 'Tu es le dernier admin : nomme d’abord un autre admin.');
+  if (user.role === 'admin' && db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND banned = 0").get().n <= 1) throw new ApiError(400, 'Tu es le dernier admin : nomme d’abord un autre admin.');
   // Supprime le compte, ses sessions, ses messages et ses réactions (clés étrangères en cascade), puis ses messages privés et ses lectures.
   transaction(() => {
     deleteUserData(user.id);

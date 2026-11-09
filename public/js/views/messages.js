@@ -1,8 +1,8 @@
 // Écran Messages : liste des canaux et des messages privés, conversation, membres en ligne (grand écran).
 // Sur téléphone, la liste et la conversation s'affichent l'une après l'autre (#/messages puis #/c/1).
-import { h, icon, token, toast, colorOf, timeOf, dayKey, dayLabel, stamp, richText, count, keepFocus, announce } from '../dom.js';
+import { h, icon, token, toast, colorOf, staffTag, mentions, timeOf, dayKey, dayLabel, stamp, richText, count, keepFocus, announce } from '../dom.js';
 import { call } from '../net.js';
-import { state, dmScope, otherOf, isAdmin, sortedUsers } from '../store.js';
+import { state, dmScope, otherOf, isAdmin, isStaff, roleColor, sortedUsers } from '../store.js';
 import { openProfile, openChannelEditor, confirmDialog } from '../dialogs.js';
 
 let ui = null; // éléments de l'écran ouvert, null quand on est ailleurs
@@ -49,7 +49,7 @@ export function renderList() {
       href: `#/c/${c.id}`,
       className: `conv-item${state.unread[s] ? ' has-unread' : ''}`,
       'aria-current': scope === s ? 'page' : null,
-    }, h('span.conv-icon', icon('hash')), h('span.label', c.name), badge(state.unread[s])));
+    }, h('span.conv-icon', icon(c.staffOnly ? 'shield' : 'hash')), h('span.label', c.name), badge(state.unread[s])));
   });
 
   // Les conversations privées, plus celle qu'on vient d'ouvrir et qui n'a pas encore de message.
@@ -82,7 +82,7 @@ export function renderOnline() {
   const users = sortedUsers().filter((u) => u.id !== state.me.id);
   const on = users.filter((u) => state.online.has(u.id));
   const row = (u, isOn) => h(`button.member${isOn ? '' : '.offline'}`, { type: 'button', onclick: () => openProfile(u.id) },
-    token(u, { online: isOn }), h('span.label', u.pseudo), u.role === 'admin' ? h('span.tag-admin', 'admin') : null);
+    token(u, { online: isOn }), h('span.label', { style: roleColor(u) ? `color:${colorOf(roleColor(u))}` : null }, u.pseudo), staffTag(u));
   keepFocus(ui.online, () => ui.online.replaceChildren(
     h('h2', `En ligne — ${on.length}`),
     ...(on.length ? on.map((u) => row(u, true)) : [h('p.nav-empty', 'Personne d’autre pour l’instant.')]),
@@ -95,7 +95,7 @@ function openConversation(scope) {
   let topic = null;
   if (state.route.view === 'channel') {
     const c = state.channels.find((x) => x.id === state.route.id);
-    title = h('h1', icon('hash'), h('span.label', c.name));
+    title = h('h1', icon(c.staffOnly ? 'shield' : 'hash'), h('span.label', c.name), c.staffOnly ? h('span.tag-admin.tag-modo', 'équipe') : null);
     topic = c.topic;
   } else {
     const u = state.users.get(state.route.id);
@@ -274,11 +274,21 @@ function renderMessages({ toBottom = false } = {}) {
   if (toBottom) ui.messages.querySelector('.new-line')?.scrollIntoView({ block: 'nearest' });
 }
 
+// Les mentions : « @pseudo » d'un compte qui existe.
+function byPseudo(name) {
+  const low = name.toLowerCase();
+  for (const u of state.users.values()) if (u.pseudo.toLowerCase() === low) return { pseudo: u.pseudo, me: u.id === state.me.id };
+  return null;
+}
+
+// La corbeille : un admin partout ; un modo seulement sur les messages des membres, hors messages privés (le serveur le vérifie aussi).
+const canDelete = (m, author) => isAdmin() || (isStaff() && author.role === 'membre' && !String(m.scope ?? '').startsWith('dm:'));
+
 function messageEl(m, first) {
   const author = state.users.get(m.userId) || { pseudo: 'Compte supprimé', avatar: '?', color: '' };
   const el = h(`article.msg${first ? '.first' : ''}${m.pending ? '.pending' : ''}${m.failed ? '.failed' : ''}`, {
     dataset: { id: String(m.id) },
-    style: `--author:${colorOf(author.color)}`,
+    style: `--author:${colorOf(roleColor(author) ?? author.color)}`, // la couleur du premier rôle, comme sur Discord
     'aria-label': `${author.pseudo}, ${stamp(m.createdAt)}`,
   });
   if (first) {
@@ -286,13 +296,14 @@ function messageEl(m, first) {
       token(author),
       h('div.msg-head',
         h('button.msg-author', { type: 'button', onclick: () => state.users.has(m.userId) && openProfile(m.userId) }, author.pseudo),
-        author.role === 'admin' ? h('span.tag-admin', 'admin') : null,
+        staffTag(author),
         h('time.msg-time', { dateTime: new Date(m.createdAt).toISOString(), title: stamp(m.createdAt) }, timeOf(m.createdAt))), // le jour est déjà dans le séparateur
     );
   } else {
     el.append(h('time.msg-side-time', { dateTime: new Date(m.createdAt).toISOString() }, timeOf(m.createdAt)));
   }
-  el.append(h('p.msg-body', richText(m.body)));
+  el.append(h('p.msg-body', richText(m.body, byPseudo)));
+  if (m.userId !== state.me.id && mentions(m.body, state.me.pseudo)) el.classList.add('is-mention'); // on te parle : le message ressort
 
   if (m.failed) {
     el.append(h('div.msg-fail', 'Pas envoyé.',
@@ -319,8 +330,8 @@ function messageEl(m, first) {
 
   if (m.id > 0) {
     el.append(h('div.msg-tools',
-      h('button.icon-btn', { type: 'button', title: 'Réagir', onclick: (e) => togglePicker(el, m, e.currentTarget) }, icon('smile', `Réagir au message de ${author.pseudo}`)),
-      isAdmin() ? h('button.icon-btn.danger', { type: 'button', title: 'Supprimer (admin)', onclick: () => adminDelete(m) }, icon('trash', `Supprimer le message de ${author.pseudo}`)) : null));
+      h('button.icon-btn', { type: 'button', title: 'Réagir', onclick: (e) => togglePicker(el, m, e.currentTarget) }, icon('smile', `Réagir au message écrit par ${author.pseudo}`)),
+      canDelete(m, author) ? h('button.icon-btn.danger', { type: 'button', title: 'Supprimer (modération)', onclick: () => adminDelete(m) }, icon('trash', `Supprimer le message écrit par ${author.pseudo}`)) : null));
     // Sur écran tactile, un appui sur le message montre les outils.
     el.addEventListener('click', (e) => {
       if (e.target.closest('button, a') || !touch()) return;
@@ -377,7 +388,7 @@ async function react(m, emoji) {
 
 async function adminDelete(m) {
   const author = state.users.get(m.userId)?.pseudo || 'cette personne';
-  const ok = await confirmDialog('Supprimer le message', `Le message de ${author} disparaîtra pour tout le monde.`,
+  const ok = await confirmDialog('Supprimer le message', `Le message écrit par ${author} disparaîtra pour tout le monde.`,
     { confirmLabel: 'Supprimer', danger: true });
   if (!ok) return;
   try {
@@ -397,7 +408,7 @@ export function renderComposer() {
   if (!ui?.composer) return;
   if (state.mutedUntil > Date.now()) {
     const until = new Date(state.mutedUntil).toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
-    ui.composer.replaceChildren(h('p.composer-note', `Un admin t’a mis en sourdine jusqu’à ${until}. Tu peux lire, mais pas écrire.`));
+    ui.composer.replaceChildren(h('p.composer-note', `Tu es en sourdine jusqu’à ${until}. Tu peux lire, mais pas écrire.`));
     return;
   }
   const scope = currentScope();
@@ -411,19 +422,85 @@ export function renderComposer() {
     maxlength: state.options.limits.messageMax,
     enterkeyhint: 'send',
   });
-  const form = h('form.composer', area, h('button.btn', { type: 'submit', title: 'Envoyer' }, icon('send', 'Envoyer')));
+  const picks = h('ul.mention-picks', { id: 'mention-picks', role: 'listbox', 'aria-label': 'Mentionner', hidden: true });
+  area.setAttribute('aria-autocomplete', 'list');
+  area.setAttribute('aria-controls', 'mention-picks');
+  area.setAttribute('aria-expanded', 'false');
+  const form = h('form.composer', picks, area, h('button.btn', { type: 'submit', title: 'Envoyer' }, icon('send', 'Envoyer')));
+
+  // « @ » propose les pseudos : flèches pour choisir, Entrée ou Tab pour insérer, Échap pour fermer.
+  let found = [];
+  let active = 0;
+  const query = () => /(^|\s)@([\p{L}\p{N}_.-]{0,20})$/u.exec(area.value.slice(0, area.selectionStart));
+  const closePicks = () => {
+    found = [];
+    picks.hidden = true;
+    area.setAttribute('aria-expanded', 'false');
+    area.removeAttribute('aria-activedescendant');
+  };
+  const insert = (u) => {
+    const q = query();
+    if (!q) return closePicks();
+    const start = area.selectionStart - q[2].length - 1;
+    area.setRangeText(`@${u.pseudo} `, start, area.selectionStart, 'end');
+    closePicks();
+    area.focus();
+    grow();
+  };
+  const drawPicks = () => {
+    picks.replaceChildren(...found.map((u, i) => h('li', {
+      id: `mention-${u.id}`,
+      role: 'option',
+      'aria-selected': String(i === active),
+      onmousedown: (e) => { e.preventDefault(); insert(u); }, // avant que le champ perde le focus
+    }, token(u, { size: 's', online: state.online.has(u.id) }), h('span', u.pseudo))));
+    picks.hidden = !found.length;
+    area.setAttribute('aria-expanded', String(Boolean(found.length)));
+    if (found.length) area.setAttribute('aria-activedescendant', `mention-${found[active].id}`);
+  };
+  const updatePicks = () => {
+    const q = query();
+    if (!q) return closePicks();
+    const low = q[2].toLowerCase();
+    found = sortedUsers().filter((u) => u.id !== state.me.id && u.pseudo.toLowerCase().startsWith(low)).slice(0, 6);
+    active = 0;
+    return drawPicks();
+  };
+  area.addEventListener('blur', closePicks);
+  area.addEventListener('click', updatePicks);
+
   const grow = () => {
     area.style.height = 'auto';
     area.style.height = `${area.scrollHeight}px`;
   };
   area.addEventListener('input', () => {
     grow();
+    updatePicks();
     if (area.value.trim() && Date.now() - lastTyping > 3000) {
       lastTyping = Date.now();
       call(state.socket, 'typing', { scope }).catch(() => {});
     }
   });
   area.addEventListener('keydown', (e) => {
+    if (found.length) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        active = (active + (e.key === 'ArrowDown' ? 1 : found.length - 1)) % found.length;
+        drawPicks();
+        return;
+      }
+      if ((e.key === 'Enter' || e.key === 'Tab') && !e.isComposing) {
+        e.preventDefault();
+        insert(found[active]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation(); // ferme seulement la liste, pas la conversation
+        closePicks();
+        return;
+      }
+    }
     // Entrée envoie, Maj + Entrée va à la ligne (sauf pendant une saisie d'accent ou sur écran tactile).
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !touch()) {
       e.preventDefault();
@@ -500,6 +577,7 @@ export function onMessage(m) {
   }
   const viewing = Boolean(ui?.messages) && m.scope === currentScope();
   const seen = viewing && !document.hidden && nearBottom();
+  if (m.userId !== state.me.id && !seen && mentions(m.body, state.me.pseudo)) notifyMention(m);
   if (m.userId !== state.me.id) {
     const typers = state.typing.get(m.scope);
     if (typers?.has(m.userId)) {
@@ -514,7 +592,7 @@ export function onMessage(m) {
     renderTyping();
     if (seen) markRead();
     if (m.userId !== state.me.id && !seen) ui.jump.hidden = false;
-    if (m.userId !== state.me.id) announce(`${state.users.get(m.userId)?.pseudo ?? 'Quelqu’un'} : ${m.body}`);
+    if (m.userId !== state.me.id) announce(`${state.users.get(m.userId)?.pseudo ?? 'Quelqu’un'} : ${m.body}`);
   }
   renderList();
 }
@@ -529,6 +607,15 @@ function appendMessage(m) {
   ui.messages.append(messageEl(m, startsGroup(prev, m)));
   if (stick) ui.messages.scrollTop = ui.messages.scrollHeight;
   return true;
+}
+
+// Quelqu'un te mentionne ailleurs que là où tu lis : une notification avec un lien vers le message.
+function notifyMention(m) {
+  const who = state.users.get(m.userId)?.pseudo || 'Quelqu’un';
+  const channel = m.scope.startsWith('c:') ? state.channels.find((c) => `c:${c.id}` === m.scope) : null;
+  const where = channel ? `dans #${channel.name}` : 'en message privé';
+  const href = channel ? `#/c/${channel.id}` : `#/dm/${m.userId}`;
+  toast([`${who} te mentionne ${where}. `, h('a.toast-link', { href, onclick: (e) => e.currentTarget.closest('.toast')?.remove() }, 'Voir')], { ms: 12000, action: true });
 }
 
 export function onMessageUpdate(m) {

@@ -165,19 +165,19 @@ export function mount(root, api) {
   function verdict() {
     const r = v.reveal;
     if (!r) return null;
-    const shout = r.kind === 'liar' ? '« Menteur ! »' : '« Tout pile ! »';
+    const shout = r.kind === 'liar' ? '« Menteur ! »' : '« Tout pile ! »';
     const c = r.changed;
     let result;
     if (r.kind === 'liar') result = r.success ? 'L’annonce était juste.' : 'L’annonce était fausse.';
-    else result = r.success ? 'C’est exact, au dé près !' : 'Ce n’est pas exact.';
+    else result = r.success ? 'C’est exact, au dé près !' : 'Ce n’est pas exact.';
     let fate = '';
     if (c) fate = c.delta > 0 ? who(c.id, 'regagnes un dé', 'regagne un dé') : who(c.id, 'perds un dé', 'perd un dé');
-    else if (r.kind === 'exact' && r.success) fate = `${who(r.caller, 'as', 'a')} déjà tous ses dés`;
+    else if (r.kind === 'exact' && r.success) fate = `${who(r.caller, 'as', 'a')} déjà tous ${r.caller === me ? 'tes' : 'ses'} dés`;
     return h('div.mt-verdict', { 'aria-live': 'polite' },
-      h('p.mt-v1', who(r.caller, 'dis', 'dit'), ' ', h('b.mt-shout', shout), ` sur ${r.bidder === me ? 'ton annonce' : 'l’annonce de ' + nm(r.bidder)} : `, bidLabel({ qty: r.qty, face: r.face })),
-      h('p.mt-v2', `Sur la table : ${plural(r.count, 'dé', 'dés')} de ${r.face}${r.face === 1 ? ' (seuls les 1 comptent).' : ', jokers compris.'}`),
+      h('p.mt-v1', who(r.caller, 'dis', 'dit'), ' ', h('b.mt-shout', shout), ` sur ${r.bidder === me ? 'ton annonce' : 'l’annonce de ' + nm(r.bidder)} : `, bidLabel({ qty: r.qty, face: r.face })),
+      h('p.mt-v2', `Sur la table : ${plural(r.count, 'dé', 'dés')} de ${r.face}${r.face === 1 ? ' (seuls les 1 comptent).' : ', jokers compris.'}`),
       h(`p.mt-v3.${r.success ? 'ok' : 'ko'}`, result, ' ', fate ? h('b', `${fate}.`) : null, r.eliminated ? ` ${who(c.id, 'sors', 'sort')} de la partie.` : null),
-      v.phase === 'over' && v.winner !== null ? h('p.mt-winner', `${v.winner === me ? 'Tu remportes' : nm(v.winner) + ' remporte'} la partie !`) : null);
+      v.phase === 'over' && v.winner !== null ? h('p.mt-winner', `${v.winner === me ? 'Tu remportes' : nm(v.winner) + ' remporte'} la partie !`) : null);
   }
 
   const dock = h('div.mt-dock');
@@ -229,8 +229,8 @@ export function mount(root, api) {
     const min = v.minQty[pick.face - 1];
     const possible = FACES.some((f) => v.minQty[f - 1] <= v.total);
     const ok = canBid();
-    const hint = !possible ? 'Plus aucune annonce possible : il faut dire « Menteur ! ».'
-      : pick.qty < min ? `Minimum : ${plural(min, 'dé', 'dés')} de ${pick.face}.`
+    const hint = !possible ? 'Plus aucune annonce possible : il faut dire « Menteur ! ».'
+      : pick.qty < min ? `Minimum : ${plural(min, 'dé', 'dés')} de ${pick.face}.`
         : pick.face === 1 ? 'Les 1 comptent seuls (pas de jokers).' : '';
     const faces = FACES.map((f) => h('button.mt-face', {
       type: 'button',
@@ -242,9 +242,9 @@ export function mount(root, api) {
     }, die(f)));
     const calls = v.bid ? h('div.mt-calls',
       h(`button.mt-btn.mt-btn-liar${armed === 'liar' ? '.is-armed' : ''}`, { type: 'button', dataset: { k: 'call-liar' }, disabled: busy, onclick: () => arm('liar') },
-        armed === 'liar' ? 'Sûr ? Touche encore' : 'Menteur !'),
+        armed === 'liar' ? 'Sûr ? Touche encore' : 'Menteur !'),
       v.options.exact ? h(`button.mt-btn.mt-btn-exact${armed === 'exact' ? '.is-armed' : ''}`, { type: 'button', dataset: { k: 'call-exact' }, disabled: busy, onclick: () => arm('exact') },
-        armed === 'exact' ? 'Sûr ? Touche encore' : ['Tout pile', h('small.mt-btn-note', 'annonce exacte au dé près')]) : null) : null;
+        armed === 'exact' ? 'Sûr ? Touche encore' : ['Tout pile', h('small.mt-btn-note', 'annonce exacte au dé près')]) : null) : null;
     return h('div.mt-builder',
       h('div.mt-faces', { role: 'group', 'aria-label': 'Valeur annoncée' }, faces),
       h('div.mt-bidrow',

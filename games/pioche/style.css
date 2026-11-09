@@ -241,7 +241,7 @@
 @keyframes pi-glow { to { box-shadow: 0 3px 0 rgb(0 0 0 / 0.38), 0 0 26px rgb(255 210 63 / 0.85); } }
 /* ——— Téléphone : table plus petite, la main reste entière à l'écran ——— */
 @media (max-width: 899px) {
-  .g-pioche { --cw: 62px; --ch: 93px; --step: 33px; --tw: 92px; --th: 138px; }
+  .g-pioche { --cw: 72px; --ch: 108px; --step: 44px; --tw: 92px; --th: 138px; } /* 44 px visibles par carte : la taille d’un doigt */
   .g-pioche .pi { gap: 6px; padding-top: 6px; padding-bottom: 8px; }
   .g-pioche .pi-table { padding: 2px 12px 14px; }
   .g-pioche .pi-old { display: none; }

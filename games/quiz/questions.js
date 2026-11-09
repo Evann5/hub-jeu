@@ -7,7 +7,7 @@ export const THEMES = {
   pop: 'Culture pop',
   sport: 'Sport',
   langue: 'Langue française',
-  table: 'À table',
+  table: 'Cuisine',
   arts: 'Arts et lettres',
 };
 

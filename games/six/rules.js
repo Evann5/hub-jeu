@@ -186,7 +186,7 @@ export function move(state, playerId, action, ctx) {
 
   if (state.phase === 'choose') {
     if (action?.type !== 'pick') throw new Error('Choisis une carte de ta main.');
-    if (state.picks[seat] !== null) throw new Error('Ta carte est posée : attends les autres.');
+    if (state.picks[seat] !== null) throw new Error('Ta carte est posée : attends les autres.');
     const card = Number(action.card);
     if (!state.hands[seat].includes(card)) throw new Error('Cette carte n’est pas dans ta main.');
     const hands = state.hands.map((h, i) => (i === seat ? h.filter((c) => c !== card) : h));
@@ -197,7 +197,7 @@ export function move(state, playerId, action, ctx) {
 
   // Phase « row » : seule la personne dont la carte est trop basse joue.
   if (action?.type !== 'row') throw new Error('Choisis la rangée que tu ramasses.');
-  if (state.pending.seat !== seat) throw new Error("Ce n'est pas ton tour.");
+  if (state.pending.seat !== seat) throw new Error("Ce n’est pas ton tour.");
   const r = Number(action.row);
   if (!Number.isInteger(r) || r < 0 || r >= ROWS) throw new Error('Cette rangée n’existe pas.');
   return { state: takeRow(state, r, ctx) };

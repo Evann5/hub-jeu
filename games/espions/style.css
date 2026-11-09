@@ -273,3 +273,7 @@
 @media (prefers-reduced-motion: reduce) {
   .g-espions *, .g-espions *::before, .g-espions *::after { animation: none !important; transition: none !important; }
 }
+
+/* Les deux boutons du salon d'équipe : ils passent à la ligne plutôt que de couper leur texte. */
+.g-espions .es-actions { flex-wrap: wrap; }
+.g-espions .es-actions .es-btn { flex: 1 1 auto; min-width: max-content; }

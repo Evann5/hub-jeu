@@ -152,7 +152,7 @@ export function move(s, playerId, action, ctx) {
       const clue = String(action.text ?? '').trim().replace(/\s+/g, ' ');
       if (!clue) throw new Error('Écris un indice.');
       if (clue.length > MAX_CLUE) throw new Error(`Ton indice est trop long (${MAX_CLUE} caractères au plus).`);
-      if (/\d/.test(clue)) throw new Error('Pas de chiffre dans l’indice : décris avec des mots.');
+      if (/\d/.test(clue)) throw new Error('Pas de chiffre dans l’indice : décris avec des mots.');
       return { state: { ...s, phase: 'guess', clue, needle: DIAL / 2, locks: [], deadline: due(s, ctx.now, s.timer * 1000) } };
     }
     case 'guess': {
@@ -173,14 +173,17 @@ export function move(s, playerId, action, ctx) {
       throw new Error('Place l’aiguille, puis verrouille.');
     }
     case 'bet': {
-      if (type !== 'bet' || !['L', 'R'].includes(action.side)) throw new Error('Choisis : la zone est plus à gauche ou plus à droite.');
+      if (type !== 'bet' || !['L', 'R'].includes(action.side)) throw new Error('Choisis : la zone est plus à gauche ou plus à droite.');
       if (!bettors(s).includes(playerId)) throw new Error('Seule l’autre équipe parie.');
       if (playerId in s.bets) throw new Error('Tu as déjà parié.');
       const t = { ...s, bets: { ...s.bets, [playerId]: action.side } };
       return { state: bettors(t).every((id) => id in t.bets) ? reveal(t, ctx) : t };
     }
     case 'reveal':
-      return { state: type === 'next' ? nextRound(s, ctx) : s };
+      if (type !== 'next') return { state: s };
+      // L'hôte (premier joueur encore là) lance la manche suivante ; sinon le minuteur s'en charge.
+      if (playerId !== active(s)[0]) throw new Error('C’est l’hôte de la partie qui lance la manche suivante.');
+      return { state: nextRound(s, ctx) };
     default:
       throw new Error('La partie est terminée.');
   }
@@ -213,13 +216,13 @@ export function leave(s, playerId, ctx) {
 export function status(s) {
   if (s.phase === 'over') {
     const failed = s.mode === 'coop' && s.scores[0] < s.target;
-    return { over: true, turn: null, winners: winnersOf(s), ...(failed ? { label: `${s.scores[0]} points sur ${s.target} : objectif manqué` } : {}) };
+    return { over: true, turn: null, winners: winnersOf(s), ...(failed ? { label: `${s.scores[0]} points sur ${s.target} : objectif manqué` } : {}) };
   }
   let turn;
   if (s.phase === 'clue') turn = [s.leader];
   else if (s.phase === 'guess') turn = guessers(s);
   else if (s.phase === 'bet') turn = bettors(s).filter((id) => !(id in s.bets));
-  else turn = active(s);
+  else turn = active(s).slice(0, 1); // révélation : l'hôte lance la manche suivante
   return { over: false, turn, winners: [], deadline: s.deadline };
 }
 

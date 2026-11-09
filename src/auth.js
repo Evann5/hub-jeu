@@ -62,8 +62,11 @@ export async function checkPassword(password, stored) {
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 export const tokenHash = sha256;
 
+// Rôles décoratifs d'un compte, dans l'ordre de la liste des rôles (le premier colore le pseudo).
+const rolesOfUser = db.prepare('SELECT r.id FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ? ORDER BY r.position, r.id');
+
 export function publicUser(u) {
-  return { id: u.id, pseudo: u.pseudo, avatar: u.avatar, color: u.color, bio: u.bio, role: u.role };
+  return { id: u.id, pseudo: u.pseudo, avatar: u.avatar, color: u.color, bio: u.bio, role: u.role, roles: rolesOfUser.all(u.id).map((r) => r.id) };
 }
 
 export function classCode() {
@@ -74,7 +77,7 @@ export function validatePseudo(pseudo) {
   // Accents acceptés (Élodie, Trần) ; lettres qui imitent une lettre normale refusées (ｚ pleine chasse, ɑ, ı seul…).
   const plainEnough = pseudo.normalize('NFKC') === pseudo.normalize('NFC') && /^[a-z0-9_.-]*$/.test(plainPseudo(pseudo));
   if (!PSEUDO_RE.test(pseudo) || !plainEnough) {
-    return `Le pseudo doit faire de ${LIMITS.pseudoMin} à ${LIMITS.pseudoMax} caractères : lettres, chiffres, point, tiret ou tiret bas.`;
+    return `Le pseudo doit faire de ${LIMITS.pseudoMin} à ${LIMITS.pseudoMax} caractères : lettres, chiffres, point, tiret ou tiret bas.`;
   }
   return null;
 }
@@ -194,8 +197,13 @@ export function tooManyFailures(ip, pseudo, now = Date.now()) {
 }
 
 // Un pseudo qui n'existe pas ne compte pas pour l'adresse : sinon, 500 pseudos inventés bloqueraient toute la classe.
-export function forgiveAddress(ip) {
+// Il a son propre compteur : au-delà, seuls ces essais sont refusés, sans calcul, et les vrais comptes passent toujours.
+const unknownByIp = createLimiter({ max: 1000, windowMs: WINDOW });
+export function unknownPseudoAttempt(ip) {
   failuresByIp.undo(ip);
+  if (unknownByIp.blocked(ip)) return false;
+  unknownByIp.hit(ip);
+  return true;
 }
 
 // On compte l'essai AVANT de vérifier le mot de passe (le calcul est asynchrone : une rafale en parallèle passerait sinon toute entière

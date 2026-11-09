@@ -133,11 +133,11 @@ const COMMON_PASSWORDS = new Set([
 export function passwordProblem(password, pseudo = '', { min = 10, max = PASSWORD_MAX } = {}) {
   if (typeof password !== 'string' || password.length < min) return `Le mot de passe doit faire au moins ${min} caractères.`;
   if (password.length > max) return `Le mot de passe est trop long (${max} caractères au maximum).`;
-  if (new Set(password).size === 1) return 'Ce mot de passe est trop simple : un seul caractère répété.';
+  if (new Set(password).size === 1) return 'Ce mot de passe est trop simple : un seul caractère répété.';
   const lower = password.toLowerCase();
   const name = String(pseudo).trim().toLowerCase();
   // Les pseudos de 3 lettres ou moins se retrouveraient dans trop de mots : on ne compare qu'à partir de 4.
   if (name.length >= 4 && (lower.includes(name) || name.includes(lower))) return 'Le mot de passe ne doit pas contenir ton pseudo.';
-  if (COMMON_PASSWORDS.has(lower)) return 'Ce mot de passe est l’un des plus courants : choisis-en un autre.';
+  if (COMMON_PASSWORDS.has(lower)) return 'Ce mot de passe est l’un des plus courants : choisis-en un autre.';
   return null;
 }

@@ -250,10 +250,10 @@ export function move(s, playerId, action, ctx) {
     x.folded = true;
     x.last = { t: 'fold' };
   } else if (type === 'check') {
-    if (!o.canCheck) throw new Error(`Tu ne peux pas parler : il faut suivre (${o.toCall}) ou te coucher.`);
+    if (!o.canCheck) throw new Error(`Tu ne peux pas parler : il faut suivre (${o.toCall}) ou te coucher.`);
     x.last = { t: 'check' };
   } else if (type === 'call') {
-    if (o.canCheck) throw new Error('Rien à suivre : tu peux parler.');
+    if (o.canCheck) throw new Error('Rien à suivre : tu peux parler.');
     commit(x, o.toCall);
     x.last = { t: x.allIn ? 'allin' : 'call', amt: x.bet };
   } else if (type === 'raise' || type === 'allin') {
@@ -266,7 +266,7 @@ export function move(s, playerId, action, ctx) {
       commit(x, to - x.bet);
       x.last = { t: 'allin', amt: x.bet };
     } else {
-      if (x.noRaise) throw new Error('Tu ne peux pas relancer : la dernière mise était un tapis trop court pour rouvrir les enchères. Tu peux suivre ou te coucher.');
+      if (x.noRaise) throw new Error('Tu ne peux pas relancer : la dernière mise était un tapis trop court pour rouvrir les enchères. Tu peux suivre ou te coucher.');
       if (to < o.minTo) throw new Error(`La relance minimale est à ${o.minTo}.`);
       const size = to - t.currentBet;
       commit(x, to - x.bet);

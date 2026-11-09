@@ -1,25 +1,25 @@
 {
   "name": "Bataille navale",
   "tagline": "Coule la flotte adverse.",
-  "description": "Cache ta flotte sur la carte, devine où se cache celle de l'autre. Le premier qui coule tous les bateaux adverses gagne.",
+  "description": "Cache ta flotte sur ta grille, devine où se cache celle de l’autre. Le premier qui coule tous les bateaux adverses gagne.",
   "how": [
     "Chacun place sa flotte de 5 bateaux (5, 4, 3, 3 et 2 cases) sur sa grille de 10 × 10, en même temps. Tu peux aussi la faire placer au hasard.",
-    "Quand vous êtes prêts, vous tirez chacun votre tour sur une case de la grille adverse : à l'eau, touché ou coulé.",
-    "Tu vois tes tirs sur la grille ennemie, et ceux de l'adversaire sur ta flotte.",
-    "Le premier qui coule tous les bateaux de l'autre gagne.",
-    "Réglages possibles : rejouer après une touche, et un minuteur par tir (au bout, un tir au hasard est joué pour toi)."
+    "Quand vous êtes prêts, vous tirez chacun votre tour sur une case de la grille adverse : à l’eau, touché ou coulé.",
+    "Tu vois tes tirs sur la grille ennemie, et ceux de l’adversaire sur ta flotte.",
+    "Le premier qui coule tous les bateaux de l’autre gagne.",
+    "Réglages possibles : rejouer après une touche, et un minuteur par tir (quand le temps est écoulé, un tir au hasard est joué pour toi)."
   ],
   "minPlayers": 2,
   "maxPlayers": 2,
-  "duration": "10 min",
+  "duration": "10 min",
   "emoji": "⚓",
   "family": "plateau",
   "color": "#5BC8F5",
   "ink": "#04121F",
   "order": 30,
   "options": [
-    { "key": "salvo", "label": "Rejouer après une touche", "help": "Touché ou coulé : on tire encore", "type": "bool", "default": false },
-    { "key": "timer", "label": "Minuteur par tir", "help": "À la fin, un tir au hasard est joué", "type": "choice", "default": 0,
-      "choices": [{ "value": 0, "label": "Sans" }, { "value": 15, "label": "15 s" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }] }
+    { "key": "salvo", "label": "Rejouer après une touche", "help": "Touché ou coulé : on tire encore", "type": "bool", "default": false },
+    { "key": "timer", "label": "Minuteur par tir", "help": "Quand le temps est écoulé, un tir au hasard est joué", "type": "choice", "default": 0,
+      "choices": [{ "value": 0, "label": "Sans" }, { "value": 15, "label": "15 s" }, { "value": 30, "label": "30 s" }, { "value": 60, "label": "1 min" }] }
   ]
 }

@@ -69,20 +69,20 @@ export function mount(root, api) {
     switch (n.kind) {
       case 'start': return 'Respire. La partie commence en silence.';
       case 'play': return `${poser(n.by, n.card)}.`;
-      case 'mistake': return `Erreur ! ${poser(n.by, n.card)}, mais il restait des cartes plus petites : ${lostText(n.lost)}. Elles sont défaussées, une vie en moins.`;
+      case 'mistake': return `Erreur ! ${poser(n.by, n.card)}, mais il restait des cartes plus petites : ${lostText(n.lost)}. Elles sont défaussées, une vie en moins.`;
       case 'star-ask': return `${isMe(n.by) ? 'Tu proposes' : `${name(n.by)} propose`} une étoile filante.`;
       case 'star-no': return `${isMe(n.by) ? 'Tu as refusé' : `${name(n.by)} a refusé`} l’étoile filante.`;
-      case 'star': return `Étoile filante : chacun défausse sa plus petite carte${n.cards.length ? ` (${n.cards.map((c) => `${isMe(c.id) ? 'toi' : name(c.id)} ${c.card}`).join(', ')})` : ''}.`;
+      case 'star': return `Étoile filante : chacun défausse sa plus petite carte${n.cards.length ? ` (${n.cards.map((c) => `${isMe(c.id) ? 'toi' : name(c.id)} ${c.card}`).join(', ')})` : ''}.`;
       case 'left': return `${isMe(n.by) ? 'Tu as quitté' : `${name(n.by)} a quitté`} la partie.`;
-      case 'cleared': return `${n.prev && n.prev.kind !== 'start' ? `${noticeText(n.prev)} ` : ''}Niveau ${n.level} réussi${n.bonus === 'star' ? ' : une étoile en plus' : n.bonus === 'life' ? ' : une vie en plus' : ''}.`;
-      case 'won': return `${n.prev ? `${noticeText(n.prev)} ` : ''}Tous les niveaux sont réussis !`;
+      case 'cleared': return `${n.prev && n.prev.kind !== 'start' ? `${noticeText(n.prev)} ` : ''}Niveau ${n.level} réussi${n.bonus === 'star' ? ' : une étoile en plus' : n.bonus === 'life' ? ' : une vie en plus' : ''}.`;
+      case 'won': return `${n.prev ? `${noticeText(n.prev)} ` : ''}Tous les niveaux sont réussis !`;
       case 'lost': return `${n.prev ? `${noticeText(n.prev)} ` : ''}${n.why === 'alone' ? 'Il ne reste plus assez de joueurs.' : 'Plus de vie.'}`;
       default: return '';
     }
   }
 
   function meter(label, filled, max, kind) {
-    return h('div.tp-meter', { role: 'img', 'aria-label': `${label} : ${filled} sur ${max}` },
+    return h('div.tp-meter', { role: 'img', 'aria-label': `${label} : ${filled} sur ${max}` },
       h('span.tp-meter-label', label),
       h('span.tp-meter-icons', { 'aria-hidden': 'true' }, Array.from({ length: max }, (_, i) => h(`i.is-${kind}${i < filled ? '.is-on' : ''}`, icon(kind)))));
   }
@@ -125,11 +125,11 @@ export function mount(root, api) {
     if (sv) {
       const need = alive().length;
       if (sv.yes.includes(api.me.id)) {
-        return h('div.tp-star.is-open', h('p', `Étoile filante proposée : ${sv.yes.length} accord${sv.yes.length > 1 ? 's' : ''} sur ${need}. ${isMe(sv.by) ? 'Tu attends les autres.' : 'Tu as accepté.'}`),
+        return h('div.tp-star.is-open', h('p', `Étoile filante proposée : ${sv.yes.length} accord${sv.yes.length > 1 ? 's' : ''} sur ${need}. ${isMe(sv.by) ? 'Tu attends les autres.' : 'Tu as accepté.'}`),
           h('button.tp-btn.is-ghost', { type: 'button', dataset: { k: 'no' }, onclick: () => api.sendMove({ type: 'star-no' }).catch(() => {}) }, isMe(sv.by) ? 'Annuler la proposition' : 'Finalement non'));
       }
       return h('div.tp-star.is-open',
-        h('p', h('b', name(sv.by)), ' propose une étoile filante : chacun défausse sa plus petite carte, sans perdre de vie. Tout le monde doit être d’accord.'),
+        h('p', h('b', name(sv.by)), ' propose une étoile filante : chacun défausse sa plus petite carte, sans perdre de vie. Tout le monde doit être d’accord.'),
         h('div.tp-row',
           h('button.tp-btn', { type: 'button', dataset: { k: 'yes' }, onclick: () => api.sendMove({ type: 'star-yes' }).catch(() => {}) }, 'D’accord'),
           h('button.tp-btn.is-ghost', { type: 'button', dataset: { k: 'no' }, onclick: () => api.sendMove({ type: 'star-no' }).catch(() => {}) }, 'Non')));
@@ -143,10 +143,19 @@ export function mount(root, api) {
   }
 
   function handView() {
-    if (!playing() || !v.hand) return h('p.tp-watch', info.isPlayer ? 'Tu as quitté la partie : tu la regardes.' : 'Tu regardes la partie.');
-    if (!v.hand.length) return h('p.tp-watch', 'Tu as posé toutes tes cartes. Reste concentré : les autres jouent encore.');
+    if (!playing() || !v.hand) return h('p.tp-watch', info.isPlayer ? 'Tu as quitté la partie : tu la regardes.' : 'Tu regardes la partie.');
+    if (!v.hand.length) return h('p.tp-watch', 'Tu as posé toutes tes cartes. Reste concentré : les autres jouent encore.');
     const [lowest, ...rest] = v.hand;
     const blocked = Boolean(v.starVote);
+    if (api.hidesSecrets?.()) {
+      // En classe, sur ordinateur : les numéros restent cachés (maintenir le clic) ; le bouton ne dit pas lequel on pose.
+      return h('section.tp-hand', { 'aria-label': 'Ta main' },
+        api.secret(h('div.tp-secret', orb(lowest, '.is-big'), rest.length ? h('ul.tp-rest', { 'aria-label': 'Tes autres cartes, de la plus petite à la plus grande' }, rest.map((c) => h('li', orb(c, '.is-small')))) : null), { label: 'tes cartes' }),
+        h('button.tp-card.is-blind', {
+          type: 'button', dataset: { k: 'play' }, disabled: blocked,
+          onclick: () => api.sendMove({ type: 'play', card: lowest }).catch(() => {}),
+        }, h('span.tp-card-label', blocked ? 'Réponds à l’étoile' : 'Poser ma plus petite carte')));
+    }
     return h('section.tp-hand', { 'aria-label': 'Ta main' },
       h('button.tp-card', {
         type: 'button', dataset: { k: 'play' }, disabled: blocked,
@@ -180,8 +189,8 @@ export function mount(root, api) {
         h('div.tp-breath', { 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
         h('h2', 'Concentration'),
         prev ? h('p.tp-notice', prev) : null,
-        h('p', first ? 'Chacun va recevoir une carte. But : les poser ensemble dans l’ordre croissant, sans parler.' : `Niveau ${v.level} : chacun va recevoir ${v.level} cartes.`),
-        h('p.tp-silence', 'Respire. Dès que les cartes sont distribuées, plus un mot : pas de chat pendant le niveau.'),
+        h('p', first ? 'Chacun va recevoir une carte. But : les poser ensemble dans l’ordre croissant, sans parler.' : `Niveau ${v.level} : chacun va recevoir ${v.level} cartes.`),
+        h('p.tp-silence', 'Respire. Dès que les cartes sont distribuées, plus un mot : pas de chat pendant le niveau.'),
         me && !ready
           ? h('button.tp-btn.is-main', { type: 'button', dataset: { k: 'ready' }, onclick: () => api.sendMove({ type: 'ready' }).catch(() => {}) }, 'Prêt')
           : h('p.tp-wait', me ? 'Tu es prêt. On attend les autres…' : 'Les joueurs se concentrent…')),
@@ -197,7 +206,7 @@ export function mount(root, api) {
         h('h2', won ? 'Vous êtes synchrones' : 'Le fil s’est rompu'),
         h('p', won ? `Les ${v.levels} niveaux sont réussis, sans un mot. Bravo à toute l’équipe.` : `Vous êtes arrivés au niveau ${v.level} sur ${v.levels}. La prochaine fois sera la bonne.`),
         h('p.tp-notice', noticeText(v.notice)),
-        v.burned.length && !won ? h('p.tp-small', `Cartes défaussées à ce niveau : ${lostText(v.burned)}.`) : null),
+        v.burned.length && !won ? h('p.tp-small', `Cartes défaussées à ce niveau : ${lostText(v.burned)}.`) : null),
     ];
   }
 

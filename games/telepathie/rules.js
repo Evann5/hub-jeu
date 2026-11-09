@@ -86,7 +86,7 @@ function lose(s, why) {
 function playCard(s, id, card) {
   const hand = s.hands[id];
   if (!hand.length) throw new Error('Tu n’as plus de carte à poser dans ce niveau.');
-  if (card !== hand[0]) throw new Error('Ta plus petite carte a changé : regarde ta main.');
+  if (card !== hand[0]) throw new Error('Ta plus petite carte a changé : regarde ta main.');
   const hands = {};
   const lost = [];
   for (const p of s.players) {
@@ -123,14 +123,14 @@ export function move(s, playerId, action, ctx) {
   if (!active(s).includes(playerId)) throw new Error('Tu as quitté la partie.');
   const type = action?.type;
   if (s.phase === 'focus') {
-    if (type !== 'ready') throw new Error('Respire : clique sur « Prêt » quand tu es concentré.');
+    if (type !== 'ready') throw new Error('Respire : appuie sur « Prêt » quand tu es concentré.');
     if (s.ready.includes(playerId)) throw new Error('Tu es déjà prêt. Attends les autres.');
     const t = { ...s, ready: [...s.ready, playerId] };
     return { state: active(t).every((id) => t.ready.includes(id)) ? startLevel(t, ctx) : t };
   }
   // phase « play »
   if (type === 'play') {
-    if (s.starVote) throw new Error('Une étoile est proposée : accepte-la ou refuse-la avant de poser une carte.');
+    if (s.starVote) throw new Error('Une étoile est proposée : accepte-la ou refuse-la avant de poser une carte.');
     return { state: playCard(s, playerId, Number(action.card)) };
   }
   if (type === 'star') {
@@ -171,7 +171,7 @@ export function leave(s, playerId, ctx) {
 }
 
 export function status(s) {
-  if (s.phase === 'over') return { over: true, turn: null, winners: s.result === 'won' ? active(s) : [], ...(s.result === 'won' ? {} : { label: 'Le fil s\'est rompu' }) };
+  if (s.phase === 'over') return { over: true, turn: null, winners: s.result === 'won' ? active(s) : [], ...(s.result === 'won' ? {} : { label: 'Le fil s’est rompu' }) };
   const turn = s.phase === 'focus' ? active(s).filter((id) => !s.ready.includes(id)) : active(s);
   return { over: false, turn, winners: [] };
 }

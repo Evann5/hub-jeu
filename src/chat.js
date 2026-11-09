@@ -20,19 +20,19 @@ export function checkScope(scope, userId) {
   if (!m || canonical !== scope) throw new ChatError('Conversation introuvable.');
   if (m[1] === 't') {
     // Chat d'une table : ouvert aux joueurs et aux spectateurs (toute la classe peut regarder).
-    if (!tableExists(m[2])) throw new ChatError("Cette partie n'existe plus.");
+    if (!tableExists(m[2])) throw new ChatError("Cette partie n’existe plus.");
     return { kind: 'table', tableId: Number(m[2]) };
   }
   if (m[1] === 'c') {
-    const channel = db.prepare('SELECT id FROM channels WHERE id = ?').get(Number(m[2]));
-    if (!channel) throw new ChatError("Ce canal n'existe plus.");
+    const channel = db.prepare('SELECT id, staff_only FROM channels WHERE id = ?').get(Number(m[2]));
+    if (!channel || (channel.staff_only && !isStaffId(userId))) throw new ChatError("Ce canal n’existe plus."); // un canal d'équipe n'existe pas pour les autres
     return { kind: 'channel', channelId: channel.id };
   }
   const a = Number(m[2]);
   const b = Number(m[3]);
   if (!(a < b) || (userId !== a && userId !== b)) throw new ChatError('Conversation introuvable.');
   const other = userId === a ? b : a;
-  if (!db.prepare('SELECT 1 FROM users WHERE id = ?').get(other)) throw new ChatError("Cette personne n'a plus de compte.");
+  if (!db.prepare('SELECT 1 FROM users WHERE id = ?').get(other)) throw new ChatError("Cette personne n’a plus de compte.");
   return { kind: 'dm', members: [a, b] };
 }
 
@@ -80,7 +80,7 @@ export function postMessage(scope, userId, body) {
 export function toggleReaction(messageId, userId, emoji) {
   if (!REACTIONS.includes(emoji)) throw new ChatError('Réaction inconnue.');
   const msg = getMessage(messageId);
-  if (!msg) throw new ChatError("Ce message n'existe plus.");
+  if (!msg) throw new ChatError("Ce message n’existe plus.");
   const had = db.prepare('DELETE FROM reactions WHERE message_id = ? AND user_id = ? AND emoji = ?').run(msg.id, userId, emoji);
   if (!had.changes) db.prepare('INSERT INTO reactions (message_id, user_id, emoji) VALUES (?, ?, ?)').run(msg.id, userId, emoji);
   return getMessage(msg.id);
@@ -88,7 +88,7 @@ export function toggleReaction(messageId, userId, emoji) {
 
 export function deleteMessage(id) {
   const msg = getMessage(id);
-  if (!msg) throw new ChatError("Ce message n'existe plus.");
+  if (!msg) throw new ChatError("Ce message n’existe plus.");
   db.prepare('DELETE FROM messages WHERE id = ?').run(msg.id);
   return msg;
 }
@@ -116,7 +116,7 @@ function dmScopesOf(userId) {
 // Nombre de messages non lus par scope (canaux et messages privés de la personne).
 export function unreadCounts(userId) {
   const reads = new Map(db.prepare('SELECT scope, last_id FROM reads WHERE user_id = ?').all(userId).map((r) => [r.scope, r.last_id]));
-  const channels = db.prepare('SELECT id FROM channels').all().map((c) => `c:${c.id}`);
+  const channels = listChannels(userId).map((c) => `c:${c.id}`);
   const count = db.prepare('SELECT COUNT(*) AS n FROM messages WHERE scope = ? AND id > ? AND user_id != ?');
   const out = {};
   for (const scope of [...channels, ...dmScopesOf(userId)]) {
@@ -139,9 +139,17 @@ export function dmList(userId) {
   });
 }
 
-export function listChannels() {
-  return db.prepare('SELECT id, name, topic, position FROM channels ORDER BY position, id').all();
+// L'équipe : modérateurs et admins (lu dans la base à chaque fois : un changement de niveau compte tout de suite).
+export const isStaffId = (userId) => ['modo', 'admin'].includes(db.prepare('SELECT role FROM users WHERE id = ?').get(Number(userId))?.role);
+
+// Les canaux qu'une personne voit : les canaux d'équipe seulement pour l'équipe. Sans personne : tous (pour l'équipe).
+export function listChannels(userId = null) {
+  const all = db.prepare('SELECT id, name, topic, position, staff_only FROM channels ORDER BY position, id').all()
+    .map(({ staff_only: staffOnly, ...c }) => ({ ...c, staffOnly: Boolean(staffOnly) }));
+  return userId === null || isStaffId(userId) ? all : all.filter((c) => !c.staffOnly);
 }
+
+export const isStaffChannel = (scope) => scope.startsWith('c:') && Boolean(db.prepare('SELECT staff_only FROM channels WHERE id = ?').get(Number(scope.slice(2)))?.staff_only);
 
 export function cleanChannel({ name, topic }) {
   const clean = String(name ?? '')
@@ -163,15 +171,16 @@ export function createChannel(input) {
   const { name, topic } = cleanChannel(input);
   if (db.prepare('SELECT 1 FROM channels WHERE name = ?').get(name)) throw new ChatError('Un canal porte déjà ce nom.');
   const pos = db.prepare('SELECT COALESCE(MAX(position), 0) + 1 AS p FROM channels').get().p;
-  db.prepare('INSERT INTO channels (name, topic, position, created_at) VALUES (?, ?, ?, ?)').run(name, topic, pos, Date.now());
+  db.prepare('INSERT INTO channels (name, topic, position, staff_only, created_at) VALUES (?, ?, ?, ?, ?)').run(name, topic, pos, input?.staffOnly ? 1 : 0, Date.now());
+  return name;
 }
 
 export function updateChannel(id, input) {
   const { name, topic } = cleanChannel(input);
   const clash = db.prepare('SELECT id FROM channels WHERE name = ?').get(name);
   if (clash && clash.id !== Number(id)) throw new ChatError('Un canal porte déjà ce nom.');
-  const res = db.prepare('UPDATE channels SET name = ?, topic = ? WHERE id = ?').run(name, topic, Number(id));
-  if (!res.changes) throw new ChatError("Ce canal n'existe plus.");
+  const res = db.prepare('UPDATE channels SET name = ?, topic = ?, staff_only = ? WHERE id = ?').run(name, topic, input?.staffOnly ? 1 : 0, Number(id));
+  if (!res.changes) throw new ChatError("Ce canal n’existe plus.");
 }
 
 export function deleteChannel(id) {
@@ -180,7 +189,7 @@ export function deleteChannel(id) {
   db.prepare('DELETE FROM messages WHERE scope = ?').run(scope);
   db.prepare('DELETE FROM reads WHERE scope = ?').run(scope);
   const res = db.prepare('DELETE FROM channels WHERE id = ?').run(Number(id));
-  if (!res.changes) throw new ChatError("Ce canal n'existe plus.");
+  if (!res.changes) throw new ChatError("Ce canal n’existe plus.");
 }
 
 // Suppression d'un compte : efface ses messages privés (dans les deux sens) et les « lus » de ces conversations.

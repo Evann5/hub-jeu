@@ -7,7 +7,7 @@ const RANK_LABEL = { 11: 'V', 12: 'D', 13: 'R', 14: 'A' };
 const RANK_NAME = { 2: 'deux', 3: 'trois', 4: 'quatre', 5: 'cinq', 6: 'six', 7: 'sept', 8: 'huit', 9: 'neuf', 10: 'dix', 11: 'valet', 12: 'dame', 13: 'roi', 14: 'as' };
 const RESULT = { blackjack: 'Blackjack', win: 'Gagné', push: 'Égalité', lose: 'Perdu' };
 
-const fmt = (n) => Number(n).toLocaleString('fr-FR');
+const fmt = (n) => Number(n).toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0');
 const signed = (n) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '0');
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -65,7 +65,7 @@ export function mount(root, api) {
     const badge = hd.result
       ? h(`span.bj-badge.r-${hd.forfeit ? 'lose' : hd.result}`, hd.forfeit ? 'Abandon' : `${RESULT[hd.result]} ${signed(hd.gain)}`)
       : hd.bust ? h('span.bj-badge.r-lose', 'Dépasse 21')
-        : hd.natural ? h('span.bj-badge.r-blackjack', 'Blackjack !')
+        : hd.natural ? h('span.bj-badge.r-blackjack', 'Blackjack !')
           : null;
     return h(`div.bj-hand${active ? '.is-active' : ''}${hd.result ? `.r-${hd.result}` : ''}`,
       h('div.bj-cards', hd.cards.map((c, i) => cardEl(c, key(i), size))),
@@ -85,7 +85,7 @@ export function mount(root, api) {
     if (seat.out) bits.push(seat.left ? 'Parti' : 'Éliminé');
     else if (v.phase === 'bet') bits.push(seat.placed ? 'A misé' : 'Mise…');
     const node = h(`article.bj-seat${mine ? '.is-me' : ''}${turn ? '.is-turn' : ''}${seat.out ? '.is-out' : ''}${waiting ? '.is-wait' : ''}`,
-      { 'aria-label': `${user.pseudo}${mine ? ' (toi)' : ''}, ${fmt(seat.chips)} jetons${bits.length ? `, ${bits[0]}` : ''}` },
+      { 'aria-label': `${user.pseudo}${mine ? ' (toi)' : ''}, ${fmt(seat.chips)} jeton${seat.chips > 1 ? 's' : ''}${bits.length ? `, ${bits[0]}` : ''}` },
       h('header.bj-who',
         h('span.bj-av', { 'aria-hidden': 'true' }, user.avatar || '🙂'),
         h('span.bj-name', user.pseudo),
@@ -116,7 +116,7 @@ export function mount(root, api) {
       return node;
     });
     let label = '';
-    if (d.cards.length) label = hiddenNow ? `Montre ${d.shown === 11 ? 'un as' : d.shown}` : d.blackjack ? 'Blackjack !' : d.bust ? `Dépasse : ${d.value}` : `Total ${d.value}`;
+    if (d.cards.length) label = hiddenNow ? `Montre ${d.shown === 11 ? 'un as' : d.shown}` : d.blackjack ? 'Blackjack !' : d.bust ? `Dépasse : ${d.value}` : `Total ${d.value}`;
     dealerEl.replaceChildren(
       h('div.bj-banque', h('span.bj-logo', 'Banque'),
         label ? h(`span.bj-total.is-dealer${d.bust ? '.is-bust' : ''}`, label) : null),
@@ -144,7 +144,7 @@ export function mount(root, api) {
       text = v.turn === api.me.id ? 'À toi de jouer.' : '';
     } else if (v.phase === 'result') {
       const d = meSeat?.delta || 0;
-      text = !meSeat || meSeat.out && !meSeat.hands.length ? 'Manche terminée.' : d > 0 ? `Manche gagnée : ${signed(d)} jetons.` : d < 0 ? `Manche perdue : ${signed(d)} jetons.` : 'Manche à égalité : tu récupères ta mise.';
+      text = !meSeat || meSeat.out && !meSeat.hands.length ? 'Manche terminée.' : d > 0 ? `Manche gagnée : ${signed(d)} jetons.` : d < 0 ? `Manche perdue : ${signed(d)} jetons.` : 'Manche à égalité : tu récupères ta mise.';
     } else text = '';
     statusEl.textContent = text;
   }
@@ -159,9 +159,9 @@ export function mount(root, api) {
     const send = (action) => api.sendMove(action).catch(() => {});
 
     if (v.phase === 'over') {
-      const first = v.winners.length ? v.winners.map((id) => api.user(id).pseudo).join(' et ') : null;
+      const first = v.winners.length ? v.winners.map((id) => api.user(id).pseudo).join(', ').replace(/, ([^,]*)$/, ' et $1') : null;
       panel.append(h('div.bj-final',
-        h('p.bj-final-title', v.winners.includes(api.me.id) ? (v.solo ? 'Bien joué : tu repars avec plus !' : 'Tu es le plus riche !') : first ? `${first} ${v.winners.length > 1 ? 'gagnent' : 'gagne'}` : v.solo ? 'La banque gagne' : 'Partie terminée'),
+        h('p.bj-final-title', v.winners.includes(api.me.id) ? (v.solo ? 'Bien joué : tu repars avec plus !' : 'Tu es le plus riche !') : first ? `${first} ${v.winners.length > 1 ? 'gagnent' : 'gagne'}` : v.solo ? 'La banque gagne' : 'Partie terminée'),
         h('ol.bj-rank', v.ranking.map((id, i) => h(`li${id === api.me.id ? '.is-me' : ''}`,
           h('span.bj-pos', String(i + 1)), h('span.bj-pn', api.user(id).pseudo), h('b', fmt(v.seats.find((s) => s.id === id).chips)))))));
       return;
@@ -175,7 +175,7 @@ export function mount(root, api) {
       return;
     }
     if (meSeat.out) {
-      panel.append(h('p.bj-wait', meSeat.left ? 'Tu as quitté la partie.' : 'Tu n’as plus assez de jetons : tu regardes la fin.'));
+      panel.append(h('p.bj-wait', meSeat.left ? 'Tu as quitté la partie.' : 'Tu n’as plus assez de jetons : tu regardes la fin.'));
       return;
     }
     if (v.phase === 'bet') {
@@ -215,7 +215,7 @@ export function mount(root, api) {
           h('label.bj-amountbox', h('span.bj-lbl', 'Ta mise'), input),
           h('button.bj-step', { type: 'button', 'aria-label': 'Ajouter 10 jetons', onclick: () => add(10) }, '+')),
         h('div.bj-chips-row', chipBtn(10), chipBtn(50), chipBtn(100), chipBtn(500),
-          h('button.bj-chipbtn.is-all', { type: 'button', onclick: () => set(o.maxBet) }, 'Tapis')),
+          h('button.bj-chipbtn.is-all', { type: 'button', onclick: () => set(o.maxBet) }, 'Mise max')),
         go));
       refresh();
       return;
@@ -226,7 +226,7 @@ export function mount(root, api) {
       return;
     }
     panel.append(h('div.bj-actions',
-      h('button.bj-btn.is-hit', { type: 'button', onclick: () => send({ type: 'hit' }) }, 'Carte'),
+      h('button.bj-btn.is-hit', { type: 'button', onclick: () => send({ type: 'hit' }) }, 'Tirer'),
       h('button.bj-btn.is-stand', { type: 'button', onclick: () => send({ type: 'stand' }) }, 'Rester'),
       h('button.bj-btn.is-double', { type: 'button', disabled: !o.canDouble, onclick: () => send({ type: 'double' }) }, 'Doubler'),
       h('button.bj-btn.is-split', { type: 'button', disabled: !o.canSplit, onclick: () => send({ type: 'split' }) }, 'Séparer')));

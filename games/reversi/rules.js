@@ -92,11 +92,11 @@ const isOver = (s) => Boolean(s.over || s.forfeit);
 // Un coup : { cell: 0..63 }. Renvoie { state } ou lève une Error en français.
 export function move(state, playerId, action, ctx) {
   if (isOver(state)) throw new Error('La partie est terminée.');
-  if (state.players[state.turn] !== playerId) throw new Error("Ce n'est pas ton tour.");
+  if (state.players[state.turn] !== playerId) throw new Error("Ce n’est pas ton tour.");
   const cell = Number(action?.cell);
   if (!Number.isInteger(cell) || cell < 0 || cell >= SIZE * SIZE) throw new Error('Case inconnue.');
-  if (state.board[cell] !== null) throw new Error('Cette case est déjà occupée : choisis une case marquée d’un point.');
-  if (!flipsFor(state.board, cell, state.turn).length) throw new Error('Ce coup ne retourne aucun pion : choisis une case marquée d’un point.');
+  if (state.board[cell] !== null) throw new Error('Cette case est déjà occupée : choisis une case marquée d’un point.');
+  if (!flipsFor(state.board, cell, state.turn).length) throw new Error('Ce coup ne retourne aucun pion : choisis une case marquée d’un point.');
   return place(state, cell, ctx, false);
 }
 

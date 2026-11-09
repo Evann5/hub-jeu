@@ -1,264 +1,351 @@
-/* Loups-garous : un conte cartoon de jeu mobile. Nuit violet fluo avec une lune néon, jour orange vif, rôles en stickers.
-   La couleur de tout l'écran bascule avec la phase (data-tone sur .lg). Toutes les règles commencent par .g-loup-garou. */
+/* Loups-garous : « forêt de minuit ». Une lisière de sapins, un village dans la clairière, une lune qui grossit
+   de nuit en nuit et des yeux qui brillent dans le noir. Le ciel suit la partie (data-tone sur .lg) : nuit vert sapin,
+   plein jour clair pour le débat, crépuscule pour le vote, lune rousse quand les loups gagnent.
+   Titres en Bricolage Grotesque serrée, texte en Figtree. Toutes les règles commencent par .g-loup-garou. */
 
-@font-face { font-family: 'Unbounded'; src: url('assets/fonts/unbounded.woff2') format('woff2-variations'); font-weight: 200 900; font-display: swap; }
+@font-face { font-family: 'Bricolage Grotesque'; src: url('assets/fonts/bricolage-grotesque.woff2') format('woff2-variations'); font-weight: 200 800; font-stretch: 75% 100%; font-display: swap; }
 @font-face { font-family: 'Figtree'; src: url('assets/fonts/figtree.woff2') format('woff2-variations'); font-weight: 300 900; font-display: swap; }
 
-.g-loup-garou { background: #1A0A5C; --display: 'Unbounded', ui-sans-serif, system-ui, sans-serif; --sans: 'Figtree', ui-sans-serif, system-ui, sans-serif; }
+.g-loup-garou {
+  background: #04120F;
+  --display: 'Bricolage Grotesque', 'Arial Narrow', ui-sans-serif, system-ui, sans-serif;
+  --sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  /* Couleurs fixes */
+  --amber: #FFC23D; --amber-ink: #1A1205; --bite: #FF5468; --moon: #EEF4E2; --deep: #082420;
+}
 
+/* ——— Jetons par moment de la partie ——— */
 .g-loup-garou .lg {
   /* nuit */
-  --on-sky: #FFFFFF; --on-sky-2: #E6D9FF;
-  --panel: #2A1170; --panel-2: #3C1A9A; --ink: #FFFFFF; --ink-2: #D3C4FF; --edge: #9A6BFF; --shadow: #0E0330;
-  --seat: #3C1A9A; --seat-hi: #5226C8; --accent: #FFE14D; --btn: #FFE14D; --btn-ink: #1B0B4A;
-  --hill-far: #7A2BF0; --hill-near: #4B12B8; --tree: #2FE0B0; --tree-hi: #A6FFE6; --trunk: #1B0B4A; --win: 1;
+  --on-sky: #EEF4E2; --on-sky-2: #A9C9BC;
+  --panel: rgb(5 22 19 / 0.86); --panel-soft: rgb(5 22 19 / 0.62); --line: rgb(238 244 226 / 0.14); --line-strong: rgb(238 244 226 / 0.34);
+  --ink: #EEF4E2; --ink-2: #A9C9BC; --seat: rgb(238 244 226 / 0.07); --seat-hi: rgb(238 244 226 / 0.14);
+  --btn: var(--amber); --btn-ink: var(--amber-ink); --focus: var(--amber); --warn: #FF7A89;
+  --far: #0E3630; --near: #03100D; --house: #05191A; --win: #FFC23D; --win-o: 1; --eyes-o: 1;
+  --orb: #EEF4E2; --orb-glow: rgb(238 244 226 / 0.22);
   position: relative; flex: 1; min-height: 0; overflow: hidden; container-type: inline-size;
-  color: var(--on-sky); font: 500 1rem/1.5 var(--sans);
+  color: var(--on-sky); font: 450 1rem/1.5 var(--sans);
 }
 .g-loup-garou .lg[data-tone='day'] {
-  --on-sky: #2A0C5A; --on-sky-2: #5B2A7A;
-  --panel: #FFFFFF; --panel-2: #FFE9F5; --ink: #2A0C5A; --ink-2: #5B3F9A; --edge: #2A0C5A; --shadow: #2A0C5A;
-  --seat: #FFE9F5; --seat-hi: #FFD1EC; --accent: #FF3DAE; --btn: #FFE14D; --btn-ink: #1B0B4A;
-  --hill-far: #FFC247; --hill-near: #FF9A2E; --tree: #7AE04A; --tree-hi: #C8FF8F; --win: 0;
+  --on-sky: #082420; --on-sky-2: #2D5A50;
+  --panel: #FFFFFF; --panel-soft: rgb(255 255 255 / 0.82); --line: rgb(8 36 32 / 0.12); --line-strong: rgb(8 36 32 / 0.4);
+  --ink: #082420; --ink-2: #3F6158; --seat: #EDF5F0; --seat-hi: #DCEDE4;
+  --btn: #082420; --btn-ink: #FFFFFF; --focus: #082420; --warn: #C21F3A;
+  --far: #7CC3A2; --near: #2E7A5C; --house: #5DA585; --win-o: 0; --eyes-o: 0;
+  --orb: #FFE58A; --orb-glow: rgb(255 236 150 / 0.55);
 }
 .g-loup-garou .lg[data-tone='dusk'] {
-  --on-sky: #FFFFFF; --on-sky-2: #FFD6EE;
-  --panel: #5A0F7A; --panel-2: #7A1A9E; --ink: #FFFFFF; --ink-2: #FFD0F0; --edge: #FF8AD8; --shadow: #2B0540;
-  --seat: #7A1A9E; --seat-hi: #9A2BC4; --accent: #FFE14D;
-  --hill-far: #D43BC0; --hill-near: #8E1AA8; --tree: #FF9A5C; --tree-hi: #FFD1A6; --win: 1;
+  --on-sky: #FFF1E8; --on-sky-2: #F6CDBF;
+  --panel: rgb(30 9 20 / 0.88); --panel-soft: rgb(30 9 20 / 0.66); --line: rgb(255 241 232 / 0.16); --line-strong: rgb(255 241 232 / 0.38);
+  --ink: #FFF1E8; --ink-2: #F0C3B6; --seat: rgb(255 241 232 / 0.08); --seat-hi: rgb(255 241 232 / 0.15);
+  --far: #5E2236; --near: #1E0711; --house: #4A1A2A; --win: #FFB24D; --win-o: 1; --eyes-o: 0;
+  --orb: #FF9A5C; --orb-glow: rgb(255 140 90 / 0.4);
+}
+.g-loup-garou .lg[data-tone='blood'] {
+  --far: #3A1015; --near: #0A0304; --house: #2A0A0E; --win: #FF5468;
+  --panel: rgb(16 5 7 / 0.88); --panel-soft: rgb(16 5 7 / 0.66); --on-sky-2: #E8B4B4; --ink-2: #E2B2B2;
+  --orb: #FF5468; --orb-glow: rgb(255 84 104 / 0.38); --eyes-o: 1;
 }
 
-/* ——— Ciel, lune néon, soleil, village ——— */
-.g-loup-garou .lg-sky { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(#1A0A5C 0%, #4B14C8 45%, #9B2FE8 78%, #E04FD8 100%); }
+/* ——— Le ciel ——— */
+.g-loup-garou .lg-sky { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(#03100D 0%, #082420 40%, #0F3A33 78%, #17493F 100%); }
 .g-loup-garou .lg-sky::before, .g-loup-garou .lg-sky::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
-.g-loup-garou .lg-sky::before { background: linear-gradient(#FF8A1F 0%, #FFB13D 45%, #FFD84D 82%, #FFF27A 100%); }
-.g-loup-garou .lg-sky::after { background: linear-gradient(#3A0CA8 0%, #C2299F 62%, #FF7A59 100%); }
+.g-loup-garou .lg-sky::before { background: linear-gradient(#8FD6EE 0%, #BDE7EE 50%, #E2F5E6 100%); }
+.g-loup-garou .lg-sky::after { background: linear-gradient(#1A0A16 0%, #4A1630 42%, #A3364A 78%, #F07D5A 100%); }
 .g-loup-garou .lg[data-tone='day'] .lg-sky::before, .g-loup-garou .lg[data-tone='dusk'] .lg-sky::after { opacity: 1; }
+/* Les deux ciels de jour et de crépuscule passent sous la lune, les étoiles et la lisière. */
+.g-loup-garou .lg-stars, .g-loup-garou .lg-orb { z-index: 1; }
+.g-loup-garou .lg-scene { z-index: 2; }
+.g-loup-garou .lg[data-tone='blood'] .lg-sky { background: linear-gradient(#070203 0%, #1E0709 45%, #4A1015 82%, #6A171C 100%); }
+
+/* Étoiles fixes (aucune animation : un grand calque qui clignote coûte cher). */
 .g-loup-garou .lg-stars {
-  position: absolute; inset: 0 0 25% 0; z-index: 1; transition: opacity 1s;
+  position: absolute; inset: 0 0 30% 0; transition: opacity 1s;
   background-image:
-    radial-gradient(2.2px 2.2px at 8% 12%, #fff, transparent), radial-gradient(1.6px 1.6px at 17% 38%, #C9F8FF, transparent),
-    radial-gradient(2.6px 2.6px at 26% 8%, #FFF27A, transparent), radial-gradient(1.6px 1.6px at 33% 27%, #fff, transparent),
-    radial-gradient(2.2px 2.2px at 41% 15%, #FF9AE8, transparent), radial-gradient(1.6px 1.6px at 49% 42%, #fff, transparent),
-    radial-gradient(2.6px 2.6px at 57% 6%, #fff, transparent), radial-gradient(1.6px 1.6px at 64% 30%, #C9F8FF, transparent),
-    radial-gradient(2.2px 2.2px at 72% 20%, #FFF27A, transparent), radial-gradient(1.6px 1.6px at 79% 46%, #fff, transparent),
-    radial-gradient(2.6px 2.6px at 88% 10%, #fff, transparent), radial-gradient(1.6px 1.6px at 94% 34%, #FF9AE8, transparent),
-    radial-gradient(1.6px 1.6px at 12% 56%, #fff, transparent), radial-gradient(2.2px 2.2px at 38% 60%, #C9F8FF, transparent),
-    radial-gradient(1.6px 1.6px at 68% 58%, #fff, transparent), radial-gradient(2.2px 2.2px at 91% 62%, #FFF27A, transparent);
-  animation: lg-twinkle 2.4s ease-in-out infinite alternate;
+    radial-gradient(1.6px 1.6px at 7% 14%, #fff, transparent), radial-gradient(1.2px 1.2px at 15% 40%, #DFF5EA, transparent),
+    radial-gradient(2px 2px at 24% 9%, #fff, transparent), radial-gradient(1.2px 1.2px at 31% 28%, #DFF5EA, transparent),
+    radial-gradient(1.6px 1.6px at 43% 16%, #fff, transparent), radial-gradient(1.2px 1.2px at 51% 44%, #DFF5EA, transparent),
+    radial-gradient(2px 2px at 58% 6%, #fff, transparent), radial-gradient(1.2px 1.2px at 66% 31%, #fff, transparent),
+    radial-gradient(1.6px 1.6px at 73% 21%, #DFF5EA, transparent), radial-gradient(1.2px 1.2px at 80% 47%, #fff, transparent),
+    radial-gradient(2px 2px at 92% 12%, #fff, transparent), radial-gradient(1.2px 1.2px at 95% 36%, #DFF5EA, transparent),
+    radial-gradient(1.2px 1.2px at 11% 58%, #fff, transparent), radial-gradient(1.6px 1.6px at 37% 62%, #DFF5EA, transparent);
+  opacity: 0.75;
 }
-.g-loup-garou .lg[data-tone='day'] .lg-stars { opacity: 0; animation: none; }
-@keyframes lg-twinkle { from { filter: brightness(0.75); } to { filter: brightness(1.5); } }
+.g-loup-garou .lg[data-tone='day'] .lg-stars { opacity: 0; }
+.g-loup-garou .lg[data-tone='dusk'] .lg-stars { opacity: 0.35; }
 
+/* La lune : un halo et un disque. Sa partie sombre est un masque décalé : croissant la 1re nuit, pleine à la 4e. */
+/* Téléphone : la lune se glisse entre le titre et le minuteur. Ordinateur : elle se lève derrière le village (plus bas). */
 .g-loup-garou .lg-orb {
-  position: absolute; z-index: 1; top: 5%; left: calc(100% - 22%); width: clamp(56px, 12cqi, 96px); aspect-ratio: 1; border-radius: 50%;
-  background:
-    radial-gradient(circle at 64% 66%, rgb(120 150 0 / 0.28) 0 9%, transparent 10%),
-    radial-gradient(circle at 34% 42%, rgb(120 150 0 / 0.25) 0 13%, transparent 14%),
-    radial-gradient(circle at 34% 30%, #FBFFC2, #E2FF4D 72%);
-  box-shadow: 0 0 0 5px rgb(255 255 255 / 0.25), 0 0 50px 18px rgb(214 255 60 / 0.55), 0 0 140px 50px rgb(255 77 220 / 0.3);
-  transition: left 1.2s cubic-bezier(0.34, 1.4, 0.5, 1), top 1.2s cubic-bezier(0.34, 1.4, 0.5, 1), box-shadow 1s, filter 1s;
-  animation: lg-bob 4s ease-in-out infinite;
+  --size: 64px; --shift: 0.3;
+  position: absolute; left: 66%; top: 46px; translate: -50% -50%; width: calc(var(--size) * 2); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, var(--orb-glow) 22%, transparent 68%);
+  transition: top 1.2s cubic-bezier(0.3, 0.7, 0.2, 1), left 1.2s cubic-bezier(0.3, 0.7, 0.2, 1);
 }
-@keyframes lg-bob { 50% { translate: 0 6px; } }
-.g-loup-garou .lg[data-tone='day'] .lg-orb {
-  top: 9%; left: 8%;
-  background: radial-gradient(circle at 36% 34%, #FFFBB0, #FFE14D 60%, #FFC21F);
-  box-shadow: 0 0 0 8px #FFD23F, 0 0 0 16px rgb(255 255 255 / 0.4), 0 0 80px 30px rgb(255 240 120 / 0.6);
+.g-loup-garou .lg-orb i {
+  position: absolute; inset: 25%; border-radius: 50%;
+  background: radial-gradient(circle at 62% 64%, rgb(8 36 32 / 0.12) 0 9%, transparent 10%), radial-gradient(circle at 36% 40%, rgb(8 36 32 / 0.1) 0 12%, transparent 13%), var(--orb);
+  -webkit-mask-image: radial-gradient(50% 50% at calc(50% - 100% * var(--shift)) 44%, transparent 97%, #000 100%);
+  mask-image: radial-gradient(50% 50% at calc(50% - 100% * var(--shift)) 44%, transparent 97%, #000 100%);
 }
-.g-loup-garou .lg[data-tone='dusk'] .lg-orb { top: 12%; left: 46%; filter: hue-rotate(-60deg) saturate(1.5); }
+.g-loup-garou .lg[data-moon='2'] .lg-orb { --shift: 0.52; }
+.g-loup-garou .lg[data-moon='3'] .lg-orb { --shift: 0.8; }
+.g-loup-garou .lg[data-moon='4'] .lg-orb, .g-loup-garou .lg:not([data-tone='night']) .lg-orb { --shift: 3; }
+.g-loup-garou .lg[data-tone='day'] .lg-orb { left: 30%; top: 58px; }
+@container (min-width: 760px) {
+  .g-loup-garou .lg-orb { --size: clamp(120px, 17cqi, 180px); left: 50%; top: calc(100% - min(34%, 250px) * 0.52); }
+  .g-loup-garou .lg[data-tone='dusk'] .lg-orb { top: calc(100% - min(34%, 250px) * 0.3); }
+  .g-loup-garou .lg[data-tone='day'] .lg-orb { --size: 110px; left: 20%; top: 64px; }
+}
 
-.g-loup-garou .lg-scene { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; width: 100%; height: min(36%, 280px); }
-.g-loup-garou .lg-scene * { transition: fill 1s, opacity 1s; }
-.g-loup-garou .lg-scene .hill-far { fill: var(--hill-far); }
-.g-loup-garou .lg-scene .hill-near { fill: var(--hill-near); }
-.g-loup-garou .lg-scene .house.c0 { fill: #FF5FD2; } .g-loup-garou .lg-scene .roof.c0 { fill: #B8189A; }
-.g-loup-garou .lg-scene .house.c1 { fill: #3FDCF8; } .g-loup-garou .lg-scene .roof.c1 { fill: #0A8FC4; }
-.g-loup-garou .lg-scene .house.c2 { fill: #FFE14D; } .g-loup-garou .lg-scene .roof.c2 { fill: #FF8A1F; }
-.g-loup-garou .lg-scene .roof { stroke: #1B0B4A; stroke-width: 3; }
-.g-loup-garou .lg-scene .house { stroke: #1B0B4A; stroke-width: 3; }
-.g-loup-garou .lg-scene .win { fill: #FFF27A; stroke: #1B0B4A; stroke-width: 2.5; opacity: calc(0.35 + var(--win) * 0.65); }
-.g-loup-garou .lg-scene .tree { fill: var(--tree); stroke: #1B0B4A; stroke-width: 3; }
-.g-loup-garou .lg-scene .tree-hi { fill: var(--tree-hi); opacity: 0.85; }
-.g-loup-garou .lg-scene .trunk { fill: #1B0B4A; }
+/* La lisière */
+.g-loup-garou .lg-scene { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: min(34%, 250px); }
+.g-loup-garou .lg-scene .far { fill: var(--far); transition: fill 1s; }
+.g-loup-garou .lg-scene .near { fill: var(--near); transition: fill 1s; }
+.g-loup-garou .lg-scene .house { fill: var(--house); transition: fill 1s; }
+.g-loup-garou .lg-scene .win { fill: var(--win); opacity: var(--win-o); transition: opacity 1s; }
+.g-loup-garou .lg-scene .eyes { fill: #FFC23D; opacity: var(--eyes-o); transition: opacity 1.2s; transform-box: fill-box; }
+.g-loup-garou .lg[data-tone='blood'] .lg-scene .eyes { fill: #FF5468; }
+/* Un clignement lent, de temps en temps, sur quatre paires d'yeux minuscules : seul mouvement permanent du jeu. */
+.g-loup-garou .lg-scene .eyes path { transform-box: fill-box; transform-origin: center; animation: lg-blink 7s infinite; }
+.g-loup-garou .lg-scene .e1 path { animation-delay: 2.3s; }
+.g-loup-garou .lg-scene .e2 path { animation-delay: 4.1s; animation-duration: 9s; }
+.g-loup-garou .lg-scene .e3 path { animation-delay: 5.6s; }
+@keyframes lg-blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+.g-loup-garou .lg[data-tone='day'] .lg-scene .eyes path, .g-loup-garou .lg[data-tone='dusk'] .lg-scene .eyes path { animation: none; }
 
 /* ——— Mise en page ——— */
 .g-loup-garou .lg-scroll {
   position: absolute; inset: 0; z-index: 3; overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column; gap: 16px; padding: clamp(12px, 3.5cqi, 28px) clamp(12px, 3.5cqi, 28px) 120px;
+  display: flex; flex-direction: column; gap: 18px; padding: clamp(14px, 3.5cqi, 28px) clamp(14px, 3.5cqi, 28px) 128px;
 }
-.g-loup-garou .lg-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
-.g-loup-garou .lg-title { flex: 1 1 200px; min-width: 0; }
-.g-loup-garou .lg-kicker { display: inline-block; margin: 0; padding: 3px 12px; border-radius: 999px; background: #FFE14D; color: #1B0B4A; font: 800 0.75rem var(--sans); letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 3px 0 #1B0B4A; transform: rotate(-2deg); }
-.g-loup-garou .lg-title h2 { margin: 8px 0 0; font: 900 clamp(1.45rem, 6.4cqi, 2.3rem)/1.05 var(--display); letter-spacing: -0.03em; text-wrap: balance; text-shadow: 0 3px 0 rgb(14 3 48 / 0.35); }
-.g-loup-garou .lg[data-tone='day'] .lg-title h2 { text-shadow: 0 3px 0 rgb(255 255 255 / 0.5); }
-.g-loup-garou .lg-body { display: grid; gap: 16px; align-items: start; }
-.g-loup-garou .lg-main { display: grid; gap: 16px; min-width: 0; }
+.g-loup-garou .lg-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 14px; }
+.g-loup-garou .lg-title { flex: 1 1 220px; min-width: 0; }
+.g-loup-garou .lg-kicker { margin: 0; color: var(--on-sky-2); font: 700 0.9375rem/1.2 var(--sans); }
+.g-loup-garou .lg-title h2 {
+  margin: 2px 0 0; color: var(--on-sky); font: 800 clamp(2.1rem, 9cqi, 3.4rem)/0.92 var(--display); font-stretch: 78%; letter-spacing: -0.025em; text-wrap: balance;
+}
+.g-loup-garou .lg-body { display: grid; gap: 14px; align-items: start; }
+.g-loup-garou .lg-main { display: grid; gap: 14px; min-width: 0; }
 /* Téléphone : le village et le journal sont des enfants directs de la grille, pour que le village passe devant quand on y fait un choix. */
 .g-loup-garou .lg-side { display: contents; }
 .g-loup-garou .lg-body.is-pick-first .lg-village { order: -1; }
 @container (min-width: 760px) {
-  .g-loup-garou .lg-body { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
-  .g-loup-garou .lg-side { display: grid; gap: 16px; min-width: 0; }
+  .g-loup-garou .lg-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+  .g-loup-garou .lg-side { display: grid; gap: 14px; min-width: 0; }
   .g-loup-garou .lg-body.is-pick-first .lg-village { order: 0; }
 }
-.g-loup-garou .lg-body.is-fresh .lg-panel { animation: lg-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-@keyframes lg-pop { from { transform: scale(0.88) translateY(14px); opacity: 0; } }
+/* Le seul moment orchestré : à chaque nouvelle phase, le panneau d'action se lève doucement. */
+.g-loup-garou .lg-body.is-fresh .lg-main > .lg-panel:first-child { animation: lg-rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes lg-rise { from { transform: translateY(10px); opacity: 0; } }
 
-.g-loup-garou .lg-timer { display: grid; gap: 5px; min-width: 96px; padding: 8px 14px; border: 3px solid #1B0B4A; border-radius: 18px; background: #fff; color: #1B0B4A; box-shadow: 0 4px 0 #1B0B4A; }
-.g-loup-garou .lg-time { font: 900 1.25rem/1 var(--display); font-variant-numeric: tabular-nums; text-align: center; letter-spacing: -0.04em; }
-.g-loup-garou .lg-bar { display: block; height: 8px; overflow: hidden; border-radius: 4px; background: #E4DAFF; }
-.g-loup-garou .lg-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #2FE0B0, #FFE14D); transform-origin: left; transition: transform 0.5s linear; }
-.g-loup-garou .lg-timer.is-low { animation: lg-shake 0.5s ease-in-out infinite; }
-.g-loup-garou .lg-timer.is-low .lg-time { color: #E0143C; }
-@keyframes lg-shake { 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
+/* Minuteur */
+.g-loup-garou .lg-timer { display: grid; gap: 6px; min-width: 92px; padding: 8px 12px 9px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--ink); }
+.g-loup-garou .lg-time { font: 700 1.375rem/1 var(--display); font-stretch: 85%; font-variant-numeric: tabular-nums; text-align: center; }
+.g-loup-garou .lg-bar { display: block; height: 4px; overflow: hidden; border-radius: 2px; background: var(--line); }
+.g-loup-garou .lg-bar i { display: block; height: 100%; border-radius: 2px; background: var(--amber); transform-origin: left; transition: transform 0.5s linear; }
+.g-loup-garou .lg[data-tone='day'] .lg-bar i { background: #082420; }
+.g-loup-garou .lg-timer.is-low { border-color: var(--bite); }
+.g-loup-garou .lg-timer.is-low .lg-time { color: var(--warn); }
+.g-loup-garou .lg-timer.is-low .lg-bar i { background: var(--bite); }
 
+/* Ta carte : une petite carte retournée dans l'en-tête */
 .g-loup-garou .lg-chip {
-  display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 5px 20px 5px 6px; border: 3px solid #1B0B4A; border-radius: 999px;
-  background: #fff; color: #1B0B4A; font: 800 1rem var(--sans); text-align: left; box-shadow: 0 4px 0 #1B0B4A; transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px 6px 6px; border: 1px solid var(--line-strong); border-radius: 14px;
+  background: var(--panel); color: var(--ink); font: 700 1rem/1.15 var(--sans); text-align: left; transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
 }
-.g-loup-garou .lg-chip small { display: block; color: #5B3F9A; font-size: 0.75rem; font-weight: 700; line-height: 1.1; }
-.g-loup-garou .lg-chip.is-watch { padding: 0 20px; align-items: center; margin: 0; }
-.g-loup-garou button.lg-chip:hover { transform: translateY(-2px) rotate(-1.5deg); }
-.g-loup-garou button.lg-chip:active { transform: translateY(3px); box-shadow: 0 1px 0 #1B0B4A; }
+.g-loup-garou .lg-chip small { display: block; color: var(--ink-2); font-size: 0.75rem; font-weight: 600; }
+.g-loup-garou .lg-chip.is-watch { padding: 0 16px; margin: 0; }
+.g-loup-garou button.lg-chip { cursor: pointer; }
+.g-loup-garou button.lg-chip:hover { border-color: var(--ink); }
+.g-loup-garou button.lg-chip:active { transform: scale(0.97); }
 
-.g-loup-garou .lg-medal { flex: none; border-radius: 50%; overflow: hidden; }
+.g-loup-garou .lg-medal { flex: none; border-radius: 50%; }
 
-/* ——— Boîtes et panneaux : des stickers à gros contour ——— */
-.g-loup-garou .lg-panel, .g-loup-garou .lg-box {
-  position: relative; padding: clamp(16px, 4cqi, 24px); border: 4px solid var(--edge); border-radius: 28px; background: var(--panel); color: var(--ink);
-  box-shadow: 0 7px 0 var(--shadow);
-}
-.g-loup-garou .lg-panel { display: grid; gap: 12px; }
-.g-loup-garou .lg-panel h3 { margin: 0; font: 900 clamp(1.15rem, 4.8cqi, 1.55rem)/1.15 var(--display); letter-spacing: -0.03em; text-wrap: balance; }
+/* ——— Panneaux : l'action d'abord, le reste plus discret ——— */
+.g-loup-garou .lg-panel, .g-loup-garou .lg-box { position: relative; border: 1px solid var(--line); border-radius: 20px; background: var(--panel); color: var(--ink); }
+.g-loup-garou .lg-panel { display: grid; gap: 12px; padding: clamp(16px, 4cqi, 24px); box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.6); }
+.g-loup-garou .lg-box { padding: clamp(14px, 3.5cqi, 20px); background: var(--panel-soft); }
+.g-loup-garou .lg[data-tone='day'] .lg-panel { box-shadow: 0 18px 36px -26px rgb(8 36 32 / 0.45); }
+.g-loup-garou .lg-panel h3 { margin: 0; font: 800 clamp(1.45rem, 5.4cqi, 1.9rem)/1.02 var(--display); font-stretch: 82%; letter-spacing: -0.015em; text-wrap: balance; }
 .g-loup-garou .lg-panel p, .g-loup-garou .lg-box p { margin: 0; }
 .g-loup-garou .lg-muted { color: var(--ink-2); font-size: 0.9375rem; }
-.g-loup-garou .lg-chosen { font: 800 1.2rem/1.2 var(--display); }
-.g-loup-garou .lg-recap { padding: 10px 16px; border-radius: 18px; background: #fff; color: #2A0C5A; font-weight: 700; box-shadow: 0 4px 0 rgb(14 3 48 / 0.35); }
-.g-loup-garou .lg-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.g-loup-garou .lg-chosen { display: flex; flex-wrap: wrap; align-items: center; font: 750 1.3rem/1.2 var(--display); font-stretch: 85%; }
+.g-loup-garou .lg-recap { padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-soft); color: var(--ink); }
+.g-loup-garou .lg-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
+/* Boutons */
 .g-loup-garou .lg-btn {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; border: 3px solid #1B0B4A; border-radius: 999px;
-  font: 800 1rem var(--sans); text-align: center; box-shadow: 0 5px 0 #1B0B4A; transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s, filter 0.15s;
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 20px; border: 1.5px solid transparent; border-radius: 12px;
+  font: 700 1rem/1.15 var(--sans); white-space: nowrap; text-align: center; cursor: pointer;
+  transition: transform 0.12s ease-out, background-color 0.15s, border-color 0.15s, filter 0.15s;
 }
 .g-loup-garou .lg-btn.primary { background: var(--btn); color: var(--btn-ink); }
-.g-loup-garou .lg-btn.danger { background: #FF4D7A; color: #1B0B4A; }
-.g-loup-garou .lg-btn.ghost { background: #fff; color: #1B0B4A; }
-.g-loup-garou .lg-btn:not(:disabled):hover { transform: translateY(-2px) rotate(-0.6deg); box-shadow: 0 7px 0 #1B0B4A; }
-.g-loup-garou .lg-btn:not(:disabled):active { transform: translateY(4px) scale(1.02, 0.96); box-shadow: 0 1px 0 #1B0B4A; }
-.g-loup-garou .lg-btn:disabled { background: #D9CCFF; color: #5B3F9A; border-color: #5B3F9A; box-shadow: 0 5px 0 #5B3F9A; cursor: not-allowed; }
-.g-loup-garou :focus-visible { outline: 4px solid #FFE14D; outline-offset: 3px; }
-.g-loup-garou .lg[data-tone='day'] :focus-visible { outline-color: #FF3DAE; }
+.g-loup-garou .lg-btn.danger { background: var(--bite); color: #1A0306; }
+.g-loup-garou .lg-btn.ghost { width: auto; height: auto; background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.g-loup-garou .lg-btn:not(:disabled):hover { filter: brightness(1.08); }
+.g-loup-garou .lg-btn.ghost:not(:disabled):hover { border-color: var(--ink); filter: none; }
+.g-loup-garou .lg-btn:not(:disabled):active { transform: scale(0.97); }
+.g-loup-garou .lg-btn:disabled { background: transparent; color: var(--ink-2); border: 1.5px dashed var(--line-strong); cursor: not-allowed; }
+.g-loup-garou :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
-.g-loup-garou .lg-panel.is-sleep { justify-items: start; overflow: hidden; }
-.g-loup-garou .lg-facts { display: grid; gap: 6px; width: 100%; margin: 0; padding: 10px 14px; border-radius: 14px; background: rgb(255 255 255 / 0.08); }
-.g-loup-garou .lg-facts > div { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
-.g-loup-garou .lg-facts dt { color: var(--ink-2); font-size: 0.8125rem; font-weight: 700; }
-.g-loup-garou .lg-facts dt::after { content: ' :'; }
-.g-loup-garou .lg-facts dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
-.g-loup-garou .lg-zzz { display: flex; align-items: flex-end; gap: 4px; font: 900 2rem/1 var(--display); color: #FFE14D; text-shadow: 0 3px 0 #0E0330; }
-.g-loup-garou .lg-zzz span { animation: lg-float 1.8s ease-in-out infinite; }
-.g-loup-garou .lg-zzz span:nth-child(2) { animation-delay: 0.3s; font-size: 1.4em; }
-.g-loup-garou .lg-zzz span:nth-child(3) { animation-delay: 0.6s; font-size: 1.8em; }
-@keyframes lg-float { 50% { transform: translateY(-9px) rotate(8deg); } }
+/* La nuit, pour ceux qui dorment */
+.g-loup-garou .lg-panel.is-sleep { justify-items: start; }
+.g-loup-garou .lg-facts { display: grid; gap: 6px; width: 100%; margin: 4px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+.g-loup-garou .lg-facts > div { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.g-loup-garou .lg-facts dt { color: var(--ink-2); font-size: 0.875rem; font-weight: 600; }
+.g-loup-garou .lg-facts dt::after { content: '\00A0:'; }
+.g-loup-garou .lg-facts dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.g-loup-garou .lg-zzz { display: flex; align-items: flex-end; gap: 3px; color: var(--amber); font: 800 1.4rem/1 var(--display); }
+.g-loup-garou .lg-zzz span { animation: lg-float 3.2s ease-in-out infinite; }
+.g-loup-garou .lg-zzz span:nth-child(2) { animation-delay: 0.4s; font-size: 1.3em; }
+.g-loup-garou .lg-zzz span:nth-child(3) { animation-delay: 0.8s; font-size: 1.65em; }
+@keyframes lg-float { 50% { transform: translateY(-5px); } }
 
 .g-loup-garou .lg-votes { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.g-loup-garou .lg-votes li { padding: 8px 14px; border-radius: 14px; background: var(--panel-2); }
+.g-loup-garou .lg-votes li { padding: 9px 12px; border-radius: 12px; background: var(--seat); }
 .g-loup-garou .lg-vision-row { display: flex; align-items: center; gap: 14px; font-size: 1.15rem; }
-.g-loup-garou .lg-god { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--ink-2); }
+.g-loup-garou .lg-god { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); }
+/* Les morts regardent : un panneau en pointillés, comme un fantôme du village. */
+.g-loup-garou .lg-panel.is-god { border: 1.5px dashed var(--line-strong); background: var(--panel-soft); box-shadow: none; }
 
-.g-loup-garou .lg-dawn { display: grid; gap: 10px; padding: 14px 16px; border-radius: 20px; background: var(--panel-2); }
-.g-loup-garou .lg-dawn-title { font: 800 1.05rem/1.25 var(--display); letter-spacing: -0.02em; }
+/* L'aube : qui est mort cette nuit */
+.g-loup-garou .lg-dawn { display: grid; gap: 10px; padding: 14px; border-radius: 14px; background: rgb(255 84 104 / 0.1); border: 1px solid rgb(255 84 104 / 0.35); }
+.g-loup-garou .lg[data-tone='day'] .lg-dawn { background: #FFF0F1; border-color: #F3B6BE; }
+.g-loup-garou .lg-dawn-title { font: 750 1.15rem/1.2 var(--display); font-stretch: 85%; }
 .g-loup-garou .lg-dawn-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.g-loup-garou .lg-dawn-list li { display: flex; align-items: center; gap: 12px; }
-.g-loup-garou .lg-who { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
-.g-loup-garou .lg-role-tag { padding: 1px 10px; border: 2px solid #1B0B4A; border-radius: 999px; background: var(--rc); color: #1B0B4A; font-size: 0.75rem; font-weight: 800; white-space: nowrap; }
+.g-loup-garou .lg-dawn-list li { display: flex; align-items: center; gap: 12px; font-size: 1.125rem; }
+.g-loup-garou .lg-who { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.g-loup-garou .lg-role-tag { padding: 1px 9px; border-radius: 999px; background: var(--rc); color: #082420; font-size: 0.8125rem; font-weight: 700; line-height: 1.5; white-space: nowrap; }
 
-.g-loup-garou .lg-result { font: 800 1.1rem/1.2 var(--display); color: var(--ink); }
-.g-loup-garou .lg-reveal { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.g-loup-garou .lg-reveal li { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border-radius: 999px; background: var(--panel-2); }
-.g-loup-garou .lg-reveal li.is-win { background: #FFE14D; color: #1B0B4A; box-shadow: 0 0 0 3px #1B0B4A; }
+/* ——— Fin de partie : toutes les cartes retournées ——— */
+.g-loup-garou .lg-result { font: 750 1.2rem/1.2 var(--display); font-stretch: 85%; color: var(--ink); }
+.g-loup-garou .lg-reveal { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+.g-loup-garou .lg-reveal li { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--seat); }
+.g-loup-garou .lg-reveal-text { display: grid; flex: 1; min-width: 0; line-height: 1.25; }
+.g-loup-garou .lg-reveal-text b { display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-loup-garou .lg-reveal-text > span { color: var(--ink-2); font-size: 0.875rem; }
+.g-loup-garou .lg-reveal li.is-dead .lg-medal { filter: grayscale(1); opacity: 0.7; }
+.g-loup-garou .lg-reveal li.is-win { border: 2px solid var(--amber); background: rgb(255 194 61 / 0.12); }
+.g-loup-garou .lg[data-tone='day'] .lg-reveal li.is-win { border-color: #082420; background: #FFF6DC; }
+.g-loup-garou .lg-win-tag { flex: none; padding: 2px 8px; border-radius: 999px; background: var(--amber); color: var(--amber-ink); font-size: 0.75rem; font-weight: 800; }
 .g-loup-garou .lg-panel.is-over { overflow: hidden; }
 .g-loup-garou .lg-panel.is-over > :not(.lg-confetti) { position: relative; z-index: 1; }
-.g-loup-garou .lg-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: 24px; }
-.g-loup-garou .lg-confetti i { position: absolute; top: -16px; left: var(--x); width: 9px; height: 15px; border-radius: 3px; background: var(--c); transform: rotate(var(--r)); animation: lg-fall var(--t) ease-in var(--d) 2 both; }
-@keyframes lg-fall { to { transform: translateY(420px) rotate(calc(var(--r) + 540deg)); } }
+.g-loup-garou .lg-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit; }
+.g-loup-garou .lg-confetti i { position: absolute; top: -16px; left: var(--x); width: 7px; height: 12px; border-radius: 2px; background: var(--c); transform: rotate(var(--r)); animation: lg-fall var(--t) ease-in var(--d) 1 both; }
+@keyframes lg-fall { to { transform: translateY(460px) rotate(calc(var(--r) + 420deg)); opacity: 0; } }
 
 /* ——— Le village ——— */
-.g-loup-garou .lg-village h3, .g-loup-garou .lg-journal summary { margin: 0 0 12px; font: 900 1.1rem/1.1 var(--display); letter-spacing: -0.03em; }
-.g-loup-garou .lg-village h3 small { margin-left: 6px; color: var(--ink-2); font: 700 0.8125rem var(--sans); letter-spacing: 0; }
-.g-loup-garou .lg-seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.g-loup-garou .lg-village h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 12px; font: 800 1.3rem/1.1 var(--display); font-stretch: 82%; }
+.g-loup-garou .lg-journal summary { margin: 0; font: 750 1.15rem/1.1 var(--display); font-stretch: 85%; }
+.g-loup-garou .lg-village h3 small { color: var(--ink-2); font: 600 0.875rem var(--sans); font-variant-numeric: tabular-nums; }
+.g-loup-garou .lg-seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .g-loup-garou .lg-seat {
-  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; padding: 8px 12px; border: 3px solid transparent; border-radius: 20px;
-  background: var(--seat); color: var(--ink); font: inherit; text-align: left; --ring: var(--seat);
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 7px 10px; border: 1.5px solid transparent; border-radius: 14px;
+  background: var(--seat); color: var(--ink); font: inherit; text-align: left;
 }
 .g-loup-garou .lg-seat-text { display: grid; min-width: 0; }
-.g-loup-garou .lg-seat-name { display: flex; align-items: center; gap: 6px; overflow: hidden; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-.g-loup-garou .lg-sub { color: var(--ink-2); font-size: 0.75rem; font-weight: 600; line-height: 1.25; }
-.g-loup-garou .lg-sub.is-wolf { color: #FF4D7A; font-weight: 800; }
-.g-loup-garou .lg[data-tone='day'] .lg-sub.is-wolf { color: #C4163F; }
-.g-loup-garou .lg-me { padding: 0 8px; border-radius: 999px; background: #FFE14D; color: #1B0B4A; font-size: 0.6875rem; font-weight: 900; }
-.g-loup-garou .lg-heart { flex: none; width: 1.05em; height: 1.05em; vertical-align: -0.15em; color: #FF4D9E; }
+.g-loup-garou .lg-seat-name { display: flex; align-items: center; gap: 6px; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.g-loup-garou .lg-sub { color: var(--ink-2); font-size: 0.8125rem; font-weight: 500; line-height: 1.25; }
+.g-loup-garou .lg-sub.is-wolf { color: var(--warn); font-weight: 700; }
+.g-loup-garou .lg-me { padding: 0 7px; border-radius: 999px; background: var(--ink); color: var(--panel); font-size: 0.6875rem; font-weight: 800; line-height: 1.5; }
+.g-loup-garou .lg[data-tone='day'] .lg-me { color: #fff; }
+.g-loup-garou .lg-heart { flex: none; width: 1.05em; height: 1.05em; vertical-align: -0.15em; color: #FF7AC6; }
 .g-loup-garou .lg-chosen .lg-heart { margin: 0 8px; }
-.g-loup-garou .lg[data-tone='day'] .lg-heart { color: #E0147F; }
-.g-loup-garou .lg-seat.is-dead { border: 3px dashed var(--edge); background: transparent; }
-.g-loup-garou .lg-seat.is-dead .lg-seat-name { text-decoration: line-through; text-decoration-thickness: 2px; opacity: 0.85; }
-.g-loup-garou .lg-seat.is-dead .lg-medal { filter: grayscale(0.7); }
-.g-loup-garou button.lg-seat { cursor: pointer; border-color: var(--edge); box-shadow: 0 4px 0 var(--shadow); transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s, background-color 0.15s; }
-.g-loup-garou button.lg-seat:hover { background: var(--seat-hi); transform: translateY(-3px) rotate(-1deg); box-shadow: 0 7px 0 var(--shadow); }
-.g-loup-garou button.lg-seat:active { transform: translateY(3px) scale(1.03, 0.95); box-shadow: 0 1px 0 var(--shadow); }
-.g-loup-garou .lg-seat.is-picked { background: #FFE14D; color: #1B0B4A; border-color: #1B0B4A; box-shadow: 0 4px 0 #1B0B4A; --ring: #FFE14D; }
-.g-loup-garou .lg-seat.is-picked .lg-sub { color: #4B2F9A; }
-.g-loup-garou .lg-seat.is-picked .lg-sub.is-wolf { color: #C4163F; }
+.g-loup-garou .lg[data-tone='day'] .lg-heart { color: #C2186E; }
+/* Mort : plus de fond, un contour en pointillés, le nom barré, la médaille du rôle révélé en gris. */
+.g-loup-garou .lg-seat.is-dead { border: 1.5px dashed var(--line-strong); background: transparent; }
+.g-loup-garou .lg-seat.is-dead .lg-seat-name { color: var(--ink-2); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.g-loup-garou .lg-seat.is-dead .lg-medal { filter: grayscale(1); opacity: 0.75; }
+/* Ciblable : contour ambre ; choisi : plein ambre. */
+.g-loup-garou button.lg-seat { cursor: pointer; border-color: rgb(255 194 61 / 0.55); transition: background-color 0.15s, border-color 0.15s, transform 0.12s ease-out; }
+.g-loup-garou .lg[data-tone='day'] button.lg-seat { border-color: rgb(8 36 32 / 0.45); }
+.g-loup-garou button.lg-seat:hover { background: var(--seat-hi); border-color: var(--amber); }
+.g-loup-garou .lg[data-tone='day'] button.lg-seat:hover { border-color: #082420; }
+.g-loup-garou button.lg-seat:active { transform: scale(0.97); }
+.g-loup-garou .lg-seat.is-picked, .g-loup-garou button.lg-seat.is-picked:hover { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+.g-loup-garou .lg[data-tone='day'] .lg-seat.is-picked, .g-loup-garou .lg[data-tone='day'] button.lg-seat.is-picked:hover { background: #082420; color: #fff; border-color: #082420; }
+.g-loup-garou .lg-seat.is-picked .lg-sub { color: inherit; opacity: 0.85; }
+.g-loup-garou .lg-seat.is-picked .lg-sub.is-wolf { color: #8A0F22; opacity: 1; }
+.g-loup-garou .lg-seat.is-picked .lg-me { background: var(--amber-ink); color: var(--amber); }
+.g-loup-garou .lg[data-tone='day'] .lg-seat.is-picked .lg-me { background: #fff; color: #082420; }
 
+/* Journal */
 .g-loup-garou .lg-journal { padding: 0; }
-.g-loup-garou .lg-journal summary { display: flex; align-items: center; min-height: 56px; margin: 0; padding: 0 clamp(16px, 4cqi, 24px); cursor: pointer; }
-.g-loup-garou .lg-journal > :not(summary) { margin: 0 clamp(16px, 4cqi, 24px) clamp(16px, 4cqi, 24px); }
+.g-loup-garou .lg-journal summary { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 clamp(14px, 3.5cqi, 20px); cursor: pointer; list-style: none; }
+.g-loup-garou .lg-journal summary::-webkit-details-marker { display: none; }
+/* Chevron dessiné : le même dans Chrome et Safari, tourné quand le journal est ouvert. */
+.g-loup-garou .lg-journal summary::after { content: ''; width: 9px; height: 9px; margin: -4px 4px 0 auto; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); rotate: 45deg; transition: rotate 0.2s ease-out; }
+.g-loup-garou .lg-journal[open] summary::after { margin-top: 4px; rotate: 225deg; }
+.g-loup-garou .lg-journal > :not(summary) { margin: 0 clamp(14px, 3.5cqi, 20px) clamp(14px, 3.5cqi, 20px); }
 .g-loup-garou .lg-log { display: grid; gap: 10px; padding: 0 0 0 20px; }
 .g-loup-garou .lg-log li { font-size: 0.9375rem; }
+.g-loup-garou .lg-log li::marker { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .g-loup-garou .lg-ballots { display: block; margin-top: 2px; color: var(--ink-2); font-size: 0.8125rem; }
 
-/* ——— La carte de rôle : un sticker géant ——— */
-.g-loup-garou .lg-overlay { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: rgb(20 6 70 / 0.86); }
-.g-loup-garou .lg-card-wrap { display: grid; justify-items: center; gap: 14px; width: min(340px, 100%); margin: auto; color: #fff; }
+/* ——— La carte de rôle : une vraie carte qu'on retourne ——— */
+.g-loup-garou .lg-overlay { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: rgb(3 14 12 / 0.9); }
+.g-loup-garou .lg-card-wrap { display: grid; justify-items: center; gap: 16px; width: min(330px, 100%); margin: auto; color: var(--moon); perspective: 900px; }
+.g-loup-garou .lg-card-wrap .secret-box { width: 100%; border-radius: 22px; }
 .g-loup-garou .lg-card {
-  display: grid; justify-items: center; gap: 8px; width: 100%; padding: 20px 22px 24px; border: 5px solid #1B0B4A; border-radius: 32px; text-align: center; color: #1B0B4A;
-  background: linear-gradient(#fff 55%, color-mix(in srgb, var(--rc) 35%, #fff)); box-shadow: 0 9px 0 #0E0330, 0 0 0 4px #FFE14D, 0 0 60px 10px color-mix(in srgb, var(--rc) 70%, transparent);
-  animation: lg-pop-card 0.7s cubic-bezier(0.34, 1.7, 0.5, 1) both;
+  --field: #1A3A34;
+  position: relative; display: grid; justify-items: center; gap: 8px; width: 100%; padding: 22px 22px 26px; border-radius: 22px; text-align: center; color: var(--moon);
+  background: linear-gradient(var(--field) 0 0) top / 100% 168px no-repeat, #071C18;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1), 0 30px 60px -24px rgb(0 0 0 / 0.85);
+  animation: lg-flip 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-@keyframes lg-pop-card { from { transform: scale(0.4) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.06) rotate(2deg); } }
-.g-loup-garou .lg-card-kicker { margin: 0; padding: 2px 14px; border-radius: 999px; background: #1B0B4A; color: #FFE14D; font: 800 0.75rem var(--sans); letter-spacing: 0.16em; text-transform: uppercase; }
-.g-loup-garou .lg-card-art { padding: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px #1B0B4A, 0 6px 0 4px #1B0B4A; transform: rotate(-4deg); }
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .g-loup-garou .lg-card { --field: color-mix(in srgb, var(--rc) 38%, #071C18); }
+}
+/* Filet intérieur de carte à jouer : rayon extérieur 22 = rayon intérieur 14 + marge 8. */
+.g-loup-garou .lg-card::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgb(255 255 255 / 0.16); border-radius: 14px; pointer-events: none; }
+@keyframes lg-flip { from { transform: rotateY(80deg); opacity: 0; } }
+.g-loup-garou .lg-card-kicker { margin: 0; color: rgb(238 244 226 / 0.9); font: 600 0.9375rem/1.2 var(--sans); }
+.g-loup-garou .lg-card-art { margin-top: 6px; border-radius: 50%; box-shadow: 0 0 0 6px #071C18, 0 12px 30px -8px rgb(0 0 0 / 0.7); }
 .g-loup-garou .lg-card-art .lg-medal { display: block; }
-.g-loup-garou .lg-card h3 { margin: 10px 0 0; font: 900 clamp(1.6rem, 9cqi, 2rem)/1 var(--display); letter-spacing: -0.04em; }
-.g-loup-garou .lg-card-line { margin: 0; font-size: 1rem; font-weight: 600; }
-.g-loup-garou .lg-card-team { margin: 0; padding: 3px 14px; border-radius: 999px; background: var(--rc); border: 3px solid #1B0B4A; font: 800 0.9375rem var(--sans); }
-.g-loup-garou .lg-card-note { margin: 0; padding: 0 6px; text-align: center; font-size: 0.9375rem; font-weight: 600; color: #E6D9FF; }
-.g-loup-garou .lg-overlay .lg-btn.primary { background: #FFE14D; color: #1B0B4A; }
-
-@container (min-width: 700px) {
-  .g-loup-garou .lg[data-tone='night'] .lg-orb { left: 50%; top: 3%; }
+.g-loup-garou .lg-card h3 { margin: 10px 0 0; font: 800 clamp(2.2rem, 11cqi, 2.6rem)/0.95 var(--display); font-stretch: 78%; letter-spacing: -0.02em; }
+.g-loup-garou .lg-card-line { margin: 0; color: #C9DDD3; font-size: 1rem; line-height: 1.45; text-wrap: pretty; }
+.g-loup-garou .lg-card-team { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 0; color: var(--moon); font-weight: 700; }
+.g-loup-garou .lg-card-team::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--rc); }
+.g-loup-garou .lg-card-note { margin: 0; padding: 0 6px; text-align: center; color: #C9DDD3; font-size: 0.9375rem; text-wrap: balance; }
+.g-loup-garou .lg-overlay .lg-btn.primary { min-width: 180px; background: var(--amber); color: var(--amber-ink); }
+/* Sur ordinateur en classe, la carte cachée montre son dos : la lune et des étoiles. */
+.g-loup-garou .lg-overlay .secret-cover {
+  gap: 10px; border-radius: 22px; color: var(--moon); font: 600 1rem/1.3 var(--sans);
+  background:
+    radial-gradient(circle at 50% 36%, #EEF4E2 0 26px, rgb(238 244 226 / 0.16) 27px 46px, transparent 47px),
+    radial-gradient(1.4px 1.4px at 20% 20%, #fff, transparent), radial-gradient(1.4px 1.4px at 78% 16%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 30% 72%, #fff, transparent), radial-gradient(1.2px 1.2px at 84% 64%, #fff, transparent),
+    linear-gradient(#0E3630, #071C18);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), inset 0 0 0 8px #071C18, inset 0 0 0 9px rgb(255 255 255 / 0.16);
+  padding-top: 120px;
 }
+.g-loup-garou .lg-overlay .secret-cover svg { opacity: 0.9; }
 
 /* ——— Téléphone ——— */
 @container (max-width: 480px) {
-  .g-loup-garou .lg-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'title timer' 'title chip'; gap: 8px 12px; }
+  .g-loup-garou .lg-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'title timer' 'title chip'; align-items: end; gap: 8px 12px; }
   .g-loup-garou .lg-title { grid-area: title; align-self: center; }
+  /* Le titre s'arrête avant la lune : jamais de texte clair sur le disque clair. */
+  .g-loup-garou .lg-title h2 { max-width: 200px; }
   .g-loup-garou .lg-timer { grid-area: timer; justify-self: end; }
-  .g-loup-garou .lg-chip { grid-area: chip; justify-self: end; min-height: 46px; padding-right: 14px; }
-  .g-loup-garou .lg-scroll { gap: 12px; padding-bottom: 96px; }
-  .g-loup-garou .lg-body { gap: 12px; }
-  .g-loup-garou .lg-btn { flex: 1 1 auto; min-height: 46px; }
+  .g-loup-garou .lg-chip { grid-area: chip; justify-self: end; min-height: 46px; padding-right: 12px; }
+  .g-loup-garou .lg-scroll { gap: 14px; padding-bottom: 104px; }
+  .g-loup-garou .lg-body, .g-loup-garou .lg-main { gap: 12px; }
+  .g-loup-garou .lg-btn { flex: 1 1 auto; min-height: 48px; }
   /* Pendant le vote, « Voter blanc » doit rester sur le premier écran : panneaux et pauses plus serrés. */
-  .g-loup-garou .lg-main { gap: 12px; }
-  .g-loup-garou .lg-panel { padding: 14px 16px; gap: 8px; }
-  .g-loup-garou .lg-panel p { font-size: 0.9375rem; line-height: 1.35; }
-  .g-loup-garou .lg-panel .lg-muted { font-size: 0.8125rem; }
-  .g-loup-garou .lg-timer { padding: 6px 12px; gap: 4px; }
-  .g-loup-garou .lg-box { padding: 14px 16px; }
-  .g-loup-garou .lg-village h3 { margin-bottom: 8px; }
-  .g-loup-garou .lg-seats { gap: 8px; }
-  .g-loup-garou .lg-seat { min-height: 50px; padding: 6px 10px; }
+  .g-loup-garou .lg-panel { padding: 16px; gap: 10px; }
+  .g-loup-garou .lg-panel p { font-size: 0.9375rem; line-height: 1.4; }
+  .g-loup-garou .lg-panel .lg-muted { font-size: 0.875rem; }
+  .g-loup-garou .lg-timer { padding: 7px 10px 8px; }
+  .g-loup-garou .lg-box { padding: 14px; }
+  .g-loup-garou .lg-village h3 { margin-bottom: 10px; }
+  .g-loup-garou .lg-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-loup-garou .lg-seat { min-height: 52px; padding: 6px 8px; gap: 8px; }
+}
+@container (max-width: 340px) {
+  .g-loup-garou .lg-seats { grid-template-columns: minmax(0, 1fr); }
+  .g-loup-garou .lg-btn { white-space: normal; }
 }
 
 @media (prefers-reduced-motion: reduce) {

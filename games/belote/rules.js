@@ -56,22 +56,22 @@ export function trickLeader(trick, trump) {
 
 // Cartes autorisées et raison de l'obligation. trick vide = on ouvre, tout est permis.
 export function obligation(hand, trick, trump, seat) {
-  if (!trick.length) return { legal: hand.slice(), reason: 'Tu ouvres le pli : joue la carte que tu veux.' };
+  if (!trick.length) return { legal: hand.slice(), reason: 'Tu ouvres le pli : joue la carte que tu veux.' };
   const led = suitOf(trick[0].card);
   const follow = hand.filter((c) => suitOf(c) === led);
   const winning = trickLeader(trick, trump);
   const topTrump = trick.filter((t) => suitOf(t.card) === trump).reduce((m, t) => Math.max(m, rankStrength(t.card, trump)), -1);
   if (led === trump) {
-    if (!follow.length) return { legal: hand.slice(), reason: 'Tu n’as pas d’atout : joue ce que tu veux.' };
+    if (!follow.length) return { legal: hand.slice(), reason: 'Tu n’as pas d’atout : joue ce que tu veux.' };
     const higher = follow.filter((c) => rankStrength(c, trump) > topTrump);
     return higher.length
       ? { legal: higher, reason: 'Tu dois monter à l’atout.' }
       : { legal: follow, reason: 'Tu ne peux pas monter, mais tu dois jouer atout.' };
   }
   if (follow.length) return { legal: follow, reason: `Tu dois fournir à ${SUIT_NAMES[led]}.` };
-  if (teamOf(winning.seat) === teamOf(seat)) return { legal: hand.slice(), reason: 'Ton partenaire est maître : tu n’es pas obligé de couper.' };
+  if (teamOf(winning.seat) === teamOf(seat)) return { legal: hand.slice(), reason: 'Ton partenaire est maître : tu n’es pas obligé de couper.' };
   const trumps = hand.filter((c) => suitOf(c) === trump);
-  if (!trumps.length) return { legal: hand.slice(), reason: `Tu n’as ni ${SUIT_NAMES[led]} ni atout : joue ce que tu veux.` };
+  if (!trumps.length) return { legal: hand.slice(), reason: `Tu n’as ni ${SUIT_NAMES[led]} ni atout : joue ce que tu veux.` };
   if (topTrump >= 0) {
     const higher = trumps.filter((c) => rankStrength(c, trump) > topTrump);
     return higher.length
@@ -269,7 +269,7 @@ export function move(state, playerId, action, ctx) {
   if (state.phase === 'over') throw new Error('La partie est terminée.');
 
   if (state.phase === 'recap') {
-    if (type !== 'next') throw new Error('La donne est finie : clique sur « Donne suivante ».');
+    if (type !== 'next') throw new Error('La donne est finie : appuie sur « Donne suivante ».');
     const ready = state.ready.slice();
     ready[seat] = true;
     if (ready.every(Boolean)) return { state: nextHand(state, ctx) };

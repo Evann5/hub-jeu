@@ -109,7 +109,7 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
       h('label.field', h('span', 'Mot de passe'),
         h('input.input', { name: 'login_password', type: 'password', autocomplete: 'current-password', required: true })),
       h('button.btn.btn-block', { type: 'submit' }, 'Se connecter'),
-      h('p.hint', 'Mot de passe oublié ? Demande à un admin : il te donnera un mot de passe provisoire.'),
+      h('p.hint', 'Mot de passe oublié ? Demande à un admin : il te donnera un mot de passe provisoire.'),
     );
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -142,7 +142,7 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
         h('small', { id: 'reg-password-hint' }, 'Au moins 10 caractères, sans ton pseudo.')),
       h('div.check',
         h('input', { type: 'checkbox', id: 'reg-rules', name: 'reg_rules', required: true }),
-        h('label', { htmlFor: 'reg-rules' }, "J'accepte les ",
+        h('label', { htmlFor: 'reg-rules' }, "J’accepte les ",
           h('button.link-btn', { type: 'button', onclick: (e) => { e.preventDefault(); openRules(); } }, 'règles de Hubuno'),
           ' et la façon dont mes données sont gardées.')),
       h('button.btn.btn-block', { type: 'submit' }, 'Créer mon compte'),
@@ -150,7 +150,7 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       showError(form, null);
-      const missing = [['reg_code', 'Entre le code de la classe : un admin te le donne.'], ['reg_pseudo', 'Choisis un pseudo.']].find(([name]) => !form.elements[name].value.trim());
+      const missing = [['reg_code', 'Entre le code de la classe : un admin te le donne.'], ['reg_pseudo', 'Choisis un pseudo.']].find(([name]) => !form.elements[name].value.trim());
       if (missing) {
         showError(form, missing[1], form.elements[missing[0]]);
         return;

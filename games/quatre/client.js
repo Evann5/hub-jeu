@@ -49,7 +49,7 @@ export function mount(root, api) {
   const timerText = h('span.q-timer-text');
   const timerFill = h('span.q-timer-fill');
   const timer = h('div.q-timer', { hidden: true, 'aria-hidden': 'true' }, h('span.q-timer-bar', timerFill), timerText);
-  const board = h('div.q-board', { role: 'group', 'aria-label': 'Grille : 7 colonnes de 6 places' }, cols);
+  const board = h('div.q-board', { role: 'group', 'aria-label': 'Grille : 7 colonnes de 6 places' }, cols);
   const stamp = h('div.q-stamp', { hidden: true, 'aria-hidden': 'true' });
   // Trait qui barre les jetons gagnants, dessiné par-dessus la grille (coordonnées en cases : 7 de large, 6 de haut).
   const svgNs = 'http://www.w3.org/2000/svg';
@@ -85,7 +85,7 @@ export function mount(root, api) {
   function play(c) {
     if (!state || info.over) return;
     if (!myTurn()) {
-      if (info.isPlayer) api.toast("Ce n'est pas ton tour.");
+      if (info.isPlayer) api.toast("Ce n’est pas ton tour.");
       return;
     }
     api.sendMove({ col: c }).catch(() => {});
@@ -112,14 +112,14 @@ export function mount(root, api) {
   const verb = (id, one, two) => (id === api.me.id ? two : one);
 
   function statusText(s) {
-    if (s.forfeit) return `${api.user(s.forfeit).pseudo} a abandonné. ${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} !`;
-    if (s.winner) return `${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} : quatre à la suite !`;
-    if (s.draw) return 'Grille pleine : match nul.';
+    if (s.forfeit) return `${api.user(s.forfeit).pseudo} a abandonné. ${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} !`;
+    if (s.winner) return `${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} : quatre à la suite !`;
+    if (s.draw) return 'Grille pleine : match nul.';
     const slow = s.players[1 - s.turn];
-    const late = s.last?.auto ? `${slow === api.me.id ? "Tu n'as" : `${api.user(slow).pseudo} n'a`} pas joué à temps : jeton posé au hasard. ` : '';
-    if (myTurn()) return `${late}À toi : choisis une colonne.`;
+    const late = s.last?.auto ? `${slow === api.me.id ? "Tu n’as" : `${api.user(slow).pseudo} n’a`} pas joué à temps : jeton posé au hasard. ` : '';
+    if (myTurn()) return `${late}À toi : choisis une colonne.`;
     if (info.isPlayer) return `${late}${api.user(s.players[s.turn]).pseudo} réfléchit…`;
-    return `${late}Au tour de ${api.user(s.players[s.turn]).pseudo}.`;
+    return `${late}À ${api.user(s.players[s.turn]).pseudo} de jouer.`;
   }
 
   function renderPlayers(s) {
@@ -170,7 +170,7 @@ export function mount(root, api) {
       b.classList.toggle('is-open', ok);
       b.classList.toggle('is-full', free === 0);
       b.setAttribute('aria-disabled', ok ? 'false' : 'true');
-      b.setAttribute('aria-label', `Colonne ${c + 1} : ${free === 0 ? 'pleine' : `${free} ${free > 1 ? 'places libres' : 'place libre'}`}`);
+      b.setAttribute('aria-label', `Colonne ${c + 1} : ${free === 0 ? 'pleine' : `${free} ${free > 1 ? 'places libres' : 'place libre'}`}`);
       const g = ghosts[c];
       g.hidden = !(ok && mine >= 0);
       if (!g.hidden) {
@@ -198,7 +198,7 @@ export function mount(root, api) {
   api.onState((s, i) => {
     state = s;
     info = i;
-    if (wasOver === false && i.over && s.winner && !s.forfeit && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // pas de confettis sur l'écran de celui qui perd
+    if (wasOver === false && i.over && s.winner && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // le gagnant, même par abandon ; jamais celui qui perd
     wasOver = i.over;
     renderPlayers(s);
     renderBoard(s);

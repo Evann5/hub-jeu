@@ -54,8 +54,8 @@ export function sameWord(guess, word) {
 // Un indice valide : un seul mot, pas de la famille du mot mystère. Renvoie le texte nettoyé ou lève une erreur claire.
 export function checkClue(text, word) {
   const clue = String(text ?? '').trim();
-  if (!clue) throw new Error('Écris ton indice : un seul mot.');
-  if (/\s/.test(clue)) throw new Error('Un seul mot : retire les espaces.');
+  if (!clue) throw new Error('Écris ton indice : un seul mot.');
+  if (/\s/.test(clue)) throw new Error('Un seul mot : retire les espaces.');
   if (clue.length > MAX_CLUE) throw new Error(`Ton indice est trop long (${MAX_CLUE} lettres au plus).`);
   if (!/^[\p{L}\p{N}-]+$/u.test(clue)) throw new Error('Écris seulement des lettres, sans apostrophe ni signe.');
   if (related(clue, word)) throw new Error('Cet indice est trop proche du mot mystère (même mot, ou même famille). Trouves-en un autre.');
@@ -187,16 +187,16 @@ export function move(s, playerId, action, ctx) {
     }
     case 'write': {
       if (type !== 'clue') throw new Error('Écris ton indice.');
-      if (isActive) throw new Error('Tu devines : ce sont les autres qui écrivent.');
+      if (isActive) throw new Error('Tu devines : ce sont les autres qui écrivent.');
       if (!writers(s).includes(playerId)) throw new Error('Tu as quitté la partie.');
       if (playerId in s.clues) throw new Error('Tu as déjà donné ton indice.');
       const t = { ...s, clues: { ...s.clues, [playerId]: checkClue(action.text, s.word) } };
       return { state: writers(t).every((id) => id in t.clues) ? toReview(t, ctx) : t };
     }
     case 'review': {
-      if (isActive) throw new Error('Tu devines : attends que les autres aient trié les indices.');
+      if (isActive) throw new Error('Tu devines : attends que les autres aient trié les indices.');
       if (!writers(s).includes(playerId)) throw new Error('Tu as quitté la partie.');
-      if (s.done.includes(playerId)) throw new Error('Tu as déjà confirmé : attends les autres.');
+      if (s.done.includes(playerId)) throw new Error('Tu as déjà confirmé : attends les autres.');
       if (type === 'done') {
         const t = { ...s, done: [...s.done, playerId] };
         return { state: writers(t).every((id) => t.done.includes(id)) ? toGuess(t, ctx) : t };
@@ -254,7 +254,7 @@ export function leave(s, playerId, ctx) {
 export function status(s) {
   if (s.phase === 'over') {
     const won = s.score >= Math.ceil(s.rounds / 2);
-    return { over: true, turn: null, winners: won ? active(s) : [], ...(won ? {} : { label: `${s.score} sur ${s.rounds} : c'est raté cette fois` }) };
+    return { over: true, turn: null, winners: won ? active(s) : [], ...(won ? {} : { label: `${s.score} sur ${s.rounds} : c’est raté cette fois` }) };
   }
   let turn;
   if (s.phase === 'pick' || s.phase === 'guess') turn = [s.active];

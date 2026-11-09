@@ -176,17 +176,17 @@ function doScore(s, id, box, ctx) {
 // Actions : { type: 'roll', keep: [indices des dés gardés] } | { type: 'score', box }
 export function move(state, playerId, action, ctx) {
   if (state.over) throw new Error('La partie est terminée.');
-  if (state.turn !== playerId) throw new Error("Ce n'est pas ton tour.");
+  if (state.turn !== playerId) throw new Error("Ce n’est pas ton tour.");
   const type = action?.type;
 
   if (type === 'roll') {
-    if (state.rolls >= MAX_ROLLS) throw new Error('Tu as déjà lancé 3 fois : choisis une case pour inscrire tes points.');
+    if (state.rolls >= MAX_ROLLS) throw new Error('Tu as déjà lancé 3 fois : choisis une case pour inscrire tes points.');
     let keep = [];
     if (state.rolls > 0) {
       const raw = Array.isArray(action.keep) ? action.keep : [];
       keep = [...new Set(raw.map(Number))];
       if (keep.some((i) => !Number.isInteger(i) || i < 0 || i > 4)) throw new Error('Dé inconnu.');
-      if (keep.length === 5) throw new Error('Tu gardes les 5 dés : relâche-en au moins un pour relancer, ou choisis une case.');
+      if (keep.length === 5) throw new Error('Tu gardes les 5 dés : relâches-en au moins un pour relancer, ou choisis une case.');
     }
     return { state: doRoll(state, keep, ctx), events: [{ type: 'roll' }] };
   }

@@ -41,7 +41,7 @@ export function mount(root, api) {
     const nodes = [head('Invente'), roster(v.written), entry()];
     const waiting = v.players.filter((id) => !v.left.includes(id) && !v.written.includes(id)).length;
     if (isPlayer() && v.mine === null) {
-      nodes.push(h('p.my-ask', 'Invente une fausse définition qui sonne vraie : les autres devront trouver la vraie.'));
+      nodes.push(h('p.my-ask', 'Invente une fausse définition qui sonne vraie : les autres devront trouver la vraie.'));
       const area = h('textarea', {
         rows: 3, maxlength: 160, placeholder: 'Ta définition, crédible comme un dictionnaire…', 'aria-label': 'Ta fausse définition',
         value: draft, oninput: (e) => { draft = e.target.value; },
@@ -82,7 +82,7 @@ export function mount(root, api) {
         onclick: () => api.sendMove({ type: 'vote', option: o.index }).catch(() => {}),
       }, h('b', `${o.index + 1}.`), h('span', o.text), o.mine ? h('small', 'la tienne') : v.myVote === o.index ? h('small', 'ton vote') : null))));
     return [head('Vote'), roster(v.voted), entry(true),
-      h('p.my-ask', canVote ? 'Laquelle est la vraie ?' : v.myVote !== null ? 'Vote enregistré. On attend les autres.' : 'Les joueurs cherchent la vraie…'),
+      h('p.my-ask', canVote ? 'Laquelle est la vraie ?' : v.myVote !== null ? 'Vote enregistré. On attend les autres.' : 'Les joueurs cherchent la vraie…'),
       list];
   }
 
@@ -91,7 +91,7 @@ export function mount(root, api) {
     const opts = [...v.options].sort((a, b) => (b.by === 'vrai') - (a.by === 'vrai'));
     const list = h('ol.my-senses.is-reveal', opts.map((o) => {
       const truth = o.by === 'vrai';
-      const votes = o.voters.length ? `${o.voters.length} vote${o.voters.length > 1 ? 's' : ''} : ${o.voters.map(pseudo).join(', ')}` : 'aucun vote';
+      const votes = o.voters.length ? `${o.voters.length} vote${o.voters.length > 1 ? 's' : ''} : ${o.voters.map(pseudo).join(', ')}` : 'aucun vote';
       return h(`li.${truth ? 'is-truth' : 'is-fake'}`,
         h('div.my-sense',
           h('b', `${o.index + 1}`),
@@ -102,7 +102,14 @@ export function mount(root, api) {
     const last = v.round + 1 >= v.rounds;
     return [head('Révélation'), roster(null), entry(true),
       info.isPlayer ? h(`p.my-gain${g ? '.is-good' : ''}`, g ? `+${g} points pour toi` : 'Aucun point cette manche') : null, list,
-      isPlayer() ? h('div.my-foot', h('button.my-btn', { type: 'button', onclick: () => api.sendMove({ type: 'next' }).catch(() => {}) }, last ? 'Voir le classement' : 'Mot suivant')) : null];
+      nextFoot(last)];
+  }
+
+  // L'hôte (premier joueur encore là) passe à la suite ; les autres voient qui s'en charge.
+  function nextFoot(last) {
+    const host = v.players.find((id) => !v.left.includes(id));
+    if (isPlayer() && host === api.me.id) return h('div.my-foot', h('button.my-btn', { type: 'button', onclick: () => api.sendMove({ type: 'next' }).catch(() => {}) }, last ? 'Voir le classement' : 'Mot suivant'));
+    return host ? h('p.my-gain', `${pseudo(host)} ${last ? 'affiche le classement' : 'passe au mot suivant'}.`) : null;
   }
 
   function scores() {

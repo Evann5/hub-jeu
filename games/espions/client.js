@@ -13,7 +13,7 @@ const ENDED = {
   max: 'a épuisé ses essais',
   neutral: 'est tombée sur un passant',
   enemy: 'a touché un contact adverse',
-  assassin: 'a touché l’assassin !',
+  assassin: 'a touché l’assassin !',
   timeout: 'a manqué de temps',
   skipped: 'n’a pas donné d’indice à temps',
 };
@@ -81,7 +81,7 @@ export function mount(root, api) {
   // ——— Phase « équipes » ———
   function startIssue() {
     for (const t of ['red', 'blue']) {
-      if (!view.lead[t]) return `Il manque un chef à l’${TEAM[t].agency.toLowerCase()} : quelqu’un doit se proposer.`;
+      if (!view.lead[t]) return `Il manque un chef à l’${TEAM[t].agency.toLowerCase()} : quelqu’un doit se proposer.`;
       if (membersOf(t).length < 2) return `L’${TEAM[t].agency.toLowerCase()} a besoin d’au moins un agent en plus de son chef.`;
     }
     return null;
@@ -116,15 +116,15 @@ export function mount(root, api) {
         m ? h('div.es-actions',
           btn('Répartir au hasard', () => send({ type: 'shuffle' }).catch(swallow), { kind: 'ghost', key: 'shuffle' }),
           btn('Commencer l’opération', () => send({ type: 'start' }).catch(swallow), { disabled: Boolean(issue), key: 'start' })) : h('p.es-empty', 'Tu regardes la partie.'),
-        issue ? h('p.es-hint', issue) : h('p.es-hint.is-ok', 'Tout est prêt : n’importe qui peut lancer l’opération.')),
+        issue ? h('p.es-hint', issue) : h('p.es-hint.is-ok', 'Tout est prêt : n’importe qui peut lancer l’opération.')),
     ];
   }
 
   // ——— Grille ———
   function cardLabel(i, c) {
     const parts = [c.word];
-    if (c.kind) parts.push(`retournée : ${KIND_LABEL[c.kind]}`);
-    else if (view.key) parts.push(`dans la clé : ${KIND_LABEL[view.key[i]]}`);
+    if (c.kind) parts.push(`retournée : ${KIND_LABEL[c.kind]}`);
+    else if (view.key) parts.push(`dans la clé : ${KIND_LABEL[view.key[i]]}`);
     const pickers = Object.entries(view.picks).filter(([, p]) => p === i).map(([id]) => name(Number(id)));
     if (pickers.length) parts.push(`désignée par ${pickers.join(', ')}`);
     return parts.join(', ');
@@ -157,7 +157,10 @@ export function mount(root, api) {
   function board() {
     return [
       h('div.es-tab', { 'aria-hidden': 'true' }, h('span', `DOSSIER N° ${dossierNo()}`)),
-      h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))),
+      // Le chef voit la clé : en classe, sur ordinateur, elle reste cachée tant qu'il ne maintient pas le clic (son équipe est à côté).
+      view.key && view.phase !== 'over'
+        ? api.secret(h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))), { label: 'la clé secrète' })
+        : h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))),
       view.key && view.phase !== 'over'
         ? h('p.es-legend', h('b', 'Clé secrète'), ' : ne la montre à personne.')
         : null,
@@ -215,7 +218,7 @@ export function mount(root, api) {
     if (canPick()) {
       const picked = sel !== null ? view.cards[sel]?.word : null;
       const myPick = view.picks[m.id];
-      const mates = Object.entries(view.picks).map(([id, c]) => `${name(Number(id))} : ${c === -1 ? 's’arrêter' : view.cards[c].word}`);
+      const mates = Object.entries(view.picks).map(([id, c]) => `${name(Number(id))} : ${c === -1 ? 's’arrêter' : view.cards[c].word}`);
       return h('div.es-note.is-pick',
         h('div.es-actions',
           btn(picked ? `Désigner ${picked}` : 'Touche un mot', () => {
@@ -225,9 +228,9 @@ export function mount(root, api) {
           }, { disabled: sel === null, key: 'confirm' }),
           view.guesses > 0 ? btn(myPick === -1 ? 'Tu veux t’arrêter' : 'S’arrêter ici', () => send({ type: 'pick', card: -1 }).catch(swallow), { kind: 'ghost', key: 'stop' }) : null,
           myPick !== undefined ? btn('Retirer mon choix', () => send({ type: 'pick', card: null }).catch(swallow), { kind: 'ghost', key: 'clear' }) : null),
-        mates.length ? h('p.es-hint', `Choix de l’agence : ${mates.join(' · ')}.`) : null);
+        mates.length ? h('p.es-hint', `Choix de l’agence : ${mates.join(' · ')}.`) : null);
     }
-    if (m && m.role === 'chef' && m.team === A) return h('div.es-note.is-quiet', h('h3', 'Tes agents cherchent'), h('p', 'Ne dis rien, pas de signe.'));
+    if (m && m.role === 'chef' && m.team === A) return h('div.es-note.is-quiet', h('h3', 'Tes agents cherchent'), h('p', 'Ne dis rien et ne fais aucun signe.'));
     return null;
   }
 
@@ -239,7 +242,7 @@ export function mount(root, api) {
         h('b', { 'aria-label': `${view.left ? view.left[t] : 0} contacts à retrouver` }, view.left ? String(view.left[t]) : '–'),
         h('span.es-count-name', h('span.es-long', TEAM[t].agency), h('span.es-short', TEAM[t].name === 'rouge' ? 'Rouge' : 'Bleue'),
           h('small', view.left ? `à retrouver${view.first === t ? ' · commence' : ''}` : '')),
-        h('span.es-crew', { 'aria-label': `Agents : ${mem.map(name).join(', ')}` }, mem.slice(0, 5).map((id) => h(`span.es-crew-one${id === view.lead[t] ? '.is-chef' : ''}`, { title: `${name(id)}${id === view.lead[t] ? ' (chef)' : ''}` }, api.token(api.user(id), { size: 's' }))),
+        h('span.es-crew', { 'aria-label': `Agents : ${mem.map(name).join(', ')}` }, mem.slice(0, 5).map((id) => h(`span.es-crew-one${id === view.lead[t] ? '.is-chef' : ''}`, { title: `${name(id)}${id === view.lead[t] ? ' (chef)' : ''}` }, api.token(api.user(id), { size: 's' }))),
           mem.length > 5 ? h('small', `+${mem.length - 5}`) : null));
     };
     score.replaceChildren(teamBox('red'), teamBox('blue'));
@@ -305,8 +308,8 @@ export function mount(root, api) {
     if (!w.team) return h('div.es-banner', h('p.es-stamp-big', 'Mission annulée'), h('p', 'Trop de joueurs sont partis avant le début.'));
     const reasons = {
       cards: `${TEAM[w.team].agency} a retrouvé tous ses contacts.`,
-      assassin: `L’${TEAM[w.team === 'red' ? 'blue' : 'red'].agency.toLowerCase()} a touché l’assassin : elle perd.`,
-      forfeit: `L’${TEAM[w.team === 'red' ? 'blue' : 'red'].agency.toLowerCase()} n’a plus assez d’agents : forfait.`,
+      assassin: `L’${TEAM[w.team === 'red' ? 'blue' : 'red'].agency.toLowerCase()} a touché l’assassin : elle perd.`,
+      forfeit: `L’${TEAM[w.team === 'red' ? 'blue' : 'red'].agency.toLowerCase()} n’a plus assez d’agents : forfait.`,
     };
     const won = me() && me().team === w.team;
     return h(`div.es-banner.t-${w.team}`,
@@ -324,9 +327,9 @@ export function mount(root, api) {
       sigPrev = sig;
       sel = null;
       live.textContent = view.phase === 'teams' ? 'Formez vos agences.'
-        : view.phase === 'over' ? (view.winner.team ? `Fin de partie : ${TEAM[view.winner.team].agency} l’emporte.` : 'Fin de partie.')
-          : view.phase === 'clue' ? `${TEAM[view.active].agency} : le chef prépare un indice.`
-            : `${TEAM[view.active].agency} : indice ${view.clue.word}, ${view.clue.number === 0 ? 'illimité' : view.clue.number}.`;
+        : view.phase === 'over' ? (view.winner.team ? `Fin de partie : ${TEAM[view.winner.team].agency} l’emporte.` : 'Fin de partie.')
+          : view.phase === 'clue' ? `${TEAM[view.active].agency} : le chef prépare un indice.`
+            : `${TEAM[view.active].agency} : indice ${view.clue.word}, ${view.clue.number === 0 ? 'illimité' : view.clue.number}.`;
     }
     if (sel !== null && (view.phase !== 'guess' || view.cards[sel]?.kind)) sel = null;
     app.dataset.phase = view.phase;

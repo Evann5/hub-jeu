@@ -205,7 +205,7 @@ export function mount(root, api) {
     promoEl.hidden = !promo;
     if (!promo) return;
     promoEl.replaceChildren(
-      h('p', 'Promotion : choisis une pièce'),
+      h('p', 'Promotion : choisis une pièce'),
       h('div.eq-promo-row', PROMO_CHOICES.map(([letter, name]) => h('button.eq-promo-btn', {
         type: 'button',
         'aria-label': name,
@@ -302,7 +302,7 @@ export function mount(root, api) {
             h('button.eq-btn.is-main', { type: 'button', onclick: () => send({ type: 'draw-accept' }) }, 'Accepter la nulle'),
             h('button.eq-btn', { type: 'button', onclick: () => send({ type: 'draw-decline' }) }, 'Refuser'))));
       } else if (v.offer === mine) {
-        parts.push(h('p.eq-note', myTurn ? 'Nulle proposée : joue ton coup, ton adversaire répondra à son tour.' : 'Nulle proposée : ton adversaire répond à son prochain tour.'));
+        parts.push(h('p.eq-note', myTurn ? 'Nulle proposée : joue ton coup, ton adversaire répondra à son tour.' : 'Nulle proposée : ton adversaire répond à son prochain tour.'));
       } else if (myTurn && v.offer === null) {
         parts.push(h('button.eq-btn', { type: 'button', onclick: () => send({ type: 'draw-offer' }) }, 'Proposer la nulle'));
       }
@@ -319,20 +319,20 @@ export function mount(root, api) {
       const win = r.winner !== null ? v.players[r.winner] : null;
       const lose = r.winner !== null ? v.players[1 - r.winner] : null;
       switch (r.reason) {
-        case 'mate': return `Échec et mat. ${nameOf(win)} ${verbWin(win)} !`;
-        case 'resign': return `${api.user(lose).pseudo} abandonne. ${nameOf(win)} ${verbWin(win)} !`;
-        case 'time': return `Le temps de ${lose === api.me.id ? 'ton camp' : api.user(lose).pseudo} est écoulé. ${nameOf(win)} ${verbWin(win)} !`;
-        case 'stalemate': return 'Pat : le camp au trait n’a aucun coup possible. Partie nulle.';
+        case 'mate': return `Échec et mat. ${nameOf(win)} ${verbWin(win)} !`;
+        case 'resign': return `${api.user(lose).pseudo} abandonne. ${nameOf(win)} ${verbWin(win)} !`;
+        case 'time': return `Temps écoulé pour ${lose === api.me.id ? 'toi' : api.user(lose).pseudo}. ${nameOf(win)} ${verbWin(win)} !`;
+        case 'stalemate': return 'Pat : le camp au trait n’a aucun coup possible. Partie nulle.';
         case 'insufficient': return 'Matériel insuffisant pour mater. Partie nulle.';
-        case 'fifty': return 'Règle des 50 coups : partie nulle.';
-        case 'repetition': return 'Même position trois fois : partie nulle.';
-        case 'agreement': return 'Nulle acceptée : partie nulle.';
-        case 'time-insufficient': return 'Temps écoulé, mais l’adversaire ne peut plus mater : partie nulle.';
+        case 'fifty': return 'Règle des 50 coups : partie nulle.';
+        case 'repetition': return 'Même position trois fois : partie nulle.';
+        case 'agreement': return 'Nulle acceptée : partie nulle.';
+        case 'time-insufficient': return 'Temps écoulé, mais l’adversaire ne peut plus mater : partie nulle.';
         default: return 'Partie terminée.';
       }
     }
     const mover = v.players[v.turn];
-    const check = v.check !== null ? ' Échec !' : '';
+    const check = v.check !== null ? ' Échec !' : '';
     if (info?.isPlayer && mover === api.me.id) {
       return selected !== null ? 'Touche une case marquée pour y jouer la pièce.' : `À toi de jouer.${check}`;
     }

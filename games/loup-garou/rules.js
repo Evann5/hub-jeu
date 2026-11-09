@@ -292,7 +292,7 @@ export function move(state, playerId, action, ctx) {
   const a = action && typeof action === 'object' ? action : {};
   if (s.phase === 'over') throw new Error('La partie est terminée.');
   if (!isAlive(s, playerId) && !(s.phase === 'hunter' && s.hunters[0] === playerId)) {
-    throw new Error('Tu es mort : tu regardes la suite de la partie.');
+    throw new Error('Tu es mort : tu regardes la suite de la partie.');
   }
   const role = s.roles[playerId];
 
@@ -306,7 +306,7 @@ export function move(state, playerId, action, ctx) {
     } else if (a.type === 'peek') {
       if (role !== 'seer' || s.acts.seer) throw new Error('Tu ne peux pas faire ça cette nuit.');
       const t = target(s, a.target);
-      if (t === playerId) throw new Error('Tu te connais déjà : choisis quelqu’un d’autre.');
+      if (t === playerId) throw new Error('Tu te connais déjà : choisis quelqu’un d’autre.');
       s.seen.push({ n: s.n, target: t, role: s.roles[t] });
       s.acts.seer = true;
     } else if (a.type === 'wolf') {

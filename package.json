@@ -13,7 +13,9 @@
     "dev": "node --watch server.js",
     "test": "node --test src/*.test.js games/*/rules.test.js games/poker/hands.test.js",
     "test:parcours": "node --test --test-concurrency=2 tests/parcours/*.test.mjs",
-    "test:parcours:tous": "TOUS_LES_JEUX=1 node --test tests/parcours/tous-les-jeux.test.mjs"
+    "test:parcours:tel": "TOUS_LES_JEUX=1 TELEPHONE=1 node --test tests/parcours/tous-les-jeux.test.mjs",
+    "test:parcours:tous": "TOUS_LES_JEUX=1 node --test tests/parcours/tous-les-jeux.test.mjs",
+    "demo": "node scripts/demo.mjs"
   },
   "dependencies": {
     "express": "^5.3.0",

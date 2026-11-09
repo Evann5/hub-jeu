@@ -1,7 +1,7 @@
 // Les monuments d'Escales, façon maquette d'architecte. Un monument tient sur une case de 2 × 3 (le bas à y = 0, l'avant vers +z).
 // Pour une nouvelle ville : écrire ici une fonction avec le petit kit (box, cyl, cone, dome, bars) et la nommer dans board.js.
 // Les couleurs écrites ici ne servent qu'à donner des nuances : bake() les change en tons de blanc, et le tout est fondu en une seule forme.
-import * as THREE from './three/three.module.js';
+import * as THREE from './three/three.module.js?v=r186'; // même adresse que scene.js (sinon three serait chargé deux fois)
 import { TILES } from './board.js';
 
 const mats = new Map();

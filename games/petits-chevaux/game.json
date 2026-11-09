@@ -1,18 +1,18 @@
 {
   "name": "Petits chevaux",
-  "tagline": "Sors un 6, fais le tour du manège, monte à l'échelle.",
-  "description": "Le grand classique de 2 à 4 joueurs : un 6 pour sortir un cheval, prise en tombant pile sur un adversaire, montée à l'échelle au compte exact. Le premier qui rentre ses quatre chevaux gagne.",
+  "tagline": "Sors un 6, fais le tour du manège, monte à l’échelle.",
+  "description": "Le grand classique de 2 à 4 joueurs : un 6 pour sortir un cheval, prise en tombant pile sur un adversaire, montée à l’échelle au compte exact. Le premier qui rentre ses quatre chevaux gagne.",
   "how": [
-    "Chacun a 4 chevaux à l'écurie. À ton tour, touche « Lancer le dé » : le dé est tiré par le serveur.",
-    "Il faut un 6 pour sortir un cheval de l'écurie. Quand tous tes chevaux sont à l'écurie, tu as trois essais. Un 6 te fait toujours rejouer.",
-    "Avance d'autant de cases que le dé. Si tu peux jouer plusieurs chevaux, choisis-en un (touche le bouton du cheval ou le cheval sur le plateau). S'il n'y a aucun coup possible, la main passe toute seule.",
-    "Tomber pile sur un cheval adverse le renvoie à l'écurie. Tu ne peux pas t'arrêter sur un de tes propres chevaux, mais tu peux sauter par-dessus les autres.",
-    "Après un tour complet, ton cheval monte à l'échelle de 6 barreaux : il faut le chiffre exact pour atteindre le dernier (depuis le pied de l'échelle, un 6 ; depuis l'avant-dernier barreau, un 1). Personne ne peut te prendre dans l'échelle.",
-    "Le premier qui a ses 4 chevaux tout en haut de l'échelle gagne. Avec le minuteur, si tu tardes, le dé est lancé pour toi et le premier coup possible est joué. Si quelqu'un abandonne, ses chevaux quittent le plateau et la partie continue."
+    "Chacun a 4 chevaux à l’écurie. À ton tour, touche « Lancer le dé ».",
+    "Il faut un 6 pour sortir un cheval de l’écurie. Quand tous tes chevaux sont à l’écurie, tu as trois essais. Un 6 te fait toujours rejouer.",
+    "Avance d’autant de cases que le dé. Si tu peux jouer plusieurs chevaux, choisis-en un (touche le bouton du cheval ou le cheval sur le plateau). S’il n’y a aucun coup possible, la main passe toute seule.",
+    "Tomber pile sur un cheval adverse le renvoie à l’écurie. Tu ne peux pas t’arrêter sur un de tes propres chevaux, mais tu peux sauter par-dessus les autres.",
+    "Après un tour complet, ton cheval monte à l’échelle de 6 barreaux : il faut le chiffre exact pour atteindre le dernier (depuis le pied de l’échelle, un 6 ; depuis l’avant-dernier barreau, un 1). Personne ne peut te prendre dans l’échelle.",
+    "Le premier qui a ses 4 chevaux tout en haut de l’échelle gagne. Avec le minuteur, si tu tardes, le dé est lancé pour toi et le premier coup possible est joué. Si quelqu’un abandonne, ses chevaux quittent le plateau et la partie continue."
   ],
   "minPlayers": 2,
   "maxPlayers": 4,
-  "duration": "20 min",
+  "duration": "20 min",
   "emoji": "🐴",
   "family": "plateau",
   "color": "#FF5FA8",
@@ -23,9 +23,9 @@
       "key": "timer", "label": "Minuteur par tour", "help": "Si le temps est écoulé, le dé est lancé et le premier coup possible est joué.", "type": "choice", "default": 0,
       "choices": [
         { "value": 0, "label": "Sans" },
-        { "value": 20, "label": "20 s" },
-        { "value": 40, "label": "40 s" },
-        { "value": 60, "label": "1 min" }
+        { "value": 20, "label": "20 s" },
+        { "value": 40, "label": "40 s" },
+        { "value": 60, "label": "1 min" }
       ]
     }
   ]

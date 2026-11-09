@@ -1,7 +1,8 @@
 // Écran Profil : mon avatar, ma couleur, ma bio, mon mot de passe, les règles, la déconnexion et la suppression du compte.
-import { h, icon, token, toast, keepFocus } from '../dom.js';
+import { h, icon, token, toast, keepFocus, colorOf } from '../dom.js';
 import { api, call } from '../net.js';
-import { state, actions, isAdmin } from '../store.js';
+import { state, actions, isAdmin, LEVELS } from '../store.js';
+import { isDesktop, hideSecrets, setHideSecrets } from '../secret.js';
 import { modal, asyncForm, openRules } from '../dialogs.js';
 
 export function render(container) {
@@ -12,8 +13,9 @@ export function render(container) {
   const colorRow = h('div.color-row', { role: 'group', 'aria-label': 'Couleur de l’avatar' });
 
   function draw() {
+    preview.style.setProperty('--c', colorOf(draft.color));
     preview.replaceChildren(token({ ...state.me, ...draft }, { size: 'l' }),
-      h('div', h('strong', state.me.pseudo), h('span', isAdmin() ? 'Admin' : 'Membre')));
+      h('div', h('strong', state.me.pseudo), h('span', LEVELS[state.me.role] ?? 'Membre')));
     keepFocus(avatarGrid, () => avatarGrid.replaceChildren(...avatars.map((a) => h('button', {
       type: 'button',
       'aria-pressed': String(a === draft.avatar),
@@ -62,6 +64,11 @@ export function render(container) {
       h('section.card.card-panel', h('h2', 'Mon profil'), profileForm),
       h('div.page-col',
         h('section.card.card-panel', h('h2', 'Mot de passe'), passForm),
+        isDesktop() ? h('section.card.card-panel',
+          h('h2', 'En classe'),
+          h('label.check',
+            h('input', { type: 'checkbox', name: 'hide_secrets', checked: hideSecrets(), onchange: (e) => { setHideSecrets(e.currentTarget.checked); toast(e.currentTarget.checked ? 'Tes secrets seront cachés.' : 'Tes secrets resteront visibles sur cet ordinateur.'); } }),
+            h('span', 'Cacher mon rôle, mon mot ou mes cartes secrètes sur cet ordinateur : je maintiens le clic pour les voir, ils se recachent quand je lâche. Sur téléphone, rien n’est caché.'))) : null,
         h('section.card.card-panel',
           h('h2', 'Compte'),
           h('ul.menu-list',

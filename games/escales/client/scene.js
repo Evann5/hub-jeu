@@ -2,7 +2,8 @@
 // au sol et ses éléments ; un cadre de la couleur du joueur montre à qui appartient une ville.
 // Pour rester fluide : le décor est fondu en une seule forme, les ombres sont calculées une fois, et rien n'est redessiné tant que rien ne bouge.
 // Ce fichier ne connaît pas les règles : il reçoit l'état avec update(view) et signale les cases touchées avec onTile(pos).
-import * as THREE from './three/three.module.js';
+// Le ?v= (révision de three) permet au serveur de garder ce fichier un an chez l'élève. Changer de version de three : changer ?v= ici, dans monuments.js et dans les deux imports de three.module.js.
+import * as THREE from './three/three.module.js?v=r186';
 import { REGIONS, TILES } from './board.js';
 import { buildMonument, buildSpecial, buildCharacter, buildProp, bake } from './monuments.js';
 import { FLAGS, PATTERNS, PROPS_OF } from './countries.js';
@@ -22,6 +23,10 @@ const BANNER_D = 1.8;
 const BANNER_H = 0.1; // les bandeaux sont des plaques en relief
 const DICE_Z = -7.15; // la piste des dés, en haut de la zone centrale
 const BOTTOM_LIFT = 1.2; // les bandeaux du bas remontent : les monuments de la rangée du bas, debout devant eux, ne cachent plus leur nom
+const BANNER_PX = { w: 1024, h: 230, flagW: 120, flagH: 80, gap: 26 }; // l'image d'un bandeau, en pixels
+const NAME_MARGIN = 0.06; // l'air laissé autour du nom d'un pays, sur le plateau
+const PITCH = 0.85; // l'inclinaison de la caméra : assez plongeante pour tout lire, assez basse pour voir les monuments debout
+const MONUMENTS_RISE_S = 0.7; // les monuments sortent de leur case en arrivant
 const PAWN_SCALE = Math.min(window.innerWidth, window.innerHeight) < 520 ? 2 : 1.75; // tient sur sa case ; un peu plus grand sur téléphone, où tout est petit
 
 const SIDE_BACK = 0.18;
@@ -183,7 +188,7 @@ function buildPrint(focusU) {
     }
     if (!nameOnly) {
       // Le prix à gauche : à droite, la place est gardée pour le visage du propriétaire.
-      const label = `${t.price.toLocaleString('fr-FR')} €`;
+      const label = `${t.price.toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0')} €`;
       c.font = '700 50px "ES Barlow", system-ui, sans-serif';
       c.textAlign = 'left';
       let x = lx + 14;
@@ -229,10 +234,69 @@ function bannerFrame(r) {
   return { center: new THREE.Vector3(-edge, 0, -off), U: new THREE.Vector3(0, 0, -1), V: new THREE.Vector3(-1, 0, 0) };
 }
 
+// La place du nom sur l'image du bandeau : les noms longs rétrécissent, le drapeau et les décors posés aux deux bouts restent libres.
+// Laisse la police réglée sur la taille retenue.
+function bannerTitle(c, name) {
+  let titlePx = 98;
+  do {
+    c.font = `800 ${titlePx}px "ES Titres", system-ui, sans-serif`;
+    titlePx -= 2;
+  } while (c.measureText(name).width > BANNER_PX.w * 0.42 && titlePx > 50);
+  c.textBaseline = 'middle';
+  const m = c.measureText(name);
+  const total = BANNER_PX.flagW + BANNER_PX.gap + m.width;
+  return { total, x0: (BANNER_PX.w - total) / 2, descent: m.actualBoundingBoxDescent };
+}
+
+// Sur le plateau, la bande occupée par le drapeau et le nom d'un bandeau du bas : de x0 à x1, et son bord côté caméra (front).
+function nameSpan(r) {
+  const { total, x0, descent } = bannerTitle(document.createElement('canvas').getContext('2d'), REGIONS[r].name);
+  const { center } = bannerFrame(r);
+  const x = (px) => center.x - 3.98 + (px / BANNER_PX.w) * 7.96;
+  return { x0: x(x0), x1: x(x0 + total), front: center.z - BANNER_D / 2 + ((BANNER_PX.h / 2 + 5 + descent) / BANNER_PX.h) * BANNER_D };
+}
+
+// Rangée du bas : vu depuis la caméra, un grand monument debout devant le bandeau de son pays peut mordre sur le nom écrit derrière.
+// Il rapetisse alors juste ce qu'il faut, jamais sous 60 %, pour que le nom reste entier. fit(k) replace le monument à k fois sa taille.
+function clearNames(model, matrix, fit, spans) {
+  const v = new THREE.Vector3();
+  const m = new THREE.Matrix4();
+  const one = new THREE.Matrix4();
+  const slope = Math.tan(PITCH);
+  const hides = () => {
+    model.updateMatrixWorld(true);
+    let hit = false;
+    model.traverse((o) => {
+      if (hit || !o.isMesh) return;
+      const p = o.geometry.attributes.position;
+      for (let n = 0; n < (o.isInstancedMesh ? o.count : 1) && !hit; n += 1) {
+        if (o.isInstancedMesh) o.getMatrixAt(n, one);
+        m.multiplyMatrices(matrix, o.matrixWorld);
+        if (o.isInstancedMesh) m.multiply(one);
+        for (let i = 0; i < p.count && !hit; i += 1) {
+          v.fromBufferAttribute(p, i).applyMatrix4(m);
+          const ground = v.z - (v.y - BANNER_H) / slope; // le point du sol que ce sommet cache, vu depuis la caméra
+          hit = spans.some((s) => v.x > s.x0 - NAME_MARGIN && v.x < s.x1 + NAME_MARGIN && ground < s.front + NAME_MARGIN);
+        }
+      }
+    });
+    return hit;
+  };
+  if (!hides()) return;
+  let [lo, hi] = [0.6, 1];
+  for (let i = 0; i < 7; i += 1) {
+    const k = (lo + hi) / 2;
+    fit(k);
+    if (hides()) hi = k;
+    else lo = k;
+  }
+  fit(lo);
+}
+
 // Les bandeaux au sol : la couleur du pays, son motif, son drapeau et son nom.
 function buildBanners() {
-  const W = 1024;
-  const H = 230;
+  const W = BANNER_PX.w;
+  const H = BANNER_PX.h;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H * REGIONS.length;
@@ -253,18 +317,9 @@ function buildBanners() {
     c.lineWidth = 3;
     PATTERNS[reg.id](c, W, H);
     // Le nom s'écrit à même la couleur du pays : le motif s'efface doucement derrière lui.
-    // Les noms longs rétrécissent : le drapeau et les décors posés aux deux bouts du bandeau restent libres.
-    let titlePx = 98;
-    do {
-      c.font = `800 ${titlePx}px "ES Titres", system-ui, sans-serif`;
-      titlePx -= 2;
-    } while (c.measureText(reg.name).width > W * 0.42 && titlePx > 50);
-    c.textBaseline = 'middle';
-    const fw = 120;
-    const fh = 80;
-    const tw = c.measureText(reg.name).width;
-    const total = fw + 26 + tw;
-    const x0 = (W - total) / 2;
+    const { total, x0 } = bannerTitle(c, reg.name);
+    const fw = BANNER_PX.flagW;
+    const fh = BANNER_PX.flagH;
     const fade = c.createLinearGradient(x0 - 90, 0, x0 + total + 90, 0);
     const rgb = softened(reg.color, 0.08);
     const col = (a) => `rgba(${Math.round(new THREE.Color(rgb).convertLinearToSRGB().r * 255)},${Math.round(new THREE.Color(rgb).convertLinearToSRGB().g * 255)},${Math.round(new THREE.Color(rgb).convertLinearToSRGB().b * 255)},${a})`;
@@ -349,7 +404,8 @@ function buildFlags() {
 
 // Ce qui est dessiné sur la dalle : la zone centrale et la piste des dés. Net et sans ornement.
 function buildEngraving() {
-  const SIZE = 2048;
+  // Deux aplats aux bords nets : sur un écran de téléphone (plateau d'environ 800 pixels), 1024 donne la même image que 2048 pour quatre fois moins de mémoire.
+  const SIZE = Math.min(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2) <= 900 ? 1024 : 2048;
   const WORLD = HALF * 2 + 1.5;
   const px = SIZE / WORLD;
   const canvas = document.createElement('canvas');
@@ -514,14 +570,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     const color = t.type === 'city' ? `#${softened(REGIONS[t.region].color, 0.1).getHexString()}` : SPECIAL_COLOR[t.type];
     const base = paint(f.corner ? baseGeo.corner : baseGeo.side, `#${new THREE.Color(color).multiplyScalar(0.62).getHexString()}`); // le socle, d'un ton plus foncé : la case a de l'épaisseur
     const plate = paint(plateGeometry(w - 0.34, TILE_D - 0.34, PLATE_H, 0.1), color);
-    const onSide = !f.corner && !f.flat;
-    const front = f.corner ? 0.05 : f.flat ? 0.34 : 0.1;
-    const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
-    model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
-    fitModel(model, w, front, HEROES[t.model] ?? 1, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H, onSide ? -0.03 : 0.35);
-    if (onSide) model.position.x += f.rot < 0 ? -SIDE_BACK : SIDE_BACK; // reculé sur sa case : le pion se tient devant, sur la case
-    const top = new THREE.Box3().setFromObject(model).max.y;
-    items.push({ object: base, matrix: m, tile: t.pos, lift: true }, { object: plate, matrix: m, tile: t.pos, lift: true }, { object: model, matrix: m, ao: PLATE_H, tile: t.pos, lift: true });
+    items.push({ object: base, matrix: m, tile: t.pos, lift: true }, { object: plate, matrix: m, tile: t.pos, lift: true });
     const hit = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, TILE_D));
     hit.position.set(f.x, 1.2, f.z);
     hit.rotation.y = f.rot;
@@ -532,7 +581,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     levels.position.set(f.x, 0, f.z);
     levels.rotation.y = f.rot;
     scene.add(levels);
-    return { f, w, top, levels, level: 0, rim: null, fill: null, shade: null, badge: null, color: null };
+    return { f, w, top: PLATE_H, levels, level: 0, rim: null, fill: null, shade: null, badge: null, color: null };
   });
 
   REGIONS.forEach((reg, r) => {
@@ -576,6 +625,32 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   world.frustumCulled = false;
   const flags = buildFlags();
   scene.add(groundShadow(), world, buildEngraving(), buildBanners(), flags, buildPrint(focusU));
+
+  // ——— Les monuments : une seconde forme, prête dès que les fichiers sculptés sont là (showMonuments) ———
+  // Le plateau s'affiche sans les attendre ; ils sortent ensuite de leur case, d'un seul mouvement.
+  const spans = REGIONS.map((reg, r) => r).filter((r) => Math.floor(r / 2) === 2).map(nameSpan);
+  function monumentItems() {
+    return TILES.map((t) => {
+      const { f, w } = parts[t.pos];
+      const m = placed(f.x, f.z, f.rot);
+      const onSide = !f.corner && !f.flat;
+      const front = f.corner ? 0.05 : f.flat ? 0.34 : 0.1;
+      const model = t.type === 'city' ? buildMonument(t.model) : buildSpecial(t.type);
+      model.rotation.y = -f.rot; // quel que soit le côté du plateau, le monument nous fait face
+      const fit = (k) => {
+        model.scale.setScalar(1);
+        model.position.set(0, 0, 0);
+        fitModel(model, w, front, (HEROES[t.model] ?? 1) * k, f.flip, f.corner && f.flip ? BOTTOM_CORNER_H : f.flat ? Infinity : t.type === 'chantier' ? 1.6 : SIDE_HEROES[t.model] ?? SIDE_H, onSide ? -0.03 : 0.35);
+        if (onSide) model.position.x += f.rot < 0 ? -SIDE_BACK : SIDE_BACK; // reculé sur sa case : le pion se tient devant, sur la case
+      };
+      fit(1);
+      if (f.flip && !f.corner) clearNames(model, m, fit, spans);
+      parts[t.pos].top = new THREE.Box3().setFromObject(model).max.y;
+      return { object: model, matrix: m, ao: PLATE_H, tile: t.pos, lift: true };
+    });
+  }
+  let monuments = null;
+  let rise = null; // l'arrivée des monuments : de 0 à 1
 
   // ——— À qui sont les villes ———
   const tints = new Map();
@@ -1030,7 +1105,6 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   let lastRollN = -1;
 
   // ——— La caméra : une vue fixe, sans perspective. Le plateau reste un rectangle, toutes les cases ont la même taille ———
-  const PITCH = 0.85; // l'inclinaison : assez plongeante pour tout lire, assez basse pour voir les monuments debout
   let size = { w: 0, h: 0 };
   camera.position.set(0, Math.sin(PITCH) * 150, Math.cos(PITCH) * 150);
   camera.lookAt(0, 0, 0);
@@ -1080,6 +1154,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   // ——— La boucle : elle ne tourne que quand quelque chose bouge ———
   let raf = 0;
   let last = 0;
+  // Après CALM_MS sans rien de neuf (pas d'animation, pas de nouvel état, pas de geste), le plateau arrête de se redessiner :
+  // l'image reste affichée telle quelle et la batterie respire. Le moindre événement (wake) relance la boucle.
+  const CALM_MS = 8000;
+  let calmAt = performance.now() + CALM_MS;
   const quality = { frames: 0, total: 0, step: 0 };
 
   function lowerQuality() {
@@ -1164,7 +1242,8 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         const target = pawnSpot(pawn.player, pawn.shown);
         const scale = PAWN_SCALE * crowdScale(peopleOn(pawn.shown, pawn).length);
         const k = 1 - Math.exp(-dt * 10);
-        if (pawn.mesh.position.distanceToSquared(target) > 0.0004 || Math.abs(pawn.mesh.scale.x - scale) > 0.002) {
+        // Seuls x et z se rapprochent ici : comparer aussi la hauteur (relevée sur la case du joueur) gardait la boucle active en permanence.
+        if ((pawn.mesh.position.x - target.x) ** 2 + (pawn.mesh.position.z - target.z) ** 2 > 0.0004 || Math.abs(pawn.mesh.scale.x - scale) > 0.002) {
           crowdMoving = true;
           busy = true;
           pawn.mesh.position.x += (target.x - pawn.mesh.position.x) * k;
@@ -1295,6 +1374,17 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
         if (r.first) react(r.id, 'joy', 4);
       }
     }
+    if (rise !== null) { // les monuments sortent de leur case, puis leurs ombres se posent
+      rise = Math.min(1, rise + dt / MONUMENTS_RISE_S);
+      const k = Math.max(0.001, 1 - (1 - rise) ** 3);
+      monuments.scale.y = k;
+      monuments.position.y = PLATE_H * (1 - k);
+      busy = true;
+      if (rise >= 1) {
+        rise = null;
+        monumentsShown();
+      }
+    }
     for (let i = fades.length - 1; i >= 0; i -= 1) { // la faillite : le pion rétrécit et tombe
       const f = fades[i];
       f.t += dt / 0.6;
@@ -1373,14 +1463,18 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       }
     }
     if (busy) wake();
-    else if (lifeOn() && !lifeTimer) { // au repos, une image de temps en temps suffit : la machine reste tranquille
+    else if (lifeOn() && !lifeTimer && now < calmAt) { // au repos, une image de temps en temps suffit : la machine reste tranquille
       lifeTimer = setTimeout(() => {
         lifeTimer = 0;
-        wake();
-      }, 100); // 10 images par seconde au repos : les drapeaux flottent, et la batterie tient
+        kick();
+      }, 100); // 10 images par seconde au début du repos : les drapeaux flottent, puis plus rien (voir CALM_MS)
     }
   }
   function wake() {
+    calmAt = performance.now() + CALM_MS;
+    kick();
+  }
+  function kick() {
     if (raf) return;
     if (!last || performance.now() - last > 100) last = performance.now() - 16;
     raf = requestAnimationFrame(tick);
@@ -1404,7 +1498,10 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
     return raycaster.intersectObjects(hitBoxes, false)[0]?.object.userData.pos ?? null;
   };
   let downAt = null;
-  const onDown = (e) => { downAt = { x: e.clientX, y: e.clientY }; };
+  const onDown = (e) => {
+    downAt = { x: e.clientX, y: e.clientY };
+    wake(); // un geste sur le plateau relance la vie douce du décor
+  };
   // Sur « click » et pas « pointerup » : au doigt, le clic arrive juste après, et il refermerait la fiche qui vient de s'ouvrir sous lui.
   const onClick = (e) => {
     const start = downAt;
@@ -1554,6 +1651,32 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
   // Tout préparer dès le chargement : le premier lancer de dés ne doit pas faire saccader le jeu.
   renderer.compile(scene, camera);
 
+  // Pose les monuments, une seule fois. rise : ils sortent doucement de leur case (jamais si l'animation est réduite).
+  // Leur ombre attend qu'ils soient debout : calculée pendant la montée, elle serait celle des monuments entiers.
+  function showMonuments(rising) {
+    if (monuments) return;
+    monuments = new THREE.Mesh(bake(monumentItems(), { fullColor: true }), world.material);
+    monuments.receiveShadow = true;
+    monuments.frustumCulled = false;
+    scene.add(monuments);
+    for (const key of shots.keys()) if (key.startsWith('m')) shots.delete(key); // une fiche ouverte avant leur arrivée montrait la version en code
+    if (marker.visible && view) {
+      markerBase = parts[view.players[view.cur].pos].top + 0.75;
+      marker.position.y = markerBase;
+    }
+    if (rising && !reduced) {
+      rise = 0;
+      monuments.scale.y = 0.001;
+      monuments.position.y = PLATE_H;
+    } else monumentsShown();
+    wake();
+  }
+  function monumentsShown() {
+    monuments.castShadow = true;
+    renderer.shadowMap.needsUpdate = true;
+    host.dataset.monuments = 'ok'; // pour les tests : tout le plateau est là
+  }
+
   // ——— De petites images rendues une seule fois : le portrait d'un voyageur, le monument d'une ville ———
   function snapshot(key, build, frame) {
     if (shots.has(key)) return shots.get(key);
@@ -1600,6 +1723,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
 
   return {
     update,
+    showMonuments,
     walking,
     payCoins,
     react,

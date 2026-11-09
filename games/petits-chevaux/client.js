@@ -235,7 +235,7 @@ export function mount(root, api) {
   function tokenLabel(seat, horse, choosable) {
     const p = v.pos[seat][horse];
     const where = p === 0 ? 'à l’écurie' : p === TOP ? 'arrivé' : p > LAP ? `sur l’échelle, barreau ${p - LAP}` : `sur le circuit, case ${p}`;
-    return `Cheval ${horse + 1} ${COLORS[v.colors[seat]].name} de ${api.user(v.players[seat]).pseudo}, ${where}${choosable ? ', touche pour le jouer' : ''}`;
+    return `Cheval ${horse + 1} ${COLORS[v.colors[seat]].name} (${api.user(v.players[seat]).pseudo}), ${where}${choosable ? ', touche pour le jouer' : ''}`;
   }
 
   function renderTargets() {
@@ -285,13 +285,13 @@ export function mount(root, api) {
     const who = l.seat === v.you ? 'Tu as' : `${api.user(v.players[l.seat]).pseudo} a`;
     if (l.horse === null) {
       if (v.phase === 'choose' && v.turn === l.seat) return `${who} fait ${l.die}.`;
-      return `${who} fait ${l.die} : aucun coup possible.`;
+      return `${who} fait ${l.die} : aucun coup possible.`;
     }
-    let text = `${who} fait ${l.die} : `;
+    let text = `${who} fait ${l.die} : `;
     text += l.from === 0 ? `le cheval ${l.horse + 1} sort de l’écurie` : l.to === TOP ? `le cheval ${l.horse + 1} arrive en haut de l’échelle` : `le cheval ${l.horse + 1} avance`;
-    if (l.captured) text += `, et prend le cheval ${l.captured.horse + 1} de ${api.user(v.players[l.captured.seat]).pseudo}`;
+    if (l.captured) text += `, et prend le cheval ${l.captured.horse + 1} (${api.user(v.players[l.captured.seat]).pseudo})`;
     text += '.';
-    if (l.die === 6 && v.phase !== 'over') text += ` ${l.seat === v.you ? 'Tu rejoues' : 'Il rejoue'} !`;
+    if (l.die === 6 && v.phase !== 'over') text += ` ${l.seat === v.you ? 'Tu rejoues' : 'Il rejoue'} !`;
     return text;
   }
 
@@ -299,14 +299,14 @@ export function mount(root, api) {
     if (v.phase === 'over') {
       const w = v.players.indexOf(v.winner);
       const home = v.pos[w].every((p) => p === TOP);
-      if (w === v.you) return home ? 'Tu gagnes ! Tes quatre chevaux sont en haut.' : 'Tu gagnes : les autres ont quitté la partie.';
-      return home ? `${api.user(v.winner).pseudo} gagne : ses quatre chevaux sont en haut.` : `${api.user(v.winner).pseudo} gagne : les autres ont quitté la partie.`;
+      if (w === v.you) return home ? 'Tu gagnes ! Tes quatre chevaux sont en haut.' : 'Tu gagnes : les autres ont quitté la partie.';
+      return home ? `${api.user(v.winner).pseudo} gagne : ses quatre chevaux sont en haut.` : `${api.user(v.winner).pseudo} gagne : les autres ont quitté la partie.`;
     }
     if (!info?.isPlayer || v.you === null || v.you < 0) return `${api.user(v.players[v.turn]).pseudo} ${v.phase === 'choose' ? 'choisit un cheval' : 'lance le dé'}…`;
-    if (v.left.includes(v.players[v.you])) return 'Tu as quitté la partie : tu regardes.';
+    if (v.left.includes(v.players[v.you])) return 'Tu as quitté la partie : tu regardes.';
     if (myTurn()) {
-      if (v.phase === 'choose') return `Tu as fait ${v.die} : choisis ton cheval.`;
-      return v.tries > 1 ? `À toi : sors un cheval avec un 6 (${v.tries} essais)` : 'À toi : lance le dé !';
+      if (v.phase === 'choose') return `Tu as fait ${v.die} : choisis ton cheval.`;
+      return v.tries > 1 ? `À toi : sors un cheval avec un 6 (${v.tries} essais)` : 'À toi : lance le dé !';
     }
     return `${api.user(v.players[v.turn]).pseudo} ${v.phase === 'choose' ? 'choisit un cheval' : 'lance le dé'}…`;
   }
@@ -340,8 +340,8 @@ export function mount(root, api) {
     const last = v.last;
     const shown = v.phase === 'choose' ? v.die : last?.die ?? null;
     dieEl.dataset.face = shown ? String(shown) : '0';
-    dieEl.setAttribute('aria-label', shown ? `Dé : ${shown}` : 'Dé : pas encore lancé');
-    dieWho.textContent = last ? (last.seat === v.you ? 'ton dernier lancer' : `lancer de ${api.user(v.players[last.seat]).pseudo}`) : '';
+    dieEl.setAttribute('aria-label', shown ? `Dé : ${shown}` : 'Dé : pas encore lancé');
+    dieWho.textContent = last ? (last.seat === v.you ? 'ton dernier lancer' : `dernier lancer : ${api.user(v.players[last.seat]).pseudo}`) : '';
     if (v.rolls !== lastRolls) {
       dieEl.classList.remove('is-rolling');
       void dieEl.offsetWidth;
@@ -359,7 +359,7 @@ export function mount(root, api) {
       svgEl('svg', { viewBox: '-20 -20 40 40', width: 34, height: 34, 'aria-hidden': 'true' },
         svgEl('g', { fill: COLORS[v.colors[v.you]].fill, stroke: INK, 'stroke-width': 3.4, 'stroke-linejoin': 'round' }, tokenShape(v.colors[v.you], 16)),
         svgEl('text', { y: 6, 'text-anchor': 'middle', class: 'pc-num', fill: INK }, String(c.horse + 1))),
-      h('span', h('b', `Cheval ${c.horse + 1}`), h('small', choiceText(c) + (c.capture ? ` · prend un cheval de ${api.user(v.players[c.capture.seat]).pseudo}` : ''))))));
+      h('span', h('b', `Cheval ${c.horse + 1}`), h('small', choiceText(c) + (c.capture ? ` · prend un cheval (${api.user(v.players[c.capture.seat]).pseudo})` : ''))))));
     } else if (myTurn() && v.phase === 'roll') {
       actionEl.replaceChildren(h('button.pc-roll', { type: 'button', onclick: () => send({ type: 'roll' }) }, horseIcon(), 'Lancer le dé'));
     } else {
@@ -375,7 +375,7 @@ export function mount(root, api) {
     const left = Math.max(0, v.deadline - api.now());
     timerBar.style.transform = `scaleX(${Math.min(1, left / (v.timer * 1000))})`;
     timerEl.classList.toggle('is-low', left < 8000);
-    timerEl.setAttribute('aria-label', `Temps restant : ${Math.ceil(left / 1000)} secondes`);
+    timerEl.setAttribute('aria-label', `Temps restant : ${Math.ceil(left / 1000)} secondes`);
   }
   const clock = setInterval(() => { if (v) renderTimer(); }, 200);
 

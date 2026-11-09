@@ -9,7 +9,7 @@ const RANK_NAME = { 2: 'deux', 3: 'trois', 4: 'quatre', 5: 'cinq', 6: 'six', 7: 
 const DENOMS = [[1000, 'd5'], [500, 'd4'], [100, 'd3'], [50, 'd2'], [10, 'd1'], [1, 'd0']];
 const ACTION_LABEL = { check: 'Parole', call: 'Suit', raise: 'Relance', bet: 'Mise', allin: 'Tapis', fold: 'Couché' };
 
-const fmt = (n) => Number(n).toLocaleString('fr-FR');
+const fmt = (n) => Number(n).toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0');
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function mount(root, api) {
@@ -112,7 +112,7 @@ export function mount(root, api) {
     ['Brelan', '3 cartes du même rang'],
     ['Double paire', 'deux paires différentes'],
     ['Paire', '2 cartes du même rang'],
-    ['Carte haute', 'rien de tout ça : la carte la plus haute'],
+    ['Carte haute', 'rien de tout ça : la carte la plus haute'],
   ];
   const handsPanel = h('div.pk-hands', { id: 'pk-hands', hidden: true, role: 'region', 'aria-label': 'Ordre des combinaisons' },
     h('p.pk-hands-title', 'De la plus forte à la plus faible'),
@@ -198,7 +198,7 @@ export function mount(root, api) {
   function resultLines() {
     const sd = v.showdown;
     if (!sd) return null;
-    const winnersOf = (list) => list.map(name).join(' et ');
+    const winnersOf = (list) => list.map(name).join(', ').replace(/, ([^,]*)$/, ' et $1');
     let side = 0;
     return sd.pots.map((pot, i) => {
       let label = 'Pot';
@@ -218,7 +218,7 @@ export function mount(root, api) {
     if (!main) return '';
     const names = main.winners.map(name);
     const me = main.winners.includes(api.me.id);
-    if (names.length > 1) return `${names.join(' et ')} se partagent le pot`;
+    if (names.length > 1) return `${names.join(', ').replace(/, ([^,]*)$/, ' et $1')} se partagent le pot`;
     return me ? 'Tu remportes le pot' : `${names[0]} remporte le pot`;
   }
 
@@ -299,7 +299,7 @@ export function mount(root, api) {
     potStack.replaceChildren(showPot > 0 ? chipStack(showPot) : '');
     // Blindes posées mais rien encore au pot : on montre la somme des mises plutôt que « Pot vide ».
     const openBets = v.phase === 'hand' && showPot === 0 ? bets : 0;
-    potLabel.textContent = showPot > 0 ? `Pot ${fmt(showPot)}` : openBets > 0 ? `Mises : ${fmt(openBets)}` : v.phase === 'result' ? '' : 'Pot vide';
+    potLabel.textContent = showPot > 0 ? `Pot ${fmt(showPot)}` : openBets > 0 ? `Mises : ${fmt(openBets)}` : v.phase === 'result' ? '' : 'Pot vide';
     potEl.classList.toggle('is-empty', showPot === 0);
     potEl.hidden = v.phase !== 'hand' && showPot === 0;
     if (v.phase === 'hand') {
@@ -360,7 +360,7 @@ export function mount(root, api) {
       statusEl.textContent = '';
       const winner = v.winner;
       actionsEl.append(h('div.pk-final',
-        h('p.pk-final-title', winner === api.me.id ? 'Tu remportes la partie !' : winner ? `${api.user(winner).pseudo} remporte la partie` : 'Partie terminée'),
+        h('p.pk-final-title', winner === api.me.id ? 'Tu remportes la partie !' : winner ? `${api.user(winner).pseudo} remporte la partie` : 'Partie terminée'),
         h('ol.pk-rank', v.ranking.map((id, i) => h(`li${id === api.me.id ? '.is-me' : ''}`,
           h('span.pk-pos', String(i + 1)), h('span.pk-pn', api.user(id).pseudo), h('b', fmt(v.seats.find((s) => s.id === id).chips)))))));
       return;
@@ -378,13 +378,13 @@ export function mount(root, api) {
     }
     if (meSeat.out) {
       statusEl.textContent = '';
-      actionsEl.append(h('p.pk-wait', meSeat.left ? 'Tu as quitté la partie.' : 'Tu es éliminé : tu regardes la fin de la partie.'));
+      actionsEl.append(h('p.pk-wait', meSeat.left ? 'Tu as quitté la partie.' : 'Tu es éliminé : tu regardes la fin de la partie.'));
       return;
     }
     if (!o) {
       raiseOpen = false;
       statusEl.textContent = meSeat.folded ? `Tu t’es couché. ${v.toAct ? `${api.user(v.toAct).pseudo} doit parler.` : ''}`
-        : meSeat.allIn ? 'Tu es à tapis : plus qu’à attendre les cartes.' : v.toAct ? `${api.user(v.toAct).pseudo} doit parler.` : '';
+        : meSeat.allIn ? 'Tu es à tapis : plus qu’à attendre les cartes.' : v.toAct ? `${api.user(v.toAct).pseudo} doit parler.` : '';
       if (meSeat.folded) actionsEl.append(h('p.pk-wait', 'Attends la prochaine main.'));
       return;
     }
@@ -397,7 +397,7 @@ export function mount(root, api) {
       raiseOpen = false;
     }
     raiseTo = Math.min(Math.max(raiseTo, o.minTo), o.maxTo);
-    statusEl.textContent = o.canCheck ? 'À toi de parler.' : `À toi de parler : ${fmt(o.toCall)} à suivre.`;
+    statusEl.textContent = o.canCheck ? 'À toi de parler.' : `À toi de parler : ${fmt(o.toCall)} à suivre.`;
 
     const send = (action) => api.sendMove(action).catch(() => {});
     const callAll = o.toCall >= meSeat.chips;

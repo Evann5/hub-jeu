@@ -6,16 +6,16 @@ import { FLAGS } from './client/countries.js';
 import { createSound } from './client/sound.js';
 import { loadSculpted } from './client/monuments.js';
 
-const money = (n) => `${Number(n).toLocaleString('fr-FR')} €`;
+const money = (n) => `${Number(n).toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0')} €`;
 
 const ABOUT = {
-  start: 'Tu touches 200 € à chaque passage.',
-  customs: 'Simple visite si tu tombes dessus. Retenu ici : fais un double ou paie 50 €. Au troisième échec, tu paies et tu avances.',
-  festival: 'Tu gagnes 100 €.',
+  start: 'Tu touches 200 € à chaque passage.',
+  customs: 'Simple visite si tu tombes dessus. Retenu ici : fais un double ou paie 50 €. Au troisième échec, tu paies et tu avances.',
+  festival: 'Tu gagnes 100 €.',
   control: 'Direction la Douane, sans passer par le Départ.',
-  telex: 'Une dépêche au hasard : bonne ou mauvaise nouvelle.',
-  tax: 'Impôts : 10 % de ton argent, 50 € au moins. Taxe de séjour : 100 €.',
-  chantier: 'Tu paies 50 € de travaux.',
+  telex: 'Une dépêche au hasard : bonne ou mauvaise nouvelle.',
+  tax: 'Impôts : 10 % de ton argent, 50 € au moins. Taxe de séjour : 100 €.',
+  chantier: 'Tu paies 50 € de travaux.',
 };
 
 export function mount(root, api) {
@@ -63,7 +63,7 @@ export function mount(root, api) {
   const turnBox = h('div.es-turn', { hidden: true, 'aria-hidden': 'true' }); // le bandeau du hub et la liste des joueurs le disent déjà aux lecteurs d'écran
   // Sur téléphone, sous le plateau : où en est la partie, et le rappel que les cases se touchent.
   const under = h('p.es-under');
-  const outNote = h('p.es-outnote', { hidden: true }, 'Tu es éliminé : tu regardes la fin de la partie.');
+  const outNote = h('p.es-outnote', { hidden: true }, 'Tu es éliminé : tu regardes la fin de la partie.');
   const frame = h('div.es', stage, loading, tip, turnBox, under, outNote, side, flash, action, layer);
   api.gateTurn();
   root.append(frame);
@@ -78,7 +78,15 @@ export function mount(root, api) {
     applyMap(map);
     const tileText = TILES.map((t) => t.short ?? t.name).join('');
     const titleText = `${REGIONS.map((r) => r.name).join('')}Escales`;
-    Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('800 60px "ES Titres"', titleText), loadSculpted(api.asset)]).catch(() => {}).finally(() => {
+    // Les monuments (une quarantaine de petits fichiers) ne retardent plus le plateau : les polices passent d'abord, le plateau s'affiche,
+    // puis les monuments sortent de leur case. Déjà en cache, ils arrivent dans l'instant et sont posés tout de suite, sans animation.
+    let sculptedIn = false;
+    let sculpted = null;
+    const fonts = Promise.all([document.fonts.load('800 40px "ES Barlow"', tileText), document.fonts.load('700 30px "ES Barlow"', '0123456789 €'), document.fonts.load('800 60px "ES Titres"', titleText)]).catch(() => {});
+    fonts.then(() => {
+      sculpted = loadSculpted(api.asset).then(() => { sculptedIn = true; });
+      return Promise.race([sculpted, new Promise((ok) => { setTimeout(ok, 150); })]);
+    }).finally(() => {
       if (gone) return;
       try {
         world = createWorld(stage, {
@@ -119,6 +127,8 @@ export function mount(root, api) {
         boardReady = true;
         if (v) renderAction();
         loading.remove();
+        if (sculptedIn) world.showMonuments(false);
+        else sculpted?.then(() => { if (!gone && world) world.showMonuments(true); });
       } catch (err) {
         loading.remove();
         console.error(err);
@@ -154,7 +164,7 @@ export function mount(root, api) {
         : `Libre, ${money(t.price)}`));
       if (prop?.level) lines.push(h('span', LEVEL_NAMES[prop.level]));
     }
-    if (here.length) lines.push(h('span', `Ici : ${here.join(', ')}`));
+    if (here.length) lines.push(h('span', `Ici : ${here.join(', ')}`));
     tip.replaceChildren(...lines);
     tip.style.borderColor = owner ? PAWN_COLORS[owner.seat] : 'transparent';
     tip.style.transform = `translate(${Math.round(x + 14)}px, ${Math.round(y + 14)}px)`;
@@ -191,7 +201,7 @@ export function mount(root, api) {
     const old = before.cash.get(p.id);
     const d = old === undefined ? 0 : p.cash - old;
     if (!d || v.over || p.out) return null;
-    return h(`span.es-delta${d > 0 ? '.is-up' : '.is-down'}`, { 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d.toLocaleString('fr-FR')} €`);
+    return h(`span.es-delta${d > 0 ? '.is-up' : '.is-down'}`, { 'aria-hidden': 'true' }, `${d > 0 ? '+' : ''}${d.toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0')} €`);
   }
 
   // Chaque événement a son son.
@@ -210,7 +220,7 @@ export function mount(root, api) {
       sound.turn();
       navigator.vibrate?.(70); // sur téléphone, on sent que c'est à soi
     }
-    document.title = !v.over && document.hidden && myTurn() ? `À toi ! ${pageTitle}` : pageTitle;
+    document.title = !v.over && document.hidden && myTurn() ? `À toi ! ${pageTitle}` : pageTitle;
     const outNow = v.players.filter((p) => p.out).length;
     if (before.out !== undefined && outNow > before.out && !v.over) sound.fail();
     before.out = outNow;
@@ -270,23 +280,23 @@ export function mount(root, api) {
       : missing <= 0 ? 'Avec celle-ci, tu peux construire'
         : `Encore ${missing} ville${missing > 1 ? 's' : ''} après celle-ci pour construire`;
     const left = me().cash - t.price;
-    return h('button.es-offer', { type: 'button', 'aria-label': `Voir la fiche de ${t.name}`, onclick: () => openOverlay({ kind: 'city', pos }) },
+    return h('button.es-offer', { type: 'button', 'aria-label': `Voir la fiche : ${t.name}`, onclick: () => openOverlay({ kind: 'city', pos }) },
       picture(world?.monument(pos), '.es-offer-pic'),
       h('span.es-offer-text',
         h('span.es-stamp', { 'aria-hidden': 'true' }, 'À vendre'),
         h('b', t.name),
         h('small', isCity ? flagOf(t.region) : null, isCity ? REGIONS[t.region].name : 'Escale'),
-        h('span', isCity ? `Loyer ${money(t.rent)}, ${money(t.rent * 2)} avec ${v.majority} villes du pays` : `Loyer ${money(ESCALE_RENTS[1])}, plus avec d'autres escales`),
+        h('span', isCity ? `Loyer ${money(t.rent)}, ${money(t.rent * 2)} avec ${v.majority} villes du pays` : `Loyer ${money(ESCALE_RENTS[1])}, plus avec d’autres escales`),
         h('span.es-pips-line', { 'aria-hidden': 'true' }, pips),
         h(isCity && missing <= 0 ? 'em' : 'small.es-offer-goal', goal),
-        left >= 0 ? h(`small.es-offer-goal${left < 150 ? '.is-low' : ''}`, left < 150 ? `Il ne te restera que ${money(left)} : attention aux loyers` : `Il te restera ${money(left)}`) : null));
+        left >= 0 ? h(`small.es-offer-goal${left < 150 ? '.is-low' : ''}`, left < 150 ? `Il ne te restera que ${money(left)} : attention aux loyers` : `Il te restera ${money(left)}`) : null));
   }
 
   // Où en est le pays : à qui sont ses villes, et ce qu'il te manque pour y construire.
   function standing(t) {
     if (t.type !== 'city') {
       const n = TILES.filter((x) => x.type === 'escale' && v.props[x.pos]?.owner === meId).length;
-      return h('span.es-standing', `Loyer de base 25 €. Tu as ${n} escale${n > 1 ? 's' : ''} sur 4.`);
+      return h('span.es-standing', `Loyer de base 25 €. Tu as ${n} escale${n > 1 ? 's' : ''} sur 4.`);
     }
     const group = TILES.filter((x) => x.region === t.region);
     const mine = group.filter((x) => v.props[x.pos]?.owner === meId).length;
@@ -323,7 +333,7 @@ export function mount(root, api) {
       return h('li', h('b', name), ` : ${what} (+${money(got)})`);
     };
     return h('div.es-debtplan',
-      h('p.es-note', `Tu as ${money(p.cash)}. « Réunir l'argent » fera ceci :`),
+      h('p.es-note', `Tu as ${money(p.cash)}. « Réunir l’argent » fera ceci :`),
       h('ul', plan.map(line)),
       h('p.es-note', 'Une ville en gage ne rapporte plus de loyer. Tu peux aussi choisir toi-même dans Villes.'));
   }
@@ -337,7 +347,7 @@ export function mount(root, api) {
         const built = TILES.reduce((sum, t) => sum + (v.props[t.pos]?.owner === p.id ? v.props[t.pos].level : 0), 0);
         return [money(p.cash), n ? `${n} ville${n > 1 ? 's' : ''}` : null, built ? `${built} niveau${built > 1 ? 'x' : ''}` : null].filter(Boolean).join(' + ');
       };
-      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : v.winners.length > 3 ? `${v.winners.length} joueurs à égalité !` : `${v.winners.map(nameOf).join(' et ') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
+      return [h('p.es-big', v.winners.includes(meId) ? 'Tu gagnes !' : v.winners.length > 3 ? `${v.winners.length} joueurs à égalité !` : `${v.winners.map(nameOf).join(', ').replace(/, ([^,]*)$/, ' et $1') || 'Personne ne'} ${v.winners.length > 1 ? 'gagnent' : 'gagne'} !`),
         h(`ol.es-rank${ranked.length > 6 ? '.is-long' : ''}`, { style: `--rank-rows:${Math.ceil(ranked.length / 2)}` }, ranked.map((p, i) => h('li', { style: `--p:${PAWN_COLORS[p.seat]}` },
           h('b.es-rank-n', String(i + 1)),
           picture(world?.portrait(p.seat), '.es-face'),
@@ -351,11 +361,11 @@ export function mount(root, api) {
       case 'roll':
         if (p.blocked) {
           return [say(`Retenu à la Douane (essai ${p.blocked} sur 3).`),
-            h('p.es-note', 'Un double te libère. Au 3e essai raté, tu paies 50 € et tu avances.'),
+            h('p.es-note', 'Un double te libère. Au 3e essai raté, tu paies 50 € et tu avances.'),
             btn('Tenter un double', { type: 'roll' }),
-            p.cash >= 50 ? btn('Payer 50 €', { type: 'payFine' }, '.is-ghost') : null];
+            p.cash >= 50 ? btn('Payer 50 €', { type: 'payFine' }, '.is-ghost') : null];
         }
-        return [btn(v.again ? 'Un double ! Relance les dés' : 'Lancer les dés', { type: 'roll' }), buildLink()];
+        return [btn(v.again ? 'Un double ! Relance les dés' : 'Lancer les dés', { type: 'roll' }), buildLink()];
       case 'buy':
         return [offer(p.pos),
           h('div.es-choice',
@@ -363,7 +373,7 @@ export function mount(root, api) {
             btn('Passer', { type: 'decline' }, '.is-ghost'))];
       case 'debt':
         return [say(`Tu dois ${money(v.debt.amount)} ${v.debt.why}.`),
-          p.cash >= v.debt.amount ? null : v.raisable >= v.debt.amount ? debtNote(p) : h('p.es-note', `Même en vendant tout, tu n'aurais que ${money(v.raisable ?? p.cash)}. Négocie avec un joueur, ou c'est la faillite.`),
+          p.cash >= v.debt.amount ? null : v.raisable >= v.debt.amount ? debtNote(p) : h('p.es-note', `Même en vendant tout, tu n’aurais que ${money(v.raisable ?? p.cash)}. Négocie avec un joueur, ou c’est la faillite.`),
           p.cash >= v.debt.amount ? btn(`Payer ${money(v.debt.amount)}`, { type: 'pay' })
             : v.raisable >= v.debt.amount ? btn('Réunir l’argent et payer', { type: 'raise' }) : null,
           confirmBankrupt ? h('div.es-choice', btn('Oui, je déclare faillite', { type: 'bankrupt' }, '.is-danger'), h('button.es-btn.is-ghost', { type: 'button', onclick: () => { confirmBankrupt = false; promptKey = null; renderAction(); } }, 'Annuler'))
@@ -376,14 +386,14 @@ export function mount(root, api) {
   }
 
   // Le journal parle des joueurs par leur pseudo : quand c'est de toi, il te dit « tu ».
-  const VERBS = { gagne: 'gagnes', paie: 'paies', achète: 'achètes', laisse: 'laisses', construit: 'construis', vend: 'vends', passe: 'passes', quitte: 'quittes', fait: 'fais', doit: 'dois', rachète: 'rachètes', propose: 'proposes', récupère: 'récupères', met: 'mets', accepte: 'acceptes', refuse: 'refuses', retire: 'retires' };
+  const VERBS = { lance: 'lances', part: 'pars', gagne: 'gagnes', paie: 'paies', achète: 'achètes', laisse: 'laisses', construit: 'construis', vend: 'vends', passe: 'passes', quitte: 'quittes', fait: 'fais', doit: 'dois', rachète: 'rachètes', propose: 'proposes', récupère: 'récupères', met: 'mets', accepte: 'acceptes', refuse: 'refuses', retire: 'retires' };
   // full : dans l'historique, la carte du Télex reste en entier, entre guillemets puisqu'elle s'adresse à celui qui la tire.
   function spoken(text, full = false) {
     const name = me()?.pseudo;
-    const telex = text.match(/^Télex pour (.+?) : (.*)$/);
+    const telex = text.match(/^Télex pour (.+?)\s:\s(.*)$/);
     if (telex) {
-      if (telex[1] === name) return `Télex : ${telex[2]}`;
-      return full ? `Télex pour ${telex[1]} : « ${telex[2]} »` : `Télex pour ${telex[1]}.`;
+      if (telex[1] === name) return `Télex : ${telex[2]}`;
+      return full ? `Télex pour ${telex[1]} : « ${telex[2]} »` : `Télex pour ${telex[1]}.`;
     }
     if (!name) return text;
     if (text.endsWith(' concluent un échange.')) {
@@ -391,51 +401,94 @@ export function mount(root, api) {
       if (pair.startsWith(`${name} et `)) return `Tu conclus un échange avec ${pair.slice(name.length + 4)}.`;
       if (pair.endsWith(` et ${name}`)) return `Tu conclus un échange avec ${pair.slice(0, -(name.length + 4))}.`;
     }
-    if (text.endsWith(`l'échange de ${name}.`)) return text.replace(`l'échange de ${name}`, 'ton échange');
-    if (text.startsWith(`${name} est retenu`)) return text.replace(`${name} est retenu`, 'Tu es retenu');
+    if (text.endsWith(`l’échange proposé par ${name}.`)) return text.replace(`l’échange proposé par ${name}`, 'ton échange');
     const [verb] = text.slice(name.length + 1).split(' ');
     if (text.startsWith(`${name} `) && VERBS[verb]) return `Tu ${VERBS[verb]}${text.slice(name.length + 1 + verb.length)}`;
+    if (text.endsWith(` propose un échange à ${name}.`)) return `${text.slice(0, -` propose un échange à ${name}.`.length)} te propose un échange.`;
+    // « Frida paie 22 € à Tom (Rome). », lu par Tom : « Frida te paie 22 € (Rome). »
+    const pay = text.indexOf(' paie ');
+    const toMe = text.indexOf(` à ${name}`, pay);
+    if (pay > 0 && toMe > pay) {
+      const rest = text.slice(toMe + name.length + 3);
+      if (rest === '.' || rest.startsWith(' (')) return `${text.slice(0, pay)} te paie ${text.slice(pay + 6, toMe)}${rest}`;
+    }
     return text.replaceAll(` à ${name} `, ' à toi ').replaceAll(` à ${name}.`, ' à toi.');
   }
 
   // Ce qui vient de se passer : une ligne, quelques secondes, puis plus rien.
+  // Les robots enchaînent plus vite que les pions ne marchent : les lignes attendent leur tour, pour que chacune se lise.
+  const FLASH_MIN = 1500;
+  const FLASH_MAX_WAITING = 4;
   let flashN = null;
   let flashTimer = 0;
+  let flashQueue = [];
+  let flashShownAt = 0;
+  let flashHold = 0;
   let hinted = false;
+  // Un gros loyer, c'est le moment fort de la partie : il se voit, et il reste plus longtemps.
+  const isHuge = (text) => {
+    const paid = text.match(/ paie ([\d\s\u202f]+)€/);
+    return Boolean(paid) && Number(paid[1].replace(/\D/g, '')) >= 300 && / à /.test(text);
+  };
+  function holdFlash(text, ms, big) {
+    clearTimeout(flashTimer);
+    flash.textContent = text;
+    flash.classList.add('is-on');
+    flash.classList.toggle('is-big', big);
+    flashShownAt = performance.now();
+    flashHold = ms;
+    flashTimer = setTimeout(nextFlash, ms);
+  }
+  function nextFlash() {
+    const line = flashQueue.shift();
+    if (line) {
+      const huge = isHuge(line.text);
+      holdFlash(spoken(line.text), huge ? 4500 : flashQueue.length ? FLASH_MIN : 3000, huge);
+      return;
+    }
+    flashTimer = 0;
+    flashHold = 0;
+    flash.classList.remove('is-on', 'is-big');
+  }
   function renderFlash(busy) {
     if (!hinted && !busy && !v.over && window.matchMedia('(hover: none)').matches) { // sur écran tactile, une fois : les noms sont petits, la fiche est à un toucher
       hinted = true;
-      flash.textContent = 'Touche une case pour voir sa fiche.';
-      flash.classList.add('is-on');
-      flashTimer = setTimeout(() => flash.classList.remove('is-on'), 3500);
       flashN = v.log.at(-1)?.n ?? 0;
+      holdFlash('Touche une case pour voir sa fiche.', 3500, false);
       return;
     }
-    const last = v.log.at(-1);
-    const fresh = flashN !== null && last && last.n > flashN;
-    flashN = last?.n ?? 0;
+    const seen = flashN;
+    flashN = v.log.at(-1)?.n ?? 0;
     if (announce && !v.over) {
-      flash.textContent = announce;
+      flashQueue = [];
+      holdFlash(announce, 4000, true);
       announce = null;
-      flash.classList.add('is-on', 'is-big');
+      return;
+    }
+    if (v.over) {
+      flashQueue = [];
+      nextFlash();
       clearTimeout(flashTimer);
-      flashTimer = setTimeout(() => flash.classList.remove('is-on', 'is-big'), 4000);
       return;
     }
-    // Une fiche à décider cache la ligne, sauf pour la réponse à un échange : elle ne doit pas passer inaperçue.
-    if (v.over || (busy && !(fresh && /échange/i.test(last.text)))) {
-      flash.classList.remove('is-on');
+    const news = seen === null ? [] : v.log.filter((l) => l.n > seen && !/ lance \d/.test(l.text)); // les dés se voient sur le plateau
+    flashQueue.push(...news);
+    // Une fiche à décider cache la ligne, sauf pour ce qui ne doit pas passer inaperçu : la réponse à un échange, un gros loyer.
+    if (busy) flashQueue = flashQueue.filter((l) => /échange/i.test(l.text) || isHuge(l.text));
+    while (flashQueue.length > FLASH_MAX_WAITING) {
+      const i = flashQueue.findIndex((l) => !isHuge(l.text));
+      flashQueue.splice(i < 0 ? 0 : i, 1); // trop de retard : on laisse tomber la plus ancienne ligne ordinaire
+    }
+    if (busy && !flashQueue.length) {
+      nextFlash(); // plus rien à montrer : on efface
       return;
     }
-    if (!fresh || / lance \d/.test(last.text)) return; // les dés se voient sur le plateau
-    flash.textContent = spoken(last.text);
-    // Un gros loyer, c'est le moment fort de la partie : il se voit, et il reste plus longtemps.
-    const paid = last.text.match(/ paie ([\d\s\u202f]+) €/);
-    const huge = paid && Number(paid[1].replace(/\D/g, '')) >= 300 && / à /.test(last.text);
-    flash.classList.add('is-on');
-    flash.classList.toggle('is-big', Boolean(huge));
+    if (!flashQueue.length) return;
+    // La ligne affichée va au bout de son temps minimum, puis la suivante prend sa place sans attendre.
+    const left = flashHold ? Math.min(flashHold, FLASH_MIN) - (performance.now() - flashShownAt) : 0;
     clearTimeout(flashTimer);
-    flashTimer = setTimeout(() => flash.classList.remove('is-on', 'is-big'), huge ? 5500 : 3000);
+    if (left > 0) flashTimer = setTimeout(nextFlash, left);
+    else nextFlash();
   }
 
   // Au milieu du plateau : le voyageur dont c'est le tour, en grand.
@@ -466,7 +519,7 @@ export function mount(root, api) {
     const fresh = turnKey !== null;
     turnKey = key;
     turnBox.style.setProperty('--p', PAWN_COLORS[p.seat]);
-    turnBox.replaceChildren(picture(world.portrait(p.seat), '.es-face') ?? h('i.es-dot'), h('p', h('b', mine ? 'À toi !' : p.pseudo), h('small', where)));
+    turnBox.replaceChildren(picture(world.portrait(p.seat), '.es-face') ?? h('i.es-dot'), h('p', h('b', mine ? 'À toi !' : p.pseudo), h('small', where)));
     if (fresh && !QUIET) {
       turnBox.classList.remove('is-in');
       void turnBox.offsetWidth;
@@ -493,10 +546,10 @@ export function mount(root, api) {
     round.classList.toggle('is-last', lastRound);
     under.classList.toggle('is-last', lastRound);
     under.hidden = v.over;
-    under.textContent = `${lastRound ? 'Dernier tour !' : round.textContent} · Touche une case pour sa fiche`;
+    under.textContent = `${lastRound ? 'Dernier tour !' : round.textContent} · Touche une case pour sa fiche`;
     if (lastRound && !lastAnnounced) {
       lastAnnounced = true;
-      announce = 'Dernier tour !';
+      announce = 'Dernier tour !';
     }
     const plain = myTurn() && ((v.phase === 'roll' && !v.players[v.cur].blocked) || v.phase === 'end'); // un simple bouton, sans carte autour
     action.classList.toggle('is-plain', plain);
@@ -554,8 +607,8 @@ export function mount(root, api) {
     const none = after(meId, [], []);
     const mine = unlocks(iGet, after(meId, iGet, iGive), none);
     const theirs = unlocks(iGive, after(other.id, iGive, iGet), after(other.id, [], []));
-    if (mine.length) lines.push(`Tu pourrais construire : ${mine.join(', ')}.`);
-    if (theirs.length) lines.push(`${other.pseudo} pourrait construire : ${theirs.join(', ')}.`);
+    if (mine.length) lines.push(`Tu pourrais construire : ${mine.join(', ')}.`);
+    if (theirs.length) lines.push(`${other.pseudo} pourrait construire : ${theirs.join(', ')}.`);
     return lines.length ? h('p.es-trade-note', lines.join(' ')) : null;
   }
 
@@ -563,7 +616,7 @@ export function mount(root, api) {
     const incoming = t.to === meId;
     const other = v.players.find((p) => p.id === (incoming ? t.from : t.to));
     return h('div.es-trade', { style: `--p:${PAWN_COLORS[other.seat]}` },
-      h('p.es-trade-who', picture(world?.portrait(other.seat), '.es-face'), incoming ? `${other.pseudo} te propose un échange` : `En attente de ${other.pseudo}`),
+      h('p.es-trade-who', picture(world?.portrait(other.seat), '.es-face'), incoming ? `${other.pseudo} te propose un échange` : `${other.pseudo} n’a pas encore répondu`),
       h('dl.es-trade-sum',
         h('dt', 'Tu reçois'), h('dd', offerText(incoming ? t.give : t.get)),
         h('dt', 'Tu donnes'), h('dd', offerText(incoming ? t.get : t.give))),
@@ -628,8 +681,8 @@ export function mount(root, api) {
       h('p.es-fact', t.fact ?? 'Le propriétaire encaisse selon le nombre d’escales qu’il possède.'),
       whoHere(pos),
       t.type === 'city' ? standing(t) : null,
-      h('p.es-owner', owner ? `${owner.id === meId ? 'À toi' : `À ${owner.pseudo}`}${prop.mortgaged ? ', en gage' : ''}. Loyer actuel : ${money(v.rents[pos] ?? 0)}.` : `Libre. Prix : ${money(t.price)}.`),
-      prop?.level ? h('p', `Niveau : ${LEVEL_NAMES[prop.level]} (${prop.level} sur ${MAX_LEVEL}).`) : null,
+      h('p.es-owner', owner ? `${owner.id === meId ? 'À toi' : `À ${owner.pseudo}`}${prop.mortgaged ? ', en gage' : ''}. Loyer actuel : ${money(v.rents[pos] ?? 0)}.` : `Libre. Prix : ${money(t.price)}.`),
+      prop?.level ? h('p', `Niveau : ${LEVEL_NAMES[prop.level]} (${prop.level} sur ${MAX_LEVEL}).`) : null,
       h('dl.es-rents', lines.map(([k, val], i) => [h(`dt${i === now ? '.is-now' : ''}`, k), h(`dd${i === now ? '.is-now' : ''}`, money(val))])),
       t.build ? h('p.es-note', `Construire un niveau coûte ${money(v.costs[pos] ?? t.build)}. Il faut ${v.majority} villes du pays.`) : null,
       h('div.es-row',
@@ -637,7 +690,7 @@ export function mount(root, api) {
         a.unmortgage.includes(pos) ? btn(`Récupérer (${money(unmortgageCost(t))})`, { type: 'unmortgage', pos }) : null,
         a.sell.includes(pos) ? btn('Vendre un niveau', { type: 'sell', pos }, '.is-ghost') : null,
         a.mortgage.includes(pos) ? btn(`Mettre en gage (+${money(mortgageValue(t))})`, { type: 'mortgage', pos }, '.is-ghost') : null),
-      a.mortgage.includes(pos) ? h('p.es-note', `En gage : plus de loyer, et ${money(unmortgageCost(t))} pour la récupérer.`) : null);
+      a.mortgage.includes(pos) ? h('p.es-note', `En gage : plus de loyer, et ${money(unmortgageCost(t))} pour la récupérer.`) : null);
   }
 
   // Les villes, pays par pays : on voit d'un coup où l'on approche de la majorité. Les pays où l'on a le plus viennent d'abord.
@@ -707,7 +760,7 @@ export function mount(root, api) {
       h('dl.es-rents', h('dt', 'Tour'), h('dd', v.maxRounds ? `${Math.min(v.round, v.maxRounds)} sur ${v.maxRounds}` : String(v.round)), h('dt', 'Temps par action'), h('dd', v.timer ? `${v.timer} s` : 'Sans limite'), h('dt', 'Joueurs'), h('dd', String(v.players.length)), h('dt', 'Villes pour construire'), h('dd', `${v.majority} sur 4`)),
       h('h3', 'Les règles en bref'),
       h('ul.es-rules', RULES.map((r) => h('li', r))),
-      h('p.es-note', 'À l’ordinateur : la barre d’espace lance les dés et termine ton tour. Touche une case pour voir sa fiche, et un joueur pour voir ses villes. Pour abandonner : le bouton est à côté de la liste des joueurs (onglet Chat sur téléphone).'));
+      h('p.es-note', 'À l’ordinateur : la barre d’espace lance les dés et termine ton tour. Touche une case pour voir sa fiche, et un joueur pour voir ses villes. Pour abandonner : le bouton est à côté de la liste des joueurs (onglet Chat sur téléphone).'));
   }
 
   // Construire : les villes possibles, un bouton par ville.
@@ -805,7 +858,7 @@ export function mount(root, api) {
       const wallet = h('small', money(p.cash));
       let list = picker(p.id, set);
       let listKey = null;
-      const gauge = moneyGauge(`Argent : ${title}`, p.cash, cash, (n) => { onCash(n); update(); });
+      const gauge = moneyGauge(`Argent : ${title}`, p.cash, cash, (n) => { onCash(n); update(); });
       const keyOf = () => Object.keys(v.props).map(Number).filter((pos) => v.props[pos].owner === p.id && !v.props[pos].level).join();
       listKey = keyOf();
       live.push(() => {

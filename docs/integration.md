@@ -243,6 +243,7 @@ export function mount(root, api) {
 | `h(tag, props, ...enfants)` | Crée des éléments (`h('button.ma-classe', { onclick }, 'Texte')`), texte toujours inséré comme texte |
 | `gateTurn()`, `showTurn()` | Facultatif, pour un jeu animé : après `gateTurn()`, le badge « À toi de jouer » et le bandeau de fin n'apparaissent que quand le jeu appelle `showTurn()`, à la fin de son animation |
 | `toast(texte)`, `openChat()`, `asset(chemin)` | Notification, ouvrir le chat (onglet sur téléphone), URL d'un fichier de `assets/` |
+| `secret(élément, { label })`, `hidesSecrets()` | En classe, sur ordinateur : `secret` entoure un affichage secret sans bouton (rôle, mot, main) et le cache tant qu'on ne maintient pas le clic ; `label` complète « Maintiens le clic pour voir … ». `hidesSecrets()` dit si le cache est actif (pour ne pas écrire un rôle ailleurs, comme dans une pastille). Sur téléphone ou si le joueur l'a désactivé dans Profil, `secret` rend l'élément tel quel |
 
 `root` occupe toute la zone de jeu (hauteur fixe, le jeu gère son défilement). Le hub affiche autour : l'en-tête, les joueurs, le chat, et une barre « Partie terminée » avec la revanche.
 

@@ -140,16 +140,16 @@ export function move(s, playerId, action, ctx) {
   if (s.phase === 'over') throw new Error('La partie est terminée.');
   const seat = s.players.indexOf(playerId);
   if (seat < 0 || s.left.includes(playerId)) throw new Error('Tu ne joues plus cette partie.');
-  if (seat !== s.turn) throw new Error("Ce n'est pas ton tour.");
+  if (seat !== s.turn) throw new Error("Ce n’est pas ton tour.");
   if (action?.type === 'roll') {
-    if (s.phase !== 'roll') throw new Error('Le dé est déjà lancé : choisis un cheval.');
+    if (s.phase !== 'roll') throw new Error('Le dé est déjà lancé : choisis un cheval.');
     return { state: resolveRoll(s, rollDie(ctx), ctx) };
   }
   if (action?.type === 'move') {
     if (s.phase !== 'choose') throw new Error('Lance d’abord le dé.');
     const horse = Number(action.horse);
     const mv = legalMoves(s).find((m) => m.horse === horse);
-    if (!Number.isInteger(horse) || !mv) throw new Error('Ce cheval ne peut pas avancer de ce nombre : choisis-en un autre.');
+    if (!Number.isInteger(horse) || !mv) throw new Error('Ce cheval ne peut pas avancer de ce nombre : choisis-en un autre.');
     return { state: applyMove(s, mv, ctx) };
   }
   throw new Error('Action inconnue.');

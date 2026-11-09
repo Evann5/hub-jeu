@@ -244,7 +244,8 @@ test('mode coopératif : tout le monde cherche ensemble, victoire dès le score 
   assert.notEqual(view(s, 1).leader, null);
   s = round(withSecret(s, 100), { needle: 104 });
   assert.equal(s.scores[0], 8);
-  s = play(s, 2, { type: 'next' });
+  assert.throws(() => play(s, 2, { type: 'next' }), /hôte/); // seul l'hôte lance la suite
+  s = play(s, 1, { type: 'next' });
   assert.equal(s.phase, 'over');
   assert.deepEqual(status(s).winners.sort(), [1, 2, 3]);
 });

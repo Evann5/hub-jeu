@@ -5,3 +5,4 @@
 - **Playwright** : celui du projet s'il est installé, sinon celui de `~/.claude/toolkit/outils/` (ou le dossier `PLAYWRIGHT_DIR`) ; aucun des deux, ou navigateur absent : les tests s'affichent « ignorés » avec la raison. Rien n'est installé par les tests.
 - **Limites du serveur** à respecter si on ajoute un test : 60 inscriptions/h par adresse, 6 créations de table/min et par joueur, 5 messages par 5 s et par joueur, 200 échecs de connexion par adresse.
 - **Un test rouge est un vrai signal** : pas d'attente fixe, tout se cale sur le DOM ; le test « coupure » coupe puis relance le serveur (`S.serveur.couper()` / `demarrer()`).
+- **Voir à l’œil** : `CAPTURES=dossier` garde une image par jeu (`tous-les-jeux`) ou par moment d’Escales (`escales-cas` : Douane, dette, faillite) ; `TELEPHONE=petit` simule un petit téléphone (375 × 667).

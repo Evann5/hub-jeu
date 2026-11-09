@@ -11,7 +11,8 @@ const CAUSE = {
   left: 'a quitté la partie',
 };
 
-const TONES = { night: 'night', witch: 'night', hunter: 'day', debate: 'day', vote: 'day' };
+// Le ciel suit la partie : nuit, plein jour pour le débat, crépuscule pour le vote.
+const TONES = { night: 'night', witch: 'night', hunter: 'day', debate: 'day', vote: 'dusk' };
 
 const heart = (label) => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -42,7 +43,7 @@ export function mount(root, api) {
   let cardFirst = false;
 
   // ——— Structure fixe ———
-  const sky = h('div.lg-sky', { 'aria-hidden': 'true' }, h('div.lg-stars'), h('div.lg-orb'), scene());
+  const sky = h('div.lg-sky', { 'aria-hidden': 'true' }, h('div.lg-stars'), h('div.lg-orb', h('i')), scene());
   const live = h('p.sr-only', { 'aria-live': 'polite' });
   const head = h('header.lg-head');
   const body = h('div.lg-body');
@@ -124,9 +125,10 @@ export function mount(root, api) {
     const seenRole = view.seen?.filter((x) => x.target === id).at(-1)?.role;
     const lover = view.lovers?.includes(id);
     const sub = [];
+    const hides = api.hidesSecrets?.(); // en classe, sur ordinateur : les rôles connus des vivants ne s'affichent pas dans la liste
     if (d) sub.push(h('span.lg-sub', `${roleName(d.role)} · ${CAUSE[d.cause] ?? ''}`.replace(/ · $/, '')));
-    else if (r) sub.push(h('span.lg-sub', roleName(r)));
-    if (seenRole && !d) sub.push(h('span.lg-sub', `Vu : ${roleName(seenRole)}`));
+    else if (r && !hides) sub.push(h('span.lg-sub', roleName(r)));
+    if (seenRole && !d && !hides) sub.push(h('span.lg-sub', `Vu : ${roleName(seenRole)}`));
     if (wolfVoters.length) sub.push(h('span.lg-sub.is-wolf', `Visé par ${join(wolfVoters.map(name))}`));
     const inner = [
       d ? h('span.lg-seat-medal', medal(d.role, 34)) : api.token(api.user(id), { size: 's' }),
@@ -165,7 +167,7 @@ export function mount(root, api) {
     }
     if (e.k === 'vote') {
       const count = e.out === null ? 0 : e.ballots.filter(([, t]) => t === e.out).length;
-      return h('li', h('b', `Jour ${e.n} · `), e.out === null ? 'égalité ou aucun vote : personne n’est éliminé.' : [who(e.out), ` est éliminé (${count} voix).`],
+      return h('li', h('b', `Jour ${e.n} · `), e.out === null ? 'égalité ou aucun vote : personne n’est éliminé.' : [who(e.out), ` est éliminé (${count} voix).`],
         e.ballots.length ? h('small.lg-ballots', e.ballots.map(([from, to]) => `${name(from)} → ${to === null ? 'blanc' : name(to)}`).join(' · ')) : null);
     }
     if (e.k === 'left') return h('li', h('b', 'Départ · '), `${name(e.id)} a quitté la partie.`);
@@ -204,7 +206,7 @@ export function mount(root, api) {
   function nightPanel() {
     const me = view.me;
     const r = recap();
-    if (!me) return [r, sleepPanel('La nuit est tombée. Tu regardes la partie : les rôles ne sont pas visibles.')];
+    if (!me) return [r, sleepPanel('La nuit est tombée. Tu regardes la partie : les rôles ne sont pas visibles.')];
     if (!me.alive) return [r, godPanel()];
     if (me.role === 'cupid' && !me.acted) {
       const [a, b] = sel;
@@ -216,12 +218,12 @@ export function mount(root, api) {
     }
     if (me.role === 'cupid' && view.n === 1) { // Cupidon n'agit que la première nuit : ensuite il dort comme tout le monde
       const [a, b] = view.lovers ?? [];
-      return [r, sleepPanel(`C’est fait : ${a ? name(a) : '?'} et ${b ? name(b) : '?'} sont unis pour la vie. Retourne dormir.`)];
+      return [r, sleepPanel(`C’est fait : ${a ? name(a) : '?'} et ${b ? name(b) : '?'} sont unis pour la vie. Retourne dormir.`)];
     }
     if (me.role === 'seer' && !me.acted) {
       return [r, h('section.lg-panel',
-        h('h3', 'Voyante, qui sondes-tu ?'),
-        h('p', 'Choisis quelqu’un : tu verras son vrai rôle.'),
+        h('h3', 'Voyante, qui sondes-tu ?'),
+        h('p', 'Choisis quelqu’un : tu verras son vrai rôle.'),
         btn(sel[0] ? `Sonder ${name(sel[0])}` : 'Choisis un joueur', () => { send({ type: 'peek', target: sel[0] }); sel = []; }, { disabled: !sel[0], key: 'confirm' }))];
     }
     if (me.role === 'seer') {
@@ -242,9 +244,9 @@ export function mount(root, api) {
       const agreed = targets.every((t) => t !== undefined) && new Set(targets).size === 1;
       return [r, h('section.lg-panel',
         h('h3', 'Loup-garou, choisis ta proie'),
-        h('p', mates.length ? `Ta meute : ${join(mates.map(name))}. Choisissez tous la même victime.` : 'Tu es le seul loup : touche ta victime dans le village.'),
+        h('p', mates.length ? `Ta meute : ${join(mates.map(name))}. Toute la meute doit choisir la même victime.` : 'Tu es le seul loup : touche ta victime dans le village.'),
         h('ul.lg-votes', votes),
-        h('p.lg-muted', agreed ? 'Vous êtes d’accord : la nuit avance.' : 'Tu peux changer d’avis jusqu’à la fin du temps.'))];
+        h('p.lg-muted', agreed ? 'Vous êtes d’accord : la nuit avance.' : 'Tu peux changer d’avis jusqu’à la fin du temps.'))];
     }
     return [r, sleepPanel('Tout le monde ferme les yeux. Les rôles de la nuit agissent en secret… attends le lever du jour.')];
   }
@@ -258,9 +260,9 @@ export function mount(root, api) {
         h('p', w.victim === null ? 'Les loups n’ont désigné personne cette nuit.' : [h('b', name(w.victim)), ' est la victime des loups.']),
         h('div.lg-actions',
           w.victim !== null && w.life && !w.saved ? btn(`Sauver ${name(w.victim)}`, () => send({ type: 'save' }), { key: 'save' }) : null,
-          w.death && w.poisoned === null ? btn(sel[0] ? `Empoisonner ${name(sel[0])}` : 'Poison : choisis quelqu’un', () => { send({ type: 'poison', target: sel[0] }); sel = []; }, { disabled: !sel[0], kind: 'danger', key: 'poison' }) : null,
-          btn('Terminer', () => send({ type: 'pass' }), { kind: 'ghost', key: 'pass' })),
-        h('p.lg-muted', `Potion de vie : ${w.life ? 'disponible' : 'utilisée'} · Potion de mort : ${w.death ? 'disponible' : 'utilisée'}`),
+          w.death && w.poisoned === null ? btn(sel[0] ? `Empoisonner ${name(sel[0])}` : 'Poison : choisis quelqu’un', () => { send({ type: 'poison', target: sel[0] }); sel = []; }, { disabled: !sel[0], kind: 'danger', key: 'poison' }) : null,
+          btn('Passer ma nuit', () => send({ type: 'pass' }), { kind: 'ghost', key: 'pass' })),
+        h('p.lg-muted', `Potion de vie : ${w.life ? 'disponible' : 'utilisée'} · Potion de mort : ${w.death ? 'disponible' : 'utilisée'}`),
         w.saved ? h('p.lg-chosen', 'Tu as sauvé la victime.') : null)];
     }
     if (!view.me?.alive && view.witch) return [godPanel()];
@@ -270,13 +272,13 @@ export function mount(root, api) {
   function godPanel() {
     const lines = [];
     if (view.phase === 'night' && view.wolves) {
-      lines.push(h('li', 'Loups : ', join(view.wolves.map(name)), view.wolves.every((w) => view.wolfVotes?.[w] === undefined) ? '' : [' — ', ...view.wolves.map((w) => (view.wolfVotes?.[w] !== undefined ? `${name(w)} → ${name(view.wolfVotes[w])} ` : ''))]));
+      lines.push(h('li', 'Loups : ', join(view.wolves.map(name)), view.wolves.every((w) => view.wolfVotes?.[w] === undefined) ? '' : [' — ', ...view.wolves.map((w) => (view.wolfVotes?.[w] !== undefined ? `${name(w)} → ${name(view.wolfVotes[w])} ` : ''))]));
     }
-    if (view.witch) lines.push(h('li', `Sorcière : potion de vie ${view.witch.life ? 'disponible' : 'utilisée'}, potion de mort ${view.witch.death ? 'disponible' : 'utilisée'}${view.witch.victim !== null ? `, victime visée : ${name(view.witch.victim)}` : ''}.`));
-    if (view.lovers) lines.push(h('li', 'Amoureux : ', h('b', name(view.lovers[0])), ' et ', h('b', name(view.lovers[1])), '.'));
+    if (view.witch) lines.push(h('li', `Sorcière : potion de vie ${view.witch.life ? 'disponible' : 'utilisée'}, potion de mort ${view.witch.death ? 'disponible' : 'utilisée'}${view.witch.victim !== null ? `, victime visée : ${name(view.witch.victim)}` : ''}.`));
+    if (view.lovers) lines.push(h('li', 'Amoureux : ', h('b', name(view.lovers[0])), ' et ', h('b', name(view.lovers[1])), '.'));
     return h('section.lg-panel.is-god',
       h('h3', 'Tu es mort'),
-      h('p', 'Tu regardes la partie et tu vois tous les rôles. Garde le secret : ne dis rien aux vivants.'),
+      h('p', 'Tu regardes la partie et tu vois tous les rôles. Garde le secret : ne dis rien aux vivants.'),
       lines.length ? h('ul.lg-god', lines) : null);
   }
 
@@ -296,8 +298,8 @@ export function mount(root, api) {
     const wolves = (view.players.filter((id) => view.roles[id] === 'wolf' && isAlive(id)));
     return h('section.lg-panel.is-god',
       h('h3', 'Tu es mort'),
-      h('p', `${d ? `Tu es ${CAUSE[d.cause] ?? 'mort'}`.replace('Tu es mort dans', 'Tu es mort dans').replace('Tu es a quitté la partie', 'Tu as quitté la partie') : 'Tu as quitté la partie'}. Tu vois tous les rôles : ne dis rien aux vivants.`),
-      wolves.length ? h('p.lg-muted', `Loups encore en vie : ${join(wolves.map(name))}.`) : null,
+      h('p', `${d ? `Tu es ${CAUSE[d.cause] ?? 'mort'}`.replace('Tu es mort dans', 'Tu es mort dans').replace('Tu es a quitté la partie', 'Tu as quitté la partie') : 'Tu as quitté la partie'}. Tu vois tous les rôles : ne dis rien aux vivants.`),
+      wolves.length ? h('p.lg-muted', `Loups encore en vie : ${join(wolves.map(name))}.`) : null,
       view.phase === 'debate' ? h('div.lg-actions', btn('Ouvrir le chat', () => api.openChat(), { kind: 'ghost', key: 'chat' })) : null,
       view.phase === 'debate'
         ? h('p.lg-muted', `${view.ready} sur ${view.aliveCount} prêts à voter.`)
@@ -311,7 +313,7 @@ export function mount(root, api) {
     return [h('section.lg-panel',
       h('h3', 'Le village se réveille'),
       dawnBlock(),
-      can ? h('p', 'Qui se comporte bizarrement ? Parlez dans le chat de la table.') : null,
+      can ? h('p', 'Qui se comporte bizarrement ? On en parle dans le chat de la partie.') : null,
       h('div.lg-actions',
         btn('Ouvrir le chat', () => api.openChat(), { kind: 'ghost', key: 'chat' }),
         can ? btn(me.ready ? 'Prêt, on attend les autres' : 'Je suis prêt à voter', () => send({ type: 'ready' }), { disabled: me.ready, key: 'ready' }) : null),
@@ -327,9 +329,9 @@ export function mount(root, api) {
       h('h3', 'Le vote du village'),
       me?.alive
         ? h('p', mine === undefined ? 'Touche le joueur que tu soupçonnes. Tu peux changer d’avis.' : mine === null ? 'Tu as voté blanc.' : ['Tu votes contre ', h('b', name(mine)), '.'])
-        : h('p', 'Le village vote. Tu es mort ou tu regardes : ta voix ne compte pas.'),
+        : h('p', 'Le village vote. Tu es mort ou tu regardes : ta voix ne compte pas.'),
       me?.alive ? h('div.lg-actions', btn('Voter blanc', () => send({ type: 'vote', target: null }), { kind: 'ghost', key: 'blank' })) : null,
-      h('p.lg-muted', `${view.voted} sur ${view.aliveCount} ont voté. Égalité : personne n’est éliminé.`))];
+      h('p.lg-muted', `${view.voted} sur ${view.aliveCount} ont voté. Égalité : personne n’est éliminé.`))];
   }
 
   function hunterPanel() {
@@ -337,7 +339,7 @@ export function mount(root, api) {
     if (me && view.hunter === me.id) {
       return [h('section.lg-panel',
         h('h3', 'Dernier tir du Chasseur'),
-        h('p', 'Tu es mort, mais pas encore tout à fait : emporte quelqu’un avec toi.'),
+        h('p', 'Tu es mort, mais pas encore tout à fait : emporte quelqu’un avec toi.'),
         h('div.lg-actions',
           btn(sel[0] ? `Tirer sur ${name(sel[0])}` : 'Choisis ta cible', () => { send({ type: 'shoot', target: sel[0] }); sel = []; }, { disabled: !sel[0], kind: 'danger', key: 'shoot' }),
           btn('Ne pas tirer', () => send({ type: 'pass' }), { kind: 'ghost', key: 'pass' })))];
@@ -356,11 +358,11 @@ export function mount(root, api) {
   function overPanel() {
     const w = view.winner;
     const meWon = view.me && w.ids.includes(view.me.id);
-    const titles = { village: 'Le village a gagné !', wolves: 'Les loups ont gagné !', lovers: 'Les amoureux gagnent !', none: 'Personne ne survit…' };
+    const titles = { village: 'Le village a gagné !', wolves: 'Les loups ont gagné !', lovers: 'Les amoureux gagnent !', none: 'Personne ne survit…' };
     const subs = {
       village: 'Tous les loups sont tombés. Le jour se lève sur un village sauvé.',
       wolves: 'Les loups sont maintenant aussi nombreux que les autres. La nuit leur appartient.',
-      lovers: 'Un loup et un villageois, unis contre tous : ils restent seuls, ensemble.',
+      lovers: 'Un loup et un villageois, unis contre tous : ils restent seuls, ensemble.',
       none: 'Le village est désert.',
     };
     const byRole = ['wolf', 'seer', 'witch', 'hunter', 'cupid', 'villager'];
@@ -370,8 +372,10 @@ export function mount(root, api) {
       h('h3', titles[w.side]),
       h('p', subs[w.side]),
       view.me ? h('p.lg-result', meWon ? 'Tu fais partie des gagnants.' : 'Tu as perdu cette fois.') : null,
-      h('ul.lg-reveal', order.map((id) => h('li', { class: w.ids.includes(id) ? 'is-win' : '' },
-        medal(view.roles[id], 36), h('span', h('b', name(id)), ` · ${roleName(view.roles[id])}`, view.lovers?.includes(id) ? [' ', heart('amoureux')] : '')))))];
+      h('ul.lg-reveal', order.map((id) => h('li', { class: `${w.ids.includes(id) ? 'is-win' : ''}${isAlive(id) ? '' : ' is-dead'}` },
+        medal(view.roles[id], 40),
+        h('span.lg-reveal-text', h('b', name(id), view.lovers?.includes(id) ? heart('amoureux') : null), h('span', roleName(view.roles[id]))),
+        w.ids.includes(id) ? h('span.lg-win-tag', 'Gagnant') : null))))];
   }
 
   function panel() {
@@ -404,8 +408,10 @@ export function mount(root, api) {
     head.replaceChildren(
       h('div.lg-title', h('p.lg-kicker', kicker), h('h2', title)),
       timer,
-      me ? h('button.lg-chip', { type: 'button', onclick: () => openCard(false), 'aria-label': `Ma carte : ${roleName(me.role)}`, dataset: { key: 'chip' } },
-        medal(me.role, 36), h('span', h('small', me.alive ? 'Ta carte' : 'Ta carte (mort)'), roleName(me.role))) : h('p.lg-chip.is-watch', 'Spectateur'),
+      me && api.hidesSecrets?.() ? h('button.lg-chip', { type: 'button', onclick: () => openCard(false), 'aria-label': 'Voir ma carte', dataset: { key: 'chip' } },
+        h('span', h('small', me.alive ? 'Ta carte' : 'Ta carte (mort)'), 'Voir')) // le rôle n'est pas écrit : un voisin le lirait
+        : me ? h('button.lg-chip', { type: 'button', onclick: () => openCard(false), 'aria-label': `Ma carte : ${roleName(me.role)}`, dataset: { key: 'chip' } },
+          medal(me.role, 36), h('span', h('small', me.alive ? 'Ta carte' : 'Ta carte (mort)'), roleName(me.role))) : h('p.lg-chip.is-watch', 'Spectateur'),
     );
   }
 
@@ -436,15 +442,17 @@ export function mount(root, api) {
     const plural = { wolf: 'Loups-garous', villager: 'Villageois' };
     const comp = Object.entries(view.comp).map(([k, v]) => `${v} ${v > 1 && plural[k] ? plural[k] : ROLES[k].name}`);
     overlay.hidden = false;
-    overlay.replaceChildren(h('div.lg-card-wrap', { role: 'dialog', 'aria-modal': 'true', 'aria-label': `Ta carte : ${r.name}` },
-      h('article.lg-card', { style: `--rc:${r.color}` },
-        h('p.lg-card-kicker', cardFirst ? 'Tu es…' : 'Ta carte'),
-        h('div.lg-card-art', medal(view.me.role, 168)),
-        h('h3', r.name),
-        h('p.lg-card-line', r.line),
-        h('p.lg-card-team', `Tu joues pour ${r.team}.`)),
-      view.me.role === 'wolf' && view.wolves?.length > 1 ? h('p.lg-card-note', `Ta meute : ${join(view.wolves.filter((x) => x !== view.me.id).map(name))}.`) : null,
-      h('p.lg-card-note', `Dans ce village : ${join(comp)}.`),
+    overlay.replaceChildren(h('div.lg-card-wrap', { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Ta carte' },
+      api.secret([ // en classe, sur ordinateur : la carte reste cachée tant qu'on ne maintient pas le clic
+        h('article.lg-card', { style: `--rc:${r.color}` },
+          h('p.lg-card-kicker', cardFirst ? 'Tu es…' : 'Ta carte'),
+          h('div.lg-card-art', medal(view.me.role, 168)),
+          h('h3', r.name),
+          h('p.lg-card-line', r.line),
+          h('p.lg-card-team', `Tu joues pour ${r.team}.`)),
+        view.me.role === 'wolf' && view.wolves?.length > 1 ? h('p.lg-card-note', `Ta meute : ${join(view.wolves.filter((x) => x !== view.me.id).map(name))}.`) : null,
+      ], { label: 'ton rôle' }),
+      h('p.lg-card-note', `Dans ce village : ${join(comp)}.`),
       h('button.lg-btn.primary', { type: 'button', onclick: () => closeCard(), dataset: { key: 'card-ok' } }, cardFirst ? 'J’ai compris' : 'Fermer')));
     overlay.querySelector('[data-key="card-ok"]').focus();
   }
@@ -469,11 +477,12 @@ export function mount(root, api) {
       if (cardOpen) closeCard(true); // la phase change (ex. nuit 1 -> Sorcière) : la carte ne doit pas recouvrir l'écran suivant
       const { kicker, title } = headInfo();
       const dawn = view.phase === 'debate' ? view.log.findLast((e) => e.k === 'dawn' && e.n === view.n) : null;
-      live.textContent = `${kicker} : ${title}.${dawn ? (dawn.dead.length ? ` Morts : ${join(dawn.dead.map((id) => `${name(id)}, ${roleName(view.roles[id])}`))}.` : ' Personne n’est mort.') : ''}`;
+      live.textContent = `${kicker} : ${title}.${dawn ? (dawn.dead.length ? ` Morts : ${join(dawn.dead.map((id) => `${name(id)}, ${roleName(view.roles[id])}`))}.` : ' Personne n’est mort.') : ''}`;
     }
     let tone = TONES[view.phase];
-    if (!tone) tone = { village: 'day', wolves: 'night', lovers: 'dusk', none: 'night' }[view.winner.side];
+    if (!tone) tone = { village: 'day', wolves: 'blood', lovers: 'dusk', none: 'night' }[view.winner.side];
     app.dataset.tone = tone;
+    app.dataset.moon = String(Math.min(view.n, 4)); // la lune grossit de nuit en nuit, pleine à la 4e
     const tgt = targeting();
     renderHead();
     body.className = `lg-body${fresh ? ' is-fresh' : ''}`;

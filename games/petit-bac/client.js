@@ -163,11 +163,11 @@ export function mount(root, api) {
       inputs[i]));
     const { clock, bar, clockBox } = bomb();
     const alert = h('p.pb-alert', { 'aria-live': 'assertive' });
-    const note = h('p.pb-note', { id: 'pb-stop-note' }, 'Tout est rempli ? Les autres n’auront que 10 secondes.');
+    const note = h('p.pb-note', { id: 'pb-stop-note' }, 'Tout est rempli ? Les autres n’auront que 10 secondes.');
     const stop = h('button.pb-stop', {
       type: 'button',
       onclick: onStop,
-    }, 'Stop !');
+    }, 'Stop !');
     const mates = h('ul.pb-strip', { 'aria-label': 'Où en sont les autres' });
     ui = {
       kind: 'writing', inputs, clock, bar, clockBox, alert, note, stop, mates,
@@ -178,7 +178,7 @@ export function mount(root, api) {
       top(ui, mates),
       alert,
       h('ol.pb-sheet', rows),
-      player ? h('div.pb-actions', stop, note) : h('p.pb-note', 'Tu regardes la partie : les réponses restent cachées jusqu’à la fin de la manche.'));
+      player ? h('div.pb-actions', stop, note) : h('p.pb-note', 'Tu regardes la partie : les réponses restent cachées jusqu’à la fin de la manche.'));
     pb.scrollTop = 0;
     if (player && !('ontouchstart' in window)) inputs[0].focus({ preventScroll: true });
     live.textContent = `Manche ${view.round} sur ${view.rounds}. La lettre est ${view.letter}.`;
@@ -187,8 +187,8 @@ export function mount(root, api) {
   function firstProblem(view) {
     for (let i = 0; i < view.categories.length; i++) {
       const check = fits(local[i], view.letter);
-      if (check === 'empty') return { i, text: `Il te manque encore : « ${view.categories[i]} ».` };
-      if (check === 'letter') return { i, text: `« ${local[i].trim()} » ne commence pas par ${view.letter}.` };
+      if (check === 'empty') return { i, text: `Il te manque encore : « ${view.categories[i]} ».` };
+      if (check === 'letter') return { i, text: `« ${local[i].trim()} » ne commence pas par ${view.letter}.` };
     }
     return null;
   }
@@ -228,7 +228,7 @@ export function mount(root, api) {
     }));
     if (view.stopBy) {
       const who = view.stopBy === api.me.id ? 'Tu as' : `${name(view.stopBy)} a`;
-      ui.callout.textContent = view.stopBy === api.me.id ? 'Tu as crié Stop !' : `${name(view.stopBy)} : Stop !`;
+      ui.callout.textContent = view.stopBy === api.me.id ? 'Tu as crié Stop !' : `${name(view.stopBy)} : Stop !`;
       ui.callout.classList.add('is-on');
       ui.note.hidden = true;
       ui.stop.disabled = true;
@@ -312,12 +312,12 @@ export function mount(root, api) {
         cell.ans.textContent = c.text || '—';
         cell.why.textContent = c.state === 'unique' ? '' : REASONS[c.state];
         cell.pts.textContent = c.state === 'empty' ? '' : c.points ? `+${c.points}` : '0';
-        cell.pts.setAttribute('aria-label', `${c.points} points`);
+        cell.pts.setAttribute('aria-label', `${c.points} point${c.points > 1 ? 's' : ''}`);
         if (cell.btn) {
           const contestable = c.state !== 'empty' && c.state !== 'letter';
           cell.btn.hidden = !contestable;
           cell.btn.setAttribute('aria-pressed', String(c.mine));
-          cell.btn.setAttribute('aria-label', `${c.mine ? 'Retirer ma contestation de' : 'Contester'} la réponse de ${api.user(c.id).pseudo} : ${c.text}. ${c.votes} sur ${c.need} nécessaires.`);
+          cell.btn.setAttribute('aria-label', `${c.mine ? 'Retirer ma contestation de' : 'Contester'} la réponse écrite par ${api.user(c.id).pseudo} : ${c.text}. ${c.votes} sur ${c.need} nécessaires.`);
           cell.btn.classList.toggle('is-on', c.mine);
           cell.btn.firstChild.textContent = c.mine ? 'Contestée' : 'Contester';
           cell.count.textContent = c.votes ? `${c.votes} sur ${c.need} nécessaires` : '';
@@ -328,7 +328,7 @@ export function mount(root, api) {
       .map((id) => ({ id, total: view.scores[id] || 0, gain: view.roundPoints[id] || 0 }))
       .sort((a, b) => b.total + b.gain - (a.total + a.gain));
     ui.board.replaceChildren(...order.map((p) => h('li.pb-mate',
-      { 'aria-label': `${name(p.id)} : ${p.total + p.gain} points, dont ${p.gain} gagnés à cette manche` },
+      { 'aria-label': `${name(p.id)} : ${p.total + p.gain} points, dont ${p.gain} gagnés à cette manche` },
       api.token(api.user(p.id), { size: 's' }),
       h('span.pb-mate-name', name(p.id)),
       h('span.pb-mate-n', `${p.total + p.gain}`),
@@ -337,7 +337,7 @@ export function mount(root, api) {
     ui.ready.disabled = iAmReady;
     ui.ready.textContent = iAmReady
       ? `En attente des autres (${view.ready.length}/${order.length})`
-      : view.round >= view.rounds ? 'J’ai fini : voir le classement' : 'J’ai fini : manche suivante';
+      : view.round >= view.rounds ? 'J’ai fini : voir le classement' : 'J’ai fini : manche suivante';
   }
 
   // ——— Classement final ———
@@ -352,7 +352,7 @@ export function mount(root, api) {
         h('span.pb-report-rank', `${i + 1}`),
         api.token(api.user(p.id), { size: 's' }),
         h('span.pb-report-name', name(p.id), p.gone ? ' (parti)' : ''),
-        win.has(p.id) ? h('span.pb-badge', 'Champion !') : null,
+        win.has(p.id) ? h('span.pb-badge', 'Champion !') : null,
         h('span.pb-report-total', `${p.total} pts`)))),
       h('h3.pb-history-title', 'Manche par manche'),
       h('ul.pb-history', view.history.map((r) => h('li',

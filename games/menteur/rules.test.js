@@ -51,7 +51,7 @@ test('bidError : annonces valides et refusées, avec un message en français', (
   assert.match(bidError(null, 1.5, 3, 10), /au moins 1 dé/);
   assert.match(bidError(null, 2, 7, 10), /entre 1 et 6/);
   assert.match(bidError(null, 2, 0, 10), /entre 1 et 6/);
-  assert.match(bidError(null, 11, 3, 10), /Il n'y a que 10 dés/);
+  assert.match(bidError(null, 11, 3, 10), /Il n’y a que 10 dés/);
   assert.match(bidError({ qty: 6, face: 3 }, 2, 1, 10), /moitié.*arrondie/);
   assert.equal(bidError({ qty: 6, face: 3 }, 3, 1, 10), null);
   assert.match(bidError({ qty: 3, face: 1 }, 6, 5, 20), /double/);
@@ -104,7 +104,7 @@ test('annonce : seul le joueur dont c\'est le tour joue, l\'annonce suivante doi
   s = bid(s, 3, 2, 1);
   assert.equal(s.history.length, 3);
   assert.equal(s.turn, 1, 'le tour revient au premier joueur');
-  assert.throws(() => move(s, 1, { type: 'bid', qty: 16, face: 6 }, CTX()), /Il n'y a que 15 dés/);
+  assert.throws(() => move(s, 1, { type: 'bid', qty: 16, face: 6 }, CTX()), /Il n’y a que 15 dés/);
 });
 
 test('annonce : action inconnue, annonce illisible', () => {

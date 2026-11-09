@@ -81,6 +81,9 @@ function startRealtime() {
   state.socket = socket;
 
   socket.on('state', (s) => {
+    // Le serveur a redémarré avec un autre code (mise à jour) : cette page a l’ancien, on propose de recharger.
+    if (state.version && s.version && s.version !== state.version && s.version !== state.laterVersion) showUpdate(s.version);
+    state.version ??= s.version;
     state.me = s.me;
     state.mutedUntil = s.mutedUntil;
     armMuteEnd();
@@ -91,6 +94,7 @@ function startRealtime() {
     state.online = new Set(s.online);
     state.games = s.games;
     state.tables = s.tables;
+    state.roles = s.roles ?? [];
     // Après une coupure, on recharge les conversations : des messages ont pu arriver entre-temps.
     // Les messages pas encore partis restent à l'écran, avec « Réessayer ».
     const unsent = [...state.convs].map(([scope, c]) => [scope, c.messages.filter((m) => m.id < 0)]).filter(([, list]) => list.length);
@@ -106,7 +110,7 @@ function startRealtime() {
   });
 
   socket.on('connect_error', (err) => {
-    if (err.message === 'non-connecte') actions.logout('Ta session a expiré : reconnecte-toi.');
+    if (err.message === 'non-connecte') actions.logout('Ta session a expiré : reconnecte-toi.');
     if (err.message === 'trop-de-connexions') showNotice('Trop d’onglets ouverts', 'Ton compte est ouvert sur trop d’onglets ou d’appareils à la fois. Ferme-en un, puis recharge la page.');
   });
   socket.on('disconnect', (reason) => {
@@ -120,12 +124,15 @@ function startRealtime() {
     refreshPeople();
   });
   socket.on('user', (u) => {
+    // Mon niveau change : une fiche ouverte avec des outils d'équipe n'est plus à jour, on la ferme.
+    if (u.id === state.me.id && u.role !== state.me.role) document.querySelectorAll('dialog[open]').forEach((d) => d.querySelector('.staff-tools') && d.close());
     state.users.set(u.id, u);
     if (u.id === state.me.id) state.me = u;
     if (u.id === state.me.id && state.route.view === 'admin' && !isAdmin()) go('#/'); // rétrogradé pendant qu'il regardait l'écran admin
     renderNav();
     refreshPeople();
     messages.onUsersChange();
+    admin.renderRoles(); // le nombre de membres de chaque rôle
   });
   socket.on('user:removed', (id) => {
     state.users.delete(id);
@@ -135,6 +142,12 @@ function startRealtime() {
     for (const conv of state.convs.values()) conv.messages = conv.messages.filter((m) => m.userId !== id);
     if (state.route.view === 'dm' && state.route.id === id) go('#/messages');
     else refreshPeople();
+  });
+  socket.on('roles', (list) => {
+    state.roles = list;
+    refreshPeople();
+    messages.onUsersChange();
+    admin.renderRoles();
   });
   socket.on('channels', (channels) => {
     state.channels = channels;
@@ -154,7 +167,7 @@ function startRealtime() {
     armMuteEnd();
     messages.renderComposer();
     table.onMuted();
-    toast(until ? 'Un admin t’a mis en sourdine.' : 'Tu peux de nouveau écrire.');
+    toast(until ? 'Tu es en sourdine : tu ne peux plus écrire pour le moment.' : 'Tu peux de nouveau écrire.');
   });
   socket.on('message', (m) => {
     if (m.scope.startsWith('t:')) {
@@ -270,7 +283,7 @@ function applyRoute({ moved = false } = {}) {
 function pageName({ view, id }) {
   if (view === 'channel') return `#${state.channels.find((c) => c.id === id)?.name ?? 'canal'}`;
   if (view === 'dm') return state.users.get(id)?.pseudo ?? 'Messages';
-  if (view === 'table') return gameOf(state.tables.find((t) => t.id === id)?.game)?.name ?? 'Table';
+  if (view === 'table') return gameOf(state.tables.find((t) => t.id === id)?.game)?.name ?? 'Partie';
   return { home: 'Accueil', games: 'Jouer', messages: 'Messages', members: 'Membres', profile: 'Profil', admin: 'Admin' }[view] ?? '';
 }
 
@@ -286,6 +299,20 @@ function buildShell() {
     h('a.skip-link', { href: '#contenu', onclick: (e) => { e.preventDefault(); ui.content.focus(); } }, 'Aller au contenu'),
     ui.banner,
     h('div.app', ui.nav, ui.content));
+}
+
+// Une notification qui reste là où arrivent les autres (elle ne cache ni l'en-tête ni la zone d'écriture) :
+// recharger maintenant, ou plus tard (elle ne revient alors qu'à la version suivante). Une partie en cours reprend après le rechargement.
+function showUpdate(version) {
+  if (document.querySelector('.update-banner')) return;
+  const el = toast([
+    h('span', 'Hubuno a été mis à jour.'),
+    h('span.update-actions',
+      h('button.btn.btn-dark.btn-sm', { type: 'button', onclick: () => location.reload() }, 'Recharger la page'),
+      h('button.update-later', { type: 'button', onclick: () => { state.laterVersion = version; el.remove(); } }, 'Plus tard')),
+  ], { ms: 24 * 3600_000 });
+  el.classList.add('update-banner');
+  el.setAttribute('role', 'status');
 }
 
 function setBanner(text) {

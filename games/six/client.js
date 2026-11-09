@@ -116,7 +116,7 @@ export function mount(root, api) {
       const win = over && view.winners.includes(id);
       const pct = Math.min(100, Math.round((heads[seat] / view.target) * 100));
       return h(`div.sx-pl${left ? '.is-left' : ''}${picked ? '.is-picked' : ''}${win ? '.is-win' : ''}${id === api.me.id ? '.is-me' : ''}`,
-        { dataset: { seat: String(seat) }, style: `--pc:${PASTEL[seat % PASTEL.length]}`, 'aria-label': `${label(id)} : ${heads[seat]} têtes${left ? ', parti' : picked ? ', a posé sa carte' : ''}` },
+        { dataset: { seat: String(seat) }, style: `--pc:${PASTEL[seat % PASTEL.length]}`, 'aria-label': `${label(id)} : ${heads[seat]} tête${heads[seat] > 1 ? 's' : ''}${left ? ', parti' : picked ? ', a posé sa carte' : ''}` },
         api.token(api.user(id), { size: 's' }),
         h('span.sx-pl-name', label(id)),
         h('span.sx-pl-heads', horn(), h('b', String(heads[seat]))),
@@ -131,7 +131,7 @@ export function mount(root, api) {
     lane.className = `sx-lane${extra}`;
     const clickable = myRowChoice() && !busy;
     lane.disabled = !clickable;
-    lane.setAttribute('aria-label', `Rangée ${r + 1} : ${cards.join(', ')} ; ${sum} tête${sum > 1 ? 's' : ''}${clickable ? '. Ramasser cette rangée' : ''}`);
+    lane.setAttribute('aria-label', `Rangée ${r + 1} : ${cards.join(', ')} ; ${sum} tête${sum > 1 ? 's' : ''}${clickable ? '. Ramasser cette rangée' : ''}`);
     lane.replaceChildren(
       h('span.sx-lane-n', { 'aria-hidden': 'true' }, String(r + 1)),
       h('span.sx-slots', Array.from({ length: ROW_MAX }, (_, i) => (cards[i] !== undefined
@@ -164,7 +164,7 @@ export function mount(root, api) {
     } else if (view.phase === 'row') {
       paintStrip(view.queue);
       stripNote.textContent = view.pending.seat === view.seat
-        ? `Ton ${view.pending.card} est plus petit que toutes les fins de rangée : touche la rangée que tu ramasses.`
+        ? `Ton ${view.pending.card} est plus petit que toutes les fins de rangée : touche la rangée que tu ramasses.`
         : `${label(view.players[view.pending.seat])} doit choisir une rangée à ramasser avec son ${view.pending.card}…`;
     } else {
       strip.replaceChildren();
@@ -178,7 +178,7 @@ export function mount(root, api) {
     hand.replaceChildren(...cards.map((n) => {
       const btn = h(`button.sx-pick${selected === n ? '.is-selected' : ''}`, {
         type: 'button', disabled: !can, 'aria-pressed': selected === n ? 'true' : 'false',
-        'aria-label': `Carte ${n}, ${bulls(n)} tête${bulls(n) > 1 ? 's' : ''}${selected === n ? ', sélectionnée : touche encore pour la poser' : ''}`,
+        'aria-label': `Carte ${n}, ${bulls(n)} tête${bulls(n) > 1 ? 's' : ''}${selected === n ? ', sélectionnée : touche encore pour la poser' : ''}`,
         onclick: () => selectCard(n),
       }, card(n));
       return btn;
@@ -190,7 +190,7 @@ export function mount(root, api) {
           h('button.sx-go', { type: 'button', disabled: selected === null, onclick: () => selected !== null && playCard(selected) },
             selected === null ? 'Choisis une carte' : `Poser le ${selected}`));
       } else {
-        bar.replaceChildren(h('p.sx-wait', view.picked[view.seat] ? 'Carte posée : on attend les autres…' : ''));
+        bar.replaceChildren(h('p.sx-wait', view.picked[view.seat] ? 'Carte posée : on attend les autres…' : ''));
       }
     } else {
       bar.replaceChildren();
@@ -200,15 +200,15 @@ export function mount(root, api) {
   function statusText() {
     const names = (ids) => ids.map(label).join(', ');
     if (view.phase === 'over') {
-      if (view.forfeit && view.winners.length === 1 && view.winners[0] === api.me.id) return 'Les autres ont quitté la partie : tu gagnes !';
+      if (view.forfeit && view.winners.length === 1 && view.winners[0] === api.me.id) return 'Les autres ont quitté la partie : tu gagnes !';
       const w = view.winners;
       const best = Math.min(...view.players.map((id, s) => (view.left[s] ? Infinity : view.heads[s])));
-      if (w.includes(api.me.id)) return w.length > 1 ? `Égalité en tête avec ${best} têtes : bravo !` : `Tu gagnes avec seulement ${best} têtes !`;
-      return `${names(w)} ${w.length > 1 ? 'gagnent' : 'gagne'} avec ${best} têtes.`;
+      if (w.includes(api.me.id)) return w.length > 1 ? `Égalité en tête avec ${best} tête${best > 1 ? 's' : ''} : bravo !` : `Tu gagnes avec seulement ${best} tête${best > 1 ? 's' : ''} !`;
+      return `${names(w)} ${w.length > 1 ? 'gagnent' : 'gagne'} avec ${best} tête${best > 1 ? 's' : ''}.`;
     }
     if (view.seat < 0) return view.phase === 'row' ? `${label(view.players[view.pending.seat])} choisit une rangée…` : 'Les joueurs choisissent leur carte…';
     if (view.left[view.seat]) return 'Tu as quitté la partie.';
-    if (view.phase === 'row') return view.pending.seat === view.seat ? 'Ta carte est trop petite : choisis une rangée à ramasser.' : `${label(view.players[view.pending.seat])} choisit une rangée…`;
+    if (view.phase === 'row') return view.pending.seat === view.seat ? 'Ta carte est trop petite : choisis une rangée à ramasser.' : `${label(view.players[view.pending.seat])} choisit une rangée…`;
     if (view.picked[view.seat]) {
       const waiting = view.players.filter((id, s) => !view.left[s] && !view.picked[s]);
       return waiting.length ? `Carte posée. On attend ${names(waiting)}.` : 'Carte posée.';

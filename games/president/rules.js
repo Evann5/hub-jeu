@@ -151,9 +151,9 @@ function mustBeActive(s, id) {
 function mustBeTurn(s, id) {
   mustBeActive(s, id);
   if (s.phase === 'over') throw new Error('La partie est terminée.');
-  if (s.phase === 'between') throw new Error('La manche est finie : attends la suivante.');
-  if (s.phase === 'exchange') throw new Error(id === s.exchange.president ? 'Choisis les deux cartes à donner au Pauvre.' : "L'échange de cartes est en cours.");
-  if (curId(s) !== id) throw new Error("Ce n'est pas ton tour.");
+  if (s.phase === 'between') throw new Error('La manche est finie : attends la suivante.');
+  if (s.phase === 'exchange') throw new Error(id === s.exchange.president ? 'Choisis les deux cartes à donner au Pauvre.' : "L’échange de cartes est en cours.");
+  if (curId(s) !== id) throw new Error("Ce n’est pas ton tour.");
 }
 
 // Cherche qui joue après `from`. Si on retombe sur celui qui a posé en dernier, le pli est terminé :
@@ -239,7 +239,7 @@ function doPlay(s, id, cards, ctx) {
     }
     if (!beats(s, rank, before.rank)) {
       throw new Error(s.revolution
-        ? `Révolution : il faut une valeur plus faible ou égale (${RANKS[before.rank]} ou moins).`
+        ? `Révolution : il faut une valeur plus faible ou égale (${RANKS[before.rank]} ou moins).`
         : `Il faut une valeur plus forte ou égale (${RANKS[before.rank]} ou mieux).`);
     }
   }
@@ -286,7 +286,7 @@ function actPlay(s, id, action, ctx) {
   if (!cards.length) throw new Error('Choisis au moins une carte.');
   if (cards.length > 4) throw new Error('Tu peux poser au plus 4 cartes à la fois.');
   if (new Set(cards).size !== cards.length) throw new Error('Une même carte est choisie deux fois.');
-  for (const c of cards) if (!s.hands[id].includes(c)) throw new Error("Tu n'as pas toutes ces cartes.");
+  for (const c of cards) if (!s.hands[id].includes(c)) throw new Error("Tu n’as pas toutes ces cartes.");
   if (new Set(cards.map(rankOf)).size !== 1) throw new Error('Les cartes posées doivent toutes avoir la même valeur.');
   doPlay(s, id, cards, ctx);
 }
@@ -299,7 +299,7 @@ function doPass(s, id, ctx) {
 
 function actPass(s, id, ctx) {
   mustBeTurn(s, id);
-  if (!s.pli) throw new Error('Tu ouvres le pli : pose au moins une carte.');
+  if (!s.pli) throw new Error('Tu ouvres le pli : pose au moins une carte.');
   doPass(s, id, ctx);
 }
 
@@ -317,11 +317,11 @@ function doGive(s, cards, ctx) {
 
 function actGive(s, id, action, ctx) {
   mustBeActive(s, id);
-  if (s.phase !== 'exchange') throw new Error("Il n'y a pas d'échange de cartes en cours.");
+  if (s.phase !== 'exchange') throw new Error("Il n’y a pas d’échange de cartes en cours.");
   if (id !== s.exchange.president) throw new Error('Seul le Président choisit les cartes qu’il rend.');
   const cards = Array.isArray(action.cards) ? action.cards.map(String) : [];
   if (cards.length !== 2 || new Set(cards).size !== 2) throw new Error('Choisis exactement 2 cartes différentes à donner au Pauvre.');
-  for (const c of cards) if (!s.hands[id].includes(c)) throw new Error("Tu n'as pas toutes ces cartes.");
+  for (const c of cards) if (!s.hands[id].includes(c)) throw new Error("Tu n’as pas toutes ces cartes.");
   doGive(s, cards, ctx);
 }
 

@@ -1,17 +1,17 @@
 {
   "name": "Code secret",
-  "tagline": "Devine le code avant l'autre.",
-  "description": "Chacun règle la combinaison de son coffre, puis vous cherchez celle de l'autre en même temps. Les voyants te guident. Le plus rapide gagne.",
+  "tagline": "Devine le code avant l’autre.",
+  "description": "Chacun règle la combinaison de son coffre, puis vous cherchez celle de l’autre en même temps. Les voyants te guident. Le plus rapide gagne.",
   "how": [
-    "Chacun compose en secret un code de 4 couleurs (parmi 6) que l'adversaire devra trouver.",
-    "Ensuite, vous cherchez en même temps le code de l'autre. À chaque manche, chacun propose un essai ; les indications arrivent quand les deux ont joué.",
-    "Voyant vert : une couleur bien placée. Voyant ambre : une bonne couleur, mais mal placée.",
-    "Tu as 10 essais. Celui qui trouve le code en moins d'essais gagne ; si vous le trouvez à la même manche, c'est une égalité.",
-    "Réglages possibles : 5 trous, 8 couleurs, doublons autorisés, et un minuteur par manche."
+    "Chacun compose en secret un code de 4 couleurs (parmi 6) que l’adversaire devra trouver.",
+    "Ensuite, vous cherchez en même temps le code de l’autre. À chaque manche, chacun propose un essai ; les indications arrivent quand les deux ont joué.",
+    "Voyant vert : une couleur bien placée. Voyant ambre : une bonne couleur, mais mal placée.",
+    "Tu as 10 essais. Celui qui trouve le code en moins d’essais gagne ; si vous le trouvez à la même manche, c’est une égalité.",
+    "Réglages possibles : 5 trous, 8 couleurs, doublons autorisés, et un minuteur par manche."
   ],
   "minPlayers": 2,
   "maxPlayers": 2,
-  "duration": "10 min",
+  "duration": "10 min",
   "emoji": "🔐",
   "family": "plateau",
   "color": "#E3B94F",
@@ -71,15 +71,15 @@
         },
         {
           "value": 30,
-          "label": "30 s"
+          "label": "30 s"
         },
         {
           "value": 60,
-          "label": "1 min"
+          "label": "1 min"
         },
         {
           "value": 120,
-          "label": "2 min"
+          "label": "2 min"
         }
       ]
     }

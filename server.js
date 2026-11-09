@@ -6,6 +6,7 @@ import { config } from './src/config.js';
 import { api } from './src/api.js';
 import { attachRealtime } from './src/realtime.js';
 import { purgeOldMessages } from './src/chat.js';
+import { purgeOldMod } from './src/journal.js';
 import { purgeExpiredSessions, classCode } from './src/auth.js';
 import { loadGames, gamesDir } from './src/games.js';
 import { purgeTables } from './src/play.js';
@@ -71,6 +72,7 @@ function housekeeping() {
   const removed = purgeOldMessages();
   if (removed) console.log(`Ménage : ${removed} message(s) de plus d'un an effacé(s).`);
   purgeExpiredSessions();
+  purgeOldMod();
   const tablesRemoved = purgeTables();
   if (tablesRemoved) console.log(`Ménage : ${tablesRemoved} table(s) inactive(s) fermée(s).`);
 }

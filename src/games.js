@@ -26,7 +26,7 @@ export async function loadGames() {
       const meta = JSON.parse(readFileSync(join(dir, 'game.json'), 'utf8'));
       const rules = await import(pathToFileURL(join(dir, 'rules.js')).href);
       for (const fn of ['setup', 'move', 'view', 'status']) {
-        if (typeof rules[fn] !== 'function') throw new Error(`rules.js n'exporte pas ${fn}()`);
+        if (typeof rules[fn] !== 'function') throw new Error(`rules.js n’exporte pas ${fn}()`);
       }
       const min = Number(meta.minPlayers) || 1;
       games.set(id, {
@@ -51,10 +51,10 @@ export async function loadGames() {
         rules,
       });
     } catch (err) {
-      console.error(`Jeu « ${id} » ignoré : ${err.message}`);
+      console.error(`Jeu « ${id} » ignoré : ${err.message}`);
     }
   }
-  console.log(`Jeux chargés : ${[...games.keys()].join(', ') || 'aucun'}.`);
+  console.log(`Jeux chargés : ${[...games.keys()].join(', ') || 'aucun'}.`);
 }
 
 // Ce que le navigateur reçoit du catalogue (sans les règles).

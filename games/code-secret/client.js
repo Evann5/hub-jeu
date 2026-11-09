@@ -89,7 +89,7 @@ export function mount(root, api) {
       if (g) {
         body = g.code.map((c) => peg(c));
         fb = feedback(g.black, g.white, view.holes);
-        label = `Essai ${i + 1} : ${codeLabel(g.code)}. ${g.black} bien placé${g.black > 1 ? 's' : ''}, ${g.white} mal placé${g.white > 1 ? 's' : ''}`;
+        label = `Essai ${i + 1} : ${codeLabel(g.code)}. ${g.black} bien placé${g.black > 1 ? 's' : ''}, ${g.white} mal placé${g.white > 1 ? 's' : ''}`;
         if (i >= animateFrom[seat]) cls.push('is-new');
         if (g.black === view.holes) cls.push('is-found');
       } else if (i === guesses.length && view.phase === 'guessing') {
@@ -102,7 +102,7 @@ export function mount(root, api) {
             if (locked) return c === null || c === undefined ? hole() : peg(c, '.is-locked');
             return h(`button.cs-slot${k === active ? '.is-active' : ''}${c === null || c === undefined ? '' : '.is-filled'}`, {
               type: 'button', dataset: { k: `slot${k}` },
-              'aria-label': `Trou ${k + 1} sur ${view.holes} : ${c === null || c === undefined ? 'vide' : COLORS[c].name}${k === active ? ', sélectionné' : ''}`,
+              'aria-label': `Trou ${k + 1} sur ${view.holes} : ${c === null || c === undefined ? 'vide' : COLORS[c].name}${k === active ? ', sélectionné' : ''}`,
               onclick: () => {
                 if (k === active && draft[k] !== null) draft[k] = null;
                 active = k;
@@ -111,18 +111,18 @@ export function mount(root, api) {
               },
             }, c === null || c === undefined ? null : peg(c));
           });
-          label = locked ? `Essai ${i + 1} joué, en attente de ${pseudo(oppSeat())}` : `Essai ${i + 1} en cours`;
+          label = locked ? `Essai ${i + 1} joué, ${pseudo(oppSeat())} n’a pas encore joué` : `Essai ${i + 1} en cours`;
         } else {
           const played = view.guessed[seat];
           body = Array.from({ length: view.holes }, () => (played ? h('span.cs-hole.is-covered') : hole()));
-          label = played ? `Essai ${i + 1} : ${pseudo(seat)} a joué` : `Essai ${i + 1} : ${pseudo(seat)} réfléchit`;
+          label = played ? `Essai ${i + 1} : ${pseudo(seat)} a joué` : `Essai ${i + 1} : ${pseudo(seat)} réfléchit`;
         }
       }
       body ||= Array.from({ length: view.holes }, () => hole());
       rows.push(h(`div.${cls.join('.')}`, { role: 'group', 'aria-label': label, style: `--n:${i}` }, h('span.cs-num', { 'aria-hidden': 'true' }, String(i + 1)), h('span.cs-pegs', body), fb));
     }
-    const name = iPlay() ? (mineBoard ? 'Mes essais' : `Essais de ${pseudo(seat)}`) : `Essais de ${pseudo(seat)}`;
-    const sub = mineBoard ? `Tu cherches le code de ${pseudo(1 - seat)}` : `${pseudo(seat)} cherche le code de ${pseudo(1 - seat)}`;
+    const name = iPlay() ? (mineBoard ? 'Mes essais' : `Essais : ${pseudo(seat)}`) : `Essais : ${pseudo(seat)}`;
+    const sub = mineBoard ? 'Tu cherches le code adverse' : `${pseudo(seat)} cherche le code adverse`;
     // Ma grille : la légende des voyants juste sous le titre (en bas de 10 lignes, elle restait hors de l'écran du téléphone).
     const legend = h(`p.cs-legend${mineBoard ? '.is-top' : ''}`, h('i.cs-fb-peg.is-placed'), ' couleur bien placée', h('i.cs-fb-peg.is-misplaced'), ' bonne couleur, mal placée');
     return h(`section.cs-board${mineBoard ? '.is-mine' : ''}`,
@@ -159,7 +159,7 @@ export function mount(root, api) {
     const waiting = view.phase === 'coding' ? view.codeSet[me()] : view.phase === 'guessing' ? view.myPending : true;
     if (waiting) return;
     if (!view.doubles && draft.some((x, k) => x === c && k !== active)) {
-      notice = 'Les doublons sont interdits dans cette partie : choisis une autre couleur.';
+      notice = 'Les doublons sont interdits dans cette partie : choisis une autre couleur.';
       return paintAll();
     }
     draft[active] = c;
@@ -204,20 +204,20 @@ export function mount(root, api) {
   function statusText() {
     const opp = iPlay() ? pseudo(oppSeat()) : '';
     if (view.phase === 'over') {
-      if (view.forfeit) return view.forfeit === api.me.id ? 'Tu as abandonné la partie.' : `${opp} a abandonné : tu gagnes !`;
+      if (view.forfeit) return view.forfeit === api.me.id ? 'Tu as abandonné la partie.' : `${opp} a abandonné : tu gagnes !`;
       const n = (seat) => view.guesses[seat].length;
-      if (!iPlay()) return view.winners.length === 1 ? `${api.user(view.winners[0]).pseudo} gagne !` : view.winners.length === 2 ? 'Égalité : les deux ont trouvé à la même manche.' : 'Personne n’a trouvé : égalité.';
-      if (view.winners.length === 2) return `Égalité : vous avez trouvé le code à la même manche (en ${n(me())} essais) !`;
-      if (view.winners.length === 0) return `Personne n’a trouvé le code en ${view.maxTries} essais : égalité.`;
-      return view.winners[0] === api.me.id ? `Gagné ! Tu as trouvé le code en ${n(me())} essai${n(me()) > 1 ? 's' : ''}.` : `Perdu : ${opp} a trouvé le code en ${n(oppSeat())} essai${n(oppSeat()) > 1 ? 's' : ''}.`;
+      if (!iPlay()) return view.winners.length === 1 ? `${api.user(view.winners[0]).pseudo} gagne !` : view.winners.length === 2 ? 'Égalité : les deux ont trouvé à la même manche.' : 'Personne n’a trouvé : égalité.';
+      if (view.winners.length === 2) return `Égalité : vous avez trouvé le code à la même manche (en ${n(me())} essai${n(me()) > 1 ? 's' : ''}) !`;
+      if (view.winners.length === 0) return `Personne n’a trouvé le code en ${view.maxTries} essais : égalité.`;
+      return view.winners[0] === api.me.id ? `Gagné ! Tu as trouvé le code en ${n(me())} essai${n(me()) > 1 ? 's' : ''}.` : `Perdu : ${opp} a trouvé le code en ${n(oppSeat())} essai${n(oppSeat()) > 1 ? 's' : ''}.`;
     }
-    if (!iPlay()) return view.phase === 'coding' ? `${pseudo(0)} et ${pseudo(1)} composent leur code…` : `Manche ${view.guesses[0].length + 1} : ${pseudo(0)} et ${pseudo(1)} cherchent…`;
+    if (!iPlay()) return view.phase === 'coding' ? `${pseudo(0)} et ${pseudo(1)} composent leur code…` : `Manche ${view.guesses[0].length + 1} : ${pseudo(0)} et ${pseudo(1)} cherchent…`;
     if (view.phase === 'coding') {
-      return view.codeSet[me()] ? `Code enregistré. ${opp} compose encore le sien…` : `Compose le code que ${opp} devra trouver : ${view.holes} couleurs${view.doubles ? ', doublons permis' : ' différentes'}.`;
+      return view.codeSet[me()] ? `Code enregistré. ${opp} compose encore le sien…` : `Compose le code que ton adversaire devra trouver : ${view.holes} couleurs${view.doubles ? ', doublons permis' : ' différentes'}.`;
     }
     const round = view.guesses[me()].length + 1;
     if (view.myPending) return `Essai ${round} joué. On attend ${opp}…`;
-    return `Essai ${round} sur ${view.maxTries} : cherche le code de ${opp}.`;
+    return `Essai ${round} sur ${view.maxTries} : cherche le code de ton adversaire.`;
   }
 
   // ——— Dessin complet ———
@@ -234,7 +234,7 @@ export function mount(root, api) {
       secretBar.hidden = false;
       secretBar.replaceChildren(
         h('span.cs-secret-label', 'Ton code secret'),
-        h('span.cs-secret-pegs', { role: 'img', 'aria-label': `Ton code : ${codeLabel(mySecret)}` }, mySecret.map((c) => peg(c))),
+        h('span.cs-secret-pegs', { role: 'img', 'aria-label': `Ton code : ${codeLabel(mySecret)}` }, mySecret.map((c) => peg(c))),
       );
     } else {
       secretBar.hidden = true;
@@ -268,7 +268,7 @@ export function mount(root, api) {
       const c = draft[k];
       return h(`button.cs-slot.cs-slot-big${k === active ? '.is-active' : ''}${c === null ? '' : '.is-filled'}`, {
         type: 'button', dataset: { k: `slot${k}` },
-        'aria-label': `Trou ${k + 1} sur ${view.holes} : ${c === null ? 'vide' : COLORS[c].name}${k === active ? ', sélectionné' : ''}`,
+        'aria-label': `Trou ${k + 1} sur ${view.holes} : ${c === null ? 'vide' : COLORS[c].name}${k === active ? ', sélectionné' : ''}`,
         onclick: () => {
           if (k === active && draft[k] !== null) draft[k] = null;
           active = k;
@@ -284,7 +284,7 @@ export function mount(root, api) {
 
   function reveal() {
     const item = (seat) => h('div.cs-reveal-item',
-      h('span', iPlay() && seat === me() ? 'Ton code' : `Code de ${pseudo(seat)}`),
+      h('span', iPlay() && seat === me() ? 'Ton code' : `Code : ${pseudo(seat)}`),
       h('span.cs-secret-pegs', { role: 'img', 'aria-label': codeLabel(view.secrets[seat]) }, view.secrets[seat].map((c) => peg(c))));
     return h('div.cs-reveal', h('h3', 'Les codes'), item(0), item(1));
   }

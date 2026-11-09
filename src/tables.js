@@ -48,7 +48,7 @@ function remove(t) {
 
 export function getTable(id) {
   const t = tables.get(Number(id));
-  if (!t) throw new ChatError("Cette partie n'existe plus.");
+  if (!t) throw new ChatError("Cette partie n’existe plus.");
   return t;
 }
 
@@ -108,7 +108,7 @@ function players(t) {
 }
 
 function mustHost(t, userId) {
-  if (t.hostId !== userId) throw new ChatError("Seul l'hôte de la partie peut faire ça.");
+  if (t.hostId !== userId) throw new ChatError("Seul l’hôte de la partie peut faire ça.");
 }
 
 function mustLobby(t) {
@@ -130,7 +130,7 @@ export function createTable(gameId, userId) {
   const game = games.get(gameId);
   if (!game) throw new ChatError('Jeu inconnu.');
   const open = [...tables.values()].filter((t) => t.hostId === userId && t.status !== 'over').length;
-  if (open >= MAX_OPEN_PER_HOST) throw new ChatError(`Tu as déjà ${MAX_OPEN_PER_HOST} parties ouvertes : termines-en ou ferme-en une.`);
+  if (open >= MAX_OPEN_PER_HOST) throw new ChatError(`Tu as déjà ${MAX_OPEN_PER_HOST} parties ouvertes : termine ou ferme l’une d’elles.`);
   const now = Date.now();
   const options = cleanOptions(game, {});
   const id = Number(db.prepare(
@@ -182,7 +182,7 @@ export function kickPlayer(id, userId, targetId) {
   const t = getTable(id);
   mustHost(t, userId);
   mustLobby(t);
-  if (targetId === userId) throw new ChatError('Pour partir, utilise « Quitter ».');
+  if (targetId === userId) throw new ChatError('Pour partir, utilise « Quitter ».');
   t.seats = t.seats.filter((x) => x !== targetId);
   t.kicked = [...(t.kicked ?? []), targetId]; // gardé en mémoire : le salon ne dure pas
   persist(t);
@@ -218,10 +218,10 @@ export function startTable(id, userId) {
 
 export function playMove(id, userId, action) {
   const t = getTable(id);
-  if (t.status !== 'playing') throw new ChatError(t.status === 'lobby' ? "La partie n'a pas commencé." : 'La partie est terminée.');
-  if (!t.seats.includes(userId)) throw new ChatError('Tu regardes cette partie : seuls les joueurs jouent.');
-  if (t.left.includes(userId)) throw new ChatError('Tu as quitté cette partie : tu la regardes maintenant.');
-  if (!statusOf(t).may.includes(userId)) throw new ChatError("Ce n'est pas ton tour.");
+  if (t.status !== 'playing') throw new ChatError(t.status === 'lobby' ? "La partie n’a pas commencé." : 'La partie est terminée.');
+  if (!t.seats.includes(userId)) throw new ChatError('Tu regardes cette partie : seuls les joueurs jouent.');
+  if (t.left.includes(userId)) throw new ChatError('Tu as quitté cette partie : tu la regardes maintenant.');
+  if (!statusOf(t).may.includes(userId)) throw new ChatError("Ce n’est pas ton tour.");
   const events = apply(t, runRules(() => gameOf(t).rules.move(t.state, userId, action ?? {}, ctx())));
   return { table: t, events };
 }
@@ -253,7 +253,10 @@ export function restartTable(id, userId) {
 
 export function closeTable(id, user) {
   const t = getTable(id);
-  if (t.hostId !== user.id && user.role !== 'admin') throw new ChatError("Seul l'hôte ou un admin peut fermer la partie.");
+  // Un modérateur ne ferme que les parties lancées par un membre.
+  const hostRole = db.prepare('SELECT role FROM users WHERE id = ?').get(t.hostId)?.role ?? 'membre';
+  const allowed = t.hostId === user.id || user.role === 'admin' || (user.role === 'modo' && hostRole === 'membre');
+  if (!allowed) throw new ChatError('Seul l’hôte, un modérateur (partie d’un membre) ou un admin peut fermer la partie.');
   remove(t);
 }
 

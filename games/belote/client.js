@@ -243,8 +243,8 @@ export function mount(root, api) {
     const t0 = myTeam();
     return h('section.bl-recap', { 'aria-label': 'Fin de la partie' },
       h('h2', 'Fin de la partie'),
-      h('p.bl-verdict', `${name(v.forfeit)} a quitté la partie : on ne joue pas à la belote à trois, la partie s’arrête.`),
-      h('p.bl-final', v.seat >= 0 ? (v.winnerTeam === t0 ? 'Victoire de ton équipe !' : 'L’autre équipe gagne la partie.') : `${teamName(v.winnerTeam)} gagnent la partie.`));
+      h('p.bl-verdict', `${name(v.forfeit)} a quitté la partie : on ne joue pas à la belote à trois, la partie s’arrête.`),
+      h('p.bl-final', v.seat >= 0 ? (v.winnerTeam === t0 ? 'Victoire de ton équipe !' : 'L’autre équipe gagne la partie.') : `${teamName(v.winnerTeam)} gagnent la partie.`));
   }
 
   function recapPanel() {
@@ -255,10 +255,10 @@ export function mount(root, api) {
     const takerTeam = r.taker % 2;
     const over = v.phase === 'over';
     const verdict = r.capot !== null
-      ? `Capot pour ${v.seat >= 0 ? (r.capot === t0 ? 'nous' : 'eux') : teamName(r.capot)} : 252 points !`
+      ? `Capot pour ${v.seat >= 0 ? (r.capot === t0 ? 'nous' : 'eux') : teamName(r.capot)} : 252 points !`
       : r.made
-        ? `${name(r.taker)} avait pris à ${SUIT_NAME[r.trump]} : contrat rempli.`
-        : `${name(r.taker)} avait pris à ${SUIT_NAME[r.trump]} : dedans ! 162 points pour la défense.`;
+        ? `${name(r.taker)} avait pris à ${SUIT_NAME[r.trump]} : contrat rempli.`
+        : `${name(r.taker)} avait pris à ${SUIT_NAME[r.trump]} : dedans ! 162 points pour la défense.`;
     const rows = [
       ['Plis', (t) => r.trickPoints[t]],
       ['Dix de der', (t) => (r.lastTrickTeam === t ? 10 : 0)],
@@ -271,8 +271,8 @@ export function mount(root, api) {
     let end = null;
     if (over) {
       end = v.forfeit !== null
-        ? h('p.bl-final', `${name(v.forfeit)} a quitté la partie : on ne joue pas à la belote à trois, la partie s’arrête.`)
-        : h('p.bl-final', v.seat >= 0 ? (v.winnerTeam === t0 ? 'Victoire de ton équipe !' : 'L’autre équipe gagne la partie.') : `${teamName(v.winnerTeam)} gagnent la partie.`);
+        ? h('p.bl-final', `${name(v.forfeit)} a quitté la partie : on ne joue pas à la belote à trois, la partie s’arrête.`)
+        : h('p.bl-final', v.seat >= 0 ? (v.winnerTeam === t0 ? 'Victoire de ton équipe !' : 'L’autre équipe gagne la partie.') : `${teamName(v.winnerTeam)} gagnent la partie.`);
     }
     return h('section.bl-recap', { 'aria-label': 'Bilan de la donne' },
       h('h2', over ? 'Fin de la partie' : `Donne ${v.handNo} terminée`),
@@ -301,11 +301,11 @@ export function mount(root, api) {
   }
 
   function statusText() {
-    if (v.phase === 'over') return v.forfeit !== null ? 'Partie terminée.' : 'Partie terminée : bravo aux gagnants !';
+    if (v.phase === 'over') return v.forfeit !== null ? 'Partie terminée.' : 'Partie terminée : bravo aux gagnants !';
     if (v.phase === 'recap') return 'Bilan de la donne.';
     const mine = v.turn === v.seat;
-    if (v.phase === 'bid1') return mine ? `1er tour : prends à ${SUIT_NAME[suitOf(v.upcard)]} ou passe.` : `1er tour : ${name(v.turn)} réfléchit…`;
-    if (v.phase === 'bid2') return mine ? '2e tour : choisis l’atout ou passe.' : `2e tour : ${name(v.turn)} réfléchit…`;
+    if (v.phase === 'bid1') return mine ? `1er tour : prends à ${SUIT_NAME[suitOf(v.upcard)]} ou passe.` : `1er tour : ${name(v.turn)} réfléchit…`;
+    if (v.phase === 'bid2') return mine ? '2e tour : choisis l’atout ou passe.' : `2e tour : ${name(v.turn)} réfléchit…`;
     return mine ? `À toi de jouer. ${v.hint}` : `${name(v.turn)} joue…`;
   }
 
@@ -332,7 +332,7 @@ export function mount(root, api) {
 
     const center = [];
     if (v.phase === 'bid1' || v.phase === 'bid2') {
-      center.push(h('div.bl-up', faceCard(v.upcard, '.is-up'), h('small', 'Retourne')));
+      center.push(h('div.bl-up', faceCard(v.upcard, '.is-up'), h('small', 'Retournée')));
     } else {
       center.push(trickBox());
     }
@@ -344,7 +344,8 @@ export function mount(root, api) {
         h('div.bl-center', center),
         seatBadge((mySeat() + 3) % 4)),
       showRecap ? recapPanel() : null,
-      showRecap && v.phase === 'over' && v.forfeit === null && (v.seat < 0 || v.winnerTeam === myTeam()) ? confetti() : null);
+      // Aussi après un abandon : l'équipe restante a gagné.
+      showRecap && v.phase === 'over' && (v.seat < 0 || v.winnerTeam === myTeam()) ? confetti() : null);
 
     const actions = (v.phase === 'bid1' || v.phase === 'bid2') ? bidPanel() : null;
 
@@ -404,9 +405,9 @@ export function mount(root, api) {
     // Belote, rebelote, redistribution : annoncés à tous.
     const n = view.announce?.n ?? 0;
     if (!first && seenAnnounce !== null && n !== seenAnnounce) {
-      if (view.announce.kind === 'redeal') api.toast('Personne n’a pris : on redistribue les cartes.');
+      if (view.announce.kind === 'redeal') api.toast('Personne n’a pris : on redistribue les cartes.');
       else {
-        bubble = { seat: view.announce.seat, text: view.announce.kind === 'belote' ? 'Belote !' : 'Rebelote !', until: Date.now() + BUBBLE_MS };
+        bubble = { seat: view.announce.seat, text: view.announce.kind === 'belote' ? 'Belote !' : 'Rebelote !', until: Date.now() + BUBBLE_MS };
         clearTimeout(bubbleTimer);
         bubbleTimer = setTimeout(() => { bubble = null; if (v) render(); }, BUBBLE_MS + 20);
       }

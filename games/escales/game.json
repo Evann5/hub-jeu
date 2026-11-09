@@ -1,21 +1,21 @@
 {
   "name": "Escales",
   "tagline": "Achète les villes du monde, fais payer le passage.",
-  "description": "Le grand jeu de plateau de la classe, jusqu'à 10 joueurs, avec des robots si vous êtes moins nombreux : achète des villes, réunis 3 villes d'un pays pour y construire, négocie, et fais payer tout le monde. Au dernier tour, le plus gros patrimoine gagne.",
+  "description": "Le grand jeu de plateau de la classe, jusqu’à 10 joueurs, avec des robots si vous êtes moins nombreux : achète des villes, réunis 3 villes d’un pays pour y construire, négocie, et fais payer tout le monde. Au dernier tour, le plus gros patrimoine gagne.",
   "how": [
-    "Dans le salon, choisissez les pays du plateau : au moins autant que de joueurs, de 4 à 8. Le hasard complète, et l’ordre change à chaque partie.",
-    "À ton tour, lance les dés et avance sur le plateau de 48 cases. Chaque passage au Départ rapporte 200 €. Un double te fait rejouer ; au troisième de suite, c'est la Douane.",
-    "Tombe sur une ville libre : achète-la ou passe. Si tu passes, elle reste libre pour le suivant.",
-    "Chaque ville rapporte un loyer. Avec 3 villes d'une région sur 4, le loyer double et tu peux construire (2 villes suffisent à 2 ou 3 joueurs). Avec les 4, il triple. Chaque ville monte jusqu'au niveau Skyline.",
-    "Escales : ces 4 cases rapportent plus si tu en as plusieurs.",
-    "Festival : tu gagnes 100 €. Chantier : tu paies 50 €.",
-    "Propose un échange à tout moment, même hors de ton tour : villes contre argent, tout se négocie.",
-    "Plus d'argent ? Vends des constructions, mets des villes en gage, ou négocie. Sinon, c'est la faillite : ton créancier récupère tout.",
-    "La partie s'arrête au dernier tour : le plus gros patrimoine gagne (argent, villes, constructions). Ou avant, s'il ne reste qu'un joueur."
+    "Dans le salon, l’hôte choisit les pays du plateau : au moins autant que de joueurs, de 4 à 8. Le hasard complète, et l’ordre change à chaque partie.",
+    "À ton tour, lance les dés et avance sur le plateau de 48 cases. Chaque passage au Départ rapporte 200 €. Un double te fait rejouer ; au troisième de suite, c’est la Douane.",
+    "Tombe sur une ville libre : achète-la ou passe. Si tu passes, elle reste libre pour le suivant.",
+    "Chaque ville rapporte un loyer. Avec 3 villes d’un même pays (sur 4), le loyer double et tu peux construire (2 villes suffisent à 2 ou 3 joueurs). Avec les 4, il triple. Chaque ville monte jusqu’au niveau Skyline.",
+    "Escales : ces 4 cases rapportent plus si tu en as plusieurs.",
+    "Festival : tu gagnes 100 €. Chantier : tu paies 50 €.",
+    "Propose un échange à tout moment, même hors de ton tour : villes contre argent, tout se négocie.",
+    "Plus d’argent ? Vends des constructions, mets des villes en gage, ou négocie. Sinon, c’est la faillite : ton créancier récupère tout.",
+    "La partie s’arrête au dernier tour : le plus gros patrimoine gagne (argent, villes, constructions). Ou avant, s’il ne reste qu’un joueur."
   ],
   "minPlayers": 1,
   "maxPlayers": 10,
-  "duration": "45 min",
+  "duration": "45 min",
   "emoji": "🗺️",
   "family": "plateau",
   "color": "#262C38",
@@ -27,7 +27,7 @@
     {
       "key": "bots",
       "label": "Robots",
-      "help": "Ils complètent la partie, 10 joueurs au plus. Si tu es seul, 3 robots s'ajoutent d'office.",
+      "help": "Ils complètent la partie, 10 joueurs au plus. Si tu es seul, 3 robots s’ajoutent d’office.",
       "type": "choice",
       "default": 0,
       "choices": [
@@ -91,15 +91,15 @@
         },
         {
           "value": 30,
-          "label": "30 s"
+          "label": "30 s"
         },
         {
           "value": 45,
-          "label": "45 s"
+          "label": "45 s"
         },
         {
           "value": 90,
-          "label": "90 s"
+          "label": "90 s"
         }
       ]
     },
@@ -111,15 +111,15 @@
       "choices": [
         {
           "value": 1000,
-          "label": "1 000 €"
+          "label": "1 000 €"
         },
         {
           "value": 1500,
-          "label": "1 500 €"
+          "label": "1 500 €"
         },
         {
           "value": 2000,
-          "label": "2 000 €"
+          "label": "2 000 €"
         }
       ]
     },

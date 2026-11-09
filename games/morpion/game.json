@@ -1,10 +1,15 @@
 {
   "name": "Morpion",
   "tagline": "Trois à la suite, en duel.",
-  "description": "Chacun son tour : le premier qui aligne trois symboles gagne.",
+  "description": "Chacun son tour : le premier qui aligne trois symboles gagne.",
+  "how": [
+    "Chacun son tour, pose ton symbole (croix ou rond) sur une case libre de la grille de 3 × 3.",
+    "Le premier qui aligne trois de ses symboles gagne : en ligne, en colonne ou en diagonale.",
+    "Si la grille est pleine sans alignement, c’est match nul."
+  ],
   "minPlayers": 2,
   "maxPlayers": 2,
-  "duration": "2 min",
+  "duration": "2 min",
   "emoji": "⭕",
   "family": "plateau",
   "color": "#C8F26B",

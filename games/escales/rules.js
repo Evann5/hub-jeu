@@ -14,7 +14,7 @@ const BOT_NAMES = ['Marco', 'Aïko', 'Leïla', 'Nuno', 'Frida', 'Anh', 'Giulia',
 
 const clone = (s) => structuredClone(s);
 const d6 = (ctx) => 1 + Math.floor(ctx.random() * 6);
-const money = (n) => `${n.toLocaleString('fr-FR')} €`;
+const money = (n) => `${n.toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0')} €`;
 
 const cur = (s) => s.players[s.cur];
 const byId = (s, id) => s.players.find((p) => p.id === id);
@@ -207,8 +207,8 @@ function finish(s, reason) {
   const left = active(s);
   const best = Math.max(...left.map((p) => worthOf(s, p)));
   s.winners = left.filter((p) => worthOf(s, p) === best).map((p) => p.id);
-  const names = s.winners.map((id) => byId(s, id).pseudo).join(' et ');
-  log(s, reason === 'last' ? `${names} est le dernier en jeu.` : `${reason === 'rounds' ? 'Fin des tours' : 'Plus aucun humain en jeu'} : ${names} a le plus gros patrimoine (${money(best)}).`);
+  const names = s.winners.map((id) => byId(s, id).pseudo).join(', ').replace(/, ([^,]*)$/, ' et $1');
+  log(s, reason === 'last' ? `${names} est le dernier en jeu.` : `${reason === 'rounds' ? 'Fin des tours' : 'Plus aucun humain en jeu'} : ${names} a le plus gros patrimoine (${money(best)}).`);
 }
 
 // Le joueur quitte la partie. to : id du créancier, ou null pour la banque.
@@ -235,7 +235,7 @@ function eliminate(s, p, to) {
 
 function collect(s, p) {
   p.cash += SALARY;
-  log(s, `${p.pseudo} passe au Départ : +${money(SALARY)}.`);
+  log(s, `${p.pseudo} passe au Départ : +${money(SALARY)}.`);
 }
 
 function advance(s, steps, ctx) {
@@ -257,7 +257,7 @@ function sendToCustoms(s, ctx) {
   p.blocked = 1;
   p.doubles = 0;
   s.again = false;
-  log(s, `${p.pseudo} est retenu à la Douane.`);
+  log(s, `${p.pseudo} part à la Douane.`);
   return settle(s, ctx);
 }
 
@@ -313,25 +313,25 @@ function land(s, ctx) {
 // ——— Le Télex ———
 
 const CARDS = [
-  { text: 'Surclassement : file à la prochaine escale.', play: (s, ctx) => goForwardTo(s, TILES.find((t) => t.type === 'escale' && t.pos > cur(s).pos)?.pos ?? 6, ctx) },
-  { text: 'Billet retour : retour au Départ.', play: (s, ctx) => goForwardTo(s, 0, ctx) },
-  { text: 'Tes bagages sont perdus : paie 50 €.', play: (s, ctx) => charge(s, 50, null, '(bagages perdus)', ctx) },
-  { text: 'Tu revends ton carnet de voyage : +100 €.', play: (s, ctx) => gain(s, 100, ctx) },
-  { text: 'Tu vends tes photos de voyage : +50 €.', play: (s, ctx) => gain(s, 50, ctx) },
-  { text: 'Contrôle surprise : direction la Douane.', play: (s, ctx) => sendToCustoms(s, ctx) },
-  { text: 'Ta photo gagne un concours : +150 €.', play: (s, ctx) => gain(s, 150, ctx) },
-  { text: 'Amende de stationnement : paie 40 €.', play: (s, ctx) => charge(s, 40, null, '(amende)', ctx) },
-  { text: 'Mauvaise route : recule de 3 cases.', play: (s, ctx) => { const p = cur(s); p.pos = (p.pos - 3 + SIZE) % SIZE; return land(s, ctx); } },
-  { text: 'Travaux de voirie : paie 25 € par niveau construit.', play: (s, ctx) => {
+  { text: 'Surclassement : file à la prochaine escale.', play: (s, ctx) => goForwardTo(s, TILES.find((t) => t.type === 'escale' && t.pos > cur(s).pos)?.pos ?? 6, ctx) },
+  { text: 'Billet retour : retour au Départ.', play: (s, ctx) => goForwardTo(s, 0, ctx) },
+  { text: 'Tes bagages sont perdus : paie 50 €.', play: (s, ctx) => charge(s, 50, null, '(bagages perdus)', ctx) },
+  { text: 'Tu revends ton carnet de voyage : +100 €.', play: (s, ctx) => gain(s, 100, ctx) },
+  { text: 'Tu vends tes photos de voyage : +50 €.', play: (s, ctx) => gain(s, 50, ctx) },
+  { text: 'Contrôle surprise : direction la Douane.', play: (s, ctx) => sendToCustoms(s, ctx) },
+  { text: 'Ta photo gagne un concours : +150 €.', play: (s, ctx) => gain(s, 150, ctx) },
+  { text: 'Amende de stationnement : paie 40 €.', play: (s, ctx) => charge(s, 40, null, '(amende)', ctx) },
+  { text: 'Mauvaise route : recule de 3 cases.', play: (s, ctx) => { const p = cur(s); p.pos = (p.pos - 3 + SIZE) % SIZE; return land(s, ctx); } },
+  { text: 'Travaux de voirie : paie 25 € par niveau construit.', play: (s, ctx) => {
     const levels = positionsOf(s, cur(s).id).reduce((sum, pos) => sum + s.props[pos].level, 0);
     return levels ? charge(s, levels * 25, null, '(travaux de voirie)', ctx) : settle(s, ctx);
   } },
-  { text: 'Une tante globe-trotteuse te lègue 200 €.', play: (s, ctx) => gain(s, 200, ctx) },
-  { text: 'Mauvais taux de change : perds 10 % de ton argent.', play: (s, ctx) => {
+  { text: 'Une tante globe-trotteuse te lègue 200 €.', play: (s, ctx) => gain(s, 200, ctx) },
+  { text: 'Mauvais taux de change : perds 10 % de ton argent.', play: (s, ctx) => {
     const amount = Math.floor(cur(s).cash / 10);
     return amount ? charge(s, amount, null, '(taux de change)', ctx) : settle(s, ctx);
   } },
-  { text: 'Coup de cœur : file à la prochaine ville libre.', play: (s, ctx) => {
+  { text: 'Coup de cœur : file à la prochaine ville libre.', play: (s, ctx) => {
     const from = cur(s).pos;
     for (let i = 1; i < SIZE; i += 1) {
       const t = TILES[(from + i) % SIZE];
@@ -339,7 +339,7 @@ const CARDS = [
     }
     return settle(s, ctx);
   } },
-  { text: 'Prime de fidélité : +50 € par escale que tu possèdes.', play: (s, ctx) => {
+  { text: 'Prime de fidélité : +50 € par escale que tu possèdes.', play: (s, ctx) => {
     const n = escalesOf(s, cur(s).id);
     return n ? gain(s, n * 50, ctx) : settle(s, ctx);
   } },
@@ -353,7 +353,7 @@ function gain(s, amount, ctx) {
 function drawCard(s, ctx) {
   if (!s.deck.length) s.deck = shuffle(CARDS.map((_, i) => i), ctx);
   const card = CARDS[s.deck.pop()];
-  log(s, `Télex pour ${cur(s).pseudo} : ${card.text}`);
+  log(s, `Télex pour ${cur(s).pseudo} : ${card.text}`);
   return card.play(s, ctx);
 }
 
@@ -370,7 +370,7 @@ function doRoll(s, ctx) {
     if (a === b) {
       p.blocked = 0;
       s.again = false;
-      log(s, `Un double : ${p.pseudo} passe la Douane.`);
+      log(s, `Un double : ${p.pseudo} passe la Douane.`);
       return advance(s, a + b, ctx);
     }
     p.blocked += 1;
@@ -554,11 +554,11 @@ function cleanOffer(given) {
 
 function checkOffer(s, p, offer, actorId) {
   const mine = p.id === actorId;
-  if (p.cash < offer.cash) throw new Error(mine ? `Tu n'as pas ${money(offer.cash)}.` : `${p.pseudo} n'a pas ${money(offer.cash)}.`);
+  if (p.cash < offer.cash) throw new Error(mine ? `Tu n'as pas ${money(offer.cash)}.` : `${p.pseudo} n’a pas ${money(offer.cash)}.`);
   for (const pos of offer.cities) {
     const prop = s.props[pos];
-    if (prop?.owner !== p.id) throw new Error(`${nameOn(s.map, pos)} n'appartient pas à ${p.pseudo}.`);
-    if (prop.level > 0) throw new Error(`${nameOn(s.map, pos)} a des constructions : il faut les vendre avant.`);
+    if (prop?.owner !== p.id) throw new Error(`${nameOn(s.map, pos)} n’appartient pas à ${p.pseudo}.`);
+    if (prop.level > 0) throw new Error(`${nameOn(s.map, pos)} a des constructions : il faut les vendre avant.`);
   }
 }
 
@@ -602,7 +602,7 @@ export function move(state, playerId, given, ctx) {
       break;
     case 'payFine':
       needPhase(s, 'roll');
-      if (!p.blocked) throw new Error('Tu n’es pas retenu à la Douane.');
+      if (!p.blocked) throw new Error('Tu n’es pas à la Douane.');
       if (p.cash < FINE) throw new Error(`Il te faut ${money(FINE)}.`);
       p.cash -= FINE;
       p.blocked = 0;
@@ -631,7 +631,7 @@ export function move(state, playerId, given, ctx) {
       break;
     case 'build': {
       needPhase(s, ...MANAGE_PHASES);
-      if (!canBuildAt(s, p.id, pos)) throw new Error(`Il te faut ${s.majority} villes de cette région, et un niveau libre.`);
+      if (!canBuildAt(s, p.id, pos)) throw new Error(`Il te faut ${s.majority} villes de ce pays, et un niveau libre.`);
       const cost = buildCost(s, pos);
       if (p.cash < cost) throw new Error(`Il te faut ${money(cost)}.`);
       p.cash -= cost;
@@ -677,7 +677,7 @@ export function move(state, playerId, given, ctx) {
     case 'raise': // vendre juste ce qu'il faut pour payer
       needPhase(s, 'debt');
       liquidate(s, p, s.debt.amount);
-      log(s, `${p.pseudo} vend ce qu'il faut pour payer.`);
+      log(s, `${p.pseudo} vend ce qu’il faut pour payer.`);
       if (p.cash >= s.debt.amount) settleDebt(s, ctx);
       break;
     case 'bankrupt':
@@ -700,9 +700,9 @@ export function move(state, playerId, given, ctx) {
         if (botAccepts(s, other, trade)) {
           transfer(s, p, other, give);
           transfer(s, other, p, get);
-          log(s, `${other.pseudo} accepte l'échange de ${p.pseudo}.`);
+          log(s, `${other.pseudo} accepte l’échange proposé par ${p.pseudo}.`);
         } else {
-          log(s, `${other.pseudo} refuse l'échange de ${p.pseudo}.`);
+          log(s, `${other.pseudo} refuse l’échange proposé par ${p.pseudo}.`);
         }
       } else {
         s.trades.push(trade);
@@ -718,7 +718,7 @@ export function move(state, playerId, given, ctx) {
         checkOffer(s, from, t.give, p.id);
         checkOffer(s, p, t.get, p.id);
       } catch {
-        log(s, `L'échange entre ${from.pseudo} et ${p.pseudo} n'est plus possible : il est annulé.`); // la situation a changé depuis la proposition
+        log(s, `L’échange entre ${from.pseudo} et ${p.pseudo} n’est plus possible : il est annulé.`); // la situation a changé depuis la proposition
         break;
       }
       transfer(s, from, p, t.give);
@@ -730,7 +730,7 @@ export function move(state, playerId, given, ctx) {
       const t = s.trades.find((x) => x.id === Number(action.id) && (x.to === p.id || x.from === p.id));
       if (!t) throw new Error('Cette proposition n’existe plus.');
       s.trades = s.trades.filter((x) => x.id !== t.id);
-      log(s, t.from === p.id ? `${p.pseudo} retire sa proposition.` : `${p.pseudo} refuse l'échange.`);
+      log(s, t.from === p.id ? `${p.pseudo} retire sa proposition.` : `${p.pseudo} refuse l’échange.`);
       break;
     }
     default:
@@ -819,7 +819,7 @@ export function view(state, playerId) {
 export function status(state) {
   // Le hub ne connaît que de vrais comptes : la victoire d'un robot est annoncée par le jeu lui-même.
   if (state.over) {
-    const names = state.winners.map((id) => `${byId(state, id).pseudo}${id < 0 ? ' (robot)' : ''}`).join(' et ');
+    const names = state.winners.map((id) => `${byId(state, id).pseudo}${id < 0 ? ' (robot)' : ''}`).join(', ').replace(/, ([^,]*)$/, ' et $1');
     return { turn: null, over: true, winners: state.winners.filter((id) => id > 0), label: state.winners.length > 3 ? `${state.winners.length} joueurs à égalité` : `${names} ${state.winners.length > 1 ? 'gagnent' : 'gagne'}`, deadline: null };
   }
   return { turn: cur(state).id, may: active(state).filter((p) => !p.bot).map((p) => p.id), over: false, winners: [], deadline: state.deadline };

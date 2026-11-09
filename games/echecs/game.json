@@ -1,18 +1,18 @@
 {
   "name": "Échecs",
   "tagline": "Le duel de stratégie, à la pendule si tu veux.",
-  "description": "Les échecs complets : roque, prise en passant, promotion, échec et mat, pat et toutes les nulles. Pendule en option.",
+  "description": "Les échecs complets : roque, prise en passant, promotion, échec et mat, pat et toutes les nulles. Pendule en option.",
   "how": [
-    "Deux joueurs, les blancs commencent. La couleur est tirée au sort. Le but : mettre le roi adverse en échec et mat, c'est-à-dire attaqué sans aucun moyen d'y échapper.",
-    "Touche une de tes pièces : ses coups possibles s'affichent (un point pour une case libre, un anneau pour une prise). Touche une case marquée pour jouer. Au clavier : flèches, Entrée ou Espace, Échap pour annuler.",
-    "Toutes les règles sont gérées : roque (ni échec, ni case traversée attaquée), prise en passant, promotion d'un pion arrivé au bout (tu choisis la pièce).",
-    "Partie nulle : pat, matériel insuffisant pour mater, 50 coups sans prise ni coup de pion, même position trois fois, ou nulle acceptée. Pour proposer la nulle, fais-le à ton tour ; l'autre accepte ou refuse à son tour (jouer un coup vaut refus).",
-    "Avec la pendule, ton temps s'écoule quand c'est à toi de jouer : à zéro, tu perds au temps (sauf si l'autre n'a plus de quoi mater : nulle).",
-    "Les coups sont notés à la française : R roi, D dame, T tour, F fou, C cavalier."
+    "Deux joueurs, les blancs commencent. La couleur est tirée au sort. Le but : mettre le roi adverse en échec et mat, c’est-à-dire attaqué sans aucun moyen d’y échapper.",
+    "Touche une de tes pièces : ses coups possibles s’affichent (un point pour une case libre, un anneau pour une prise). Touche une case marquée pour jouer. Au clavier : flèches, Entrée ou Espace, Échap pour annuler.",
+    "Toutes les règles sont gérées : roque (ni échec, ni case traversée attaquée), prise en passant, promotion d’un pion arrivé au bout (tu choisis la pièce).",
+    "Partie nulle : pat, matériel insuffisant pour mater, 50 coups sans prise ni coup de pion, même position trois fois, ou nulle acceptée. Pour proposer la nulle, fais-le à ton tour ; l’autre accepte ou refuse à son tour (jouer un coup vaut refus).",
+    "Avec la pendule, ton temps s’écoule quand c’est à toi de jouer : à zéro, tu perds au temps (sauf si l’autre n’a plus de quoi mater : nulle).",
+    "Les coups sont notés à la française : R roi, D dame, T tour, F fou, C cavalier."
   ],
   "minPlayers": 2,
   "maxPlayers": 2,
-  "duration": "20 min",
+  "duration": "20 min",
   "emoji": "♟️",
   "family": "plateau",
   "color": "#FF5A1F",
@@ -23,9 +23,9 @@
       "key": "clock", "label": "Pendule", "help": "Temps total par joueur, sans ajout à chaque coup.", "type": "choice", "default": 0,
       "choices": [
         { "value": 0, "label": "Sans" },
-        { "value": 5, "label": "5 min" },
-        { "value": 10, "label": "10 min" },
-        { "value": 15, "label": "15 min" }
+        { "value": 5, "label": "5 min" },
+        { "value": 10, "label": "10 min" },
+        { "value": 15, "label": "15 min" }
       ]
     }
   ]

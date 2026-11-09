@@ -4,10 +4,10 @@
 const SVG = 'http://www.w3.org/2000/svg';
 
 const CHARS = {
-  doge: { name: 'Le Doge', the: 'le Doge', power: 'Taxe : +3 pièces', block: 'Contre l’aide étrangère' },
-  lame: { name: 'La Lame', the: 'la Lame', power: 'Assassinat : −3 pièces', block: '' },
+  doge: { name: 'Le Doge', the: 'le Doge', power: 'Taxe : +3 pièces', block: 'Contre l’aide étrangère' },
+  lame: { name: 'La Lame', the: 'la Lame', power: 'Assassinat : −3 pièces', block: '' },
   courtisane: { name: 'La Courtisane', the: 'la Courtisane', power: '', block: 'Contre l’assassinat' },
-  condottiere: { name: 'Le Condottiere', the: 'le Condottiere', power: 'Vol : 2 pièces', block: 'Contre le vol' },
+  condottiere: { name: 'Le Condottiere', the: 'le Condottiere', power: 'Vol : 2 pièces', block: 'Contre le vol' },
   emissaire: { name: 'L’Émissaire', the: 'l’Émissaire', power: 'Échange de cartes', block: 'Contre le vol' },
 };
 
@@ -15,7 +15,7 @@ const ACTS = [
   { type: 'income', label: 'Revenu', sub: '+1 pièce' },
   { type: 'aid', label: 'Aide étrangère', sub: '+2 pièces, le Doge peut la contrer' },
   { type: 'tax', label: 'Taxe', sub: '+3 pièces', claim: 'doge' },
-  { type: 'steal', label: 'Vol', sub: 'prends 2 pièces', claim: 'condottiere', target: true },
+  { type: 'steal', label: 'Vol', sub: '+2 pièces volées', claim: 'condottiere', target: true },
   { type: 'exchange', label: 'Échange', sub: 'pioche et garde', claim: 'emissaire' },
   { type: 'assassinate', label: 'Assassinat', sub: '−3 pièces, une influence', claim: 'lame', target: true, cost: 3 },
   { type: 'coup', label: 'Coup d’État', sub: '−7 pièces, une influence', target: true, cost: 7 },
@@ -161,12 +161,12 @@ export function mount(root, api) {
     if (waiting) tags.push(h('span.cp-tag.is-wait', 'réagit'));
     if (losing) tags.push(h('span.cp-tag.is-hot', 'choisit sa perte'));
     if (target && v.phase !== 'action') tags.push(h('span.cp-tag.is-target', 'cible'));
-    if (v.block?.by === id) tags.push(h('span.cp-tag.is-block', `contre : ${CHARS[v.block.char].name}`));
+    if (v.block?.by === id) tags.push(h('span.cp-tag.is-block', `contre : ${CHARS[v.block.char].name}`));
     if (v.phase === 'over' && v.winner === id) tags.push(h('span.cp-tag.is-win', 'gagne'));
     return h(`li.cp-seat${isActor || losing ? '.is-turn' : ''}${waiting ? '.is-wait' : ''}${!q.alive ? '.is-out' : ''}${target && v.phase !== 'action' ? '.is-target' : ''}`,
       h('div.cp-seat-top', api.token(api.user(id), { size: 's' }), h('span.cp-name', pseudo(id)), coins(q.coins)),
       h('div.cp-seat-cards', q.cards.length
-        ? q.cards.map((c, i) => card(c.c, { size: 'sm', up: c.up, shown: v.phase === 'over' && !c.up && c.c !== null, label: c.up ? `Influence perdue : ${CHARS[c.c].name}` : `Carte cachée ${i + 1}` }))
+        ? q.cards.map((c, i) => card(c.c, { size: 'sm', up: c.up, shown: v.phase === 'over' && !c.up && c.c !== null, label: c.up ? `Influence perdue : ${CHARS[c.c].name}` : `Carte cachée ${i + 1}` }))
         : h('span.cp-gone', 'plus de cartes')),
       tags.length ? h('div.cp-tags', tags) : null);
   }
@@ -185,7 +185,7 @@ export function mount(root, api) {
     if (e.t === 'reveal') {
       const who = e.who === me ? 'Tu' : pseudo(e.who);
       const had = e.who === me ? 'avais' : 'avait';
-      return e.ok ? `${who} ${had} bien ${CHARS[e.char].the} : le doute était faux.` : `${who} n${e.who === me ? '’avais' : '’avait'} pas ${CHARS[e.char].the} : bluff découvert.`;
+      return e.ok ? `${who} ${had} bien ${CHARS[e.char].the} : le doute était faux.` : `${who} n${e.who === me ? '’avais' : '’avait'} pas ${CHARS[e.char].the} : bluff découvert.`;
     }
     if (e.t === 'declare' && (e.action === 'coup' || e.action === 'assassinate')) return `${pseudo(e.by)} utilise ${ACT_NAME[e.action]}.`;
     return '';
@@ -196,22 +196,22 @@ export function mount(root, api) {
     const waitNames = v.win ? v.win.who.filter((id) => !v.win.passed.includes(id)).map(pseudo) : [];
     switch (v.phase) {
       case 'action':
-        if (v.actor === me) return v.mustCoup ? ['À toi : coup d’État obligatoire.', 'Tu as 10 pièces ou plus.'] : ['À toi de jouer.', 'Choisis une action. Tu peux bluffer.'];
+        if (v.actor === me) return v.mustCoup ? ['À toi : coup d’État obligatoire.', 'Tu as 10 pièces ou plus.'] : ['À toi de jouer.', 'Choisis une action. Tu peux bluffer.'];
         return [`${pseudo(v.actor)} choisit son action…`, 'Tu pourras réagir si elle te vise ou te semble fausse.'];
       case 'challenge': {
         const claim = CHARS[a.claim].the;
         return canAct()
-          ? [`${name(a.by) === 'Toi' ? 'Tu' : pseudo(a.by)} annonce ${claim}.`, 'Tu le crois ? Mets en doute, ou laisse passer.']
-          : [`${a.by === me ? 'Tu annonces' : `${pseudo(a.by)} annonce`} ${claim}.`, `En attente de : ${waitNames.join(', ') || '…'}`];
+          ? [`${name(a.by) === 'Toi' ? 'Tu' : pseudo(a.by)} annonce ${claim}.`, 'Tu le crois ? Mets en doute, ou laisse passer.']
+          : [`${a.by === me ? 'Tu annonces' : `${pseudo(a.by)} annonce`} ${claim}.`, `En attente de : ${waitNames.join(', ') || '…'}`];
       }
       case 'block':
         return canAct()
           ? [`${pseudo(a.by)} tente ${actionText(a)}.`, 'Tu peux contrer, ou laisser passer.']
-          : [`${a.by === me ? 'Ton action peut être contrée' : `${pseudo(a.by)} tente ${actionText(a)}`}.`, `En attente de : ${waitNames.join(', ') || '…'}`];
+          : [`${a.by === me ? 'Ton action peut être contrée' : `${pseudo(a.by)} tente ${actionText(a)}`}.`, `En attente de : ${waitNames.join(', ') || '…'}`];
       case 'blockChallenge':
         return canAct()
-          ? [`${pseudo(v.block.by)} contre avec ${CHARS[v.block.char].the}.`, 'Il bluffe peut-être : mets en doute, ou laisse passer.']
-          : [`${name(v.block.by) === 'Toi' ? 'Tu contres' : `${pseudo(v.block.by)} contre`} avec ${CHARS[v.block.char].the}.`, `En attente de : ${waitNames.join(', ') || '…'}`];
+          ? [`${pseudo(v.block.by)} contre avec ${CHARS[v.block.char].the}.`, 'Il bluffe peut-être : mets en doute, ou laisse passer.']
+          : [`${name(v.block.by) === 'Toi' ? 'Tu contres' : `${pseudo(v.block.by)} contre`} avec ${CHARS[v.block.char].the}.`, `En attente de : ${waitNames.join(', ') || '…'}`];
       case 'lose': {
         const why = loseWhy();
         return v.lose.player === me
@@ -220,10 +220,10 @@ export function mount(root, api) {
       }
       case 'exchange':
         return v.actor === me || a.by === me
-          ? ['Échange : garde tes cartes.', `Retiens ${plural(v.exch?.keep ?? 0, 'carte', 'cartes')} parmi ${v.exch?.options.length ?? 0}.`]
+          ? ['Échange : choisis tes cartes.', `Retiens ${plural(v.exch?.keep ?? 0, 'carte', 'cartes')} parmi ${v.exch?.options.length ?? 0}.`]
           : [`${pseudo(a.by)} regarde la pioche…`, 'Il échange des cartes.'];
       case 'over':
-        return [v.winner === me ? 'Tu règnes sur la cour !' : `${pseudo(v.winner)} règne sur la cour !`, 'Dernier courtisan encore influent.'];
+        return [v.winner === me ? 'Tu règnes sur la cour !' : `${pseudo(v.winner)} règne sur la cour !`, 'Dernier courtisan encore influent.'];
       default:
         return ['', ''];
     }
@@ -234,7 +234,7 @@ export function mount(root, api) {
   function actionPanel() {
     const q = v.p[me];
     if (v.me === null) return h('p.cp-note', 'Tu regardes la partie.');
-    if (!q.alive) return h('p.cp-note', 'Tu es éliminé : tu regardes la fin de la partie.');
+    if (!q.alive) return h('p.cp-note', 'Tu es éliminé : tu regardes la fin de la partie.');
     if (v.phase === 'over' || !canAct()) return null;
     const a = v.act;
 
@@ -243,7 +243,7 @@ export function mount(root, api) {
         const def = ACTS.find((x) => x.type === picking);
         const targets = v.order.filter((id) => id !== me && alive(id) && !(picking === 'steal' && v.p[id].coins === 0));
         return h('div.cp-panel',
-          h('p.cp-label', `${def.label} : choisis une cible`),
+          h('p.cp-label', `${def.label} : choisis une cible`),
           h('div.cp-targets', targets.map((id) => h('button.cp-target', {
             type: 'button', dataset: { key: `t-${id}` },
             onclick: () => { picking = null; send({ type: def.type, target: id }); },
@@ -312,9 +312,11 @@ export function mount(root, api) {
     const losing = v.phase === 'lose' && v.lose.player === me;
     return h('section.cp-mine', { 'aria-label': 'Tes cartes' },
       h('div.cp-mine-top', h('h3', 'Tes influences'), coins(q.coins)),
-      h('div.cp-mine-cards', q.cards.map((c, i) => (losing && !c.up
-        ? card(c.c, { size: 'lg', key: `lose-${i}`, label: `Perdre ${CHARS[c.c].name}`, onclick: () => send({ type: 'lose', card: i }) })
-        : card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name })))));
+      // En classe, sur ordinateur : cachées tant qu'on ne maintient pas le clic, sauf quand il faut en choisir une à perdre.
+      losing ? h('div.cp-mine-cards', q.cards.map((c, i) => (!c.up
+        ? card(c.c, { size: 'lg', key: `lose-${i}`, label: `Perdre ${CHARS[c.c].name}`, onclick: () => send({ type: 'lose', card: i }) })
+        : card(c.c, { size: 'lg', up: c.up, label: `${CHARS[c.c].name}, perdue` }))))
+        : api.secret(h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name }))), { label: 'tes influences' }));
   }
 
   // ——— Journal ———
@@ -325,10 +327,10 @@ export function mount(root, api) {
       case 'start': return `${n(e.who)} ouvre le bal.`;
       case 'declare': return `${n(e.by)} tente ${ACT_NAME[e.action]}${e.target !== null && e.target !== undefined ? ` sur ${n(e.target)}` : ''}.`;
       case 'challenge': return `${n(e.by)} met en doute ${e.kind === 'block' ? 'le contre de' : 'l’annonce de'} ${n(e.on)} (${CHARS[e.char].the}).`;
-      case 'reveal': return e.ok ? `${n(e.who)} montre ${CHARS[e.char].the} : le doute était faux. La carte est remélangée.` : `${n(e.who)} n’avait pas ${CHARS[e.char].the} : c’était un bluff !`;
+      case 'reveal': return e.ok ? `${n(e.who)} montre ${CHARS[e.char].the} : le doute était faux. La carte est remélangée.` : `${n(e.who)} n’avait pas ${CHARS[e.char].the} : c’était un bluff !`;
       case 'block': return `${n(e.by)} contre avec ${CHARS[e.char].the}.`;
       case 'blocked': return `L’action est contrée par ${n(e.by)}.`;
-      case 'lose': return `${n(e.who)} perd une influence : ${CHARS[e.char].name}.`;
+      case 'lose': return `${n(e.who)} perd une influence : ${CHARS[e.char].name}.`;
       case 'out': return `${n(e.who)} est éliminé.`;
       case 'gain': return `${n(e.who)} gagne ${plural(e.n, 'pièce', 'pièces')}.`;
       case 'stole': return `${n(e.who)} prend ${plural(e.n, 'pièce', 'pièces')} à ${n(e.target)}.`;
@@ -384,7 +386,7 @@ export function mount(root, api) {
     el.replaceChildren(h('div.cp-in',
       h('header.cp-top',
         h('span.cp-turn', `Tour ${v.turnNo}`),
-        h('span.cp-deck', `Pioche : ${v.deckCount}`),
+        h('span.cp-deck', `Pioche : ${v.deckCount}`),
         timer()),
       h('div.cp-banner', { 'aria-live': 'polite' }, h('h2', title), h('p', sub)),
       scene(),

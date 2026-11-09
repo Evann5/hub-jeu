@@ -47,6 +47,8 @@ const PATHS = {
   chat: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z',
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z',
   back: 'M15 18l-6-6 6-6',
+  up: 'M18 15l-6-6-6 6',
+  down: 'M6 9l6 6 6-6',
   search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z M21 21l-4.3-4.3',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9',
   open: 'M7 17 17 7 M8 7h9v9',
@@ -87,6 +89,9 @@ export function setColors(c) {
 }
 
 export const colorOf = (name) => colors[name] || '#6B7F78';
+
+// Petite étiquette à côté du pseudo de l'équipe : « admin » ou « modo ».
+export const staffTag = (u) => (u?.role === 'admin' ? h('span.tag-admin', 'admin') : u?.role === 'modo' ? h('span.tag-admin.tag-modo', 'modo') : null);
 
 // Jeton (avatar) : couleur du joueur, emoji au centre, point vert s'il est en ligne.
 export function token(user, { size = '', online = false } = {}) {
@@ -181,7 +186,7 @@ export function dayKey(ts) {
 export function dayLabel(ts) {
   const now = new Date();
   const key = dayKey(ts);
-  if (key === dayKey(now)) return "Aujourd'hui";
+  if (key === dayKey(now)) return "Aujourd’hui";
   if (key === dayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))) return 'Hier';
   const label = new Date(ts).getFullYear() === now.getFullYear() ? dayFmt.format(ts) : dayYearFmt.format(ts);
   return label.charAt(0).toUpperCase() + label.slice(1);
@@ -189,23 +194,54 @@ export function dayLabel(ts) {
 
 export function stamp(ts) {
   const key = dayKey(ts);
-  if (key === dayKey(new Date())) return `aujourd'hui à ${timeOf(ts)}`;
+  if (key === dayKey(new Date())) return `aujourd’hui à ${timeOf(ts)}`;
   return `${dayLabel(ts).toLowerCase()} à ${timeOf(ts)}`;
 }
 
 // Texte d'un message : les adresses web deviennent des liens, le reste reste du texte.
 const URL_RE = /\bhttps?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]'»]/g;
-export function richText(text) {
+// Mentions « @pseudo » : surlignées si le pseudo existe (findUser rend { pseudo, me } ou null), en plus des liens.
+const MENTION_RE = /@([\p{L}\p{N}_.-]{3,20})/gu;
+function withMentions(text, findUser) {
+  if (!findUser || !text.includes('@')) return [text];
   const out = [];
   let last = 0;
-  for (const m of text.matchAll(URL_RE)) {
-    out.push(text.slice(last, m.index));
-    out.push(h('a', { href: m[0], target: '_blank', rel: 'noopener noreferrer nofollow' }, m[0]));
-    last = m.index + m[0].length;
+  for (const m of text.matchAll(MENTION_RE)) {
+    if (m.index > 0 && /[\p{L}\p{N}]/u.test(text[m.index - 1])) continue; // une adresse e-mail, pas une mention
+    let name = m[1];
+    let u = findUser(name);
+    while (!u && /[._-]$/.test(name)) { // « @Lune.Verte. » : le point final n'est pas dans le pseudo
+      name = name.slice(0, -1);
+      u = findUser(name);
+    }
+    if (!u) continue;
+    out.push(text.slice(last, m.index), h(`span.mention${u.me ? '.is-me' : ''}`, `@${u.pseudo}`));
+    last = m.index + 1 + name.length;
   }
   out.push(text.slice(last));
   return out;
 }
+
+export function richText(text, findUser = null) {
+  const out = [];
+  let last = 0;
+  for (const m of text.matchAll(URL_RE)) {
+    out.push(...withMentions(text.slice(last, m.index), findUser));
+    out.push(h('a', { href: m[0], target: '_blank', rel: 'noopener noreferrer nofollow' }, m[0]));
+    last = m.index + m[0].length;
+  }
+  out.push(...withMentions(text.slice(last), findUser));
+  return out;
+}
+
+// Le texte mentionne-t-il ce pseudo (« @pseudo », pas au milieu d'un mot ou d'une adresse e-mail) ?
+export function mentions(text, pseudo) {
+  const escaped = pseudo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^\\p{L}\\p{N}])@${escaped}(?![\\p{L}\\p{N}_-])`, 'iu').test(text);
+}
+
+// « de Tom », « d’Anna » : le pseudo est choisi par la personne, l'élision aussi doit suivre.
+export const de = (pseudo) => (/^[aàâeéèêëiîïoôöuùûüy]/i.test(pseudo) ? `d’${pseudo}` : `de ${pseudo}`);
 
 const plural = new Intl.PluralRules('fr-FR');
 export function count(n, one, many) {

@@ -115,7 +115,7 @@ function bid(s, id, n, ctx) {
   const total = totalOnTable(s);
   if (!Number.isInteger(n) || n < 1) throw new Error('Choisis un nombre de disques à retourner (1 au moins).');
   if (n > total) throw new Error(`Il n’y a que ${total} disque${total > 1 ? 's' : ''} sur la table.`);
-  if (s.bid && n <= s.bid.n) throw new Error(`Surenchéris : plus de ${s.bid.n}, ou passe.`);
+  if (s.bid && n <= s.bid.n) throw new Error(`Surenchéris : plus de ${s.bid.n}, ou passe.`);
   s.bid = { by: id, n };
   note(s, { t: 'bid', who: id, n });
   if (n === total) return startFlip(s, id, ctx);
@@ -226,7 +226,7 @@ function endResult(s, ctx) {
 export function move(state, playerId, action, ctx) {
   const s = clone(state);
   if (!s.order.includes(playerId)) throw new Error('Tu ne joues pas cette partie.');
-  if (isOut(s, playerId)) throw new Error('Tu es éliminé : tu regardes la fin de la partie.');
+  if (isOut(s, playerId)) throw new Error('Tu es éliminé : tu regardes la fin de la partie.');
   action = action ?? {};
   const type = action.type;
   const mustAct = s.phase === 'flip' ? s.challenger : s.actor;

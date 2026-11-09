@@ -274,11 +274,11 @@ export function move(s, playerId, action, ctx) {
   if (s.result) throw new Error('La partie est terminée.');
   const color = s.players.indexOf(playerId);
   if (color < 0) throw new Error('Tu ne joues pas cette partie.');
-  if (color !== s.turn) throw new Error("Ce n'est pas ton tour.");
+  if (color !== s.turn) throw new Error("Ce n’est pas ton tour.");
   const type = action?.type;
   if (type === 'draw-offer') {
     if (s.offer === color) throw new Error('Ta proposition de nulle est déjà envoyée.');
-    if (s.offer !== null) throw new Error('Ton adversaire te propose la nulle : accepte ou refuse.');
+    if (s.offer !== null) throw new Error('Ton adversaire te propose la nulle : accepte ou refuse.');
     return { state: { ...s, offer: color } };
   }
   if (type === 'draw-accept') {
@@ -313,13 +313,13 @@ export function move(s, playerId, action, ctx) {
     if (!piece) throw new Error('Il n’y a aucune pièce sur cette case.');
     if (colorOf(piece) !== color) throw new Error('Cette pièce n’est pas à toi.');
     const reachable = pseudoMoves(pos).some((m) => m.from === from && m.to === to);
-    throw new Error(reachable ? 'Ce coup laisserait ton roi en échec : choisis-en un autre.' : 'Cette pièce ne peut pas aller là.');
+    throw new Error(reachable ? 'Ce coup laisserait ton roi en échec : choisis-en un autre.' : 'Cette pièce ne peut pas aller là.');
   }
   let mv = candidates[0];
   if (candidates.length > 1) {
     const promo = String(action.promo || '').toUpperCase();
     mv = candidates.find((m) => m.promo === promo);
-    if (!mv) throw new Error('Choisis la pièce de promotion : dame, tour, fou ou cavalier.');
+    if (!mv) throw new Error('Choisis la pièce de promotion : dame, tour, fou ou cavalier.');
   }
 
   const next = play(pos, mv);

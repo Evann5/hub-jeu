@@ -79,10 +79,10 @@ const isOver = (s) => Boolean(s.winner || s.draw || s.forfeit);
 // Un coup : { col: 0..6 }. Renvoie { state } ou lève une Error en français.
 export function move(state, playerId, action, ctx) {
   if (isOver(state)) throw new Error('La partie est terminée.');
-  if (state.players[state.turn] !== playerId) throw new Error("Ce n'est pas ton tour.");
+  if (state.players[state.turn] !== playerId) throw new Error('Ce n’est pas ton tour.');
   const col = Number(action?.col);
-  if (!Number.isInteger(col) || col < 0 || col >= COLS) throw new Error('Colonne inconnue : choisis une colonne de 1 à 7.');
-  if (state.board[col] !== null) throw new Error('Cette colonne est pleine : choisis-en une autre.');
+  if (!Number.isInteger(col) || col < 0 || col >= COLS) throw new Error('Colonne inconnue : choisis une colonne de 1 à 7.');
+  if (state.board[col] !== null) throw new Error('Cette colonne est pleine : choisis-en une autre.');
   return drop(state, col, ctx, false);
 }
 

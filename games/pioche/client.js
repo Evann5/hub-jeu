@@ -75,8 +75,8 @@ export function cardName(code) {
 function topHint(view) {
   const color = COLOR_NAMES[view.color];
   const v = view.top && view.top[0] !== 'W' ? view.top.slice(1) : null;
-  const value = v === null ? null : v === 'X' ? 'un « passe »' : v === 'I' ? 'un « sens inverse »' : `un ${v}`;
-  return `À toi : joue du ${color ? color.toLowerCase() : 'même couleur'}${value ? `, ${value}` : ''} ou un joker.`;
+  const value = v === null ? null : v === 'X' ? 'un « passe »' : v === 'I' ? 'un « sens inverse »' : `un ${v}`;
+  return `À toi : joue ${color ? `du ${color.toLowerCase()}` : 'de la même couleur'}${value ? `, ${value}` : ''} ou un joker.`;
 }
 
 export function mount(root, api) {
@@ -129,22 +129,22 @@ export function mount(root, api) {
     switch (e.k) {
       case 'play': {
         let t = `${sub(e.by, 'poses', 'pose')} ${cardName(e.card)}`;
-        if (e.card[0] === 'W') t += `, couleur demandée : ${COLOR_NAMES[e.color].toLowerCase()}`;
+        if (e.card[0] === 'W') t += `, couleur demandée : ${COLOR_NAMES[e.color].toLowerCase()}`;
         if (e.draw) t += ` — ${sub(e.draw.to, 'pioches', 'pioche')} ${e.draw.n} carte${e.draw.n > 1 ? 's' : ''} et ${you(e.draw.to) ? 'passes' : 'passe'} ${poss(e.draw.to)} tour`;
         if (e.skipped) t += ` — ${sub(e.skipped, 'passes', 'passe')} ${poss(e.skipped)} tour`;
         if (e.reversed) t += ' — le sens change';
-        if (e.stack) t += ` — cumul : +${e.stack}`;
+        if (e.stack) t += ` — cumul : +${e.stack}`;
         return `${t}.`;
       }
       case 'draw': return `${sub(e.by, 'pioches', 'pioche')} une carte.`;
-      case 'stack': return `${sub(e.by, 'pioches', 'pioche')} tout le cumul : ${e.n} cartes !`;
+      case 'stack': return `${sub(e.by, 'pioches', 'pioche')} tout le cumul : ${e.n} cartes !`;
       case 'pass': return `${sub(e.by, 'passes', 'passe')}.`;
-      case 'call': return `${sub(e.by, 'annonces', 'annonce')} « Dernière ! »`;
-      case 'accuse': return `${sub(e.by, 'dénonces', 'dénonce')} ${obj(e.target)} : ${sub(e.target, 'pioches', 'pioche')} ${e.n} cartes.`;
+      case 'call': return `${sub(e.by, 'annonces', 'annonce')} « Dernière ! »`;
+      case 'accuse': return `${sub(e.by, 'dénonces', 'dénonce')} ${obj(e.target)} : ${sub(e.target, 'pioches', 'pioche')} ${e.n} cartes.`;
       case 'timeout': return `${sub(e.by, 'as', 'a')} trop tardé${e.n ? ` : ${you(e.by) ? 'tu pioches' : 'pioche'} ${e.n > 1 ? `${e.n} cartes` : 'une carte'}` : ''}.`;
       case 'left': return `${sub(e.by, 'abandonnes', 'abandonne')} la partie.`;
       case 'round': return `${sub(e.by, 'as gagné', 'a gagné')} la manche (+${e.gain} points).`;
-      case 'deal': return `Manche ${e.round} : nouvelle donne.`;
+      case 'deal': return `Manche ${e.round} : nouvelle donne.`;
       default: return '';
     }
   }
@@ -208,8 +208,8 @@ export function mount(root, api) {
         out ? h('span.pi-tag', 'parti')
           : h('span.pi-opp-n', { title: `${n} carte${n > 1 ? 's' : ''}` },
             h('span.pi-mini', { 'aria-hidden': 'true' }), `${n}`, h('span.sr-only', ` carte${n > 1 ? 's' : ''}`)),
-        last && view.called.includes(id) ? h('span.pi-tag.ok', 'Dernière !') : null,
-        danger ? h('span.pi-tag.bad', 'Pas annoncé !') : null,
+        last && view.called.includes(id) ? h('span.pi-tag.ok', 'Dernière !') : null,
+        danger ? h('span.pi-tag.bad', 'Pas annoncé !') : null,
         turn ? h('span.sr-only', ', à son tour') : null,
         !turn && next === id && view.phase !== 'between' ? h('span.pi-tag.soft', 'suivant') : null);
     }));
@@ -222,7 +222,7 @@ export function mount(root, api) {
     const drawBtn = h('button.pi-pile', {
       type: 'button',
       disabled: !view.canDraw,
-      'aria-label': view.stack ? `Piocher les ${view.stack} cartes du cumul` : `Piocher une carte (${view.drawCount} restantes)`,
+      'aria-label': view.stack ? `Piocher les ${view.stack} cartes du cumul` : `Piocher une carte (${view.drawCount} restante${view.drawCount > 1 ? 's' : ''})`,
       onclick: () => send({ type: 'draw' }),
     }, back(view.drawCount), view.canDraw ? h('span.pi-pile-hint', view.stack ? `Piocher ${view.stack}` : 'Piocher') : null);
     const topEl = face(top, 'div');
@@ -235,7 +235,7 @@ export function mount(root, api) {
         h(`div.pi-dir${revDir ? '.is-rev' : ''}`, { title: revDir ? 'Le sens est inversé' : 'Sens normal' },
           svg('M20 12a8 8 0 1 1-2.6-5.9 M20 4v5h-5', 'pi-dir-i', { stroke: true }),
           h('span.sr-only', revDir ? 'Sens inversé' : 'Sens normal')),
-        h(`div.pi-want.c-${color}`, h('span.sr-only', 'Couleur demandée : '), shape(color, 'pi-want-s'), COLOR_NAMES[color])));
+        h(`div.pi-want.c-${color}`, h('span.sr-only', 'Couleur demandée : '), shape(color, 'pi-want-s'), COLOR_NAMES[color])));
   }
 
   function renderNews() {
@@ -243,18 +243,18 @@ export function mount(root, api) {
     let text;
     if (view.phase === 'over') text = 'Partie terminée.';
     else if (view.phase === 'between') text = 'Manche terminée.';
-    else if (view.canAccuse) text = `${name(view.pending)} n'a pas annoncé « Dernière ! » : dénonce vite !`;
-    else if (view.pending === api.me.id) text = 'Il te reste une carte : clique « Dernière ! » vite !';
+    else if (view.canAccuse) text = `${name(view.pending)} n’a pas annoncé « Dernière ! » : dénonce vite !`;
+    else if (view.pending === api.me.id) text = 'Il te reste une carte : appuie sur « Dernière ! » vite !';
     else if (picking) text = 'Choisis la couleur que tu demandes.';
     else if (view.turn === api.me.id && view.stack) {
       text = view.playable.length
-        ? `Cumul de +${view.stack} sur toi : renchéris avec ${view.stackKind === 'F' ? 'un +4' : 'un +2 ou un +4'}, ou pioche les ${view.stack} cartes.`
-        : `Cumul de +${view.stack} : rien pour renchérir, pioche les ${view.stack} cartes.`;
+        ? `Cumul de +${view.stack} sur toi : renchéris avec ${view.stackKind === 'F' ? 'un +4' : 'un +2 ou un +4'}, ou pioche les ${view.stack} cartes.`
+        : `Cumul de +${view.stack} : rien pour renchérir, pioche les ${view.stack} cartes.`;
     } else if (view.turn && view.stack) text = `${api.user(view.turn).pseudo} doit renchérir ou piocher ${view.stack} cartes…`;
     else if (view.turn === api.me.id) {
-      text = view.drawn ? `Tu as pioché ${cardName(view.drawn)} : joue-la ou passe.`
+      text = view.drawn ? `Tu as pioché ${cardName(view.drawn)} : joue-la ou passe.`
         : view.playable.length ? topHint(view)
-          : 'Aucune carte ne va : pioche !';
+          : 'Aucune carte ne va : pioche !';
     } else if (view.turn) text = `${api.user(view.turn).pseudo} réfléchit…`;
     else text = '';
     if (!api.me || api.seat < 0) text = `Tu regardes la partie. ${view.turn ? `${api.user(view.turn).pseudo} joue.` : ''}`;
@@ -267,11 +267,11 @@ export function mount(root, api) {
   function renderActions() {
     const buttons = [];
     if (view.canAccuse) {
-      buttons.push(h('button.pi-btn.bad', { type: 'button', onclick: () => send({ type: 'accuse' }) }, `Dénoncer ${name(view.pending)} !`));
+      buttons.push(h('button.pi-btn.bad', { type: 'button', onclick: () => send({ type: 'accuse' }) }, `Dénoncer ${name(view.pending)} !`));
     }
     if (view.canCall) {
       const urgent = view.pending === api.me.id;
-      buttons.push(h(`button.pi-btn.call${urgent ? '.is-urgent' : ''}`, { type: 'button', onclick: () => send({ type: 'call' }) }, 'Dernière !'));
+      buttons.push(h(`button.pi-btn.call${urgent ? '.is-urgent' : ''}`, { type: 'button', onclick: () => send({ type: 'call' }) }, 'Dernière !'));
     }
     if (view.canPass) buttons.push(h('button.pi-btn', { type: 'button', onclick: () => send({ type: 'pass' }) }, 'Passer'));
     if (selected && view.playable.includes(selected) && !picking) {
@@ -312,7 +312,7 @@ export function mount(root, api) {
       send({ type: 'play', card, color: c });
     };
     const box = h('div.pi-picker', { role: 'dialog', 'aria-modal': 'false', 'aria-label': 'Choisis la couleur demandée' },
-      h('p', 'Quelle couleur demandes-tu ?'),
+      h('p', 'Quelle couleur demandes-tu ?'),
       h('div.pi-picker-row', COLORS.map((c) => h(`button.pi-color.c-${c}`, { type: 'button', onclick: () => pick(c) },
         shape(c, 'pi-color-s'), COLOR_NAMES[c]))),
       h('button.pi-btn.ghost', { type: 'button', onclick: () => { picking = null; render(); } }, 'Annuler'));
@@ -339,13 +339,13 @@ export function mount(root, api) {
         h('b.pi-score-pts', String(view.scores[id] || 0), h('span.sr-only', ' points'))));
     const pts = `${rr.gain} point${rr.gain > 1 ? 's' : ''}`;
     const winnerLine = view.rounds === 1 && over
-      ? `${sub(rr.winner, 'as gagné', 'a gagné')} : ${pts} restaient dans les mains des autres.`
-      : `${sub(rr.winner, 'as vidé ta', 'a vidé sa')} main : +${pts}.`;
+      ? `${sub(rr.winner, 'as gagné', 'a gagné')} : ${pts} restaient dans les mains des autres.`
+      : `${sub(rr.winner, 'as vidé ta', 'a vidé sa')} main : +${pts}.`;
     let actions = null;
     if (over) {
-      const names = view.winners.map((id) => api.user(id).pseudo).join(' et ');
+      const names = view.winners.map((id) => api.user(id).pseudo).join(', ').replace(/, ([^,]*)$/, ' et $1');
       // One-round game: the line above already names the winner.
-      actions = view.rounds === 1 ? null : h('p.pi-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne${view.winners.length > 1 ? 'nt' : ''} la partie !`);
+      actions = view.rounds === 1 ? null : h('p.pi-final', view.winners.length === 1 && you(view.winners[0]) ? 'Tu gagnes la partie !' : `${names} gagne${view.winners.length > 1 ? 'nt' : ''} la partie !`);
     } else if (api.seat >= 0) {
       actions = h('div.pi-next',
         h('button.pi-btn.go', { type: 'button', onclick: () => send({ type: 'next' }) }, 'Manche suivante'),
@@ -424,11 +424,11 @@ export function mount(root, api) {
   function touch(code) {
     if (api.seat < 0 || picking) return;
     if (view.turn !== api.me.id) {
-      api.toast("Ce n'est pas encore ton tour.");
+      api.toast("Ce n’est pas encore ton tour.");
       return;
     }
     if (!view.playable.includes(code)) {
-      api.toast(view.drawn ? 'Joue la carte que tu viens de piocher, ou passe.' : 'Cette carte ne va pas : même couleur, même valeur, ou un joker.');
+      api.toast(view.drawn ? 'Joue la carte que tu viens de piocher, ou passe.' : 'Cette carte ne va pas : même couleur, même valeur, ou un joker.');
       return;
     }
     if (selected === code) playCard(code);

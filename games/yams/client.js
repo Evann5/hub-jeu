@@ -7,8 +7,8 @@ const LOWER = ['brelan', 'carre', 'full', 'petite', 'grande', 'yams', 'chance'];
 const INFO = {
   ones: ['Les 1', 'total des 1'], twos: ['Les 2', 'total des 2'], threes: ['Les 3', 'total des 3'],
   fours: ['Les 4', 'total des 4'], fives: ['Les 5', 'total des 5'], sixes: ['Les 6', 'total des 6'],
-  brelan: ['Brelan', '3 identiques : total'], carre: ['Carré', '4 identiques : total'], full: ['Full', '3 + 2 : 25'],
-  petite: ['Petite suite', '4 à la suite : 30'], grande: ['Grande suite', '5 à la suite : 40'], yams: ['Yams', '5 identiques : 50'],
+  brelan: ['Brelan', '3 identiques : total'], carre: ['Carré', '4 identiques : total'], full: ['Full', '3 + 2 : 25'],
+  petite: ['Petite suite', '4 à la suite : 30'], grande: ['Grande suite', '5 à la suite : 40'], yams: ['Yams', '5 identiques : 50'],
   chance: ['Chance', 'total des dés'],
 };
 const BONUS_THRESHOLD = 63;
@@ -88,14 +88,14 @@ export function mount(root, api) {
     const names = v.winners.map((id) => (id === me ? 'Toi' : nm(id)));
     if (!names.length) return 'Personne ne gagne.';
     const best = v.totals[v.winners[0]].total;
-    if (v.winners.length > 1) return `Égalité à ${best} points : ${names.join(' et ')}.`;
-    return `${v.winners[0] === me ? 'Tu gagnes' : `${names[0]} gagne`} avec ${best} points !`;
+    if (v.winners.length > 1) return `Égalité à ${best} points : ${names.join(', ').replace(/, ([^,]*)$/, ' et $1')}.`;
+    return `${v.winners[0] === me ? 'Tu gagnes' : `${names[0]} gagne`} avec ${best} points !`;
   }
 
   function statusText() {
     if (v.over) return 'Partie terminée.';
     if (v.turn === me) {
-      if (v.rolls === 0) return 'À toi : lance les dés';
+      if (v.rolls === 0) return 'À toi : lance les dés';
       if (v.rolls < 3) return `Lancer ${v.rolls}/3 · touche les dés à garder`;
       return 'Choisis une case';
     }
@@ -106,7 +106,7 @@ export function mount(root, api) {
     const l = v.last;
     if (!l) return null;
     const who = l.id === me ? 'Tu as' : `${nm(l.id)} a`;
-    return `${who} inscrit ${l.points} point${l.points > 1 ? 's' : ''} : ${INFO[l.box][0].toLowerCase()}${l.extra ? ' (+100 de bonus)' : ''}${l.auto ? ' · temps écoulé' : ''}`;
+    return `${who} inscrit ${l.points} point${l.points > 1 ? 's' : ''} : ${INFO[l.box][0].toLowerCase()}${l.extra ? ' (+100 de bonus)' : ''}${l.auto ? ' · temps écoulé' : ''}`;
   }
 
   function trayDice() {
@@ -125,7 +125,7 @@ export function mount(root, api) {
           type: 'button',
           dataset: { k: `die-${i}` },
           'aria-pressed': String(held[i]),
-          'aria-label': `Dé ${i + 1} : ${val}, ${held[i] ? 'gardé' : 'pas gardé'}`,
+          'aria-label': `Dé ${i + 1} : ${val}, ${held[i] ? 'gardé' : 'pas gardé'}`,
           onclick: () => { held[i] = !held[i]; renderAll(`die-${i}`); },
         }, face),
         h('span.ym-keep', held[i] ? 'gardé' : ''));
@@ -142,12 +142,12 @@ export function mount(root, api) {
     if (chosen && v.preview && chosen in v.preview) {
       kids.push(h('button.ym-btn.ym-btn-ok', {
         type: 'button', dataset: { k: 'score' }, disabled: busy, onclick: score,
-      }, `Inscrire ${v.preview[chosen]} : ${INFO[chosen][0].toLowerCase()}`));
+      }, `Inscrire ${v.preview[chosen]} : ${INFO[chosen][0].toLowerCase()}`));
     }
     if (v.rolls < 3) {
       kids.push(h(`button.ym-btn.ym-btn-roll${chosen ? '.is-second' : ''}`, {
         type: 'button', dataset: { k: 'roll' }, disabled: !canRoll, onclick: roll,
-        title: keepAll ? 'Tu gardes les 5 dés : relâches-en un pour relancer.' : null,
+        title: keepAll ? 'Tu gardes les 5 dés : relâches-en un pour relancer.' : null,
       }, rollLabel));
     }
     if (!kids.length) kids.push(h('p.ym-hint', 'Choisis une case dans ta colonne'));
@@ -199,7 +199,7 @@ export function mount(root, api) {
         dataset: { k: `box-${box}` },
         disabled: busy,
         'aria-pressed': String(on),
-        'aria-label': `${INFO[box][0]} : ${pts === 0 ? 'barrer la case (0 point)' : `${pts} points possibles`}${on ? ', sélectionné' : ''}`,
+        'aria-label': `${INFO[box][0]} : ${pts === 0 ? 'barrer la case (0 point)' : `${pts} points possibles`}${on ? ', sélectionné' : ''}`,
         onclick: () => { chosen = on ? null : box; renderAll(`box-${box}`); },
       }, h('span', String(pts))));
     }
@@ -229,7 +229,7 @@ export function mount(root, api) {
     const rows = [
       ...UPPER.map(row),
       totalRow('ym-sub', 'Total haut', (id) => h('td.ym-val', h('span', String(v.totals[id].upper)))),
-      totalRow('ym-sub', `Bonus ${BONUS_THRESHOLD}+ : 35`, (id) => {
+      totalRow('ym-sub', `Bonus ${BONUS_THRESHOLD}+ : 35`, (id) => {
         const t = v.totals[id];
         return t.bonus ? h('td.ym-val', h('span', `+${t.bonus}`)) : h('td.ym-val.ym-faint', h('span', `${t.upper}/${BONUS_THRESHOLD}`));
       }),
@@ -243,7 +243,7 @@ export function mount(root, api) {
     }
     rows.push(totalRow('ym-total', 'Total', (id) => h(`td.ym-val${v.over && v.winners.includes(id) ? '.is-winner' : ''}`, h('span', String(v.totals[id].total)))));
     sheetBox.replaceChildren(h('h2.ym-title', 'Feuille de score'), h(`table.ym-sheet.cols-${cols.length}`,
-      h('caption.sr-only', 'Feuille de score : une colonne par joueur'),
+      h('caption.sr-only', 'Feuille de score : une colonne par joueur'),
       h('thead', head),
       h('tbody', rows)));
   }

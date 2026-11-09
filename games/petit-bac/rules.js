@@ -56,7 +56,7 @@ function cleanText(x) {
 }
 
 function cleanAnswers(list, count) {
-  if (!Array.isArray(list)) throw new Error('Réponses invalides : recharge la page.');
+  if (!Array.isArray(list)) throw new Error('Réponses invalides : recharge la page.');
   return Array.from({ length: count }, (_, i) => cleanText(list[i]));
 }
 
@@ -213,12 +213,12 @@ export function move(state, playerId, action, ctx) {
 
   if (type === 'stop') {
     if (state.phase !== 'writing') throw new Error('La manche est déjà terminée.');
-    if (state.stopBy) throw new Error('Quelqu’un a déjà crié « Stop ! ».');
+    if (state.stopBy) throw new Error('Quelqu’un a déjà crié « Stop ! ».');
     const answers = action.answers === undefined ? state.answers[playerId] || [] : cleanAnswers(action.answers, count);
     for (let i = 0; i < count; i++) {
       const check = checkAnswer(answers[i] || '', state.letter);
-      if (check === 'empty') throw new Error(`Il te manque encore une réponse : « ${state.categories[i]} ».`);
-      if (check === 'letter') throw new Error(`« ${answers[i]} » ne commence pas par ${state.letter} (${state.categories[i]}).`);
+      if (check === 'empty') throw new Error(`Il te manque encore une réponse : « ${state.categories[i]} ».`);
+      if (check === 'letter') throw new Error(`« ${answers[i]} » ne commence pas par ${state.letter} (${state.categories[i]}).`);
     }
     return {
       state: {
@@ -245,7 +245,7 @@ export function move(state, playerId, action, ctx) {
   }
 
   if (type === 'ready') {
-    if (state.phase !== 'review') throw new Error('Pas encore : la manche n’est pas terminée.');
+    if (state.phase !== 'review') throw new Error('Pas encore : la manche n’est pas terminée.');
     if (state.ready.includes(playerId)) return { state };
     const next = { ...state, ready: [...state.ready, playerId] };
     return { state: active(next).every((id) => next.ready.includes(id)) ? finishReview(next, ctx) : next };

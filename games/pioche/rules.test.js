@@ -213,7 +213,7 @@ test('« Dernière ! » : annoncée à temps, rien ne se passe', () => {
 
 test('« Dernière ! » oubliée et dénoncée : +2 cartes', () => {
   const s1 = play(table({ hands: { 1: ['R1', 'R2'] } }), 1, { type: 'play', card: 'R1' });
-  throwsMsg(() => move(s1, 1, { type: 'accuse' }, ctx()), /clique/);
+  throwsMsg(() => move(s1, 1, { type: 'accuse' }, ctx()), /appuie/);
   const s2 = play(s1, 3, { type: 'accuse' });
   assert.equal(s2.hands[1].length, 3);
   assert.equal(s2.pending, null);

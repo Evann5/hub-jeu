@@ -144,23 +144,23 @@ export function move(s, playerId, action, ctx) {
     }
     case 'clues': {
       if (type !== 'clue') throw new Error('C’est le moment de donner ton indice.');
-      if (nextClueGiver(s) !== playerId) throw new Error('Ce n’est pas à toi de donner un indice : attends ton tour.');
+      if (nextClueGiver(s) !== playerId) throw new Error('Ce n’est pas à toi de donner un indice : attends ton tour.');
       const text = String(action.text ?? '').replace(/\s+/g, ' ').trim();
       if (!text) throw new Error('Écris un indice.');
-      if (text.length > 40) throw new Error('Ton indice est trop long : 40 caractères au plus.');
+      if (text.length > 40) throw new Error('Ton indice est trop long : 40 caractères au plus.');
       const word = wordOf(s, playerId);
       if (word && normalize(text).includes(normalize(word))) throw new Error('Ton indice ne doit pas contenir ton mot.');
       const used = s.clues.filter((c) => c.text).some((c) => normalize(c.text) === normalize(text));
-      if (used) throw new Error('Cet indice a déjà été donné : trouves-en un autre.');
+      if (used) throw new Error('Cet indice a déjà été donné : trouves-en un autre.');
       return { state: afterClue({ ...s, clues: [...s.clues, { round: s.round, id: playerId, text }] }, ctx) };
     }
     case 'vote': {
       if (type !== 'vote') throw new Error('C’est le moment de voter.');
-      if (!alive(s).includes(playerId)) throw new Error('Tu es éliminé : tu ne votes plus.');
+      if (!alive(s).includes(playerId)) throw new Error('Tu es éliminé : tu ne votes plus.');
       if (playerId in s.votes) throw new Error('Tu as déjà voté.');
       const target = Number(action.target);
       const pool = s.candidates || alive(s);
-      if (target === playerId) throw new Error('Tu ne peux pas voter pour toi.');
+      if (target === playerId) throw new Error('Tu ne peux pas voter pour toi-même.');
       if (!pool.includes(target)) throw new Error('Choisis un joueur encore en jeu.');
       const t = { ...s, votes: { ...s.votes, [playerId]: target } };
       if (alive(t).every((id) => id in t.votes)) return { state: countVotes(t, ctx) };

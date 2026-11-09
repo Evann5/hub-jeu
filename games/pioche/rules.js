@@ -174,9 +174,9 @@ function mustBeActive(s, id) {
 
 function mustBeTurn(s, id) {
   mustBeActive(s, id);
-  if (s.phase === 'between') throw new Error('La manche est finie : attends la suivante.');
+  if (s.phase === 'between') throw new Error('La manche est finie : attends la suivante.');
   if (s.phase === 'over') throw new Error('La partie est terminée.');
-  if (curId(s) !== id) throw new Error("Ce n'est pas ton tour.");
+  if (curId(s) !== id) throw new Error('Ce n’est pas ton tour.');
 }
 
 function finishRound(s, winner, ctx) {
@@ -219,11 +219,11 @@ function actPlay(s, id, action, ctx) {
   mustBeTurn(s, id);
   const card = String(action.card || '');
   const hand = s.hands[id];
-  if (!hand.includes(card)) throw new Error("Tu n'as pas cette carte.");
+  if (!hand.includes(card)) throw new Error("Tu n’as pas cette carte.");
   if (s.phase === 'drawn' && card !== s.drawn) {
     throw new Error('Tu peux jouer seulement la carte que tu viens de piocher, ou passer.');
   }
-  if (!canPlay(s, card)) throw new Error('Cette carte ne va pas : il faut la même couleur ou la même valeur, ou un joker.');
+  if (!canPlay(s, card)) throw new Error('Cette carte ne va pas : il faut la même couleur ou la même valeur, ou un joker.');
   let chosen = colorOf(card);
   if (isWild(card)) {
     chosen = String(action.color || '');
@@ -281,7 +281,7 @@ function takeStack(s, id, ctx, kind = 'draw') {
 
 function actDraw(s, id, ctx) {
   mustBeTurn(s, id);
-  if (s.phase !== 'play') throw new Error('Tu as déjà pioché : joue cette carte ou passe.');
+  if (s.phase !== 'play') throw new Error('Tu as déjà pioché : joue cette carte ou passe.');
   s.pending = null;
   if (s.stack) {
     takeStack(s, id, ctx);
@@ -301,7 +301,7 @@ function actDraw(s, id, ctx) {
 
 function actPass(s, id, ctx) {
   mustBeTurn(s, id);
-  if (s.phase !== 'drawn') throw new Error("Tu dois d'abord piocher une carte (ou en jouer une).");
+  if (s.phase !== 'drawn') throw new Error("Tu dois d’abord piocher une carte (ou en jouer une).");
   s.pending = null;
   note(s, { k: 'pass', by: id });
   endTurn(s, ctx);
@@ -317,18 +317,18 @@ function actCall(s, id, ctx) {
     s.called.push(id);
     setDeadline(s, ctx);
   } else if (n === 1 || (n === 2 && myTurn)) {
-    if (s.called.includes(id)) throw new Error('Tu as déjà annoncé « Dernière ! ».');
+    if (s.called.includes(id)) throw new Error('Tu as déjà annoncé « Dernière ! ».');
     s.called.push(id);
   } else {
-    throw new Error('Tu annonces « Dernière ! » quand il te reste une carte, ou deux juste avant de jouer.');
+    throw new Error('Tu annonces « Dernière ! » quand il te reste une carte, ou deux juste avant de jouer.');
   }
   note(s, { k: 'call', by: id });
 }
 
 function actAccuse(s, id, ctx) {
   mustBeActive(s, id);
-  if (!s.pending) throw new Error("Personne n'a oublié d'annoncer « Dernière ! » (ou c'est trop tard).");
-  if (s.pending === id) throw new Error("C'est toi qui n'as pas annoncé : clique « Dernière ! ».");
+  if (!s.pending) throw new Error("Personne n’a oublié d’annoncer « Dernière ! » (ou c’est trop tard).");
+  if (s.pending === id) throw new Error("C’est toi qui n’as pas annoncé : appuie sur « Dernière ! ».");
   const victim = s.pending;
   s.pending = null;
   const n = drawCards(s, victim, 2, ctx);

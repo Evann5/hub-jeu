@@ -36,7 +36,7 @@ export function checkCode(state, code, what = 'code') {
   const colors = code.map(Number);
   if (colors.some((c) => !Number.isInteger(c) || c < 0 || c >= state.colors)) throw new Error('Une des couleurs n’existe pas.');
   if (!state.doubles && new Set(colors).size !== colors.length) {
-    throw new Error(`Les doublons sont interdits dans cette partie : utilise ${state.holes} couleurs différentes dans ton ${what}.`);
+    throw new Error(`Les doublons sont interdits dans cette partie : utilise ${state.holes} couleurs différentes dans ton ${what}.`);
   }
   return colors;
 }
@@ -97,7 +97,7 @@ export function move(state, playerId, action, ctx) {
   if (state.phase === 'over') throw new Error('La partie est terminée.');
 
   if (state.phase === 'coding') {
-    if (state.secrets[seat]) throw new Error('Ton code est enregistré : attends ton adversaire.');
+    if (state.secrets[seat]) throw new Error('Ton code est enregistré : attends ton adversaire.');
     if (action?.type !== 'code') throw new Error('Compose d’abord le code que ton adversaire devra trouver.');
     const code = checkCode(state, action.code, 'code');
     const secrets = state.secrets.map((s, i) => (i === seat ? code : s));
@@ -105,7 +105,7 @@ export function move(state, playerId, action, ctx) {
   }
 
   if (action?.type !== 'guess') throw new Error('C’est le moment de chercher le code de ton adversaire.');
-  if (state.pending[seat]) throw new Error('Ton essai est joué : attends ton adversaire.');
+  if (state.pending[seat]) throw new Error('Ton essai est joué : attends ton adversaire.');
   const code = checkCode(state, action.code, 'essai');
   const pending = state.pending.map((p, i) => (i === seat ? code : p));
   const next = { ...state, pending };

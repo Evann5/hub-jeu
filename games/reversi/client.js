@@ -78,7 +78,7 @@ export function mount(root, api) {
   function play(i) {
     if (!state || info.over) return;
     if (!myTurn()) {
-      if (info.isPlayer) api.toast("Ce n'est pas ton tour.");
+      if (info.isPlayer) api.toast("Ce n’est pas ton tour.");
       return;
     }
     if (state.board[i] !== null) return;
@@ -101,15 +101,15 @@ export function mount(root, api) {
 
   function statusText(s) {
     const [b, w] = s.counts;
-    if (s.forfeit) return `${api.user(s.forfeit).pseudo} a abandonné. ${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} !`;
+    if (s.forfeit) return `${api.user(s.forfeit).pseudo} a abandonné. ${nameOf(s.winner)} ${verb(s.winner, 'gagne', 'gagnes')} !`;
     if (s.over) {
       const score = `${Math.max(b, w)} à ${Math.min(b, w)}`;
-      return s.winner ? `${nameOf(s.winner)} ${verb(s.winner, "l'emporte", "l'emportes")}, ${score}.` : `Égalité parfaite : ${b} partout.`;
+      return s.winner ? `${nameOf(s.winner)} ${verb(s.winner, "l’emporte", "l’emportes")}, ${score}.` : `Égalité parfaite : ${b} partout.`;
     }
     const notes = [];
-    if (s.passed) notes.push(s.passed === api.me.id ? "Tu n'as aucun coup possible : ton tour est passé." : `${api.user(s.passed).pseudo} n'a aucun coup possible : son tour est passé.`);
-    if (s.last?.auto) notes.push(`${s.last.by === api.me.id ? 'Tu' : api.user(s.last.by).pseudo} ${s.last.by === api.me.id ? "n'as" : "n'a"} pas joué à temps : un coup a été joué au hasard.`);
-    const tail = myTurn() ? 'À toi : pose un pion sur un point.' : info.isPlayer ? `${api.user(s.players[s.turn]).pseudo} réfléchit…` : `Au tour de ${api.user(s.players[s.turn]).pseudo}.`;
+    if (s.passed) notes.push(s.passed === api.me.id ? "Tu n’as aucun coup possible : ton tour est passé." : `${api.user(s.passed).pseudo} n’a aucun coup possible : son tour est passé.`);
+    if (s.last?.auto) notes.push(`${s.last.by === api.me.id ? 'Tu' : api.user(s.last.by).pseudo} ${s.last.by === api.me.id ? "n’as" : "n’a"} pas joué à temps : un coup a été joué au hasard.`);
+    const tail = myTurn() ? 'À toi : pose un pion sur un point.' : info.isPlayer ? `${api.user(s.players[s.turn]).pseudo} réfléchit…` : `À ${api.user(s.players[s.turn]).pseudo} de jouer.`;
     return [...notes, tail].join(' ');
   }
 
@@ -167,7 +167,7 @@ export function mount(root, api) {
   api.onState((s, i) => {
     state = s;
     info = i;
-    if (wasOver === false && i.over && s.winner && !s.forfeit && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // pas de confettis sur l'écran de celui qui perd
+    if (wasOver === false && i.over && s.winner && (s.winner === api.me.id || !i.isPlayer)) confetti(root, h); // le gagnant, même par abandon ; jamais celui qui perd
     wasOver = i.over;
     renderScores(s);
     renderBoard(s);

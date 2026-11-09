@@ -10,9 +10,9 @@ export function svg(tag, attrs = {}, ...kids) {
 }
 
 const PAPER = '#FFFFFF';
-const PAPER2 = '#E4DAFF';
-const INK = '#1B0B4A';
-const GOLD = '#FFE14D';
+const PAPER2 = '#DCEFE6';
+const INK = '#082420';
+const GOLD = '#FFC23D';
 
 const star = (x, y, s = 1, o = 1) => svg('path', {
   d: 'M0-6 1.6-1.6 6 0 1.6 1.6 0 6-1.6 1.6-6 0-1.6-1.6Z', fill: GOLD, opacity: o, transform: `translate(${x} ${y}) scale(${s})`,
@@ -21,7 +21,7 @@ const star = (x, y, s = 1, o = 1) => svg('path', {
 // Chaque rôle : nom, courte phrase, couleur de la médaille, dessin (viewBox 120 × 120). currentColor = couleur du rôle.
 export const ROLES = {
   wolf: {
-    name: 'Loup-garou', short: 'Loup', color: '#FF4D7A', team: 'les loups',
+    name: 'Loup-garou', short: 'Loup', color: '#FF5468', team: 'les loups',
     line: 'Chaque nuit, tu dévores un villageois avec ta meute. Le jour, fais comme si de rien n’était.',
     art: () => [
       svg('polygon', { points: '60,106 34,88 24,58 28,18 52,40 68,40 92,18 96,58 86,88', fill: PAPER }),
@@ -38,7 +38,7 @@ export const ROLES = {
     ],
   },
   villager: {
-    name: 'Villageois', short: 'Villageois', color: '#FFA63D', team: 'le village',
+    name: 'Villageois', short: 'Villageois', color: '#6EC8FF', team: 'le village',
     line: 'Tu n’as aucun pouvoir, seulement ton flair. Écoute, débats, et trouve les loups avant qu’il ne soit trop tard.',
     art: () => [
       svg('path', { d: 'M82 30c-5-7 5-9 0-17', stroke: PAPER, 'stroke-width': 3, fill: 'none', 'stroke-linecap': 'round', opacity: 0.7 }),
@@ -54,7 +54,7 @@ export const ROLES = {
     ],
   },
   seer: {
-    name: 'Voyante', short: 'Voyante', color: '#A978FF', team: 'le village',
+    name: 'Voyante', short: 'Voyante', color: '#B79CFF', team: 'le village',
     line: 'Chaque nuit, tu sondes un joueur et découvres son vrai rôle. Guide le village sans te faire repérer.',
     art: () => [
       star(22, 28, 1.1), star(98, 22, 0.9), star(100, 84, 0.7, 0.8), star(16, 76, 0.6, 0.8),
@@ -69,7 +69,7 @@ export const ROLES = {
     ],
   },
   witch: {
-    name: 'Sorcière', short: 'Sorcière', color: '#2FE0B0', team: 'le village',
+    name: 'Sorcière', short: 'Sorcière', color: '#3FE0A8', team: 'le village',
     line: 'Tu as deux potions, une pour sauver, une pour empoisonner. Une seule fois chacune : choisis bien.',
     art: () => [
       star(24, 30, 1, 0.9), star(98, 40, 0.8), star(86, 100, 0.6, 0.8),
@@ -85,7 +85,7 @@ export const ROLES = {
     ],
   },
   hunter: {
-    name: 'Chasseur', short: 'Chasseur', color: '#8BE34A', team: 'le village',
+    name: 'Chasseur', short: 'Chasseur', color: '#FF9F43', team: 'le village',
     line: 'Si tu meurs, tu as le temps d’un dernier tir : emporte quelqu’un avec toi. Vise juste.',
     art: () => [
       svg('circle', { cx: 56, cy: 66, r: 38, fill: PAPER }),
@@ -100,7 +100,7 @@ export const ROLES = {
     ],
   },
   cupid: {
-    name: 'Cupidon', short: 'Cupidon', color: '#FF6FD8', team: 'le village',
+    name: 'Cupidon', short: 'Cupidon', color: '#FF7AC6', team: 'le village',
     line: 'La première nuit, tu unis deux joueurs pour la vie. Si l’un meurt, l’autre le suit.',
     art: () => [
       svg('path', { d: 'M22 52C12 40 14 26 28 26c10 0 14 8 14 16 0 6-6 12-20 10Z', fill: PAPER2 }),
@@ -116,7 +116,7 @@ export const ROLES = {
   },
 };
 
-// Médaille ronde façon sticker : gros contour, illustration à contours épais. size en px.
+// Médaille ronde : la couleur du rôle, le dessin, un fin cerclage. size en px.
 export function medal(role, size = 64) {
   const r = ROLES[role];
   const el = svg('svg', { viewBox: '0 0 120 120', width: size, height: size, 'aria-hidden': 'true', focusable: 'false', class: 'lg-medal' });
@@ -124,37 +124,53 @@ export function medal(role, size = 64) {
   el.style.width = `${size}px`;
   el.style.height = `${size}px`;
   el.append(
-    svg('circle', { cx: 60, cy: 60, r: 57, fill: r.color }),
-    svg('ellipse', { cx: 42, cy: 22, rx: 26, ry: 10, fill: '#fff', opacity: 0.35, transform: 'rotate(-24 42 22)' }),
+    svg('circle', { cx: 60, cy: 60, r: 58, fill: r.color }),
+    svg('circle', { cx: 60, cy: 60, r: 50, fill: 'none', stroke: INK, 'stroke-width': 1.5, opacity: 0.22 }),
     svg('g', { stroke: INK, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, ...r.art()),
-    svg('circle', { cx: 60, cy: 60, r: 57, fill: 'none', stroke: INK, 'stroke-width': 5 }),
+    svg('circle', { cx: 60, cy: 60, r: 58, fill: 'none', stroke: INK, 'stroke-width': 4 }),
   );
   return el;
 }
 
-// Décor du village en dessin animé : collines rondes, maisonnettes aux fenêtres allumées la nuit, arbres boules.
-// Les couleurs viennent du CSS (classes).
+// Sapin à deux étages, pointe en haut : un morceau de tracé (x = centre, y = pied, hh = hauteur, w = demi-largeur).
+const fir = (x, y, hh, w) => {
+  const t = y - hh * 0.48;
+  return `M${x - w} ${y}L${x - w * 0.42} ${t}H${x - w * 0.68}L${x} ${y - hh}L${x + w * 0.68} ${t}H${x + w * 0.42}L${x + w} ${y}Z`;
+};
+const n2 = (v) => Math.round(v * 10) / 10;
+
+// Décor : une lisière de sapins, le village dans la clairière, des yeux dans le noir. Les couleurs viennent du CSS (classes).
+// Les grands sapins encadrent les bords ; le milieu reste bas pour laisser voir le village.
 export function scene() {
-  const root = svg('svg', { viewBox: '0 0 1200 260', preserveAspectRatio: 'xMidYMax slice', class: 'lg-scene', 'aria-hidden': 'true', focusable: 'false' });
-  root.append(svg('path', { class: 'hill-far', d: 'M0 150C140 84 300 84 440 136S720 170 860 118 1100 90 1200 126V260H0Z' }));
-  const houses = [[120, 168, 1], [330, 150, 0.85], [560, 176, 1.1], [790, 156, 0.9], [1010, 172, 1], [1130, 150, 0.8]];
-  houses.forEach(([x, y, k], i) => {
-    const w = 64 * k;
-    const h = 42 * k;
+  const root = svg('svg', { viewBox: '0 0 1200 300', preserveAspectRatio: 'xMidYMax slice', class: 'lg-scene', 'aria-hidden': 'true', focusable: 'false' });
+  let far = 'M0 300V236H1200V300Z';
+  for (let x = -10, i = 0; x <= 1210; x += 26, i++) {
+    const hh = 58 + 30 * Math.abs(Math.sin(i * 1.7)) + 18 * Math.abs(Math.sin(i * 0.31));
+    far += fir(x, 250, n2(hh), n2(15 + (i % 3) * 3));
+  }
+  root.append(svg('path', { class: 'far', d: far }));
+  const houses = [[520, 1], [574, 0.8], [628, 1.15], [688, 0.9]];
+  for (const [x, k] of houses) {
+    const w = 40 * k;
+    const hh = 26 * k;
+    const y = 272;
     root.append(
-      svg('rect', { class: `house c${i % 3}`, x: x - w / 2, y: y - h, width: w, height: h, rx: 8 * k }),
-      svg('polygon', { class: `roof c${i % 3}`, points: `${x - w / 2 - 8},${y - h + 4} ${x},${y - h - 34 * k} ${x + w / 2 + 8},${y - h + 4}`, 'stroke-linejoin': 'round' }),
-      svg('rect', { class: 'win', x: x - 9 * k, y: y - h + 11 * k, width: 18 * k, height: 18 * k, rx: 9 * k }),
-    );
-  });
-  root.append(svg('path', { class: 'hill-near', d: 'M0 204C180 160 340 170 520 194S900 220 1060 184 1160 170 1200 180V260H0Z' }));
-  const trees = [[40, 214, 1], [100, 220, 0.75], [250, 222, 0.9], [700, 232, 1.1], [930, 222, 0.85], [1100, 216, 1.1], [1168, 222, 0.8]];
-  for (const [x, y, k] of trees) {
-    root.append(
-      svg('rect', { class: 'trunk', x: x - 4 * k, y: y - 22 * k, width: 8 * k, height: 26 * k, rx: 3 }),
-      svg('circle', { class: 'tree', cx: x, cy: y - 40 * k, r: 24 * k }),
-      svg('circle', { class: 'tree-hi', cx: x - 8 * k, cy: y - 48 * k, r: 8 * k }),
+      svg('path', { class: 'house', d: `M${n2(x - w / 2)} ${y}V${n2(y - hh)}L${x} ${n2(y - hh - 22 * k)}L${n2(x + w / 2)} ${n2(y - hh)}V${y}Z` }),
+      svg('rect', { class: 'win', x: n2(x - 5 * k), y: n2(y - hh + 6 * k), width: n2(10 * k), height: n2(9 * k), rx: 1.5 }),
     );
   }
+  let near = 'M0 300V276H1200V300Z';
+  for (let x = -20, i = 0; x <= 1220; x += 34, i++) {
+    const edge = Math.min(1, Math.abs(x - 604) / 420); // 0 au centre (la clairière), 1 sur les bords
+    const hh = 16 + 164 * edge ** 1.6 + 22 * Math.abs(Math.sin(i * 2.3));
+    near += fir(x, 300, n2(hh), n2(18 + 12 * edge + (i % 2) * 4));
+  }
+  root.append(svg('path', { class: 'near', d: near }));
+  // Des yeux dans le noir : visibles la nuit seulement (CSS).
+  [[402, 262, 1], [826, 266, 0.9], [150, 236, 1.1], [1058, 230, 1]].forEach(([x, y, k], i) => {
+    root.append(svg('g', { class: `eyes e${i}`, transform: `translate(${x} ${y}) scale(${k})` },
+      svg('path', { d: 'M-11 0q4-4.5 8 0q-4 2.6-8 0Z' }),
+      svg('path', { d: 'M3 0q4-4.5 8 0q-4 2.6-8 0Z' })));
+  });
   return root;
 }

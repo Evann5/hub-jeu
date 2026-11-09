@@ -1,16 +1,16 @@
 {
   "name": "Quiz",
   "tagline": "Le plus rapide et le plus juste.",
-  "description": "Des questions de culture générale à quatre réponses. Tout le monde répond en même temps : plus tu es rapide, plus tu marques.",
+  "description": "Des questions de culture générale à quatre réponses. Tout le monde répond en même temps : plus tu es rapide, plus tu marques.",
   "how": [
-    "Chaque question propose quatre réponses : touche la bonne avant la fin du chrono.",
-    "Une bonne réponse rapporte 500 points, plus un bonus de rapidité jusqu'à 500.",
-    "Une seule réponse par question : pas de retour en arrière.",
-    "Après chaque question, la bonne réponse et le classement s'affichent. Le meilleur score gagne."
+    "Chaque question propose quatre réponses : touche la bonne avant la fin du chrono.",
+    "Une bonne réponse rapporte 500 points, plus un bonus de rapidité jusqu’à 500.",
+    "Une seule réponse par question : pas de retour en arrière.",
+    "Après chaque question, la bonne réponse et le classement s’affichent. Le meilleur score gagne."
   ],
   "minPlayers": 1,
   "maxPlayers": 20,
-  "duration": "5 min",
+  "duration": "5 min",
   "emoji": "💡",
   "family": "ambiance",
   "color": "#6A2BFF",
@@ -20,12 +20,12 @@
     { "key": "count", "label": "Questions", "type": "choice", "default": 10,
       "choices": [{ "value": 5, "label": "5" }, { "value": 10, "label": "10" }, { "value": 15, "label": "15" }, { "value": 20, "label": "20" }] },
     { "key": "time", "label": "Temps par question", "type": "choice", "default": 15,
-      "choices": [{ "value": 10, "label": "10 s" }, { "value": 15, "label": "15 s" }, { "value": 20, "label": "20 s" }] },
+      "choices": [{ "value": 10, "label": "10 s" }, { "value": 15, "label": "15 s" }, { "value": 20, "label": "20 s" }] },
     { "key": "theme", "label": "Thème", "type": "choice", "default": "tout",
       "choices": [
         { "value": "tout", "label": "Tout" }, { "value": "geo", "label": "Géo" }, { "value": "histoire", "label": "Histoire" },
         { "value": "sciences", "label": "Sciences" }, { "value": "pop", "label": "Pop" }, { "value": "sport", "label": "Sport" },
-        { "value": "langue", "label": "Français" }, { "value": "table", "label": "À table" }, { "value": "arts", "label": "Arts" }
+        { "value": "langue", "label": "Français" }, { "value": "table", "label": "Cuisine" }, { "value": "arts", "label": "Arts" }
       ] }
   ]
 }

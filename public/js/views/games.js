@@ -1,5 +1,5 @@
 // Écran Jouer : les jeux de la classe (ouvrir une table) et les tables en cours (rejoindre, reprendre, regarder).
-import { h, icon, token, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
+import { h, de, icon, token, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
 import { call } from '../net.js';
 import { modal } from '../dialogs.js';
 import { wantJoin } from './table.js';
@@ -56,11 +56,11 @@ function openGameSheet(g) {
       h('div',
         h('p.game-meta', playersLabel(g), g.duration ? `, ${g.duration}` : ''),
         h('p.game-sheet-text', g.description || g.tagline))),
-    g.how?.length ? h('details.game-sheet-how', h('summary', 'Comment on joue ?'), h('ol.how', g.how.map((line) => h('li', line)))) : null,
+    g.how?.length ? h('details.game-sheet-how', h('summary', 'Comment on joue ?'), h('ol.how', g.how.map((line) => h('li', line)))) : null,
     waiting.length ? h('div.game-sheet-tables',
       h('h3', count(waiting.length, 'partie attend', 'parties attendent'), ' des joueurs'),
       h('ul.table-list', waiting.map((t) => h('li', h('a.game-sheet-table', { href: `#/t/${t.id}`, onclick: () => { if (!t.seats.includes(state.me.id)) wantJoin(t.id); dlg.close(); } },
-        h('span', `Partie de ${state.users.get(t.hostId)?.pseudo ?? '…'}, ${t.seats.length}/${g.maxPlayers}`),
+        h('span', `Partie ${de(state.users.get(t.hostId)?.pseudo ?? '…')}, ${t.seats.length}/${g.maxPlayers}`),
         h('b', t.seats.includes(state.me.id) ? 'Y retourner' : 'Rejoindre')))))) : null,
     problem,
     h('div.dlg-actions', h('button.btn.btn-ghost', { type: 'button', onclick: () => dlg.close() }, 'Annuler'), open));
@@ -117,7 +117,7 @@ function tableRow(t) {
     h('span.table-chip', gameLogo(g)),
     h('span.table-info',
       h('b', g.name),
-      h('span', host ? `Partie de ${host.pseudo}` : 'Partie', ' · ', statusLabel(t, g))),
+      h('span', host ? `Partie ${de(host.pseudo)}` : 'Partie', ' · ', statusLabel(t, g))),
     h('span.table-seats', { 'aria-label': count(t.seats.length, 'joueur', 'joueurs') },
       t.seats.slice(0, 5).map((id) => token(state.users.get(id), { size: 's' })),
       t.seats.length > 5 ? h('span.more', `+${t.seats.length - 5}`) : null),

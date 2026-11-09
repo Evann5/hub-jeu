@@ -10,19 +10,19 @@ export const EXTRA_COUNTRIES = [
     city('Tel-Aviv', 'bauhaus', 'La Ville blanche et ses milliers d’immeubles Bauhaus.'),
   ] },
   { id: 'coreeNord', name: 'Corée du Nord', color: '#E4576A', cities: [
-    city('Nampho', 'barrageNampho', 'Un barrage de 8 km ferme l’embouchure du Taedong.'),
+    city('Nampho', 'barrageNampho', 'Un barrage de 8 km ferme l’embouchure du Taedong.'),
     city('Wonsan', 'plageWonsan', 'Une station balnéaire sur la côte est.'),
     city('Kaesong', 'pagodeKaesong', 'L’ancienne capitale du royaume de Koryo.'),
     city('Pyongyang', 'ryugyong', 'Le Ryugyong, pyramide de 105 étages, domine la ville.'),
   ] },
   { id: 'congo', name: 'RD Congo', color: '#3FC1E0', cities: [
     city('Kisangani', 'piroguesBoyoma', 'Les chutes Wagenia et leurs pêcheurs sur le fleuve Congo.'),
-    city('Goma', 'volcanGoma', 'Au bord du lac Kivu, près du volcan Nyiragongo.'),
+    city('Matadi', 'pontMatadi', 'Le grand port du pays et le pont Maréchal, suspendu au-dessus du fleuve Congo.'),
     city('Lubumbashi', 'cuivreLubumbashi', 'La capitale du cuivre, au Haut-Katanga.'),
     city('Kinshasa', 'tourLimete', 'Une ville géante, face à Brazzaville sur le fleuve Congo.'),
   ] },
   { id: 'coreeSud', name: 'Corée du Sud', color: '#B39DF2', cities: [
-    city('Gyeongju', 'cheomseongdae', 'L’observatoire de Cheomseongdae, vieux de près de 1 400 ans.'),
+    city('Gyeongju', 'cheomseongdae', 'L’observatoire de Cheomseongdae, vieux de près de 1 400 ans.'),
     city('Jeju', 'hallasan', 'Une île volcanique dominée par le mont Halla.'),
     city('Busan', 'gamcheon', 'Le village de Gamcheon et ses maisons colorées à flanc de colline.'),
     city('Séoul', 'lotteTower', 'La Lotte World Tower culmine à 555 mètres.'),

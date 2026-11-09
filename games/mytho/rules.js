@@ -78,9 +78,9 @@ export function move(s, playerId, action, ctx) {
     if (action?.type !== 'define') throw new Error('Écris ta fausse définition.');
     const text = clean(action.text);
     if (text.length < 3) throw new Error('Ta définition est trop courte.');
-    if (text.length > 160) throw new Error('Ta définition est trop longue : 160 caractères au plus.');
+    if (text.length > 160) throw new Error('Ta définition est trop longue : 160 caractères au plus.');
     if (playerId in s.defs) throw new Error('Tu as déjà écrit ta définition.');
-    if (same(text, s.words[s.round][1])) throw new Error('C’est… la vraie définition ! Invente autre chose pour piéger les autres.');
+    if (same(text, s.words[s.round][1])) throw new Error('C’est… la vraie définition ! Invente autre chose pour piéger les autres.');
     const t = { ...s, defs: { ...s.defs, [playerId]: text } };
     return { state: active(t).every((id) => id in t.defs) ? startVote(t, ctx) : t };
   }
@@ -96,6 +96,8 @@ export function move(s, playerId, action, ctx) {
   }
   if (s.phase === 'reveal') {
     if (action?.type !== 'next') throw new Error('Attends la manche suivante.');
+    // L'hôte (premier joueur encore là) lance la suite ; sinon le minuteur s'en charge.
+    if (playerId !== active(s)[0]) throw new Error('C’est l’hôte de la partie qui lance la suite.');
     return { state: startRound(s, ctx) };
   }
   throw new Error('La partie est terminée.');
@@ -124,7 +126,7 @@ export function status(s) {
   let turn = [];
   if (s.phase === 'write') turn = active(s).filter((id) => !(id in s.defs));
   else if (s.phase === 'vote') turn = voters(s).filter((id) => !(id in s.votes));
-  else if (s.phase === 'reveal') turn = active(s); // n'importe qui peut passer à la suite
+  else if (s.phase === 'reveal') turn = active(s).slice(0, 1); // l'hôte passe à la suite
   return { over: false, turn, winners: [], deadline: s.deadline };
 }
 

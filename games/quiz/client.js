@@ -23,7 +23,7 @@ export function mount(root, api) {
   let info = null;
   let shownKey = ''; // phase + question déjà affichées : sert à ne recentrer la bande qu'au changement d'écran
 
-  const fmtPts = (n) => n.toLocaleString('fr-FR');
+  const fmtPts = (n) => n.toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0');
 
   function tick() {
     const bar = el.querySelector('.qz-timer i');
@@ -70,13 +70,13 @@ export function mount(root, api) {
       },
       h('span.qz-letter', LETTERS[i]),
       h('span.qz-text', text),
-      reveal ? h('span.qz-n', { 'aria-label': `${v.counts[i]} réponse(s)` }, String(v.counts[i])) : isMine ? h('span.qz-n', '✓') : null);
+      reveal ? h('span.qz-n', { 'aria-label': `${v.counts[i]} réponse${v.counts[i] > 1 ? 's' : ''}` }, String(v.counts[i])) : isMine ? h('span.qz-n', '✓') : null);
     });
     let status;
     if (reveal) {
       const g = v.gained[api.me.id];
       status = v.mine === null && info.isPlayer ? 'Pas de réponse cette fois.'
-        : g ? `Bonne réponse ! +${fmtPts(g)} points` : info.isPlayer ? 'Raté, +0 point' : 'Voici la bonne réponse.';
+        : g ? `Bonne réponse ! +${fmtPts(g)} points` : info.isPlayer ? 'Raté, +0 point' : 'Voici la bonne réponse.';
     } else {
       status = v.mine !== null ? `Réponse enregistrée. ${answeredCount} sur ${v.players.length - v.left.length} ont répondu.`
         : info.isPlayer ? 'Choisis ta réponse.' : 'Les joueurs répondent…';

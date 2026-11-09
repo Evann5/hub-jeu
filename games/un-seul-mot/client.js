@@ -2,7 +2,7 @@
 // Le mot mystère est un grand post-it ; les indices sont de petits post-it légèrement penchés.
 
 const COLORS = ['yellow', 'pink', 'green', 'blue', 'orange'];
-const REASONS = { doublon: 'Doublon : annulé', invalide: 'Trop proche du mot : annulé', vote: 'Annulé par vote' };
+const REASONS = { doublon: 'Doublon : annulé', invalide: 'Trop proche du mot : annulé', vote: 'Annulé par vote' };
 
 // Confettis : une pluie de pastilles, une seule fois (rien si l'animation est réduite).
 function confetti(h, host) {
@@ -68,7 +68,7 @@ export function mount(root, api) {
     if (amActive()) {
       return [head('À toi de deviner'),
         h('section.us-card', h('h2', 'Choisis un numéro de 1 à 5'),
-          h('p', 'Tu ne verras pas le mot : les autres joueurs le verront.'),
+          h('p', 'Tu ne verras pas le mot : les autres joueurs le verront.'),
           h('div.us-picks', Array.from({ length: v.choices }, (_, i) => h(`button.us-pick.${color(i)}`, {
             type: 'button', style: tilt(i), dataset: { k: `pick${i}` }, onclick: () => send({ type: 'pick', n: i + 1 }), 'aria-label': `Numéro ${i + 1}`,
           }, h('i.us-pin', { 'aria-hidden': 'true' }), String(i + 1))))),
@@ -82,7 +82,7 @@ export function mount(root, api) {
 
   function clueForm() {
     if (v.mine !== null) return note(v.mine, 0, '.is-mine');
-    const form = h('form.us-form', h('label.us-sr', { for: 'us-clue' }, 'Ton indice'), clueInput, h('button.us-btn', { type: 'submit' }, 'Coller mon indice'));
+    const form = h('form.us-form', h('label.us-sr', { for: 'us-clue' }, 'Ton indice'), clueInput, h('button.us-btn', { type: 'submit' }, 'Envoyer mon indice'));
     clueInput.id = 'us-clue';
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -95,7 +95,8 @@ export function mount(root, api) {
   }
 
   function wordCard() {
-    return h('section.us-word', h('i.us-pin', { 'aria-hidden': 'true' }), h('small', 'Le mot mystère'), h('b', v.word));
+    // En classe, sur ordinateur : caché tant qu'on ne maintient pas le clic (celui qui devine est souvent assis à côté).
+    return api.secret(h('section.us-word', h('i.us-pin', { 'aria-hidden': 'true' }), h('small', 'Le mot mystère'), h('b', v.word)), { label: 'le mot mystère' });
   }
 
   function screenWrite() {
@@ -126,13 +127,13 @@ export function mount(root, api) {
         c.auto ? h('small.us-why', REASONS[c.auto]) : c.cancelled ? h('small.us-why', REASONS.vote) : null,
         !c.auto && !me ? h('button.us-mini', {
           type: 'button', disabled: mineDone, 'aria-pressed': String(voted), dataset: { k: `cancel${c.by}` },
-          'aria-label': `${voted ? 'Retirer ton vote contre' : 'Annuler'} l’indice de ${name(c.by)}`,
+          'aria-label': `${voted ? 'Retirer ton vote contre' : 'Annuler'} l’indice écrit par ${name(c.by)}`,
           onclick: () => send({ type: 'cancel', target: c.by }),
         }, voted ? 'Retirer mon vote' : 'Annuler', h('span', ` ${c.votes.length}/${c.need}`)) : (!c.auto && c.votes.length ? h('small', `${c.votes.length}/${c.need} veulent l’annuler`) : null));
     });
     return [head('Trier les indices'), wordCard(),
       h('section.us-card', h('h2', 'Garde les bons indices'),
-        h('p', 'Doublons et indices trop proches : déjà annulés. Pour en écarter un autre, il faut plus de la moitié des voix.'),
+        h('p', 'Doublons et indices trop proches : déjà annulés. Pour en écarter un autre, il faut plus de la moitié des voix.'),
         h('ul.us-clues', notes),
         mineDone ? h('p.us-wait', 'Tu as validé. On attend les autres…') : h('button.us-btn', { type: 'button', dataset: { k: 'done' }, onclick: () => send({ type: 'done' }) }, 'C’est bon pour moi'),
         progress(v.done, 'ont validé'))];
@@ -157,7 +158,7 @@ export function mount(root, api) {
     if (amActive()) {
       const clues = v.final.map((t, i) => h(`li.us-clue.${color(i)}`, { style: tilt(i) }, h('i.us-pin', { 'aria-hidden': 'true' }), h('b.us-text', t)));
       return [head('À toi de deviner'),
-        h('section.us-card', h('h2', clues.length ? 'Quel est le mot mystère ?' : 'Aucun indice n’a survécu'),
+        h('section.us-card', h('h2', clues.length ? 'Quel est le mot mystère ?' : 'Aucun indice n’a survécu'),
           clues.length ? h('ul.us-clues', clues) : null, guessForm())];
     }
     const clues = (v.finalBy || []).map((c, i) => h(`li.us-clue.${color(i)}`, { style: tilt(i) }, h('i.us-pin', { 'aria-hidden': 'true' }), h('b.us-text', c.text), h('small', isMe(c.by) ? 'ton indice' : name(c.by))));
@@ -170,7 +171,7 @@ export function mount(root, api) {
       const e = v.history[i];
       const cls = !e ? 'is-todo' : e.outcome === 'win' ? 'is-win' : e.outcome === 'miss' ? 'is-miss' : 'is-pass';
       const text = !e ? 'à venir' : e.outcome === 'win' ? 'trouvé' : e.outcome === 'miss' ? 'raté' : e.outcome === 'pass' ? 'passé' : 'manche annulée';
-      return h(`li.${cls}`, { 'aria-label': `Manche ${i + 1} : ${text}` }, h('i'));
+      return h(`li.${cls}`, { 'aria-label': `Manche ${i + 1} : ${text}` }, h('i'));
     }));
   }
 
@@ -185,8 +186,8 @@ export function mount(root, api) {
   function screenResult() {
     const e = v.last;
     const who = isMe(e.active) ? 'Tu' : name(e.active);
-    const verdict = e.outcome === 'win' ? { cls: 'win', big: 'Trouvé !', text: `${who} ${isMe(e.active) ? 'as' : 'a'} deviné « ${e.guess} ». Un point pour l’équipe.` }
-      : e.outcome === 'miss' ? { cls: 'miss', big: 'Raté', text: `${who} ${isMe(e.active) ? 'as' : 'a'} proposé « ${e.guess} ».` }
+    const verdict = e.outcome === 'win' ? { cls: 'win', big: 'Trouvé !', text: `${who} ${isMe(e.active) ? 'as' : 'a'} deviné « ${e.guess} ». Un point pour l’équipe.` }
+      : e.outcome === 'miss' ? { cls: 'miss', big: 'Raté', text: `${who} ${isMe(e.active) ? 'as' : 'a'} proposé « ${e.guess} ».` }
         : e.outcome === 'pass' ? { cls: 'pass', big: 'Passé', text: `${who} ${isMe(e.active) ? 'as' : 'a'} passé.` }
           : { cls: 'pass', big: 'Manche annulée', text: `${who} ${isMe(e.active) ? 'as' : 'a'} quitté la partie en cours de manche.` };
     return [head('Résultat'),
@@ -201,13 +202,13 @@ export function mount(root, api) {
 
   function verdictFor() {
     const r = v.score / v.rounds;
-    if (v.score === v.rounds) return 'Score parfait ! Vous lisez dans les pensées.';
-    if (r >= 0.9) return 'Incroyable : presque sans faute.';
+    if (v.score === v.rounds) return 'Score parfait ! Vous lisez dans les pensées.';
+    if (r >= 0.9) return 'Incroyable : presque sans faute.';
     if (r >= 0.8) return 'Génial, vous êtes très synchrones.';
     if (r >= 0.65) return 'Très bien joué.';
-    if (r >= 0.5) return 'Pas mal du tout !';
-    if (r >= 0.3) return 'Dans la moyenne : encore un peu d’entraînement.';
-    return 'Pas facile aujourd’hui. On refait une partie ?';
+    if (r >= 0.5) return 'Pas mal du tout !';
+    if (r >= 0.3) return 'Dans la moyenne : encore un peu d’entraînement.';
+    return 'Pas facile aujourd’hui. On refait une partie ?';
   }
 
   function screenOver() {
@@ -217,16 +218,16 @@ export function mount(root, api) {
         h('p', verdictFor()),
         trail(),
         h('ul.us-recap', v.history.map((e, i) => h('li', h('b', `${i + 1}.`), ' ', e.word ?? '—', ' ',
-          h('small', e.outcome === 'win' ? `trouvé par ${name(e.active)}` : e.outcome === 'miss' ? `raté (« ${e.guess} »)` : e.outcome === 'pass' ? 'passé' : 'annulée')))))];
+          h('small', e.outcome === 'win' ? `trouvé par ${name(e.active)}` : e.outcome === 'miss' ? `raté (« ${e.guess} »)` : e.outcome === 'pass' ? 'passé' : 'annulée')))))];
   }
 
   function liveText() {
     if (v.phase === 'pick') return `Manche ${v.round + 1}. ${name(v.active)} choisit un numéro.`;
     if (v.phase === 'write') return amActive() ? 'Les autres écrivent leurs indices.' : seated() ? `Le mot mystère est ${v.word}. Écris un indice d’un seul mot.` : 'Les joueurs écrivent leurs indices.';
-    if (v.phase === 'review') return v.review ? 'Trie les indices : tu peux en annuler par vote.' : 'Les autres trient les indices.';
+    if (v.phase === 'review') return v.review ? 'Trie les indices : tu peux en annuler par vote.' : 'Les autres trient les indices.';
     if (v.phase === 'guess') return amActive() ? 'À toi de deviner le mot mystère.' : `${name(v.active)} réfléchit.`;
-    if (v.phase === 'result') return v.last.outcome === 'win' ? 'Trouvé !' : v.last.outcome === 'miss' ? 'Raté.' : 'Manche terminée.';
-    return `Fin de partie : ${v.score} sur ${v.rounds}.`;
+    if (v.phase === 'result') return v.last.outcome === 'win' ? 'Trouvé !' : v.last.outcome === 'miss' ? 'Raté.' : 'Manche terminée.';
+    return `Fin de partie : ${v.score} sur ${v.rounds}.`;
   }
 
   function render() {

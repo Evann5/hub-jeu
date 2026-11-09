@@ -33,7 +33,7 @@ const STARTERS = [
     { name: 'Naples', model: 'volcan', fact: 'La pizza, avec le Vésuve en toile de fond.' },
     { name: 'Florence', model: 'duomo', fact: 'Le dôme de Brunelleschi domine les toits rouges.' },
     { name: 'Venise', model: 'gondole', fact: 'Plus de 400 ponts, et pas de voitures dans le centre.' },
-    { name: 'Rome', model: 'colisee', fact: 'On y marche sur plus de 2 000 ans d’histoire.' },
+    { name: 'Rome', model: 'colisee', fact: 'On y marche sur plus de 2 000 ans d’histoire.' },
   ] },
   { id: 'japon', name: 'Japon', color: '#FFB3C7', cities: [
     { name: 'Nara', model: 'pagode', fact: 'Des cerfs en liberté saluent les passants.' },
@@ -125,14 +125,14 @@ export function applyMap(map) {
 
 // Les règles en bref, consultables pendant la partie.
 export const RULES = [
-  'Lance les dés et avance. Un double fait rejouer ; au troisième de suite, c’est la Douane.',
-  'Au Départ : +200 €.',
-  'Ville libre : achète-la ou passe. Si tu passes, elle reste libre.',
-  'Avec 3 villes d’un pays (2 à 2 ou 3 joueurs), le loyer double et tu peux construire. Avec les 4, il triple.',
-  'Escales : le loyer monte avec leur nombre.',
-  'Festival : tu gagnes 100 €. Chantier : tu paies 50 €.',
-  'Échange à tout moment, même hors de ton tour : villes contre argent.',
-  'Plus d’argent ? Vends des constructions, mets des villes en gage ou négocie. Sinon, c’est la faillite.',
+  'Lance les dés et avance. Un double fait rejouer ; au troisième de suite, c’est la Douane.',
+  'Au Départ : +200 €.',
+  'Ville libre : achète-la ou passe. Si tu passes, elle reste libre.',
+  'Avec 3 villes d’un pays (2 suffisent à 2 ou 3 joueurs), le loyer double et tu peux construire. Avec les 4, il triple.',
+  'Escales : le loyer monte avec leur nombre.',
+  'Festival : tu gagnes 100 €. Chantier : tu paies 50 €.',
+  'Échange à tout moment, même hors de ton tour : villes contre argent.',
+  'Plus d’argent ? Vends des constructions, mets des villes en gage ou négocie. Sinon, c’est la faillite.',
   'Au dernier tour, le plus gros patrimoine gagne (argent, villes, constructions).',
 ];
 
