@@ -136,7 +136,9 @@
   .g-loup-garou .lg-body.is-pick-first .lg-village { order: 0; }
 }
 /* Le seul moment orchestré : à chaque nouvelle phase, le panneau d'action se lève doucement. */
-.g-loup-garou .lg-body.is-fresh .lg-main > .lg-panel:first-child { animation: lg-rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.g-loup-garou .lg-body.is-fresh .lg-slot > .lg-panel:first-child { animation: lg-rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+/* Les panneaux de la phase sont redessinés à chaque coup ; la discussion des loups, elle, reste en place (saisie, clavier). */
+.g-loup-garou .lg-slot { display: contents; }
 @keyframes lg-rise { from { transform: translateY(10px); opacity: 0; } }
 
 /* Minuteur */
@@ -343,6 +345,39 @@
   .g-loup-garou .lg-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .g-loup-garou .lg-seat { min-height: 52px; padding: 6px 8px; gap: 8px; }
 }
+@container (max-width: 480px) {
+  .g-loup-garou .lg-btn { white-space: normal; }
+  .g-loup-garou .lg-chat-log { max-height: 180px; }
+}
+
+/* ——— Rôles en option : Capitaine, discussion des loups, Voleur, annonces du matin ——— */
+.g-loup-garou .lg-btn { max-width: 100%; overflow-wrap: anywhere; }
+.g-loup-garou .lg-badge { flex: none; width: 16px; height: 16px; vertical-align: -0.2em; }
+.g-loup-garou .lg-sub.is-cap { color: var(--ink); font-weight: 700; }
+.g-loup-garou .lg-warn { color: var(--warn); font-weight: 700; }
+.g-loup-garou .lg[data-tone='day'] .lg-warn { color: #A3122A; }
+.g-loup-garou .lg-callout { padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--seat); font-weight: 600; }
+.g-loup-garou .lg-panel p.lg-muted .lg-badge { margin-right: 2px; }
+.g-loup-garou .lg-chat[hidden], .g-loup-garou .lg-chat-form[hidden] { display: none; }
+.g-loup-garou .lg-chat { border-color: rgb(255 84 104 / 0.45); }
+.g-loup-garou .lg-chat h3 { font-size: clamp(1.25rem, 4.6cqi, 1.5rem); }
+.g-loup-garou .lg-chat-log { display: grid; align-content: start; gap: 6px; max-height: 240px; margin: 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; list-style: none; }
+.g-loup-garou .lg-chat-log li { padding: 8px 12px; border-radius: 12px; background: var(--seat); overflow-wrap: anywhere; }
+.g-loup-garou .lg-chat-log li b { color: var(--amber); }
+.g-loup-garou .lg-chat-log li.lg-chat-empty { background: transparent; padding: 4px 0; color: var(--ink-2); }
+.g-loup-garou .lg-chat .secret-box { border-radius: 14px; }
+.g-loup-garou .lg-chat-form { display: flex; gap: 8px; }
+.g-loup-garou .lg-chat-form .lg-btn { flex: none; }
+.g-loup-garou .lg-chat-input {
+  flex: 1; min-width: 0; min-height: 48px; padding: 0 14px; border: 1.5px solid var(--line-strong); border-radius: 12px;
+  background: var(--seat); color: var(--ink); font: 500 1rem/1.2 var(--sans);
+}
+.g-loup-garou .lg-chat-input::placeholder { color: var(--ink-2); }
+.g-loup-garou .lg-chat-input:focus-visible { outline-offset: 1px; border-color: var(--amber); }
+.g-loup-garou .lg-extra { display: flex; flex-wrap: wrap; gap: 10px; }
+.g-loup-garou .lg-extra-card { display: flex; flex: 1 1 140px; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--seat); font-weight: 700; }
+.g-loup-garou .lg-extra-card small { display: block; color: var(--ink-2); font-size: 0.75rem; font-weight: 600; }
+
 @container (max-width: 340px) {
   .g-loup-garou .lg-seats { grid-template-columns: minmax(0, 1fr); }
   .g-loup-garou .lg-btn { white-space: normal; }
