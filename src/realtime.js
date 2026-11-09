@@ -129,8 +129,10 @@ function rateLimited(userId) {
 
 function assertNotMuted(me) {
   if (me.muted_until > Date.now()) {
+    // Heure de Paris ; le jour même, l'heure seule (« jusqu'à 12:36 »).
+    const day = (t) => new Date(t).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
     const until = new Date(me.muted_until).toLocaleString('fr-FR', {
-      timeZone: 'Europe/Paris', weekday: 'long', hour: '2-digit', minute: '2-digit',
+      timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', ...(day(me.muted_until) === day(Date.now()) ? {} : { weekday: 'long' }),
     });
     throw new chat.ChatError(`Tu es en sourdine jusqu’à ${until}.`);
   }

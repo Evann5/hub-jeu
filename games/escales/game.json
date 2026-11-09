@@ -126,7 +126,7 @@
     {
       "key": "countries",
       "label": "Pays du plateau",
-      "help": "Au moins autant de pays que de joueurs, de 4 à 8. Les places restantes sont tirées au hasard.",
+      "help": "Choisis tes pays préférés, jusqu’à 8. Les places restantes sont tirées au hasard au lancement.",
       "type": "multi",
       "max": 8,
       "default": [

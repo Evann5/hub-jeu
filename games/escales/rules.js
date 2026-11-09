@@ -2,7 +2,7 @@
 // L'heure vient de ctx.now, le hasard de ctx.random. Tout le raisonnement est expliqué dans docs/escales.md.
 //
 // Un tour : « roll » (lancer) → la case décide de la suite (buy, debt) → « end » → joueur suivant.
-import { REGIONS, TILES, COUNTRIES, DEFAULT_MAP, MAP_SIZE, isCountry, minCountries, nameOn, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE, mortgageValue, unmortgageCost } from './client/board.js';
+import { REGIONS, TILES, COUNTRIES, DEFAULT_MAP, MAP_SIZE, isCountry, nameOn, LEVEL_MULT, MAX_LEVEL, ESCALE_RENTS, CUSTOMS_POS, SIZE, mortgageValue, unmortgageCost } from './client/board.js';
 
 export const SALARY = 200;
 export const FINE = 50; // pour sortir de la Douane
@@ -93,13 +93,10 @@ function chooseMap(options, ctx) {
   return shuffle([...chosen, ...rest.slice(0, MAP_SIZE - chosen.length)], ctx);
 }
 
-// Avant de lancer : assez de pays pour le nombre de joueurs.
-export function checkStart(players, options = {}) {
-  if (!Array.isArray(options.countries)) return null;
-  const wanted = Math.max(0, Math.floor(Number(options.bots) || 0));
-  const total = Math.min(10, players.length + (wanted || (players.length === 1 ? 3 : 0)));
-  const need = minCountries(total);
-  return options.countries.length >= need ? null : `Choisis au moins ${need} pays pour ${total} joueurs (il en manque ${need - options.countries.length}).`;
+// Avant de lancer : rien ne bloque. S'il manque des pays (moins que de joueurs), chooseMap complète au hasard ;
+// refuser le lancement laissait le salon figé sans que personne comprenne pourquoi.
+export function checkStart() {
+  return null;
 }
 
 export function setup(players, options = {}, ctx) {

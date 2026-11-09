@@ -214,7 +214,7 @@ function optionControl(def, value, editable) {
     const missing = Math.max(0, need - picked.length);
     const row = h('div.opt-row.is-multi',
       h('span.opt-label', def.label, def.help ? h('small', def.help) : null),
-      h('div.multi-head', h(`output.multi-count${missing ? '.is-short' : ''}`, { 'aria-live': 'polite' }, missing ? `${picked.length} choisis, encore ${missing} au moins` : `${picked.length} sur ${def.max}`),
+      h('div.multi-head', h('output.multi-count', { 'aria-live': 'polite' }, missing ? `${picked.length} choisis, ${missing} de plus tiré${missing > 1 ? 's' : ''} au hasard` : `${picked.length} sur ${def.max}`),
         editable ? h('button.link-btn', { type: 'button', onclick: () => send([...def.choices].map((c) => c.value).sort(() => Math.random() - 0.5).slice(0, def.max)) }, 'Au hasard') : null,
         editable && picked.length ? h('button.link-btn', { type: 'button', onclick: () => send([]) }, 'Tout enlever') : null),
       h('div.multi', { role: 'group', 'aria-label': def.label }, def.choices.map((c) => {

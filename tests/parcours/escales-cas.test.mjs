@@ -3,7 +3,7 @@
 // puis jouée à l'écran comme un vrai joueur. CAPTURES=dossier garde une image de chaque moment.
 import { DatabaseSync } from 'node:sqlite';
 import { join } from 'node:path';
-import { monterSuite, aller, jusque } from './aide.mjs';
+import { monterSuite, aller, jusque, appel, rejoindre } from './aide.mjs';
 import { CUSTOMS_POS, TILES } from '../../games/escales/client/board.js';
 
 const S = monterSuite();
@@ -77,4 +77,21 @@ S.it('Escales : Douane, ville en gage, dette impossible et faillite s’affichen
   const fin = await h.page.locator('.es').textContent();
   if (!/sorti/.test(fin)) throw new Error('fin de partie inattendue : ' + fin.slice(0, 200));
   if (/ et [^ ]+ et /.test(fin)) throw new Error('liste de noms « A et B et C » : ' + fin.slice(0, 200));
+});
+
+S.it('Escales à 5 (2 élèves + 3 robots) avec seulement 4 pays choisis : la partie se lance, les pays manquants sont tirés au hasard', async ({ ouvrir }) => {
+  const a = await ouvrir();
+  const b = await ouvrir();
+  await aller(a, '#/jouer'); // Escales est le jeu vedette : sa grande carte, en haut de Jouer
+  await a.page.locator('.game-hero').getByRole('button', { name: 'Jouer à Escales' }).click();
+  await a.page.getByRole('dialog').getByRole('button', { name: 'Créer une partie' }).click();
+  await a.page.locator('.lobby-card').waitFor();
+  const adresse = await a.page.evaluate(() => location.hash);
+  await rejoindre(b, adresse);
+  const id = Number(adresse.match(/\d+/)[0]);
+  const r = await appel(a, 'table:options', { id, options: { bots: 3 } });
+  if (!r.ok) throw new Error(`réglage des robots : ${JSON.stringify(r)}`);
+  await a.page.locator('.multi-count', { hasText: 'tiré' }).waitFor(); // « 4 choisis, 1 de plus tiré au hasard »
+  await a.page.getByRole('button', { name: 'Lancer la partie' }).click();
+  await a.page.locator('.es-world canvas').waitFor({ state: 'attached', timeout: 60_000 });
 });

@@ -647,13 +647,14 @@ test('carte : les pays choisis sont sur le plateau, le hasard complète, et les 
   assert.deepEqual(setup(people(2), { rounds: 25, timer: 0 }, ctxOf(7)).map, DEFAULT_MAP);
 });
 
-test('carte : autant de pays que de joueurs, de 4 à 8, pour lancer', () => {
+test('carte : pas assez de pays choisis, le lancement complète au hasard au lieu de refuser', () => {
   const few = { countries: ['israel', 'congo', 'japon'] };
-  assert.match(checkStart(people(2), few), /au moins 4 pays/);
-  assert.equal(checkStart(people(2), { countries: ['israel', 'congo', 'japon', 'chine'] }), null);
-  assert.match(checkStart(people(4), { ...few, bots: 3, countries: ['israel', 'congo', 'japon', 'chine', 'inde', 'france'] }), /au moins 7 pays pour 7 joueurs/);
-  assert.match(checkStart(people(1), { countries: [] }), /au moins 4 pays pour 4 joueurs/);
-  assert.equal(checkStart(people(4), {}), null);
+  assert.equal(checkStart(people(2), few), null);
+  assert.equal(checkStart(people(2), { ...few, bots: 3 }), null);
+  assert.equal(checkStart(people(1), { countries: [] }), null);
+  const s = setup(people(2), { ...few, bots: 3 }, ctxOf(7));
+  assert.equal(new Set(s.map).size, s.map.length, 'aucun pays en double');
+  for (const id of few.countries) assert.ok(s.map.includes(id), 'les pays choisis sont sur le plateau');
 });
 
 test('catalogue : 4 villes par pays, un drapeau, un motif et un décor pour chacun', async () => {

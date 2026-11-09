@@ -407,7 +407,11 @@ let localId = -1;
 export function renderComposer() {
   if (!ui?.composer) return;
   if (state.mutedUntil > Date.now()) {
-    const until = new Date(state.mutedUntil).toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+    const end = new Date(state.mutedUntil);
+    // Le jour même : l'heure seule (« jusqu'à 12:36 ») ; sinon le jour aussi.
+    const until = end.toDateString() === new Date().toDateString()
+      ? end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      : end.toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
     ui.composer.replaceChildren(h('p.composer-note', `Tu es en sourdine jusqu’à ${until}. Tu peux lire, mais pas écrire.`));
     return;
   }
