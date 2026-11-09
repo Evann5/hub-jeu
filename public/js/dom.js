@@ -237,7 +237,8 @@ export function richText(text, findUser = null) {
 // Le texte mentionne-t-il ce pseudo (« @pseudo », pas au milieu d'un mot ou d'une adresse e-mail) ?
 export function mentions(text, pseudo) {
   const escaped = pseudo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(^|[^\\p{L}\\p{N}])@${escaped}(?![\\p{L}\\p{N}_-])`, 'iu').test(text);
+  // Le pseudo s'arrête là : ni lettre, chiffre, tiret, ni un point suivi d'une suite (« @lea » n'est pas « @lea.m »).
+  return new RegExp(`(^|[^\\p{L}\\p{N}])@${escaped}(?![\\p{L}\\p{N}_-]|\\.[\\p{L}\\p{N}_-])`, 'iu').test(text);
 }
 
 // « de Tom », « d’Anna » : le pseudo est choisi par la personne, l'élision aussi doit suivre.

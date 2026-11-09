@@ -90,3 +90,24 @@ S.it('mentions : « @ » propose les pseudos, le message ressort chez la personn
   await dernier.waitFor();
   if (await dernier.locator('.mention').count()) throw new Error('ni une adresse e-mail ni un pseudo inconnu ne sont des mentions');
 });
+
+S.it('journal et messages privés : un admin n’efface pas un message privé qui n’est pas le sien, et le journal ne recopie aucun texte', async ({ ouvrir }) => {
+  const admin = await S.admin();
+  const a = await ouvrir();
+  const b = await ouvrir();
+  try {
+    const [aId, bId] = [await monId(a), await monId(b)];
+    const prive = await appel(a, 'send', { scope: `dm:${Math.min(aId, bId)}:${Math.max(aId, bId)}`, body: 'secret entre nous deux' });
+    const efface = await appel(admin, 'admin:deleteMessage', { id: prive.message.id });
+    if (efface.ok) throw new Error('un admin ne doit pas effacer un message privé dont il ne fait pas partie');
+    const salon = await appel(a, 'send', { scope: 'c:1', body: 'texte public effacé par un admin' });
+    const ok = await appel(admin, 'admin:deleteMessage', { id: salon.message.id });
+    if (!ok.ok) throw new Error(`effacement dans un canal : ${JSON.stringify(ok)}`);
+    const { entries } = await appel(admin, 'admin:modLog', {});
+    const texte = JSON.stringify(entries);
+    if (!texte.includes('a effacé un message de')) throw new Error('l’effacement doit être journalisé');
+    if (texte.includes('texte public') || texte.includes('secret entre nous')) throw new Error(`le journal ne doit recopier aucun texte : ${texte.slice(0, 300)}`);
+  } finally {
+    await admin.contexte.close().catch(() => {});
+  }
+});

@@ -78,10 +78,10 @@ async function syncStaffRoom(user) {
   io.to(`u:${user.id}`).emit('channels', chat.listChannels(user.id));
 }
 
-// Un message effacé, pour le journal : l'auteur, l'endroit et le début du texte.
+// Un message effacé, pour le journal : seulement l'endroit, jamais le texte (sinon effacer puis lire le journal
+// permettrait de lire ce qu'on n'avait pas le droit de lire).
 function describeMessage(msg) {
-  const where = msg.scope.startsWith('c:') ? `#${chat.listChannels().find((c) => `c:${c.id}` === msg.scope)?.name ?? '?'}` : msg.scope.startsWith('t:') ? 'chat d’une partie' : 'message privé';
-  return `${where} : « ${msg.body.length > 60 ? `${msg.body.slice(0, 60)}…` : msg.body} »`;
+  return msg.scope.startsWith('c:') ? `#${chat.listChannels().find((c) => `c:${c.id}` === msg.scope)?.name ?? '?'}` : 'chat d’une partie';
 }
 
 // Ferme toutes les connexions d'une personne (bannie, compte supprimé, déconnectée).
@@ -318,9 +318,12 @@ export function attachRealtime(httpServer) {
         const author = getUser(target.userId);
         if (author) withinReach(author, me);
       }
+      // Personne n'efface un message privé dont il ne fait pas partie (admin compris).
+      const found = chat.getMessage(id);
+      if (found?.scope.startsWith('dm:')) chat.checkScope(found.scope, me.id);
       const msg = chat.deleteMessage(id);
       emitToScope(msg.scope, 'message:deleted', { id: msg.id, scope: msg.scope });
-      if (msg.userId !== me.id) logMod(me, 'a effacé un message de', { target: getUser(msg.userId)?.pseudo ?? 'compte supprimé', detail: describeMessage(msg) });
+      if (msg.userId !== me.id && !msg.scope.startsWith('dm:')) logMod(me, 'a effacé un message de', { target: getUser(msg.userId)?.pseudo ?? 'compte supprimé', detail: describeMessage(msg) });
       return {};
     }, { modo: true }));
 
@@ -396,9 +399,11 @@ export function attachRealtime(httpServer) {
     }, { admin: true }));
 
     socket.on('admin:updateChannel', handler(socket, ({ id, name, topic, staffOnly }, me) => {
+      const wasStaff = Boolean(chat.listChannels().find((c) => c.id === Number(id))?.staffOnly);
       chat.updateChannel(id, { name, topic, staffOnly });
       broadcastChannels();
-      logMod(me, 'a modifié le canal', { target: `#${chat.listChannels().find((c) => c.id === Number(id))?.name ?? '?'}`, detail: staffOnly ? 'réservé à l’équipe' : '' });
+      const change = wasStaff && !staffOnly ? 'rendu public : ses anciens messages sont lisibles par toute la classe' : !wasStaff && staffOnly ? 'réservé à l’équipe' : '';
+      logMod(me, 'a modifié le canal', { target: `#${chat.listChannels().find((c) => c.id === Number(id))?.name ?? '?'}`, detail: change });
       return {};
     }, { admin: true }));
 

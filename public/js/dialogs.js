@@ -269,6 +269,13 @@ export function openChannelEditor(channel) {
       }, 'Supprimer le canal') : null,
       h('button.btn', { type: 'submit' }, channel ? 'Enregistrer' : 'Créer le canal'))),
   async () => {
+    // Un canal d'équipe qui devient public : ses anciens messages deviennent lisibles par toute la classe. On prévient.
+    if (channel?.staffOnly && !staffOnly.checked) {
+      const ok = await confirmDialog(`Rendre #${channel.name} public`,
+        'Toute la classe pourra lire les messages déjà écrits dans ce canal par l’équipe. Pour repartir de zéro, crée plutôt un nouveau canal.',
+        { confirmLabel: 'Rendre public', danger: true });
+      if (!ok) return;
+    }
     if (channel) await call(state.socket, 'admin:updateChannel', { id: channel.id, name: name.value, topic: topic.value, staffOnly: staffOnly.checked });
     else await call(state.socket, 'admin:createChannel', { name: name.value, topic: topic.value, staffOnly: staffOnly.checked });
     dlg.close();
