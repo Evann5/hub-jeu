@@ -316,7 +316,9 @@ export function mount(root, api) {
       losing ? h('div.cp-mine-cards', q.cards.map((c, i) => (!c.up
         ? card(c.c, { size: 'lg', key: `lose-${i}`, label: `Perdre ${CHARS[c.c].name}`, onclick: () => send({ type: 'lose', card: i }) })
         : card(c.c, { size: 'lg', up: c.up, label: `${CHARS[c.c].name}, perdue` }))))
-        : api.secret(h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name }))), { label: 'tes influences' }));
+        : v.phase === 'over' || q.cards.every((c) => c.up) // fin de partie ou éliminé : plus rien à cacher
+          ? h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name })))
+          : api.secret(h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name }))), { label: 'tes influences' }));
   }
 
   // ——— Journal ———
