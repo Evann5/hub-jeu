@@ -66,7 +66,7 @@ Le dossier `hubuno` est **à côté** de `public_html`, pas dedans : les donnée
    - « Connexion directe » : parfait.
    - « Connexion de secours » : Hubuno marche quand même, avec un peu plus de délai. Le dire à Minh.
 4. Test à deux : deux téléphones connectés à deux comptes. Un message envoyé par l'un doit apparaître chez l'autre en une seconde environ.
-5. Ensuite, tout se fait dans Hubuno : Minh nomme les modérateurs et les admins depuis la fiche d'un membre (écran Membres), crée les rôles colorés dans Admin, et donne l'adresse et le code à la classe avec « Copier le message pour la classe ».
+5. Ensuite, tout se fait dans Hubuno : Minh nomme les modérateurs et les admins depuis la fiche d'un membre (écran Membres), crée les rôles colorés dans Admin, et donne l'adresse et le code à la classe avec « Copier le message pour la classe ». Le détail pour Minh : `docs/premiers-pas.md`.
 
 ## Si ça ne marche pas
 
