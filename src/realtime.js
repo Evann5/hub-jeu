@@ -14,6 +14,7 @@ import * as chat from './chat.js';
 import * as roles from './roles.js';
 import { logMod, recentMod } from './journal.js';
 import { initPlay, registerPlay, gamesCatalog, tableList, dropUserFromTables } from './play.js';
+import { tableExists, getTable, statusOf as tableStatus } from './tables.js';
 
 const VERSION = codeVersion(config.root); // envoyée à chaque connexion : une page ouverte avant une mise à jour le voit
 let io;
@@ -253,6 +254,11 @@ export function attachRealtime(httpServer) {
       assertNotMuted(me);
       if (rateLimited(me.id)) throw new chat.ChatError('Doucement : attends quelques secondes avant le prochain message.');
       if (hourlyMessages.hit(me.id)) throw new chat.ChatError('Tu as envoyé beaucoup de messages : réessaie dans un moment.');
+      // Chat d'une partie : le jeu peut faire taire des joueurs (les morts des Loups-garous connaissent les rôles).
+      if (scope.startsWith('t:')) {
+        const t = tableExists(scope.slice(2)) ? getTable(scope.slice(2)) : null;
+        if (t && tableStatus(t).silent.includes(me.id)) throw new chat.ChatError('Tu es éliminé : tu pourras écrire aux joueurs à la fin de la partie.');
+      }
       const message = chat.postMessage(scope, me.id, body);
       emitToScope(scope, 'message', message);
       return { message };

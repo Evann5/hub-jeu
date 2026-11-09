@@ -72,7 +72,7 @@ function runRules(fn) {
 // Statut normalisé : à qui de jouer (liste d'ids), qui peut agir en plus (coups libres : dénoncer, « prêt »…),
 // fin, gagnants, échéance du minuteur.
 export function statusOf(t) {
-  if (t.status === 'lobby' || !t.state) return { turn: [], may: [], over: false, winners: [], deadline: null };
+  if (t.status === 'lobby' || !t.state) return { turn: [], may: [], over: false, winners: [], deadline: null, silent: [] };
   const s = gameOf(t).rules.status(t.state) || {};
   const list = (v) => (v === null || v === undefined ? [] : [].concat(v));
   const turn = list(s.turn);
@@ -83,15 +83,16 @@ export function statusOf(t) {
     winners: [].concat(s.winners || []),
     label: s.over && typeof s.label === 'string' ? s.label : null, // texte de fin fourni par le jeu (un gagnant qui n'est pas un compte)
     deadline: !s.over && Number.isFinite(s.deadline) ? s.deadline : null,
+    silent: s.over ? [] : list(s.silent).map(Number), // ne peuvent plus écrire dans le chat de la partie (ex. les morts des Loups-garous)
   };
 }
 
 export function summary(t) {
   // `may` reste sur le serveur : il peut dépendre de rôles secrets (les loups, la voyante…).
-  const { turn, over, winners, label, deadline } = statusOf(t);
+  const { turn, over, winners, label, deadline, silent } = statusOf(t);
   return {
     id: t.id, game: t.game, hostId: t.hostId, status: t.status, seats: t.seats, left: t.left, kicked: t.kicked ?? [], options: t.options,
-    turn, over, winners, label, deadline, createdAt: t.createdAt, updatedAt: t.updatedAt,
+    turn, over, winners, label, deadline, silent, createdAt: t.createdAt, updatedAt: t.updatedAt,
   };
 }
 

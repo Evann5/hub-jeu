@@ -384,7 +384,7 @@ test('victoire des loups : au moins aussi nombreux que les autres', () => {
   s = wolvesKill(s, [1], 2);
   assert.equal(s.phase, 'over');
   assert.deepEqual(s.winner, { side: 'wolves', ids: [1] });
-  assert.deepEqual(status(s), { turn: null, over: true, winners: [1], deadline: null });
+  assert.deepEqual(status(s), { turn: null, over: true, winners: [1], deadline: null, silent: [] });
 });
 
 test('victoire du village : plus aucun loup', () => {
@@ -1043,4 +1043,14 @@ test('rôles des morts cachés : la phase de la Sorcière dure autant qu’elle 
   assert.equal(timeout(morte, ctx()).state.phase, 'debate', 'le minuteur passe au jour');
   // Rôles révélés (réglage par défaut) : comme avant, la phase est sautée.
   assert.equal(phaseAprèsLesLoups({}, true).phase, 'debate');
+});
+
+test('les morts se taisent : statut « silent » pendant la partie, vide à la fin', () => {
+  let s = game(['wolf', 'villager', 'villager', 'villager', 'villager', 'villager'], NO_ROLE);
+  assert.deepEqual(status(s).silent, []);
+  s = timeout(wolvesKill(s, [1], 2), ctx()).state;
+  assert.deepEqual(status(s).silent, [2], 'le mort de la nuit ne peut plus écrire aux vivants');
+  s = votes(s, { 3: 1, 4: 1, 5: 1, 6: 1, 1: 3 });
+  assert.equal(s.phase, 'over');
+  assert.deepEqual(status(s).silent, [], 'fin de partie : tout le monde peut parler');
 });

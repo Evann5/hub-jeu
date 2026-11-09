@@ -54,6 +54,7 @@ export function onTable(payload) {
   cur.watchers = watchers;
   cur.events = events || [];
   cur.game = gameOf(table.game);
+  renderChatFoot();
   joinIfWanted();
   if (!cur.ui) buildShell();
   renderHead();
@@ -512,7 +513,6 @@ function chatMessage(m) {
 function renderChat() {
   if (!cur?.ui) return;
   cur.ui.chatList = h('ol.tchat-list');
-  const muted = state.mutedUntil > Date.now();
   const input = h('input.input', { type: 'text', placeholder: 'Écrire aux joueurs', 'aria-label': 'Écrire aux joueurs', maxlength: 500, enterkeyhint: 'send', autocomplete: 'off' });
   const form = h('form.tchat-form', input, h('button.btn', { type: 'submit', title: 'Envoyer' }, icon('send', 'Envoyer')));
   form.addEventListener('submit', async (e) => {
@@ -527,8 +527,22 @@ function renderChat() {
       toast(err.message, { error: true });
     }
   });
-  cur.ui.chat.replaceChildren(h('h2', 'Chat de la partie'), h('div.tchat-log', { role: 'log', 'aria-live': 'off', 'aria-label': 'Messages de la partie' }, cur.ui.chatList), muted ? h('p.composer-note', 'Tu es en sourdine.') : form);
+  cur.ui.chatForm = form;
+  cur.ui.chatFoot = h('div.tchat-foot');
+  cur.ui.chat.replaceChildren(h('h2', 'Chat de la partie'), h('div.tchat-log', { role: 'log', 'aria-live': 'off', 'aria-label': 'Messages de la partie' }, cur.ui.chatList), cur.ui.chatFoot);
+  renderChatFoot();
   renderChatList();
+}
+
+// Sous le chat : la zone d'écriture, ou pourquoi on ne peut pas écrire (sourdine, éliminé du jeu). Le texte en cours est gardé.
+function renderChatFoot() {
+  if (!cur?.ui?.chatFoot) return;
+  const muted = state.mutedUntil > Date.now();
+  const silent = cur.table?.silent?.includes(state.me.id);
+  const next = muted ? h('p.composer-note', 'Tu es en sourdine.')
+    : silent ? h('p.composer-note', 'Tu es éliminé : tu pourras écrire aux joueurs à la fin de la partie.')
+      : cur.ui.chatForm;
+  if (cur.ui.chatFoot.firstChild !== next) cur.ui.chatFoot.replaceChildren(next);
 }
 
 function renderChatList() {

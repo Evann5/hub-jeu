@@ -787,5 +787,6 @@ export function status(state) {
     over,
     winners: over ? s.winner.ids : [],
     deadline: over ? null : s.deadline,
+    silent: over ? [] : s.dead.map((d) => d.id), // les morts voient tous les rôles : ils n'écrivent plus aux vivants
   };
 }
