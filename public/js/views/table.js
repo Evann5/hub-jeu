@@ -38,6 +38,7 @@ export function render(container) {
 
 export function leave() {
   if (!cur) return;
+  clearTimeout(cur.ejectTimer);
   if (state.socket?.connected) call(state.socket, 'table:unwatch', { id: cur.id }).catch(() => {});
   unmountGame();
   cur = null;
@@ -203,6 +204,13 @@ function renderSide() {
       canEject(id) ? h('button.btn.btn-ghost.btn-sm.seat-eject', { type: 'button', title: `${u.pseudo} est hors ligne : continuer la partie sans attendre`, onclick: () => eject(id) }, 'Continuer sans') : null);
   });
   const inLobby = t.status === 'lobby'; // la carte du salon montre déjà les joueurs, Inviter et Quitter
+  // Un absent pas encore « retirable » : on redessine la colonne quand son délai est passé, pour faire apparaître le bouton.
+  clearTimeout(cur.ejectTimer);
+  const waits = t.seats.filter((id) => couldEject(id) && !canEject(id)).map((id) => awayDelay() - awayFor(id));
+  if (waits.length) {
+    const mine = cur;
+    cur.ejectTimer = setTimeout(() => { if (cur === mine) renderSide(); }, Math.min(...waits) + 200);
+  }
   const actions = [];
   if (seated() && !inLobby) actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: openInvite }, icon('users'), 'Inviter'));
   if (seated() && t.status === 'playing' && !t.left.includes(state.me.id)) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: forfeit }, 'Abandonner'));
@@ -216,10 +224,14 @@ function renderSide() {
 }
 
 // En partie, un joueur peut faire abandonner un autre joueur qui est hors ligne (le serveur demande 2 minutes d'absence).
-const canEject = (id) => {
+// Le bouton n'apparaît qu'une fois le délai passé (celui du serveur, donné par /api/options) : avant, on laisse à l'absent le temps de revenir.
+const awayDelay = () => state.options?.playerAwayMs ?? 120_000;
+const awayFor = (id) => Date.now() - (state.awaySince.get(id) ?? 0);
+const couldEject = (id) => {
   const t = cur.table;
   return t.status === 'playing' && id !== state.me.id && seated() && !t.left.includes(state.me.id) && !t.left.includes(id) && !state.online.has(id) && state.users.has(id);
 };
+const canEject = (id) => couldEject(id) && awayFor(id) >= awayDelay();
 
 async function eject(id) {
   const who = userOf(id).pseudo;

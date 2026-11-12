@@ -41,7 +41,12 @@ export function logError(source, { who = '', message, place = '' }, now = Date.n
     if (!msg) return;
     const same = db.prepare('SELECT id FROM error_log WHERE source = ? AND message = ? AND place = ? AND last_at > ?').get(source, msg, where, now - DAY);
     if (same) db.prepare('UPDATE error_log SET count = count + 1, last_at = ?, who = ? WHERE id = ?').run(now, clean(who, 40), same.id);
-    else db.prepare('INSERT INTO error_log (at, last_at, source, who, message, place) VALUES (?, ?, ?, ?, ?, ?)').run(now, now, source, clean(who, 40), msg, where);
+    else {
+      // Une même personne n'ouvre pas plus de 20 lignes par jour : des messages forgés ne cachent pas les vraies erreurs des autres.
+      const name = clean(who, 40);
+      if (source === 'navigateur' && db.prepare('SELECT COUNT(*) AS n FROM error_log WHERE source = ? AND who = ? AND at > ?').get(source, name, now - DAY).n >= 20) return;
+      db.prepare('INSERT INTO error_log (at, last_at, source, who, message, place) VALUES (?, ?, ?, ?, ?, ?)').run(now, now, source, name, msg, where);
+    }
   } catch { /* rien */ }
 }
 

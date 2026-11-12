@@ -142,7 +142,10 @@ function startRealtime() {
   });
   socket.on('connect', () => setBanner(null));
   socket.on('kicked', (reason) => actions.logout(reason));
-  socket.on('notice', (text) => toast(String(text), { ms: 20000, action: true })); // un mot du serveur (partie interrompue par une mise à jour)
+  socket.on('notice', (text, received) => { // un mot du serveur (partie interrompue par une mise à jour)
+    toast(String(text), { ms: 20000, action: true });
+    if (typeof received === 'function') received(); // il ne sera pas redonné
+  });
   // Le compte est ouvert sur trop d'onglets : le serveur a fermé celui-ci, le plus ancien. Il ne se reconnecte pas tout seul (sinon les onglets se chasseraient à tour de rôle).
   socket.on('replaced', () => {
     state.socket = null;
@@ -151,6 +154,9 @@ function startRealtime() {
   });
 
   socket.on('presence', (ids) => {
+    // Depuis quand chacun est hors ligne (pour ne proposer « Continuer sans » qu'après le délai) : noté quand on le voit partir.
+    for (const id of state.online) if (!ids.includes(id)) state.awaySince.set(id, Date.now());
+    for (const id of ids) state.awaySince.delete(id);
     state.online = new Set(ids);
     refreshPeople();
   });

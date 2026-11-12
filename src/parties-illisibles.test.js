@@ -38,15 +38,24 @@ test('au démarrage : une partie à l’état illisible est mise de côté, le h
       assert.match(srv.journal, new RegExp(`Partie ${cassee} \\(escales\\) illisible, mise de côté`));
       assert.match(srv.journal, new RegExp(`Partie ${abimee} \\(morpion\\) illisible, mise de côté`));
       assert.equal((await c.appel('table:watch', { id: cassee })).ok, false, 'la partie mise de côté ne s’ouvre pas');
-      // Tom jouait dans la partie d'Escales mise de côté : il est prévenu à son retour, une seule fois.
+      // Tom jouait dans la partie d'Escales mise de côté : il est prévenu à son retour.
       const avis = c.recus.filter((r) => r.ev === 'notice');
       assert.equal(avis.length, 1);
       assert.match(avis[0].data, /Escales.*interrompue par une mise à jour/);
-      const encore = await new Client(srv, tom).ouvrir();
-      await jusque(() => encore.dernier('state'), 'état reçu');
-      assert.equal(encore.recus.filter((r) => r.ev === 'notice').length, 0, 'pas de second avis');
-      encore.fermer();
+      const avisDe = async (client) => { await client.ouvrir(); await jusque(() => client.dernier('state'), 'état reçu'); await new Promise((r) => setTimeout(r, 150)); client.fermer(); return client.recus.filter((r) => r.ev === 'notice').length; };
+      assert.equal(await avisDe(new Client(srv, tom)), 0, 'reçu une fois, l’avis ne revient pas');
+      // Anna, elle, se reconnecte avec une page qui n'a pas le temps de le recevoir (elle se recharge) : l'avis lui est redonné ensuite.
+      const presse = new Client(srv, anna);
+      presse.sansAccuse = true;
+      assert.equal(await avisDe(presse), 1);
+      assert.equal(await avisDe(new Client(srv, anna)), 1, 'pas d’accusé de réception : l’avis est redonné');
+      assert.equal(await avisDe(new Client(srv, anna)), 0);
       assert.equal((await c.appel('table:create', { game: 'morpion' })).ok, true, 'on peut créer une nouvelle partie');
+      // Le serveur redémarre (une autre mise à jour) : la partie est de nouveau mise de côté, mais personne n'est prévenu deux fois.
+      await srv.couper();
+      await srv.demarrer();
+      assert.equal(await avisDe(new Client(srv, tom)), 0, 'après un redémarrage, pas de second avis');
+      assert.equal(await avisDe(new Client(srv, anna)), 0);
     } finally {
       c.fermer();
     }

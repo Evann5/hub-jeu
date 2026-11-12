@@ -14,7 +14,7 @@ import * as chat from './chat.js';
 import * as roles from './roles.js';
 import { logMod, recentMod } from './journal.js';
 import { initPlay, registerPlay, gamesCatalog, tableList, dropUserFromTables } from './play.js';
-import { tableExists, getTable, statusOf as tableStatus, takeAsideNotices, asideCount } from './tables.js';
+import { tableExists, getTable, statusOf as tableStatus, asideNoticesFor, ackAsideNotice, asideCount } from './tables.js';
 import { logError, recentErrors, serverStatus } from './etat.js';
 
 const VERSION = codeVersion(config.root); // envoyée à chaque connexion : une page ouverte avant une mise à jour le voit
@@ -267,9 +267,10 @@ export function attachRealtime(httpServer) {
     });
     if (!wasOnline) broadcastPresence(); // un onglet de plus ne change rien pour les autres
     // Une partie de cette personne n'a pas survécu à une mise à jour de son jeu : on le lui dit, une fois, au lieu de la laisser chercher.
-    for (const game of takeAsideNotices(userId)) {
+    for (const { id, game } of asideNoticesFor(userId)) {
       const name = gamesCatalog().find((g) => g.id === game)?.name ?? game;
-      socket.emit('notice', `Ta partie de ${name} a été interrompue par une mise à jour du jeu : elle ne peut pas reprendre. Tu peux en relancer une.`);
+      // Retiré seulement quand le navigateur dit l'avoir reçu : une page qui se recharge à cet instant le recevra après.
+      socket.emit('notice', `Ta partie de ${name} a été interrompue par une mise à jour du jeu : elle ne peut pas reprendre. Tu peux en relancer une.`, () => ackAsideNotice(id, userId));
     }
 
     socket.on('disconnect', () => {

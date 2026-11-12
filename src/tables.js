@@ -1,6 +1,6 @@
 // Tables de jeu : salon, places, lancement, coups, minuteurs, fin et revanche. Ne connaît pas Socket.IO.
 // Les tables vivent en mémoire et sont recopiées en base à chaque changement : une partie survit à un redémarrage.
-import { db } from './db.js';
+import { db, getSetting, setSetting } from './db.js';
 import { games, cleanOptions } from './games.js';
 import { ChatError } from './erreurs.js';
 
@@ -17,14 +17,18 @@ const save = db.prepare(
 
 // Une partie illisible (état d'un ancien format après la mise à jour d'un jeu, ligne abîmée) est mise de côté : elle reste dans la base
 // mais n'est plus chargée. Sans ça, une seule partie empêchait tout le hub de démarrer.
-const aside = []; // parties en cours mises de côté depuis le démarrage : { game, seats } (les joueurs pas encore prévenus)
+// Parties en cours mises de côté : { id, game, seats } où seats = les joueurs pas encore prévenus. La liste est gardée dans la base
+// (réglage « aside:<id> ») : un avis n'est donné qu'une fois par personne, même si le serveur redémarre dix fois avant la purge de la partie.
+const aside = [];
 let asideTotal = 0;
 export const asideCount = () => asideTotal;
-// Les jeux dont une partie de cette personne a été mise de côté ; chaque partie n'est annoncée qu'une fois par personne.
-export function takeAsideNotices(userId) {
-  const mine = aside.filter((a) => a.seats.includes(userId));
-  for (const a of mine) a.seats = a.seats.filter((x) => x !== userId);
-  return mine.map((a) => a.game);
+export const asideNoticesFor = (userId) => aside.filter((a) => a.seats.includes(userId)).map(({ id, game }) => ({ id, game }));
+// Le navigateur de cette personne a bien reçu l'avis : on ne le lui redonnera pas.
+export function ackAsideNotice(id, userId) {
+  const a = aside.find((x) => x.id === Number(id));
+  if (!a || !a.seats.includes(userId)) return;
+  a.seats = a.seats.filter((x) => x !== userId);
+  setSetting(`aside:${a.id}`, JSON.stringify(a.seats));
 }
 
 function setAside(id, game, err, row = null) {
@@ -32,8 +36,12 @@ function setAside(id, game, err, row = null) {
   asideTotal += 1;
   if (row?.status === 'playing') {
     let seats = [];
-    try { seats = [].concat(JSON.parse(row.seats)).map(Number); } catch { /* places illisibles : personne à prévenir */ }
-    aside.push({ game, seats });
+    try {
+      const saved = getSetting(`aside:${id}`);
+      seats = [].concat(JSON.parse(saved ?? row.seats)).map(Number);
+      if (saved === undefined) setSetting(`aside:${id}`, JSON.stringify(seats));
+    } catch { /* places illisibles ou base pleine : personne à prévenir */ }
+    aside.push({ id, game, seats });
   }
   console.error(`Partie ${id} (${game}) illisible, mise de côté : ${err?.message ?? err}`);
 }
@@ -416,6 +424,7 @@ export function purgeStaleTables() {
     db.prepare('DELETE FROM game_tables WHERE id = ?').run(id);
     db.prepare('DELETE FROM messages WHERE scope = ?').run(`t:${id}`);
     db.prepare('DELETE FROM reads WHERE scope = ?').run(`t:${id}`);
+    db.prepare('DELETE FROM settings WHERE key = ?').run(`aside:${id}`);
   }
   return removed;
 }

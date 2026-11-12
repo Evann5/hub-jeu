@@ -110,6 +110,7 @@ export function renderAuth(root, { mode = 'login', onDone: done, signupsOpen = t
         h('input.input', { name: 'login_password', type: 'password', autocomplete: 'current-password', required: true })),
       h('button.btn.btn-block', { type: 'submit' }, 'Se connecter'),
       h('p.hint', 'Mot de passe oublié ? Demande à un admin : il te donnera un mot de passe provisoire.'),
+      signupsOpen ? null : h('p.hint', 'Pas encore de compte ? Les inscriptions sont fermées pour le moment : demande à un admin de Hubuno.'),
     );
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

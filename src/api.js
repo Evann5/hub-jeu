@@ -56,7 +56,7 @@ function requireUser(req) {
 const str = (v) => (typeof v === 'string' ? v : '');
 
 api.get('/options', (req, res) => {
-  res.json({ colors: COLORS, avatars: AVATARS, reactions: REACTIONS, limits: LIMITS, signupsOpen: auth.signupsOpen() });
+  res.json({ colors: COLORS, avatars: AVATARS, reactions: REACTIONS, limits: LIMITS, signupsOpen: auth.signupsOpen(), playerAwayMs: config.playerAwayMs });
 });
 
 api.get('/me', (req, res) => {
@@ -78,7 +78,10 @@ api.post('/register', async (req, res) => {
   const adminPseudo = auth.isAdminPseudo(pseudo);
   const adminCodeOk = Boolean(config.adminCode) && auth.codeMatches(code, config.adminCode);
   // Inscriptions fermées par un admin : dit avant de regarder le code de classe (un code juste ou faux reçoit la même réponse).
-  if (!auth.signupsOpen() && !adminCodeOk) throw new ApiError(403, 'Les inscriptions sont fermées pour le moment. Si tu n’as pas encore de compte, demande à un admin de Hubuno.');
+  if (!auth.signupsOpen() && !adminCodeOk) {
+    if (!auth.codeMatches(code, expected)) auth.recordBadCode(req.ip); // la réponse est la même, mais les essais restent comptés
+    throw new ApiError(403, 'Les inscriptions sont fermées pour le moment. Si tu n’as pas encore de compte, demande à un admin de Hubuno.');
+  }
   if (!adminCodeOk && !auth.codeMatches(code, expected)) {
     auth.recordBadCode(req.ip);
     throw new ApiError(400, 'Ce code de classe ne marche pas. Demande-le à un admin.');

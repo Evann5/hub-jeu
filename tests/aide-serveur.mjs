@@ -108,8 +108,10 @@ export class Client {
           this.attentes.get(Number(m[1]))?.(data);
           this.attentes.delete(Number(m[1]));
         } else if (s.startsWith('42')) {
-          const [ev, data] = JSON.parse(s.slice(2));
+          const m = /^42(\d*)(.*)$/s.exec(s); // un numéro après 42 : le serveur attend un accusé de réception
+          const [ev, data] = JSON.parse(m[2]);
           this.recus.push({ ev, data });
+          if (m[1] && !this.sansAccuse) ws.send(`43${m[1]}[]`);
         }
       });
       ws.on('error', (e) => { clearTimeout(delai); ko(e); });

@@ -51,7 +51,7 @@ const hostAwaySince = new Map(); // id de la partie -> depuis quand son hôte es
 const hostAway = (t) => !isOnline(t.hostId) && Date.now() - (hostAwaySince.get(t.id) ?? Infinity) >= config.hostAwayMs;
 function sweepHosts() {
   const now = Date.now();
-  const followed = tables.allTables().filter((t) => t.status !== 'playing');
+  const followed = tables.allTables(); // en partie aussi : à la fin, on sait déjà depuis quand l'hôte est parti
   for (const id of hostAwaySince.keys()) if (!followed.some((t) => t.id === id)) hostAwaySince.delete(id);
   for (const t of followed) {
     if (isOnline(t.hostId)) {
@@ -191,8 +191,9 @@ export function registerPlay(socket, handler) {
   socket.on('disconnecting', () => {
     const uid = socket.data.userId;
     const rooms = [...socket.rooms].filter((r) => r.startsWith('t:'));
+    // Sa dernière connexion se ferme : noté tout de suite (pas 50 ms plus tard, où un envoi programmé passerait avant le délai d'absence).
+    if ((io.sockets.adapter.rooms.get(`u:${uid}`)?.size ?? 0) <= 1 && !awaySince.has(uid)) awaySince.set(uid, Date.now());
     setTimeout(() => {
-      if (!isOnline(uid) && !awaySince.has(uid)) awaySince.set(uid, Date.now());
       rooms.forEach((r) => tables.tableExists(r.slice(2)) && pushTable(Number(r.slice(2))));
     }, 50);
   });

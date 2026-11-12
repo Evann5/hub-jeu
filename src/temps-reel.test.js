@@ -334,6 +334,12 @@ test('inscriptions fermées par un admin : plus aucun compte ne se crée, bon ou
     assert.equal((await bon.json()).error, (await mauvais.json()).error, 'la réponse ne dit pas si le code était le bon');
     assert.equal((await (await fetch(`${srv.url}api/options`)).json()).signupsOpen, false, 'l’écran d’accueil le sait');
     assert.equal((await fetch(`${srv.url}api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pseudo: eleve.compte.pseudo, password: MDP }) })).status, 200, 'les comptes existants se connectent toujours');
+    // Fermées ou non, les mauvais codes restent comptés par adresse : sinon le code admin se chercherait sans frein.
+    const deviner = (i) => fetch(`${srv.url}api/register`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': '10.77.0.9' }, body: JSON.stringify({ classCode: `essai-numero-${i}`, pseudo: pseudo(), password: MDP, acceptRules: true }) });
+    const reponses = [];
+    for (let i = 0; i < 42; i++) reponses.push((await deviner(i)).status);
+    assert.deepEqual([...new Set(reponses.slice(0, 40))], [403]);
+    assert.equal(reponses.at(-1), 429, 'après 40 mauvais codes, cette adresse est bloquée');
   } finally {
     assert.deepEqual(await admin.appel('admin:setSignups', { open: true }), { ok: true, signupsOpen: true });
   }
@@ -379,8 +385,13 @@ test('joueur hors ligne en pleine partie : un autre joueur peut le mettre en aba
       await b.appel('table:join', { id });
       await a.appel('table:start', { id });
       assert.equal((await a.appel('table:eject', { id, userId: b.compte.id })).ok, false, 'un joueur en ligne ne peut pas être mis en abandon');
+      await pause(700); // le serveur tourne depuis plus longtemps que le délai d'absence
       b.fermer();
-      await jusque(async () => /encore/.test((await a.appel('table:eject', { id, userId: b.compte.id })).error ?? ''), 'juste après son départ : on lui laisse le temps de revenir');
+      // Dès la coupure, des envois programmés en rafale : aucun ne doit passer avant le délai.
+      const rafale = [];
+      for (let i = 0; i < 10; i++) { rafale.push(await a.appel('table:eject', { id, userId: b.compte.id })); await pause(15); }
+      assert.ok(rafale.every((r) => !r.ok), 'aucun abandon forcé pendant le délai');
+      assert.match(rafale.at(-1).error, /encore/, 'on lui laisse le temps de revenir');
       assert.equal((await spectateur.appel('table:eject', { id, userId: b.compte.id })).ok, false, 'un spectateur ne décide pas');
       await pause(600);
       assert.equal((await a.appel('table:eject', { id, userId: b.compte.id })).ok, true);
@@ -393,5 +404,35 @@ test('joueur hors ligne en pleine partie : un autre joueur peut le mettre en aba
     }
   } finally {
     await s5.arreter();
+  }
+});
+
+test('journal des erreurs : une même personne n’ouvre pas plus de 20 lignes par jour, et ne cache pas les erreurs des autres', async () => {
+  const s6 = await lancerServeur();
+  try {
+    const admin = await new Client(s6, await inscrire(s6, ADMIN, { admin: true })).ouvrir();
+    const bavard = await inscrire(s6, pseudo());
+    // Comme si ce compte avait déjà envoyé 20 messages forgés aujourd'hui.
+    const db = new DatabaseSync(join(s6.dir, 'hubuno.sqlite'));
+    db.exec('PRAGMA busy_timeout = 2000');
+    for (let i = 0; i < 20; i++) db.prepare('INSERT INTO error_log (at, last_at, source, who, message, place) VALUES (?, ?, ?, ?, ?, ?)').run(Date.now(), Date.now(), 'navigateur', bavard.pseudo, `message forgé ${i}`, '');
+    db.close();
+    const c = await new Client(s6, bavard).ouvrir();
+    const autre = await new Client(s6, await inscrire(s6, pseudo())).ouvrir();
+    try {
+      await c.appel('client:error', { message: 'le vingt et unième', place: '' });
+      await c.appel('client:error', { message: 'message forgé 3', place: '' }); // une erreur déjà connue compte toujours
+      await autre.appel('client:error', { message: 'une vraie erreur chez un autre élève', place: 'jeu' });
+      for (let i = 0; i < 4; i++) await c.appel('client:error', { message: `encore ${i}`, place: '' });
+      assert.equal((await c.appel('client:error', { message: 'trop', place: '' })).ok, false, '6 envois par minute au plus');
+      const { entries } = await admin.appel('admin:errors');
+      assert.ok(entries.some((e) => e.message === 'une vraie erreur chez un autre élève'), 'l’erreur de l’autre élève est visible');
+      assert.equal(entries.filter((e) => e.who === bavard.pseudo).length, 20, 'pas de vingt et unième ligne pour ce compte');
+      assert.equal(entries.find((e) => e.message === 'message forgé 3').count, 2);
+    } finally {
+      [admin, c, autre].forEach((x) => x.fermer());
+    }
+  } finally {
+    await s6.arreter();
   }
 });
