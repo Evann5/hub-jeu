@@ -74,8 +74,24 @@ export function initPlay(server) {
 export const gamesCatalog = catalog;
 export const tableList = () => tables.summaries();
 
-function broadcastTables() {
-  io.to('membres').emit('tables', tableList());
+// La liste complète des parties part à la connexion (événement « state »). Ensuite, seule la partie qui change est envoyée
+// (« tables:update »), et seulement si son résumé public a changé : un spectateur qui entre ou sort ne dérange plus toute la classe.
+const lastSent = new Map(); // id -> dernier résumé envoyé (sans updatedAt, qui bouge à chaque écriture)
+function broadcastSummary(summary) {
+  const { updatedAt, ...visible } = summary;
+  const key = JSON.stringify(visible);
+  if (lastSent.get(summary.id) === key) return;
+  lastSent.set(summary.id, key);
+  io.to('membres').emit('tables:update', { table: summary });
+}
+
+// La partie n'existe plus : la classe la retire de sa liste, ceux qui la regardaient sont prévenus et quittent sa salle.
+function broadcastRemoved(id) {
+  const room = `t:${id}`;
+  lastSent.delete(id);
+  io.to(room).emit('table:closed', { id });
+  io.in(room).socketsLeave(room);
+  io.to('membres').emit('tables:update', { removed: id });
 }
 
 // Envoie à chaque personne de la salle sa vue de la table, puis la liste des tables à tout le monde.
@@ -86,16 +102,14 @@ async function pushTable(id, events = []) {
   try {
     t = tables.getTable(id);
   } catch {
-    io.to(room).emit('table:closed', { id });
-    broadcastTables();
+    broadcastRemoved(id);
     return;
   }
   const summary = tables.safeSummary(t);
   if (!summary) { // le jeu plante sur cette partie : elle est mise de côté, la salle est prévenue
     clearTimeout(timers.get(id));
     timers.delete(id);
-    io.to(room).emit('table:closed', { id });
-    broadcastTables();
+    broadcastRemoved(id);
     return;
   }
   const watchers = new Set(sockets.map((s) => s.data.userId).filter((uid) => !t.seats.includes(uid))).size;
@@ -109,7 +123,7 @@ async function pushTable(id, events = []) {
       console.error(err);
     }
   }
-  broadcastTables();
+  broadcastSummary(summary);
 }
 
 // Minuteur du jeu (temps pour jouer, débat, vote…) : à l'échéance, le jeu applique son timeout().
@@ -163,7 +177,7 @@ export function registerPlay(socket, handler) {
   // Les spectateurs qui partent : on met à jour le nombre de personnes qui regardent.
   socket.on('disconnecting', () => {
     const rooms = [...socket.rooms].filter((r) => r.startsWith('t:'));
-    if (rooms.length) setTimeout(() => rooms.forEach((r) => pushTable(Number(r.slice(2)))), 50);
+    if (rooms.length) setTimeout(() => rooms.forEach((r) => tables.tableExists(r.slice(2)) && pushTable(Number(r.slice(2)))), 50);
   });
 
   socket.on('table:create', handler(socket, ({ game }, me) => {

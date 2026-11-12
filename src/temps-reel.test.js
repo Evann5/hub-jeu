@@ -11,6 +11,16 @@ let srv;
 let n = 0;
 const pseudo = (p = 'zz') => `${p}${Date.now().toString(36).slice(-4)}${(n++).toString(36)}`;
 const ouverts = [];
+// Le résumé d'une partie tel que ce client le connaît : la liste reçue à la connexion, puis les mises à jour une par une.
+function resume(c, id) {
+  let t = c.dernier('state')?.tables.find((x) => x.id === id) ?? null;
+  for (const r of c.recus) {
+    if (r.ev !== 'tables:update') continue;
+    if (r.data.removed === id) t = null;
+    else if (r.data.table?.id === id) t = r.data.table;
+  }
+  return t;
+}
 const connecter = async (compte) => { const c = await new Client(srv, compte).ouvrir(); ouverts.push(c); return c; };
 
 before(async () => { srv = await lancerServeur(); });
@@ -47,8 +57,8 @@ test('table:kick : seulement une personne assise, et la liste des exclus ne gros
   assert.equal((await joueur.appel('table:join', { id })).ok, true);
   assert.equal((await hote.appel('table:kick', { id, userId: invite.id })).ok, true);
   assert.equal((await hote.appel('table:kick', { id, userId: invite.id })).ok, false, 'déjà retiré : refusé');
-  await jusque(() => hote.dernier('tables')?.find((t) => t.id === id)?.kicked.length === 1, 'la liste des exclus contient une seule personne');
-  assert.deepEqual(hote.dernier('tables').find((t) => t.id === id).kicked, [invite.id]);
+  await jusque(() => resume(hote, id)?.kicked.length === 1, 'la liste des exclus contient une seule personne');
+  assert.deepEqual(resume(hote, id).kicked, [invite.id]);
   assert.equal((await joueur.appel('table:join', { id })).ok, false, 'la personne retirée ne peut pas revenir');
 });
 
@@ -132,7 +142,7 @@ test('hôte absent : dans un salon, la main passe à un joueur en ligne ; après
     const ch = await new Client(s3, hote).ouvrir();
     const ca = await new Client(s3, autre).ouvrir();
     try {
-      const table = (id) => ca.dernier('tables')?.find((t) => t.id === id) ?? ca.recus.findLast((r) => r.ev === 'tables:update' && r.data.table?.id === id)?.data.table;
+      const table = (id) => resume(ca, id);
       // 1. Salon : l'hôte ferme son onglet, l'autre joueur attend.
       const { id } = await ch.appel('table:create', { game: 'morpion' });
       await ca.appel('table:watch', { id });
@@ -171,7 +181,7 @@ test('revanche : refusée à un spectateur, ouverte à tous les joueurs de la pa
   assert.equal((await cb.appel('table:leave', { id })).ok, true); // b abandonne : la partie est finie
   assert.equal((await cs.appel('table:restart', { id })).ok, false, 'un spectateur ne relance pas');
   assert.equal((await cb.appel('table:restart', { id })).ok, true, 'un joueur qui n’est pas l’hôte relance, même après avoir abandonné');
-  const salon = () => ca.dernier('tables')?.find((t) => t.id === id) ?? ca.recus.findLast((r) => r.ev === 'tables:update' && r.data.table?.id === id)?.data.table;
+  const salon = () => resume(ca, id);
   await jusque(() => salon()?.status === 'lobby', 'retour au salon');
   assert.equal(salon().hostId, a.id, 'l’hôte, toujours là, reste l’hôte');
   assert.deepEqual(salon().seats, [a.id, b.id]);
@@ -181,7 +191,57 @@ test('revanche : refusée à un spectateur, ouverte à tous les joueurs de la pa
   await ca.appel('table:start', { id: id2 });
   assert.equal((await ca.appel('table:leave', { id: id2 })).ok, true);
   assert.equal((await cb.appel('table:restart', { id: id2 })).ok, true, 'le joueur resté relance');
-  const vue = () => cb.dernier('tables')?.find((t) => t.id === id2) ?? cb.recus.findLast((r) => r.ev === 'tables:update' && r.data.table?.id === id2)?.data.table;
+  const vue = () => resume(cb, id2);
   await jusque(() => vue()?.status === 'lobby' && vue().hostId === b.id, 'retour au salon, le joueur resté est l’hôte');
   assert.deepEqual(vue().seats, [b.id]);
+});
+
+test('liste des parties : seule la partie qui change est envoyée à la classe, et rien quand un spectateur entre ou sort', async () => {
+  const a = await connecter(await inscrire(srv, pseudo()));
+  const b = await connecter(await inscrire(srv, pseudo()));
+  const spectateur = await connecter(await inscrire(srv, pseudo()));
+  const temoin = await connecter(await inscrire(srv, pseudo())); // un élève sur un autre écran : il ne regarde aucune partie
+  const { id } = await a.appel('table:create', { game: 'morpion' });
+  await b.appel('table:join', { id });
+  await a.appel('table:start', { id });
+  await jusque(() => resume(temoin, id)?.status === 'playing', 'le témoin voit la partie en cours');
+  const recus = () => temoin.recus.filter((r) => r.ev === 'tables:update' || r.ev === 'tables');
+  // Des spectateurs entrent et sortent : rien ne change pour la classe.
+  let avant = recus().length;
+  for (let i = 0; i < 10; i++) { await spectateur.appel('table:watch', { id }); await spectateur.appel('table:unwatch', { id }); }
+  await pause(200);
+  assert.equal(recus().length, avant, 'aucun envoi à la classe pour un spectateur qui entre ou sort');
+  // Trois coups : trois petits envois, chacun avec cette seule partie.
+  avant = recus().length;
+  const joueurs = { [a.compte.id]: a, [b.compte.id]: b };
+  for (let coup = 0; coup < 3; coup++) {
+    const tour = resume(temoin, id).turn[0];
+    assert.equal((await joueurs[tour].appel('table:move', { id, action: { cell: coup } })).ok, true);
+    await jusque(() => resume(temoin, id).turn[0] !== tour, 'le tour a changé chez le témoin');
+  }
+  const envois = recus().slice(avant);
+  assert.equal(envois.length, 3);
+  assert.ok(envois.every((r) => r.ev === 'tables:update' && r.data.table.id === id), 'la liste complète n’est jamais renvoyée');
+  // La partie fermée disparaît chez le témoin, et le spectateur qui la regardait est prévenu.
+  await spectateur.appel('table:watch', { id });
+  assert.equal((await a.appel('table:close', { id })).ok, true);
+  await jusque(() => resume(temoin, id) === null, 'la partie a disparu de la liste du témoin');
+  await jusque(() => spectateur.recus.some((r) => r.ev === 'table:closed' && r.data.id === id), 'le spectateur est prévenu de la fermeture');
+});
+
+test('trop de connexions pour un compte : la plus ancienne cède la place (un wifi qui saute ne laisse personne dehors)', async () => {
+  const compte = await inscrire(srv, pseudo());
+  // Cinq onglets, puis le wifi saute : le serveur les croit encore ouverts.
+  const morts = [];
+  for (let i = 0; i < 5; i++) morts.push(await new Client(srv, compte).ouvrir());
+  morts.forEach((c) => c.devenirSourd());
+  const revenus = [];
+  for (let i = 0; i < 3; i++) revenus.push(await new Client(srv, compte).ouvrir()); // avant : « trop-de-connexions » dès le premier
+  // Six vrais onglets : le plus ancien encore ouvert est prévenu puis fermé, il ne se reconnecte pas tout seul.
+  for (let i = 0; i < 2; i++) revenus.push(await new Client(srv, compte).ouvrir());
+  const sixieme = await new Client(srv, compte).ouvrir();
+  await jusque(() => revenus[0].recus.some((r) => r.ev === 'replaced'), 'le plus ancien onglet est prévenu');
+  await jusque(() => revenus[0].ws.readyState === 3, 'et sa connexion est fermée');
+  assert.equal(revenus[1].recus.some((r) => r.ev === 'replaced'), false, 'les autres onglets restent');
+  [...morts, ...revenus, sixieme].forEach((c) => c.fermer());
 });

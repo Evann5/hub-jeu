@@ -18,11 +18,11 @@ let lastConv = null; // dernière conversation ouverte, pour revenir dessus depu
 // ——— Démarrage ———
 
 // Écran plein cadre pour ce qui bloque tout (réseau coupé, trop d'onglets) : un titre, une phrase, un bouton.
-function showNotice(title, text) {
+function showNotice(title, text, label = 'Recharger la page') {
   root.replaceChildren(h('main.notice', h('div.notice-card',
     h('h1', title),
     h('p', text),
-    h('button.btn', { type: 'button', onclick: () => location.reload() }, 'Recharger la page'))));
+    h('button.btn', { type: 'button', onclick: () => location.reload() }, label))));
 }
 
 async function boot() {
@@ -130,13 +130,18 @@ function startRealtime() {
 
   socket.on('connect_error', (err) => {
     if (err.message === 'non-connecte') actions.logout('Ta session a expiré : reconnecte-toi.');
-    if (err.message === 'trop-de-connexions') showNotice('Trop d’onglets ouverts', 'Ton compte est ouvert sur trop d’onglets ou d’appareils à la fois. Ferme-en un, puis recharge la page.');
   });
   socket.on('disconnect', (reason) => {
     if (reason !== 'io client disconnect') setBanner('Connexion perdue. Reconnexion en cours…');
   });
   socket.on('connect', () => setBanner(null));
   socket.on('kicked', (reason) => actions.logout(reason));
+  // Le compte est ouvert sur trop d'onglets : le serveur a fermé celui-ci, le plus ancien. Il ne se reconnecte pas tout seul (sinon les onglets se chasseraient à tour de rôle).
+  socket.on('replaced', () => {
+    state.socket = null;
+    ui = null;
+    showNotice('Hubuno est ouvert dans trop d’onglets', 'Cet onglet s’est mis en pause pour laisser la place au plus récent. Ferme ceux dont tu ne te sers plus, puis reprends ici.', 'Reprendre ici');
+  });
 
   socket.on('presence', (ids) => {
     state.online = new Set(ids);
@@ -204,14 +209,20 @@ function startRealtime() {
   // ——— Tables de jeu ———
   // La liste repart à chaque coup de chaque table : on ne redessine que si quelque chose de visible a changé.
   let tablesSeen = '';
-  socket.on('tables', (list) => {
-    state.tables = list;
-    const seen = JSON.stringify(list.map(({ updatedAt, deadline, ...visible }) => visible));
+  const onTables = () => {
+    const seen = JSON.stringify(state.tables.map(({ updatedAt, deadline, ...visible }) => visible));
     if (seen === tablesSeen) return;
     tablesSeen = seen;
     renderNav();
     games.refresh();
     if (state.route.view === 'home') home.render(ui.content);
+  };
+  // La liste complète arrive à la connexion (« state ») ; ensuite le serveur n'envoie que la partie qui change, ou celle qui disparaît.
+  socket.on('tables:update', ({ table: t, removed }) => {
+    if (removed !== undefined) state.tables = state.tables.filter((x) => x.id !== removed);
+    else if (state.tables.some((x) => x.id === t.id)) state.tables = state.tables.map((x) => (x.id === t.id ? t : x));
+    else state.tables = [...state.tables, t];
+    onTables();
   });
   socket.on('table', table.onTable);
   socket.on('table:closed', table.onClosed);

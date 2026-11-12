@@ -220,7 +220,16 @@ export function attachRealtime(httpServer) {
   io.use((socket, next) => {
     const user = userFromToken(readCookie(socket.request.headers.cookie, COOKIE));
     if (!user) return next(new Error('non-connecte'));
-    if ((online.get(user.id) || 0) >= MAX_SOCKETS_PER_USER) return next(new Error('trop-de-connexions'));
+    // Trop de connexions pour ce compte : la plus ancienne cède la place à la nouvelle. Après un wifi qui saute, les anciennes connexions
+    // restent comptées jusqu'à 45 s sans que le serveur sache qu'elles sont mortes : refuser la nouvelle laissait l'élève dehors.
+    if ((online.get(user.id) || 0) >= MAX_SOCKETS_PER_USER) {
+      let oldest = null;
+      for (const s of io.sockets.sockets.values()) {
+        if (s.data.userId === user.id && (!oldest || s.handshake.issued < oldest.handshake.issued)) oldest = s;
+      }
+      oldest?.emit('replaced'); // un vrai onglet l'affiche et ne se reconnecte pas tout seul ; une connexion morte ne reçoit rien
+      oldest?.disconnect(true);
+    }
     socket.data.userId = user.id;
     socket.data.tokenHash = tokenHash(readCookie(socket.request.headers.cookie, COOKIE));
     next();
