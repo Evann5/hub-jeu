@@ -6,7 +6,7 @@ import { db, getSetting, setSetting } from './db.js';
 import { config } from './config.js';
 import { COLORS, AVATARS, LIMITS } from './options.js';
 import {
-  COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions, tokenHash, ownerId,
+  COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions, tokenHash, ownerId, TEMP_PASSWORD_MS,
 } from './auth.js';
 import { createEventLimiter, sameOrigin } from './securite.js';
 import { codeVersion } from './version.js';
@@ -21,6 +21,7 @@ let io;
 const online = new Map(); // userId -> nombre de connexions ouvertes
 const sendTimes = new Map(); // userId -> horodatages des derniers envois
 
+const DISK_FULL = 'Le serveur n’a plus de place pour enregistrer. Préviens un admin : rien ne sera gardé tant que ce n’est pas réglé.';
 const MAX_SOCKETS_PER_USER = 5; // onglets et appareils ouverts en même temps, par compte
 const MIN_CLASS_CODE = 10;
 // Limite générale : 60 événements par 5 s et par personne (tous appareils confondus). Les coups de jeu ont la leur (play.js).
@@ -170,7 +171,9 @@ function handler(socket, fn, { admin = false, modo = false, event = null, muteBl
       reply({ ok: true, ...(result instanceof Promise ? await result : result) });
     } catch (err) {
       if (!(err instanceof chat.ChatError)) console.error(err);
-      reply({ ok: false, error: err instanceof chat.ChatError ? err.message : 'Erreur du serveur, réessaie dans un instant.' });
+      // Disque plein : rien n'est perdu de ce qui était déjà écrit, mais plus rien ne s'enregistre tant qu'on n'a pas fait de place.
+      const full = /database or disk is full/i.test(String(err?.message));
+      reply({ ok: false, error: err instanceof chat.ChatError ? err.message : full ? DISK_FULL : 'Erreur du serveur, réessaie dans un instant.' });
     }
   };
 }
@@ -385,7 +388,7 @@ export function attachRealtime(httpServer) {
       const syl = ['ba', 'de', 'ki', 'lo', 'mu', 'na', 'pi', 'ro', 'su', 'ta', 'vo', 'ze'];
       const pick = () => syl[randomInt(syl.length)];
       const temp = `${pick()}${pick()}${pick()}${pick()}-${randomInt(10, 100)}`;
-      db.prepare('UPDATE users SET pass_hash = ?, must_change_password = 1 WHERE id = ?').run(await hashPassword(temp), user.id);
+      db.prepare('UPDATE users SET pass_hash = ?, must_change_password = 1, temp_until = ? WHERE id = ?').run(await hashPassword(temp), Date.now() + TEMP_PASSWORD_MS, user.id);
       deleteUserSessions(user.id);
       disconnectUser(user.id, 'Ton mot de passe a été réinitialisé : reconnecte-toi avec le mot de passe provisoire.');
       logMod(me, 'a réinitialisé le mot de passe de', { target: user.pseudo });

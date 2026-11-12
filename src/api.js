@@ -72,6 +72,7 @@ api.post('/register', async (req, res) => {
 
   if (auth.badCodeBlocked(req.ip)) throw new ApiError(429, 'Trop de codes de classe ratés depuis cette connexion. Réessaie dans 15 minutes.');
   if (auth.signupBlocked(req.ip)) throw new ApiError(429, 'Trop d’inscriptions depuis cette connexion. Réessaie dans une heure.');
+  if (auth.allSignupsBlocked()) throw new ApiError(429, 'Beaucoup d’inscriptions en ce moment. Réessaie dans une heure, ou préviens un admin.');
   const expected = auth.classCode();
   if (!expected) throw new ApiError(503, "Les inscriptions ne sont pas encore ouvertes : aucun code de classe n’est réglé.");
   const adminPseudo = auth.isAdminPseudo(pseudo);
@@ -84,12 +85,14 @@ api.post('/register', async (req, res) => {
   if (config.adminCode && adminPseudo && !adminCodeOk) throw new ApiError(409, 'Ce pseudo est déjà pris.');
   const pseudoError = auth.validatePseudo(pseudo);
   if (pseudoError) throw new ApiError(400, pseudoError);
+  if (auth.reservedPseudo(pseudo)) throw new ApiError(409, 'Ce pseudo est réservé à l’équipe de Hubuno. Choisis-en un autre.');
   const passError = auth.validatePassword(password, pseudo);
   if (passError) throw new ApiError(400, passError);
   if (req.body.acceptRules !== true) throw new ApiError(400, 'Coche la case pour accepter les règles de Hubuno.');
   if (auth.pseudoTaken(pseudo)) throw new ApiError(409, 'Ce pseudo est déjà pris.');
 
   auth.recordSignup(req.ip); // compté d'avance (le calcul est asynchrone), rendu si l'inscription échoue
+  auth.recordAnySignup();
   let user;
   try {
     const passHash = await auth.hashPassword(password);
@@ -98,6 +101,7 @@ api.post('/register', async (req, res) => {
     user = auth.createUser({ pseudo, passHash });
   } catch (err) {
     auth.refundSignup(req.ip);
+    auth.refundAnySignup();
     throw err;
   }
   markAllChannelsRead(user.id);
@@ -120,6 +124,9 @@ api.post('/login', async (req, res) => {
     throw new ApiError(400, 'Pseudo ou mot de passe incorrect.');
   }
   if (user.banned) throw new ApiError(403, 'Ce compte a été bloqué par un admin.');
+  if (user.must_change_password && user.temp_until && Date.now() > user.temp_until) {
+    throw new ApiError(403, 'Ce mot de passe provisoire a expiré (il sert 24 heures). Demande-en un nouveau à un admin.');
+  }
   auth.recordSuccess(req.ip, pseudo);
   setSessionCookie(req, res, auth.createSession(user.id));
   res.json({ user: auth.publicUser(user), mustChangePassword: Boolean(user.must_change_password) });
@@ -183,6 +190,10 @@ api.use((err, req, res, next) => {
   if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Requête trop volumineuse.' });
   if (err instanceof auth.BusyError) return res.status(503).json({ error: err.message });
   if (err.status >= 400 && err.status < 500) return res.status(err.status).json({ error: 'Requête refusée.' });
+  if (/database or disk is full/i.test(String(err?.message))) {
+    console.error(err);
+    return res.status(507).json({ error: 'Le serveur n’a plus de place pour enregistrer. Préviens un admin.' });
+  }
   console.error(err);
   res.status(500).json({ error: 'Erreur du serveur, réessaie dans un instant.' });
 });

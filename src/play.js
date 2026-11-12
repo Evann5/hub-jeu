@@ -167,6 +167,14 @@ export function purgeTables() {
   return removed.length;
 }
 
+// Un coup est un petit objet : au-delà de 8 niveaux d'imbrication, ce n'est pas un joueur. Refusé avant d'atteindre les règles.
+function tooDeep(value, left = 8) {
+  if (value === null || typeof value !== 'object') return false;
+  if (left === 0) return true;
+  for (const v of Array.isArray(value) ? value : Object.values(value)) if (tooDeep(v, left - 1)) return true;
+  return false;
+}
+
 export function registerPlay(socket, handler) {
   const tableId = (id) => {
     const n = Number(id);
@@ -230,6 +238,7 @@ export function registerPlay(socket, handler) {
   }));
 
   socket.on('table:move', handler(socket, ({ id, action }, me) => {
+    if (tooDeep(action)) throw new ChatError('Ce coup est illisible.');
     const { table, events } = tables.playMove(tableId(id), me.id, action);
     changed(table, table.id, events);
     return {};

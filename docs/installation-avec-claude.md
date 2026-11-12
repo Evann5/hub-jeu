@@ -132,10 +132,6 @@ Si `git pull` refuse à cause de « local changes » : ne rien forcer, me coller
 
 ## Sauvegarder et restaurer
 
-Les sauvegardes automatiques d'O2Switch (JetBackup) couvrent `~/hubuno/data/`. Avant une grosse mise à jour :
+Hubuno se sauvegarde tout seul une fois par jour dans `~/hubuno/data/sauvegardes/` (7 jours gardés), et les sauvegardes d'O2Switch (JetBackup) couvrent tout le dossier. Avant une grosse mise à jour, une copie de plus : `cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)`.
 
-```sh
-cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)
-```
-
-Pour revenir à une sauvegarde (tout ce qui a été écrit depuis disparaît) : **Stop App** dans Setup Node.js App, puis `mv ~/hubuno/data ~/hubuno-data-abimee-$(date +%F)` et `cp -r ~/hubuno-data-AAAA-MM-JJ ~/hubuno/data`, puis **Start App**. Ne jamais copier par-dessus une base pendant que l'appli tourne.
+Pour revenir à une sauvegarde (tout ce qui a été écrit depuis disparaît), suivre pas à pas « Restaurer une sauvegarde » dans `~/hubuno/docs/mise-en-ligne.md` : appli arrêtée (**Stop App**), les trois fichiers `hubuno.sqlite*` mis de côté, la sauvegarde copiée à la place de `hubuno.sqlite`, puis **Start App**. Ne jamais copier par-dessus une base pendant que l'appli tourne.

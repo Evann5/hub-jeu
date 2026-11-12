@@ -123,6 +123,11 @@ export function pseudoTaken(pseudo) {
   return db.prepare('SELECT pseudo FROM users').all().some((u) => lookalike(u.pseudo) === wanted);
 }
 
+// Pseudos qui feraient passer un élève pour l'équipe ou pour Hubuno lui-même (comparés comme l'œil les lit : « adm1n », « Admin »).
+const RESERVED = new Set(['admin', 'admins', 'administrateur', 'administratrice', 'administrator', 'modo', 'modos', 'moderateur', 'moderatrice', 'moderation',
+  'moderator', 'hubuno', 'systeme', 'system', 'support', 'equipe', 'staff', 'prof', 'professeur'].map(lookalike));
+export const reservedPseudo = (pseudo) => RESERVED.has(lookalike(pseudo)) && !isAdminPseudo(pseudo);
+
 export function isAdminPseudo(pseudo) {
   return config.admins.includes(plainPseudo(pseudo)) || config.admins.includes(pseudo.toLowerCase());
 }
@@ -234,3 +239,12 @@ export const recordBadCode = (ip) => badCodes.hit(ip);
 export const signupBlocked = (ip) => signups.blocked(ip);
 export const recordSignup = (ip) => signups.hit(ip);
 export const refundSignup = (ip) => signups.undo(ip);
+
+// Plafond pour tout le hub, quelle que soit l'adresse : 80 inscriptions par heure (une classe de 40 s'inscrit d'un coup sans le toucher).
+// Sans lui, quelqu'un qui connaît le code de classe et change d'adresse créerait des comptes sans fin.
+const allSignups = createLimiter({ max: 80, windowMs: 3600_000 });
+export const allSignupsBlocked = () => allSignups.blocked('hub');
+export const recordAnySignup = () => allSignups.hit('hub');
+export const refundAnySignup = () => allSignups.undo('hub');
+
+export const TEMP_PASSWORD_MS = 24 * 3600_000; // un mot de passe provisoire donné par un admin sert dans la journée

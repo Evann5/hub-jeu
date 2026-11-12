@@ -11,6 +11,7 @@ import { purgeExpiredSessions, classCode } from './src/auth.js';
 import { loadGames, gamesDir } from './src/games.js';
 import { purgeTables } from './src/play.js';
 import { gzipped } from './src/gzip.js';
+import { backupIfDue } from './src/sauvegarde.js';
 
 // Filet de sécurité : une erreur imprévue est écrite dans le journal, sans arrêter le serveur (et donc sans déconnecter toute la classe).
 process.on('uncaughtException', (err) => console.error('Erreur non rattrapée :', err));
@@ -72,6 +73,13 @@ function housekeeping() {
   purgeOldMod();
   const tablesRemoved = purgeTables();
   if (tablesRemoved) console.log(`Ménage : ${tablesRemoved} table(s) inactive(s) fermée(s).`);
+  // La sauvegarde du jour (data/sauvegardes/) : jamais une raison d'arrêter le serveur si elle échoue (disque plein, droits).
+  try {
+    const saved = backupIfDue();
+    if (saved) console.log(`Sauvegarde du jour : ${saved}`);
+  } catch (err) {
+    console.error('Sauvegarde du jour impossible :', err.message);
+  }
 }
 
 // Le démarrage attend le chargement des jeux dans une fonction, sans « await » au premier niveau du fichier :

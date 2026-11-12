@@ -169,6 +169,11 @@ if (!/'modo'/.test(db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table
   }
 }
 
+// Colonne ajoutée après coup (après la recopie ci-dessus, qui ne la connaît pas) : jusqu'à quand le mot de passe provisoire d'un compte est valable.
+if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'temp_until')) {
+  db.exec('ALTER TABLE users ADD COLUMN temp_until INTEGER NOT NULL DEFAULT 0');
+}
+
 if (!db.prepare('SELECT 1 FROM channels LIMIT 1').get()) {
   const add = db.prepare('INSERT INTO channels (name, topic, position, created_at) VALUES (?, ?, ?, ?)');
   add.run('général', 'Le salon de toute la classe', 0, Date.now());

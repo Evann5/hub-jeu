@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { join } from 'node:path';
-import { lancerServeur, inscrire, Client, jusque, pause, RACINE, MDP } from '../tests/aide-serveur.mjs';
+import { lancerServeur, inscrire, Client, jusque, pause, RACINE, MDP, CODE, ADMIN } from '../tests/aide-serveur.mjs';
 
 let srv;
 let n = 0;
@@ -244,4 +244,64 @@ test('trop de connexions pour un compte : la plus ancienne cède la place (un wi
   await jusque(() => revenus[0].ws.readyState === 3, 'et sa connexion est fermée');
   assert.equal(revenus[1].recus.some((r) => r.ev === 'replaced'), false, 'les autres onglets restent');
   [...morts, ...revenus, sixieme].forEach((c) => c.fermer());
+});
+
+test('coup trop profond : refusé avant les règles, sans erreur dans le journal du serveur', async () => {
+  const a = await connecter(await inscrire(srv, pseudo()));
+  const b = await connecter(await inscrire(srv, pseudo()));
+  const { id } = await a.appel('table:create', { game: 'quatre' });
+  await b.appel('table:join', { id });
+  await a.appel('table:start', { id });
+  let profond = 1;
+  for (let i = 0; i < 3000; i++) profond = [profond];
+  for (const c of [a, b]) { // l'un des deux a la main
+    const r = await c.appel('table:move', { id, action: { col: profond } });
+    assert.equal(r.ok, false);
+    assert.doesNotMatch(r.error, /a rencontré une erreur/, 'le coup ne doit pas atteindre les règles du jeu');
+  }
+  assert.doesNotMatch(srv.journal, /RangeError|Maximum call stack/);
+});
+
+test('inscription : les pseudos qui imitent l’équipe sont réservés', async () => {
+  const essayer = (p) => fetch(`${srv.url}api/register`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ classCode: CODE, pseudo: p, password: MDP, acceptRules: true }) });
+  for (const p of ['admin', 'Adm1n', 'MODO', 'moderateur', 'hubuno']) {
+    const r = await essayer(p);
+    assert.equal(r.status, 409, `« ${p} » doit être refusé`);
+    assert.match((await r.json()).error, /réservé/);
+  }
+  assert.equal((await essayer(pseudo('admirable'))).status, 201, 'un pseudo qui commence comme « admin » reste libre');
+});
+
+test('mot de passe provisoire : valable 24 heures, refusé ensuite', async () => {
+  const admin = await connecter(await inscrire(srv, ADMIN, { admin: true }));
+  const eleve = await inscrire(srv, pseudo());
+  const { tempPassword } = await admin.appel('admin:resetPassword', { userId: eleve.id });
+  const entrer = () => fetch(`${srv.url}api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pseudo: eleve.pseudo, password: tempPassword }) });
+  assert.equal((await entrer()).status, 200, 'dans la journée, le mot de passe provisoire marche');
+  const db = new DatabaseSync(join(srv.dir, 'hubuno.sqlite'));
+  db.exec('PRAGMA busy_timeout = 2000');
+  db.prepare('UPDATE users SET temp_until = ? WHERE id = ?').run(Date.now() - 1000, eleve.id); // comme 24 heures plus tard
+  db.close();
+  const tard = await entrer();
+  assert.equal(tard.status, 403);
+  assert.match((await tard.json()).error, /expiré/);
+});
+
+test('inscriptions : plafond de 80 par heure pour tout le hub, même depuis des adresses différentes', async () => {
+  const s4 = await lancerServeur();
+  try {
+    const essayer = (i) => fetch(`${s4.url}api/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': `10.1.${Math.floor(i / 200)}.${(i % 200) + 1}` }, // une adresse différente à chaque fois
+      body: JSON.stringify({ classCode: CODE, pseudo: `masse${i}x${Date.now().toString(36).slice(-3)}`, password: MDP, acceptRules: true }),
+    });
+    const debut = [];
+    for (let lot = 0; lot < 8; lot++) debut.push(...await Promise.all(Array.from({ length: 10 }, (_, k) => essayer(lot * 10 + k))));
+    assert.deepEqual([...new Set(debut.map((r) => r.status))], [201], 'les 80 premières inscriptions passent (une classe entière s’inscrit d’un coup)');
+    const suivante = await essayer(80);
+    assert.equal(suivante.status, 429);
+    assert.match((await suivante.json()).error, /inscriptions/);
+  } finally {
+    await s4.arreter();
+  }
 });

@@ -100,26 +100,34 @@ Sur un hébergement mutualisé, l'appli peut être mise en veille quand personne
 
 ## Sauvegarder
 
-Toutes les données tiennent dans `hubuno/data/` (fichiers `hubuno.sqlite*`, toujours les trois ensemble). Les sauvegardes automatiques d'O2Switch (JetBackup) les couvrent. Avant une grosse mise à jour, une copie de ce dossier ne coûte rien :
+Toutes les données tiennent dans `hubuno/data/` (fichiers `hubuno.sqlite*`, toujours les trois ensemble).
 
-```sh
-cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)
-```
+- **Hubuno se sauvegarde tout seul, une fois par jour** : `hubuno/data/sauvegardes/hubuno-AAAA-MM-JJ.sqlite`, les 7 derniers jours. Rien à faire.
+- Les sauvegardes automatiques d'O2Switch (JetBackup) couvrent aussi tout le dossier.
+- Avant une grosse mise à jour, une copie de plus ne coûte rien : `cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)`.
 
-La base grossit lentement : environ 50 Mo pour 400 000 messages, et les messages de plus d'un an s'effacent tout seuls.
+La base grossit lentement : environ 50 Mo pour 400 000 messages, et les messages de plus d'un an s'effacent tout seuls. Avec les 7 sauvegardes, compter huit fois cette place.
 
 ## Restaurer une sauvegarde
 
 À faire seulement si la base est perdue ou abîmée : tout ce qui a été écrit depuis la sauvegarde disparaît.
 
 1. cPanel > Setup Node.js App > Hubuno > **Stop App** (l'appli ne doit pas tourner pendant la copie).
-2. Dans le Terminal, mettre l'ancienne base de côté puis remettre la sauvegarde (ici celle du 12/11/2026) :
+2. Dans le Terminal, regarder les sauvegardes disponibles, mettre la base actuelle de côté, puis remettre celle du jour voulu (ici le 12/11/2026) :
 
 ```sh
-mv ~/hubuno/data ~/hubuno-data-abimee-$(date +%F)
-cp -r ~/hubuno-data-2026-11-12 ~/hubuno/data
+ls ~/hubuno/data/sauvegardes
+mkdir ~/hubuno-base-abimee-$(date +%F)
+mv ~/hubuno/data/hubuno.sqlite* ~/hubuno-base-abimee-$(date +%F)/
+cp ~/hubuno/data/sauvegardes/hubuno-2026-11-12.sqlite ~/hubuno/data/hubuno.sqlite
 ```
+
+La deuxième et la troisième ligne emportent les trois fichiers `hubuno.sqlite`, `hubuno.sqlite-wal` et `hubuno.sqlite-shm` : il ne faut laisser aucun des deux derniers à côté de la base restaurée.
 
 3. **Start App**, puis ouvrir Hubuno et vérifier que les comptes et les messages sont là.
 
-Pour une sauvegarde JetBackup : cPanel > JetBackup > File Backups, choisir la date, restaurer le dossier `hubuno/data`, toujours appli arrêtée.
+Depuis une copie du dossier entier (`~/hubuno-data-AAAA-MM-JJ`) ou depuis JetBackup (cPanel > JetBackup > File Backups) : même méthode, appli arrêtée, en remplaçant tout le dossier `hubuno/data`.
+
+## Si le disque est plein
+
+Hubuno continue de tourner et rien de ce qui était écrit n'est perdu, mais plus rien ne s'enregistre : les élèves lisent « Le serveur n'a plus de place pour enregistrer ». Faire de la place sur le compte O2Switch (cPanel > Utilisation du disque) ; Hubuno repart tout seul, sans Restart.
