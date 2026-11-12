@@ -14,23 +14,63 @@ const save = db.prepare(
      left_ids = excluded.left_ids, options = excluded.options, state = excluded.state, updated_at = excluded.updated_at`,
 );
 
+// Une partie illisible (état d'un ancien format après la mise à jour d'un jeu, ligne abîmée) est mise de côté : elle reste dans la base
+// mais n'est plus chargée. Sans ça, une seule partie empêchait tout le hub de démarrer.
+function setAside(id, game, err) {
+  tables.delete(id);
+  console.error(`Partie ${id} (${game}) illisible, mise de côté : ${err?.message ?? err}`);
+}
+
 export function loadTables() {
   for (const r of db.prepare('SELECT * FROM game_tables').all()) {
     if (!games.has(r.game)) continue; // jeu retiré du dossier games/ : la table attend son retour
-    tables.set(r.id, {
-      id: r.id,
-      game: r.game,
-      hostId: r.host_id,
-      status: r.status,
-      seats: JSON.parse(r.seats),
-      left: JSON.parse(r.left_ids || '[]'),
-      options: JSON.parse(r.options),
-      state: r.state ? JSON.parse(r.state) : null,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
-    });
+    try {
+      const t = {
+        id: r.id,
+        game: r.game,
+        hostId: r.host_id,
+        status: r.status,
+        seats: JSON.parse(r.seats),
+        left: JSON.parse(r.left_ids || '[]'),
+        options: JSON.parse(r.options),
+        state: r.state ? JSON.parse(r.state) : null,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      };
+      if (!Array.isArray(t.seats) || !Array.isArray(t.left)) throw new Error('places illisibles');
+      // Les règles d'aujourd'hui savent-elles lire cet état ? (statut, puis vue d'un spectateur et de chaque joueur)
+      statusOf(t);
+      if (t.state) for (const who of [null, ...t.seats]) games.get(t.game).rules.view(t.state, who);
+      tables.set(r.id, t);
+    } catch (err) {
+      setAside(r.id, r.game, err);
+    }
   }
   return [...tables.values()];
+}
+
+// Les résumés de toutes les parties, pour la liste envoyée à la classe : une partie qui ferait planter son jeu est mise de côté,
+// jamais la liste entière.
+export function summaries() {
+  const out = [];
+  for (const t of [...tables.values()]) {
+    try {
+      out.push(summary(t));
+    } catch (err) {
+      setAside(t.id, t.game, err);
+    }
+  }
+  return out;
+}
+
+// Le résumé d'une partie, ou null si son jeu plante (elle est alors mise de côté).
+export function safeSummary(t) {
+  try {
+    return summary(t);
+  } catch (err) {
+    setAside(t.id, t.game, err);
+    return null;
+  }
 }
 
 function persist(t) {
@@ -119,8 +159,10 @@ function mustLobby(t) {
 // Applique le résultat d'un coup ou d'un minuteur, et passe la table en « terminée » si besoin.
 function apply(t, result) {
   if (!result || typeof result !== 'object' || !('state' in result)) throw new ChatError('Le jeu a renvoyé un état invalide.');
+  // Le statut est calculé sur le nouvel état AVANT de le garder : si le jeu plante dessus, le coup est refusé et la partie reste jouable.
+  const { over } = runRules(() => statusOf({ ...t, state: result.state, status: 'playing' }));
   t.state = result.state;
-  if (statusOf(t).over) t.status = 'over';
+  if (over) t.status = 'over';
   persist(t);
   return result.events || [];
 }
@@ -209,12 +251,13 @@ export function startTable(id, userId) {
   if (t.seats.length < game.minPlayers) {
     throw new ChatError(`Il faut au moins ${game.minPlayers} joueurs pour lancer ${game.name}.`);
   }
-  const problem = game.rules.checkStart?.(players(t), t.options);
+  const problem = runRules(() => game.rules.checkStart?.(players(t), t.options));
   if (problem) throw new ChatError(problem);
-  t.state = runRules(() => game.rules.setup(players(t), t.options, ctx()));
+  const state = runRules(() => game.rules.setup(players(t), t.options, ctx()));
+  const { over } = runRules(() => statusOf({ ...t, state, status: 'playing' }));
+  t.state = state;
   t.left = [];
-  t.status = 'playing';
-  if (statusOf(t).over) t.status = 'over';
+  t.status = over ? 'over' : 'playing';
   persist(t);
   return t;
 }
@@ -330,6 +373,13 @@ export function purgeStaleTables() {
       remove(t);
       removed.push(t.id);
     }
+  }
+  // Les parties qui ne sont pas chargées (mises de côté, ou jeu retiré) partent après 14 jours, avec leur chat.
+  for (const { id } of db.prepare('SELECT id FROM game_tables WHERE updated_at < ?').all(now - limits.playing)) {
+    if (tables.has(id)) continue;
+    db.prepare('DELETE FROM game_tables WHERE id = ?').run(id);
+    db.prepare('DELETE FROM messages WHERE scope = ?').run(`t:${id}`);
+    db.prepare('DELETE FROM reads WHERE scope = ?').run(`t:${id}`);
   }
   return removed;
 }

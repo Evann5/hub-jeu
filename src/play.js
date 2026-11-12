@@ -46,7 +46,7 @@ export function initPlay(server) {
 }
 
 export const gamesCatalog = catalog;
-export const tableList = () => tables.allTables().map(tables.summary);
+export const tableList = () => tables.summaries();
 
 function broadcastTables() {
   io.to('membres').emit('tables', tableList());
@@ -64,7 +64,14 @@ async function pushTable(id, events = []) {
     broadcastTables();
     return;
   }
-  const summary = tables.summary(t);
+  const summary = tables.safeSummary(t);
+  if (!summary) { // le jeu plante sur cette partie : elle est mise de côté, la salle est prévenue
+    clearTimeout(timers.get(id));
+    timers.delete(id);
+    io.to(room).emit('table:closed', { id });
+    broadcastTables();
+    return;
+  }
   const watchers = new Set(sockets.map((s) => s.data.userId).filter((uid) => !t.seats.includes(uid))).size;
   const views = new Map();
   for (const s of sockets) {
@@ -83,7 +90,7 @@ async function pushTable(id, events = []) {
 function schedule(t) {
   clearTimeout(timers.get(t.id));
   timers.delete(t.id);
-  if (!t || t.status !== 'playing') return;
+  if (!t || t.status !== 'playing' || !tables.tableExists(t.id)) return;
   const { deadline } = tables.statusOf(t);
   if (!deadline) return;
   const delay = Math.min(Math.max(0, deadline - Date.now()), 2 ** 31 - 1);
