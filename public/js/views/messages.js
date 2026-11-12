@@ -542,29 +542,51 @@ export function renderComposer() {
   if (!touch() && !mobile()) area.focus({ preventScroll: true });
 }
 
+// Remplace à l'écran un seul message, retrouvé par son identifiant ; false s'il n'y est pas (il faut alors tout redessiner).
+function redrawOne(oldId, m) {
+  const old = ui?.messages?.querySelector(`[data-id="${oldId}"]`);
+  if (!old) return false;
+  keepFocus(ui.messages, () => old.replaceWith(messageEl(m, old.classList.contains('first'))));
+  return true;
+}
+
+// Envoyer un message ne redessine pas la conversation : il est ajouté en bas, puis remplacé sur place quand le serveur le confirme.
+// (Tout redessiner à chaque envoi figeait la page dès que la conversation était longue.)
 async function send(scope, body, existing) {
   const conv = state.convs.get(scope);
   const local = existing || { id: localId--, scope, userId: state.me.id, body, createdAt: Date.now(), reactions: {} };
   local.pending = true;
   local.failed = false;
   if (!existing) conv?.messages.push(local);
-  if (scope === currentScope()) renderMessages({ toBottom: true });
+  const viewing = () => scope === currentScope();
+  if (viewing()) {
+    if (existing) {
+      if (!redrawOne(local.id, local)) renderMessages();
+    } else if (appendMessage(local)) {
+      ui.messages.scrollTop = ui.messages.scrollHeight;
+    } else {
+      renderMessages({ toBottom: true });
+    }
+  }
   try {
     const { message } = await call(state.socket, 'send', { scope, body });
     const live = state.convs.get(scope); // une reconnexion a pu recharger la conversation pendant l'envoi
-    if (live) {
-      const i = live.messages.indexOf(local);
-      if (i >= 0) {
-        if (live.messages.some((x) => x.id === message.id)) live.messages.splice(i, 1);
-        else live.messages[i] = message;
+    const i = live ? live.messages.indexOf(local) : -1;
+    if (i >= 0) { // sinon l'arrivée du message (onMessage) l'a déjà remplacé
+      if (live.messages.some((x) => x.id === message.id)) {
+        live.messages.splice(i, 1);
+        if (viewing()) renderMessages();
+      } else {
+        live.messages[i] = message;
+        if (viewing() && !redrawOne(local.id, message)) renderMessages();
       }
     }
   } catch (err) {
     local.pending = false;
     local.failed = true;
     toast(err.message, { error: true });
+    if (viewing() && !redrawOne(local.id, local)) renderMessages();
   }
-  if (scope === currentScope()) renderMessages();
 }
 
 function dropLocal(m) {
@@ -587,10 +609,11 @@ export function renderTyping() {
 
 export function onMessage(m) {
   const conv = state.convs.get(m.scope);
+  let replaced = null; // mon message « en cours d'envoi » que celui-ci confirme
   if (conv?.loaded && !conv.messages.some((x) => x.id === m.id)) {
     // Remplace le message « en cours d'envoi » s'il vient de nous.
     const i = conv.messages.findIndex((x) => (x.pending || x.failed) && x.userId === m.userId && x.body === m.body); // « Pas envoyé » a pu arriver quand même
-    if (i >= 0) conv.messages.splice(i, 1);
+    if (i >= 0) [replaced] = conv.messages.splice(i, 1);
     conv.messages.push(m);
   } else if (!conv?.loaded) {
     early.get(m.scope)?.push(m); // l'historique de cette conversation est en route : il le prendra à son arrivée
@@ -610,14 +633,29 @@ export function onMessage(m) {
     if (conv) conv.pendingRead = true;
     if (!seen) state.unread[m.scope] = (state.unread[m.scope] || 0) + 1;
   }
+  // Une soirée de discussion ne s'empile pas sans fin : quand on lit le bas de la conversation (ou qu'on est ailleurs), on ne garde que les derniers messages.
+  const trimmed = (!viewing || seen) && trim(conv);
   if (viewing) {
-    if (m.userId === state.me.id || !appendMessage(m)) renderMessages();
+    const inPlace = !trimmed && replaced && ui.messages.lastElementChild?.dataset.id === String(replaced.id) && redrawOne(replaced.id, m);
+    if (trimmed || (!inPlace && (replaced || !appendMessage(m)))) renderMessages();
     renderTyping();
     if (seen) markRead();
     if (m.userId !== state.me.id && !seen) ui.jump.hidden = false;
     if (m.userId !== state.me.id) announce(`${state.users.get(m.userId)?.pseudo ?? 'Quelqu’un'} : ${m.body}`);
   }
   renderList();
+}
+
+// Au-delà de MAX_KEPT messages en mémoire, on revient à KEEP : les plus anciens se rechargent avec « Voir les messages plus anciens ».
+const MAX_KEPT = 400;
+const KEEP = 300;
+function trim(conv) {
+  if (!conv?.loaded || conv.messages.length <= MAX_KEPT) return false;
+  const extra = conv.messages.length - KEEP;
+  if (conv.messages.slice(0, extra).some((x) => x.id < 0)) return false; // un message pas encore parti traîne en haut : on n'y touche pas
+  conv.messages.splice(0, extra);
+  conv.complete = false;
+  return true;
 }
 
 // Ajoute le dernier message à l'écran ; renvoie false quand il faut tout redessiner.

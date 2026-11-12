@@ -1,6 +1,8 @@
 // Parcours « messagerie » à plusieurs comptes : messages, réactions, non-lus, repère, bouton « Nouveaux messages »,
 // conversations forgées, focus au clavier, flèche Retour sur téléphone.
 // Limite du serveur à respecter : 5 messages par 5 s et par personne (les tests restent en dessous, ou répartissent sur plusieurs comptes).
+import { DatabaseSync } from 'node:sqlite';
+import { join } from 'node:path';
 import { monterSuite, jusque, aller, hashDe, appel, ecrire, messagesDe, ouvrirMessages, titre } from './aide.mjs';
 
 const S = monterSuite();
@@ -151,3 +153,53 @@ for (const [nom, viewport] of [['portrait', { width: 390, height: 844 }], ['pays
     await jusque(async () => !(await hashDe(p)).startsWith('#/c/'), 'Retour ne rouvre pas la conversation');
   });
 }
+
+S.it('conversation longue : envoyer ou recevoir un message ne reconstruit pas les messages déjà affichés', async ({ ouvrir }) => {
+  const a = await ouvrir();
+  const b = await ouvrir();
+  await ouvrirMessages(a);
+  await ouvrirMessages(b);
+  await ecrire(b, unique('Premier repère'));
+  await ecrire(b, unique('Deuxième repère'));
+  await jusque(async () => (await messagesDe(a)).filter((t) => t.includes('repère')).length >= 2, 'A a reçu les deux messages');
+  await a.page.evaluate(() => { document.querySelectorAll('.msg').forEach((el) => { el.__marque = 'déjà là'; }); });
+  const avant = await a.page.locator('.msg').count();
+  const mien = unique('Mon message');
+  await ecrire(a, mien);
+  const autre = unique('Encore un');
+  await ecrire(b, autre);
+  await jusque(async () => (await messagesDe(a)).includes(autre), 'A reçoit le message suivant');
+  const gardes = await a.page.evaluate(() => [...document.querySelectorAll('.msg')].filter((el) => el.__marque === 'déjà là').length);
+  if (gardes !== avant) throw new Error(`${avant - gardes} message(s) déjà affiché(s) ont été reconstruits pour un seul message envoyé puis un reçu`);
+  if ((await messagesDe(a)).filter((t) => t === mien).length !== 1) throw new Error('le message envoyé n’apparaît pas exactement une fois');
+  if (await a.page.locator('.msg.pending, .msg.failed').count()) throw new Error('le message envoyé est resté « en cours » ou « pas envoyé »');
+});
+
+S.it('conversation très longue : au-delà de 400 messages chargés, on ne garde que les 300 derniers, les anciens restent à portée de bouton', async ({ ouvrir }) => {
+  const a = await ouvrir();
+  const b = await ouvrir();
+  const auteur = await b.page.evaluate(async () => (await import('./js/store.js')).state.me.id);
+  const db = new DatabaseSync(join(S.serveur.dir, 'hubuno.sqlite'));
+  db.exec('BEGIN');
+  const ajouter = db.prepare('INSERT INTO messages (scope, user_id, body, created_at) VALUES (?, ?, ?, ?)');
+  for (let i = 0; i < 450; i++) ajouter.run('c:2', auteur, `Ancien message ${i}`, Date.now() - (450 - i) * 60_000);
+  db.exec('COMMIT');
+  db.close();
+  await aller(a, '#/c/2');
+  await aller(b, '#/c/2');
+  for (const p of [a, b]) await p.page.locator('.composer textarea').waitFor();
+  // A remonte dans l'historique jusqu'à avoir plus de 400 messages chargés, puis revient en bas.
+  await jusque(async () => {
+    if ((await a.page.locator('.msg').count()) > 400) return true;
+    await a.page.locator('.load-more button:not([disabled])').click({ timeout: 1000 }).catch(() => {});
+    return false;
+  }, 'plus de 400 messages chargés chez A', { delai: 30_000 });
+  await a.page.evaluate(() => { const m = document.querySelector('.messages'); m.scrollTop = m.scrollHeight; });
+  const dernier = unique('Le dernier');
+  await ecrire(b, dernier);
+  await jusque(async () => (await messagesDe(a)).includes(dernier), 'A reçoit le nouveau message');
+  const affiches = await a.page.locator('.msg').count();
+  if (affiches > 300) throw new Error(`${affiches} messages encore affichés (300 au plus attendus)`);
+  await a.page.locator('.load-more button').waitFor(); // les plus anciens se rechargent à la demande
+  if ((await messagesDe(a)).at(-1) !== dernier) throw new Error('le dernier message n’est pas en bas');
+});
