@@ -175,7 +175,7 @@ S.it('partie abandonnée : « en cours » sans coup depuis plus de 3 heures, ell
   await suite.serveur.couper();
   const db = new DatabaseSync(join(suite.serveur.dir, 'hubuno.sqlite'));
   const vieux = Date.now() - 5 * 3600_000;
-  db.prepare("INSERT INTO game_tables (game, host_id, status, seats, options, state, created_at, updated_at) VALUES ('morpion', ?, 'playing', ?, '{}', ?, ?, ?)").run(a, JSON.stringify([a, b]), JSON.stringify(state), vieux, vieux);
+  const id = Number(db.prepare("INSERT INTO game_tables (game, host_id, status, seats, options, state, created_at, updated_at) VALUES ('morpion', ?, 'playing', ?, '{}', ?, ?, ?)").run(a, JSON.stringify([a, b]), JSON.stringify(state), vieux, vieux).lastInsertRowid);
   db.close();
   await suite.serveur.demarrer();
   for (const p of [joueur, passant]) {
@@ -184,6 +184,6 @@ S.it('partie abandonnée : « en cours » sans coup depuis plus de 3 heures, ell
     await aller(p, '#/jouer');
     await p.page.getByRole('heading', { name: 'Les jeux' }).waitFor();
   }
-  await joueur.page.locator('.table-row', { hasText: 'Morpion' }).waitFor(); // son joueur la voit toujours, pour la reprendre ou la fermer
-  if (await passant.page.locator('.table-row', { hasText: 'Morpion' }).count()) throw new Error('la partie abandonnée est encore proposée à quelqu’un qui n’y joue pas');
+  await joueur.page.locator(`.table-row[href="#/t/${id}"]`).waitFor(); // son joueur la voit toujours, pour la reprendre ou la fermer
+  if (await passant.page.locator(`.table-row[href="#/t/${id}"]`).count()) throw new Error('la partie abandonnée est encore proposée à quelqu’un qui n’y joue pas');
 });

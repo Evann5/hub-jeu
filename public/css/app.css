@@ -1514,9 +1514,9 @@ body:has(.view-messages.has-conv) #toasts { bottom: var(--toast-bottom, calc(max
 
 /* ——— Journal de modération (Admin) ——— */
 .card-wide { grid-column: 1 / -1; }
-.mod-log { display: grid; gap: 2px; max-height: 420px; margin: 0; padding: 0; overflow-y: auto; list-style: none; overscroll-behavior: contain; }
-.mod-log li { display: grid; grid-template-columns: minmax(150px, auto) 1fr; gap: 4px var(--sp-3); padding: 8px 4px; border-bottom: 1px solid var(--bg-3); font-size: 0.9375rem; overflow-wrap: anywhere; }
-.mod-log time { color: var(--ink-3); font-size: 0.8125rem; white-space: nowrap; }
+.mod-log, .error-log { display: grid; gap: 2px; max-height: 420px; margin: 0; padding: 0; overflow-y: auto; list-style: none; overscroll-behavior: contain; }
+.mod-log li, .error-log li { display: grid; grid-template-columns: minmax(150px, auto) 1fr; gap: 4px var(--sp-3); padding: 8px 4px; border-bottom: 1px solid var(--bg-3); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.mod-log time, .error-log time { color: var(--ink-3); font-size: 0.8125rem; white-space: nowrap; }
 @media (max-width: 599px) { .mod-log li { grid-template-columns: minmax(0, 1fr); } }
 
 /* Téléphone, écrans avec la barre du bas : les notifications passent au-dessus d'elle. */

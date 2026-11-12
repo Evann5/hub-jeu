@@ -49,7 +49,7 @@ export function render(container) {
   channelList = h('ul.row-list');
   renderChannels();
   const status = h('dl.status-list', h('div', h('dt', 'État'), h('dd', 'Chargement…')));
-  const errorList = h('ul.mod-log', h('li', h('span.muted', 'Chargement…')));
+  const errorList = h('ul.error-log', h('li', h('span.muted', 'Chargement…')));
   const journal = h('ul.mod-log', h('li', h('span.muted', 'Chargement…')));
   roleList = h('ul.row-list');
   renderRoles();
