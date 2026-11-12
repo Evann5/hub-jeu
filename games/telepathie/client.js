@@ -150,11 +150,11 @@ export function mount(root, api) {
     if (api.hidesSecrets?.()) {
       // En classe, sur ordinateur : les numéros restent cachés (maintenir le clic) ; le bouton ne dit pas lequel on pose.
       return h('section.tp-hand', { 'aria-label': 'Ta main' },
-        api.secret(h('div.tp-secret', orb(lowest, '.is-big'), rest.length ? h('ul.tp-rest', { 'aria-label': 'Tes autres cartes, de la plus petite à la plus grande' }, rest.map((c) => h('li', orb(c, '.is-small')))) : null), { label: 'tes cartes' }),
+        api.secret(h('div.tp-secret', orb(lowest, '.is-big'), rest.length ? h('ul.tp-rest', { 'aria-label': 'Tes autres cartes, de la plus petite à la plus grande' }, rest.map((c) => h('li', orb(c, '.is-small')))) : null), { label: 'tes cartes' }),
         h('button.tp-card.is-blind', {
           type: 'button', dataset: { k: 'play' }, disabled: blocked,
           onclick: () => api.sendMove({ type: 'play', card: lowest }).catch(() => {}),
-        }, h('span.tp-card-label', blocked ? 'Réponds à l’étoile' : 'Poser ma plus petite carte')));
+        }, h('span.tp-card-label', blocked ? 'Réponds à l’étoile' : 'Poser ma plus petite carte')));
     }
     return h('section.tp-hand', { 'aria-label': 'Ta main' },
       h('button.tp-card', {

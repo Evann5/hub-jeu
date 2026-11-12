@@ -313,12 +313,12 @@ export function mount(root, api) {
     return h('section.cp-mine', { 'aria-label': 'Tes cartes' },
       h('div.cp-mine-top', h('h3', 'Tes influences'), coins(q.coins)),
       // En classe, sur ordinateur : cachées tant qu'on ne maintient pas le clic, sauf quand il faut en choisir une à perdre.
-      losing ? h('div.cp-mine-cards', q.cards.map((c, i) => (!c.up
-        ? card(c.c, { size: 'lg', key: `lose-${i}`, label: `Perdre ${CHARS[c.c].name}`, onclick: () => send({ type: 'lose', card: i }) })
-        : card(c.c, { size: 'lg', up: c.up, label: `${CHARS[c.c].name}, perdue` }))))
+      losing ? h('div.cp-mine-cards', q.cards.map((c, i) => (!c.up
+        ? card(c.c, { size: 'lg', key: `lose-${i}`, label: `Perdre ${CHARS[c.c].name}`, onclick: () => send({ type: 'lose', card: i }) })
+        : card(c.c, { size: 'lg', up: c.up, label: `${CHARS[c.c].name}, perdue` }))))
         : v.phase === 'over' || q.cards.every((c) => c.up) // fin de partie ou éliminé : plus rien à cacher
-          ? h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name })))
-          : api.secret(h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name }))), { label: 'tes influences' }));
+          ? h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name })))
+          : api.secret(h('div.cp-mine-cards', q.cards.map((c) => card(c.c, { size: 'lg', up: c.up, label: c.up ? `${CHARS[c.c].name}, perdue` : CHARS[c.c].name }))), { label: 'tes influences' }));
   }
 
   // ——— Journal ———

@@ -162,14 +162,21 @@ function openConversation(scope) {
   }
 }
 
+// Messages reçus pendant qu'un historique se charge : l'historique a pu être lu juste avant eux, on les ajoute à son arrivée.
+const early = new Map(); // scope -> messages
+
 async function loadHistory(scope, before) {
+  if (!before) early.set(scope, []);
   try {
     const res = await call(state.socket, 'history', { scope, before });
     const conv = state.convs.get(scope) || { messages: [], complete: false, loaded: false };
     const known = new Set(conv.messages.map((m) => m.id));
     conv.messages = [...res.messages.filter((m) => !known.has(m.id)), ...conv.messages];
+    const late = before ? [] : (early.get(scope) ?? []).filter((m) => !conv.messages.some((x) => x.id === m.id));
+    if (!before) early.delete(scope);
+    conv.messages.push(...late);
     // Un message resté « Pas envoyé » pendant une coupure a pu arriver quand même : il n'apparaît alors qu'une fois.
-    const mine = res.messages.filter((m) => m.userId === state.me.id);
+    const mine = [...res.messages, ...late].filter((m) => m.userId === state.me.id);
     conv.messages = conv.messages.filter((x) => x.id > 0 || !mine.some((m) => m.body === x.body && m.createdAt >= x.createdAt - 5000));
     conv.complete = res.complete;
     conv.loaded = true;
@@ -185,6 +192,7 @@ async function loadHistory(scope, before) {
       markRead();
     }
   } catch (err) {
+    if (!before) early.delete(scope);
     toast(err.message, { error: true });
   }
 }
@@ -410,8 +418,8 @@ export function renderComposer() {
     const end = new Date(state.mutedUntil);
     // Le jour même : l'heure seule (« jusqu'à 12:36 ») ; sinon le jour aussi.
     const until = end.toDateString() === new Date().toDateString()
-      ? end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      : end.toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+      ? end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      : end.toLocaleString('fr-FR', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
     ui.composer.replaceChildren(h('p.composer-note', `Tu es en sourdine jusqu’à ${until}. Tu peux lire, mais pas écrire.`));
     return;
   }
@@ -575,6 +583,8 @@ export function onMessage(m) {
     const i = conv.messages.findIndex((x) => (x.pending || x.failed) && x.userId === m.userId && x.body === m.body); // « Pas envoyé » a pu arriver quand même
     if (i >= 0) conv.messages.splice(i, 1);
     conv.messages.push(m);
+  } else if (!conv?.loaded) {
+    early.get(m.scope)?.push(m); // l'historique de cette conversation est en route : il le prendra à son arrivée
   }
   if (m.scope.startsWith('dm:')) {
     state.dms = [{ scope: m.scope, otherId: otherOf(m.scope), lastAt: m.createdAt }, ...state.dms.filter((d) => d.scope !== m.scope)];

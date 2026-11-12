@@ -105,6 +105,8 @@ tail -n 50 ~/hubuno/stderr.log
 
 - **Page d'erreur Passenger, ou « Incomplete response received from application »** : lire `stderr.log`.
   - `Cannot find module 'express'` (ou un autre module) : relancer **Run NPM Install**, puis **Restart**.
+  - `ERR_REQUIRE_ASYNC_MODULE` : le code récupéré date d'avant le 12/11/2026. `cd ~/hubuno && git pull`, puis Restart.
+  - « Hubuno n'a pas pu démarrer » : la raison est écrite juste après ; on s'arrête et j'envoie ces lignes à Minh.
   - `No such built-in module: node:sqlite` : la version de Node choisie est trop ancienne. Choisir 22.13 ou plus dans l'appli, puis Run NPM Install et Restart.
 - **« Run NPM Install » refuse parce qu'un dossier `node_modules` existe déjà dans `hubuno`** : le supprimer (`rm -rf ~/hubuno/node_modules`, jamais `data`), puis relancer Run NPM Install.
 - **« Les inscriptions ne sont pas encore ouvertes »** : `CLASS_CODE` manque ou est vide. Le corriger, puis **Restart**.
@@ -124,12 +126,16 @@ cd ~/hubuno && git pull
 
 Puis cPanel > Setup Node.js App > l'appli > **Run NPM Install** (seulement si `package.json` a changé), et **Restart** (toujours : le serveur relit les jeux au démarrage). De préférence hors des heures de cours. Les élèves connectés voient « Hubuno a été mis à jour » avec un bouton pour recharger.
 
+Pendant le Restart, les élèves connectés voient « Connexion perdue. Reconnexion en cours… » quelques secondes ; les parties en cours sont enregistrées à chaque coup et reprennent toutes seules.
+
 Si `git pull` refuse à cause de « local changes » : ne rien forcer, me coller le message. Personne n'est censé modifier les fichiers sur le serveur.
 
-## Sauvegarder
+## Sauvegarder et restaurer
 
 Les sauvegardes automatiques d'O2Switch (JetBackup) couvrent `~/hubuno/data/`. Avant une grosse mise à jour :
 
 ```sh
 cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)
 ```
+
+Pour revenir à une sauvegarde (tout ce qui a été écrit depuis disparaît) : **Stop App** dans Setup Node.js App, puis `mv ~/hubuno/data ~/hubuno-data-abimee-$(date +%F)` et `cp -r ~/hubuno-data-AAAA-MM-JJ ~/hubuno/data`, puis **Start App**. Ne jamais copier par-dessus une base pendant que l'appli tourne.

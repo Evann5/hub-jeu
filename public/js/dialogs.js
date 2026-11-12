@@ -270,7 +270,7 @@ export function openChannelEditor(channel) {
       h('button.btn', { type: 'submit' }, channel ? 'Enregistrer' : 'Créer le canal'))),
   async () => {
     // Un canal d'équipe qui devient public : ses anciens messages deviennent lisibles par toute la classe. On prévient.
-    if (channel?.staffOnly && !staffOnly.checked) {
+    if (channel?.staffOnly && !staffOnly.checked) {
       const ok = await confirmDialog(`Rendre #${channel.name} public`,
         'Toute la classe pourra lire les messages déjà écrits dans ce canal par l’équipe. Pour repartir de zéro, crée plutôt un nouveau canal.',
         { confirmLabel: 'Rendre public', danger: true });

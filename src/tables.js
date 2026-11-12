@@ -2,7 +2,7 @@
 // Les tables vivent en mémoire et sont recopiées en base à chaque changement : une partie survit à un redémarrage.
 import { db } from './db.js';
 import { games, cleanOptions } from './games.js';
-import { ChatError } from './chat.js';
+import { ChatError } from './erreurs.js';
 
 const tables = new Map(); // id -> { id, game, hostId, status, seats, left, options, state, createdAt, updatedAt }
 const MAX_OPEN_PER_HOST = 3;
@@ -184,8 +184,10 @@ export function kickPlayer(id, userId, targetId) {
   mustHost(t, userId);
   mustLobby(t);
   if (targetId === userId) throw new ChatError('Pour partir, utilise « Quitter ».');
+  // Seulement quelqu'un d'assis : sinon des identifiants inventés feraient grossir sans fin une liste diffusée à toute la classe.
+  if (!t.seats.includes(targetId)) throw new ChatError('Cette personne n’est plus dans la partie.');
   t.seats = t.seats.filter((x) => x !== targetId);
-  t.kicked = [...(t.kicked ?? []), targetId]; // gardé en mémoire : le salon ne dure pas
+  t.kicked = [...new Set([...(t.kicked ?? []), targetId])]; // gardé en mémoire : le salon ne dure pas
   persist(t);
   return t;
 }

@@ -73,6 +73,8 @@ Le dossier `hubuno` est **à côté** de `public_html`, pas dedans : les donnée
 ## Si ça ne marche pas
 
 - **Page d'erreur Passenger** : dans Setup Node.js App, vérifier la version de Node (22.13 ou plus), relancer **Run NPM Install**, puis **Restart**. Les erreurs sont écrites dans le fichier `stderr.log` du dossier `hubuno`.
+- **`stderr.log` contient `ERR_REQUIRE_ASYNC_MODULE`** : le code sur le serveur date d'avant le 12/11/2026 (O2Switch charge `server.js` d'une façon que l'ancienne version refusait). Faire `cd ~/hubuno && git pull`, puis **Restart**.
+- **`stderr.log` contient « Hubuno n'a pas pu démarrer »** : la raison est écrite juste après. Envoyer ces lignes à Minh.
 - **« Les inscriptions ne sont pas encore ouvertes »** : la variable `CLASS_CODE` manque. L'ajouter, puis **Restart**.
 - **`git clone` répond « Permission denied (publickey) »** : la clé n'est pas encore dans les *Deploy keys* du dépôt, ou `~/.ssh/config` n'a pas été écrit.
 - **Des gens apparaissent hors ligne alors qu'ils sont connectés, ou des messages arrivent en double** : O2Switch fait sans doute tourner plusieurs copies de l'appli en même temps. Hubuno doit tourner en **une seule instance** : demander au support O2Switch de limiter l'application à une instance.
@@ -89,6 +91,35 @@ Puis cPanel > Setup Node.js App > Hubuno > **Run NPM Install** (seulement si `pa
 
 Les comptes et les messages ne bougent pas : ils sont dans `hubuno/data/`, que `git pull` ne touche jamais. Les élèves connectés voient « Hubuno a été mis à jour » avec un bouton pour recharger. De préférence hors des heures de cours.
 
+Ce que voient les élèves pendant un **Restart** :
+- le bandeau « Connexion perdue. Reconnexion en cours… » pendant quelques secondes, puis tout revient sans recharger la page ;
+- les parties en cours ne sont pas perdues : chaque coup est enregistré, la partie reprend là où elle en était (un minuteur échu pendant l'arrêt se déclenche au redémarrage) ;
+- un message envoyé pendant l'arrêt part tout seul à la reprise ; si l'arrêt dure plus de 10 secondes, il reste affiché « Pas envoyé », avec « Réessayer ».
+
+Sur un hébergement mutualisé, l'appli peut être mise en veille quand personne ne s'en sert : si la première visite après une pause prend quelques secondes, c'est normal.
+
 ## Sauvegarder
 
-Toutes les données tiennent dans `hubuno/data/` (fichiers `hubuno.sqlite*`). Les sauvegardes automatiques d'O2Switch (JetBackup) les couvrent. Avant une grosse mise à jour, une copie de ce dossier ne coûte rien : `cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)`.
+Toutes les données tiennent dans `hubuno/data/` (fichiers `hubuno.sqlite*`, toujours les trois ensemble). Les sauvegardes automatiques d'O2Switch (JetBackup) les couvrent. Avant une grosse mise à jour, une copie de ce dossier ne coûte rien :
+
+```sh
+cp -r ~/hubuno/data ~/hubuno-data-$(date +%F)
+```
+
+La base grossit lentement : environ 50 Mo pour 400 000 messages, et les messages de plus d'un an s'effacent tout seuls.
+
+## Restaurer une sauvegarde
+
+À faire seulement si la base est perdue ou abîmée : tout ce qui a été écrit depuis la sauvegarde disparaît.
+
+1. cPanel > Setup Node.js App > Hubuno > **Stop App** (l'appli ne doit pas tourner pendant la copie).
+2. Dans le Terminal, mettre l'ancienne base de côté puis remettre la sauvegarde (ici celle du 12/11/2026) :
+
+```sh
+mv ~/hubuno/data ~/hubuno-data-abimee-$(date +%F)
+cp -r ~/hubuno-data-2026-11-12 ~/hubuno/data
+```
+
+3. **Start App**, puis ouvrir Hubuno et vérifier que les comptes et les messages sont là.
+
+Pour une sauvegarde JetBackup : cPanel > JetBackup > File Backups, choisir la date, restaurer le dossier `hubuno/data`, toujours appli arrêtée.

@@ -81,7 +81,7 @@ async function syncStaffRoom(user) {
 // Un message effacé, pour le journal : seulement l'endroit, jamais le texte (sinon effacer puis lire le journal
 // permettrait de lire ce qu'on n'avait pas le droit de lire).
 function describeMessage(msg) {
-  return msg.scope.startsWith('c:') ? `#${chat.listChannels().find((c) => `c:${c.id}` === msg.scope)?.name ?? '?'}` : 'chat d’une partie';
+  return msg.scope.startsWith('c:') ? `#${chat.listChannels().find((c) => `c:${c.id}` === msg.scope)?.name ?? '?'}` : 'chat d’une partie';
 }
 
 // Ferme toutes les connexions d'une personne (bannie, compte supprimé, déconnectée).
@@ -132,7 +132,7 @@ function assertNotMuted(me) {
     // Heure de Paris ; le jour même, l'heure seule (« jusqu'à 12:36 »).
     const day = (t) => new Date(t).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
     const until = new Date(me.muted_until).toLocaleString('fr-FR', {
-      timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', ...(day(me.muted_until) === day(Date.now()) ? {} : { weekday: 'long' }),
+      timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', ...(day(me.muted_until) === day(Date.now()) ? {} : { weekday: 'long' }),
     });
     throw new chat.ChatError(`Tu es en sourdine jusqu’à ${until}.`);
   }
@@ -164,12 +164,22 @@ function handler(socket, fn, { admin = false, modo = false, event = null, muteBl
       if (admin && me.role !== 'admin') throw new chat.ChatError('Réservé aux admins.');
       if (modo && !isStaff(me)) throw new chat.ChatError('Réservé aux modérateurs et aux admins.');
       if (muteBlocked) assertNotMuted(me);
-      reply({ ok: true, ...(await fn(payload ?? {}, me)) });
+      // Pas d'attente inutile : un gestionnaire sans promesse répond tout de suite. Sinon, quand deux demandes de la même personne arrivent
+      // ensemble (historique puis envoi), la diffusion de la seconde partirait avant la réponse de la première.
+      const result = fn(payload ?? {}, me);
+      reply({ ok: true, ...(result instanceof Promise ? await result : result) });
     } catch (err) {
       if (!(err instanceof chat.ChatError)) console.error(err);
       reply({ ok: false, error: err instanceof chat.ChatError ? err.message : 'Erreur du serveur, réessaie dans un instant.' });
     }
   };
+}
+
+// Chat d'une partie : le jeu peut faire taire des joueurs (les morts des Loups-garous connaissent les rôles). Vaut pour écrire et pour réagir.
+function assertNotSilenced(scope, me) {
+  if (!scope.startsWith('t:')) return;
+  const t = tableExists(scope.slice(2)) ? getTable(scope.slice(2)) : null;
+  if (t && tableStatus(t).silent.includes(me.id)) throw new chat.ChatError('Tu es éliminé : tu pourras écrire aux joueurs à la fin de la partie.');
 }
 
 function targetUser(userId, me) {
@@ -221,6 +231,7 @@ export function attachRealtime(httpServer) {
     const me = getUser(userId);
     socket.join(['membres', `u:${userId}`]);
     if (isStaff(me)) socket.join('equipe');
+    const wasOnline = online.has(userId);
     online.set(userId, (online.get(userId) || 0) + 1);
 
     socket.emit('state', {
@@ -237,12 +248,15 @@ export function attachRealtime(httpServer) {
       roles: roles.listRoles(),
       version: VERSION,
     });
-    broadcastPresence();
+    if (!wasOnline) broadcastPresence(); // un onglet de plus ne change rien pour les autres
 
     socket.on('disconnect', () => {
       const n = (online.get(userId) || 1) - 1;
-      if (n <= 0) online.delete(userId);
-      else online.set(userId, n);
+      if (n > 0) {
+        online.set(userId, n);
+        return;
+      }
+      online.delete(userId);
       broadcastPresence();
     });
 
@@ -256,11 +270,7 @@ export function attachRealtime(httpServer) {
       assertNotMuted(me);
       if (rateLimited(me.id)) throw new chat.ChatError('Doucement : attends quelques secondes avant le prochain message.');
       if (hourlyMessages.hit(me.id)) throw new chat.ChatError('Tu as envoyé beaucoup de messages : réessaie dans un moment.');
-      // Chat d'une partie : le jeu peut faire taire des joueurs (les morts des Loups-garous connaissent les rôles).
-      if (scope.startsWith('t:')) {
-        const t = tableExists(scope.slice(2)) ? getTable(scope.slice(2)) : null;
-        if (t && tableStatus(t).silent.includes(me.id)) throw new chat.ChatError('Tu es éliminé : tu pourras écrire aux joueurs à la fin de la partie.');
-      }
+      assertNotSilenced(scope, me);
       const message = chat.postMessage(scope, me.id, body);
       emitToScope(scope, 'message', message);
       return { message };
@@ -271,6 +281,7 @@ export function attachRealtime(httpServer) {
       if (!before) throw new chat.ChatError("Ce message n’existe plus.");
       chat.checkScope(before.scope, me.id);
       assertNotMuted(me);
+      assertNotSilenced(before.scope, me); // une réaction sous une question (« c'est Léa ? ») serait une réponse
       const message = chat.toggleReaction(messageId, me.id, emoji);
       emitToScope(message.scope, 'message:update', message);
       return {};
@@ -325,7 +336,7 @@ export function attachRealtime(httpServer) {
       if (found?.scope.startsWith('dm:')) chat.checkScope(found.scope, me.id);
       const msg = chat.deleteMessage(id);
       emitToScope(msg.scope, 'message:deleted', { id: msg.id, scope: msg.scope });
-      if (msg.userId !== me.id && !msg.scope.startsWith('dm:')) logMod(me, 'a effacé un message de', { target: getUser(msg.userId)?.pseudo ?? 'compte supprimé', detail: describeMessage(msg) });
+      if (msg.userId !== me.id && !msg.scope.startsWith('dm:')) logMod(me, 'a effacé un message de', { target: getUser(msg.userId)?.pseudo ?? 'compte supprimé', detail: describeMessage(msg) });
       return {};
     }, { modo: true }));
 
@@ -404,8 +415,8 @@ export function attachRealtime(httpServer) {
       const wasStaff = Boolean(chat.listChannels().find((c) => c.id === Number(id))?.staffOnly);
       chat.updateChannel(id, { name, topic, staffOnly });
       broadcastChannels();
-      const change = wasStaff && !staffOnly ? 'rendu public : ses anciens messages sont lisibles par toute la classe' : !wasStaff && staffOnly ? 'réservé à l’équipe' : '';
-      logMod(me, 'a modifié le canal', { target: `#${chat.listChannels().find((c) => c.id === Number(id))?.name ?? '?'}`, detail: change });
+      const change = wasStaff && !staffOnly ? 'rendu public : ses anciens messages sont lisibles par toute la classe' : !wasStaff && staffOnly ? 'réservé à l’équipe' : '';
+      logMod(me, 'a modifié le canal', { target: `#${chat.listChannels().find((c) => c.id === Number(id))?.name ?? '?'}`, detail: change });
       return {};
     }, { admin: true }));
 

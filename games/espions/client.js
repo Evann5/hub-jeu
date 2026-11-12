@@ -158,9 +158,9 @@ export function mount(root, api) {
     return [
       h('div.es-tab', { 'aria-hidden': 'true' }, h('span', `DOSSIER N° ${dossierNo()}`)),
       // Le chef voit la clé : en classe, sur ordinateur, elle reste cachée tant qu'il ne maintient pas le clic (son équipe est à côté).
-      view.key && view.phase !== 'over'
-        ? api.secret(h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))), { label: 'la clé secrète' })
-        : h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))),
+      view.key && view.phase !== 'over'
+        ? api.secret(h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))), { label: 'la clé secrète' })
+        : h('ul.es-board', { 'aria-label': 'Grille de 25 mots' }, view.cards.map((c, i) => card(i, c))),
       view.key && view.phase !== 'over'
         ? h('p.es-legend', h('b', 'Clé secrète'), ' : ne la montre à personne.')
         : null,

@@ -98,7 +98,7 @@ export function mount(root, api) {
   const peekButton = () => h('button.on-btn.on-peek', {
     type: 'button',
     onpointerdown: (e) => { e.preventDefault(); peek = true; drawDial(); },
-    onkeydown: (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); peek = true; drawDial(); } },
+    onkeydown: (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); peek = true; drawDial(); } },
     onkeyup: stopPeek,
     onblur: stopPeek,
   }, 'Maintiens pour voir la zone');
@@ -114,7 +114,7 @@ export function mount(root, api) {
     dial.classList.toggle('is-drag', dragging);
     // Zone cible : meneur pendant la manche, tout le monde à la révélation.
     const t = v.secret;
-    const masked = t !== null && !['reveal', 'over'].includes(v.phase) && api.hidesSecrets?.() && !peek;
+    const masked = t !== null && !['reveal', 'over'].includes(v.phase) && api.hidesSecrets?.() && !peek;
     zone.classList.toggle('is-hidden', t === null || masked);
     if (t !== null) {
       const zs = v.zones;

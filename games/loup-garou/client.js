@@ -637,10 +637,10 @@ export function mount(root, api) {
     head.replaceChildren(
       h('div.lg-title', h('p.lg-kicker', kicker), h('h2', title)),
       timer,
-      me && api.hidesSecrets?.() ? h('button.lg-chip', { type: 'button', onclick: () => openCard(false), 'aria-label': 'Voir ma carte', dataset: { key: 'chip' } },
-        h('span', h('small', me.alive ? 'Ta carte' : 'Ta carte (mort)'), 'Voir')) // le rôle n'est pas écrit : un voisin le lirait
-        : me ? h('button.lg-chip', { type: 'button', onclick: () => openCard(false), 'aria-label': `Ma carte : ${roleName(me.role)}`, dataset: { key: 'chip' } },
-          medal(me.role, 36), h('span', h('small', me.alive ? 'Ta carte' : 'Ta carte (mort)'), roleName(me.role))) : h('p.lg-chip.is-watch', 'Spectateur'),
+      me && api.hidesSecrets?.() ? h('button.lg-chip', { type: 'button', onclick: () => openCard(false), 'aria-label': 'Voir ma carte', dataset: { key: 'chip' } },
+        h('span', h('small', me.alive ? 'Ta carte' : 'Ta carte (mort)'), 'Voir')) // le rôle n'est pas écrit : un voisin le lirait
+        : me ? h('button.lg-chip', { type: 'button', onclick: () => openCard(false), 'aria-label': `Ma carte : ${roleName(me.role)}`, dataset: { key: 'chip' } },
+          medal(me.role, 36), h('span', h('small', me.alive ? 'Ta carte' : 'Ta carte (mort)'), roleName(me.role))) : h('p.lg-chip.is-watch', 'Spectateur'),
     );
   }
 
@@ -675,7 +675,7 @@ export function mount(root, api) {
     overlay.replaceChildren(h('div.lg-card-wrap', { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Ta carte' },
       api.secret([ // en classe, sur ordinateur : la carte reste cachée tant qu'on ne maintient pas le clic
         h('article.lg-card', { style: `--rc:${r.color}` },
-          h('p.lg-card-kicker', cardFirst ? 'Tu es…' : 'Ta carte'),
+          h('p.lg-card-kicker', cardFirst ? 'Tu es…' : 'Ta carte'),
           h('div.lg-card-art', medal(view.me.role, 168)),
           h('h3', r.name),
           h('p.lg-card-line', r.line),

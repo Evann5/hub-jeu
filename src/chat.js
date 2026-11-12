@@ -3,10 +3,11 @@ import { db } from './db.js';
 import { LIMITS, REACTIONS } from './options.js';
 import { config } from './config.js';
 import { tableExists } from './tables.js';
+import { ChatError } from './erreurs.js';
 
 const PAGE = 50;
 
-export class ChatError extends Error {}
+export { ChatError };
 
 export function dmScope(a, b) {
   return a < b ? `dm:${a}:${b}` : `dm:${b}:${a}`;

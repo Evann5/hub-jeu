@@ -257,11 +257,13 @@ export function mount(root, api) {
 
 ## 9. Mise en ligne et mises à jour
 
-Tout est dans `docs/mise-en-ligne.md` : cPanel, « Setup Node.js App », Node 22.13 ou plus, fichier de démarrage `server.js`, variables `CLASS_CODE`, `ADMINS` et `BASE_PATH`.
+Tout est dans `docs/mise-en-ligne.md` : cPanel, « Setup Node.js App », Node 22.13 ou plus, fichier de démarrage `server.js`, variables `CLASS_CODE`, `ADMINS`, `ADMIN_CODE` et `BASE_PATH`.
 
-Pour une mise à jour, remplacer `src`, `public`, `games`, `server.js` et `package*.json`, puis « Run NPM Install » et « Restart ». **Ne jamais toucher à `data/`.**
+O2Switch (Passenger) charge `server.js` avec `require()` : ce fichier ne doit contenir aucun `await` au premier niveau (test : `src/demarrage.test.js`).
 
-Point encore ouvert : on ne sait pas si O2Switch laisse passer les WebSockets. Socket.IO se rabat de lui-même sur le long-polling. La page Admin indique quel mode est utilisé.
+Pour une mise à jour : `git pull` dans le dossier de l'appli, « Run NPM Install » si `package.json` a changé, puis « Restart ». **Ne jamais toucher à `data/`.**
+
+Les WebSockets passent-ils sur O2Switch ? À lire sur place : la page Admin indique « Connexion directe » ou « Connexion de secours » (Socket.IO se rabat de lui-même sur le long-polling).
 
 ## 10. Vérifier après un changement
 

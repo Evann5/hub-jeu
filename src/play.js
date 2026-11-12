@@ -206,7 +206,7 @@ export function registerPlay(socket, handler) {
   socket.on('table:invite', handler(socket, ({ id, userIds }, me) => {
     const t = tables.getTable(tableId(id));
     if (!t.seats.includes(me.id)) throw new ChatError('Rejoins la partie pour inviter.');
-    const targets = [...new Set([].concat(userIds || []).map(Number))]
+    const targets = [...new Set([].concat(userIds || []).slice(0, 200).map(Number))] // coupée avant d'être vérifiée : une liste géante ne coûte rien
       .filter((uid) => uid !== me.id && getUser(uid) && !getUser(uid).banned)
       .slice(0, 40);
     if (!targets.length) throw new ChatError('Choisis au moins une personne.');

@@ -10,6 +10,8 @@ export const db = new DatabaseSync(join(config.dataDir, 'hubuno.sqlite'));
 db.exec(`
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
+  -- Pendant un redémarrage, l'ancienne copie de l'appli peut encore écrire quelques instants : on attend son verrou (2 s au plus) au lieu d'échouer.
+  PRAGMA busy_timeout = 2000;
 
   -- AUTOINCREMENT : l'identifiant d'un compte supprimé n'est jamais redonné à un autre (sinon il hériterait de ses messages privés).
   CREATE TABLE IF NOT EXISTS users (

@@ -16,8 +16,6 @@ import { gzipped } from './src/gzip.js';
 process.on('uncaughtException', (err) => console.error('Erreur non rattrapée :', err));
 process.on('unhandledRejection', (reason) => console.error('Promesse rejetée non rattrapée :', reason));
 
-await loadGames();
-
 const app = express();
 app.set('trust proxy', 1); // derrière le proxy d'O2Switch : vraie IP et HTTPS
 app.disable('x-powered-by');
@@ -65,7 +63,6 @@ app.use((err, req, res, next) => {
 });
 
 const server = createServer(app);
-attachRealtime(server);
 
 // Ménage : messages de plus d'un an et sessions expirées, au démarrage puis toutes les heures.
 function housekeeping() {
@@ -76,12 +73,23 @@ function housekeeping() {
   const tablesRemoved = purgeTables();
   if (tablesRemoved) console.log(`Ménage : ${tablesRemoved} table(s) inactive(s) fermée(s).`);
 }
-housekeeping();
-setInterval(housekeeping, 3600_000).unref();
 
-server.listen(config.port, config.host, () => {
-  console.log(`Hubuno écoute sur le port ${config.port}${config.basePath ? `, sous ${config.basePath}` : ''}.`);
-  if (process.env.NODE_ENV === 'production' && !config.host) console.warn('HOST est vide : sans proxy devant, X-Forwarded-For permet de contourner les limites. Sur un VPS, mettre HOST=127.0.0.1.');
-  if (process.env.NODE_ENV === 'production' && config.admins.length && !config.adminCode) console.warn('ADMIN_CODE est vide : le premier élève qui prend un pseudo de ADMINS devient admin.');
-  if (!classCode()) console.warn('Aucun code de classe : réglez CLASS_CODE pour ouvrir les inscriptions.');
+// Le démarrage attend le chargement des jeux dans une fonction, sans « await » au premier niveau du fichier :
+// Passenger (O2Switch) charge server.js avec require(), qui refuse un module contenant un tel « await » (ERR_REQUIRE_ASYNC_MODULE).
+async function start() {
+  await loadGames();
+  attachRealtime(server);
+  housekeeping();
+  setInterval(housekeeping, 3600_000).unref();
+  server.listen(config.port, config.host, () => {
+    console.log(`Hubuno écoute sur le port ${config.port}${config.basePath ? `, sous ${config.basePath}` : ''}.`);
+    if (process.env.NODE_ENV === 'production' && !config.host) console.warn('HOST est vide : sans proxy devant, X-Forwarded-For permet de contourner les limites. Sur un VPS, mettre HOST=127.0.0.1.');
+    if (process.env.NODE_ENV === 'production' && config.admins.length && !config.adminCode) console.warn('ADMIN_CODE est vide : le premier élève qui prend un pseudo de ADMINS devient admin.');
+    if (!classCode()) console.warn('Aucun code de classe : réglez CLASS_CODE pour ouvrir les inscriptions.');
+  });
+}
+// Un démarrage raté s'arrête net, avec la raison dans le journal (stderr.log sur O2Switch), au lieu de rester en vie sans répondre.
+start().catch((err) => {
+  console.error('Hubuno n’a pas pu démarrer :', err);
+  process.exit(1);
 });

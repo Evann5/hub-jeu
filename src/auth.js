@@ -131,10 +131,15 @@ export function findUserByPseudo(pseudo) {
   return db.prepare('SELECT * FROM users WHERE pseudo = ?').get(pseudo);
 }
 
+const MAX_SESSIONS = 10; // appareils et navigateurs connectés en même temps, par compte
+
 export function createSession(userId) {
   const token = randomBytes(32).toString('base64url');
   const expires = Date.now() + config.sessionDays * 86400_000;
   db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(sha256(token), userId, expires);
+  // Les MAX_SESSIONS dernières connexions d'un compte restent valables : sans plafond, des connexions en boucle rempliraient la base.
+  db.prepare(`DELETE FROM sessions WHERE user_id = ? AND token_hash NOT IN
+    (SELECT token_hash FROM sessions WHERE user_id = ? ORDER BY expires_at DESC, rowid DESC LIMIT ?)`).run(userId, userId, MAX_SESSIONS);
   return { token, expires };
 }
 

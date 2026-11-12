@@ -214,7 +214,7 @@ function optionControl(def, value, editable) {
     const missing = Math.max(0, need - picked.length);
     const row = h('div.opt-row.is-multi',
       h('span.opt-label', def.label, def.help ? h('small', def.help) : null),
-      h('div.multi-head', h('output.multi-count', { 'aria-live': 'polite' }, missing ? `${picked.length} choisis, ${missing} de plus tiré${missing > 1 ? 's' : ''} au hasard` : `${picked.length} sur ${def.max}`),
+      h('div.multi-head', h('output.multi-count', { 'aria-live': 'polite' }, missing ? `${picked.length} choisis, ${missing} de plus tiré${missing > 1 ? 's' : ''} au hasard` : `${picked.length} sur ${def.max}`),
         editable ? h('button.link-btn', { type: 'button', onclick: () => send([...def.choices].map((c) => c.value).sort(() => Math.random() - 0.5).slice(0, def.max)) }, 'Au hasard') : null,
         editable && picked.length ? h('button.link-btn', { type: 'button', onclick: () => send([]) }, 'Tout enlever') : null),
       h('div.multi', { role: 'group', 'aria-label': def.label }, def.choices.map((c) => {
@@ -495,7 +495,8 @@ async function loadChat(id) {
   try {
     const res = await call(state.socket, 'history', { scope: `t:${id}` });
     if (cur?.id !== id) return;
-    cur.chat = res.messages;
+    const known = new Set(res.messages.map((m) => m.id));
+    cur.chat = [...res.messages, ...cur.chat.filter((m) => !known.has(m.id))]; // ceux arrivés pendant le chargement restent
     renderChatList();
   } catch {
     // La table n'existe plus : l'erreur est déjà affichée par table:watch.
