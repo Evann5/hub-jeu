@@ -5,6 +5,7 @@ import { call } from '../net.js';
 import { state, go, gameOf, isAdmin, isStaff } from '../store.js';
 import { modal, confirmDialog, openProfile } from '../dialogs.js';
 import { secret, isDesktop, hideSecrets } from '../secret.js';
+import { reportError } from '../erreurs.js';
 
 let cur = null; // la table ouverte, null quand on est ailleurs
 // Les fichiers des jeux gardent la même adresse d'une visite à l'autre : le serveur les fait revérifier à chaque fois (réponse 304, quasi gratuite).
@@ -198,7 +199,8 @@ function renderSide() {
         h('span.label', u.pseudo),
         id === t.hostId ? h('span.tag-host', 'hôte') : null,
         won ? h('span.tag-win', 'gagne') : null,
-        turn ? h('span.sr-only', ', à son tour') : null));
+        turn ? h('span.sr-only', ', à son tour') : null),
+      canEject(id) ? h('button.btn.btn-ghost.btn-sm.seat-eject', { type: 'button', title: `${u.pseudo} est hors ligne : continuer la partie sans attendre`, onclick: () => eject(id) }, 'Continuer sans') : null);
   });
   const inLobby = t.status === 'lobby'; // la carte du salon montre déjà les joueurs, Inviter et Quitter
   const actions = [];
@@ -211,6 +213,23 @@ function renderSide() {
     h('h2', 'Joueurs', h('span.section-count', `${t.seats.length}/${g.maxPlayers}`)),
     ...(inLobby ? [] : [h('ul.seat-list', rows)]),
     ...(actions.length ? [h('div.side-actions', actions)] : [])));
+}
+
+// En partie, un joueur peut faire abandonner un autre joueur qui est hors ligne (le serveur demande 2 minutes d'absence).
+const canEject = (id) => {
+  const t = cur.table;
+  return t.status === 'playing' && id !== state.me.id && seated() && !t.left.includes(state.me.id) && !t.left.includes(id) && !state.online.has(id) && state.users.has(id);
+};
+
+async function eject(id) {
+  const who = userOf(id).pseudo;
+  const ok = await confirmDialog(`Continuer sans ${who}`, `${who} est hors ligne. La partie continuera sans attendre, comme après un abandon.`, { confirmLabel: 'Continuer sans attendre', danger: true });
+  if (!ok || !cur) return;
+  try {
+    await call(state.socket, 'table:eject', { id: cur.id, userId: id });
+  } catch (err) {
+    toast(err.message, { error: true });
+  }
 }
 
 // ——— Salon ———
@@ -417,6 +436,7 @@ function notifyGame() {
       cb(cur.view, info());
     } catch (err) {
       console.error(err);
+      reportError(err, `jeu ${cur.game?.id}`);
     }
   }
 }
@@ -478,6 +498,7 @@ async function mountGame() {
     mine.cleanup = mod.mount(mine.stage, api);
   } catch (err) {
     console.error(err);
+    reportError(err, `jeu ${g.id} (chargement)`);
     if (cur === mine) mine.stage.replaceChildren(h('p.game-error', 'Le jeu n’a pas pu se charger. Recharge la page ; si ça continue, préviens un admin.'));
   }
 }
@@ -492,6 +513,7 @@ function unmountGame() {
     if (typeof cur.cleanup === 'function') cur.cleanup();
   } catch (err) {
     console.error(err);
+    reportError(err, `jeu ${cur.game?.id} (fermeture)`);
   }
   cur.cleanup = null;
 }

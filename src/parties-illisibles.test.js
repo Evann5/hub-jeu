@@ -38,6 +38,14 @@ test('au démarrage : une partie à l’état illisible est mise de côté, le h
       assert.match(srv.journal, new RegExp(`Partie ${cassee} \\(escales\\) illisible, mise de côté`));
       assert.match(srv.journal, new RegExp(`Partie ${abimee} \\(morpion\\) illisible, mise de côté`));
       assert.equal((await c.appel('table:watch', { id: cassee })).ok, false, 'la partie mise de côté ne s’ouvre pas');
+      // Tom jouait dans la partie d'Escales mise de côté : il est prévenu à son retour, une seule fois.
+      const avis = c.recus.filter((r) => r.ev === 'notice');
+      assert.equal(avis.length, 1);
+      assert.match(avis[0].data, /Escales.*interrompue par une mise à jour/);
+      const encore = await new Client(srv, tom).ouvrir();
+      await jusque(() => encore.dernier('state'), 'état reçu');
+      assert.equal(encore.recus.filter((r) => r.ev === 'notice').length, 0, 'pas de second avis');
+      encore.fermer();
       assert.equal((await c.appel('table:create', { game: 'morpion' })).ok, true, 'on peut créer une nouvelle partie');
     } finally {
       c.fermer();

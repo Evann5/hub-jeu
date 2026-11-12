@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { join } from 'node:path';
-import { lancerServeur, inscrire, Client, jusque, pause, RACINE, MDP, CODE, ADMIN } from '../tests/aide-serveur.mjs';
+import { lancerServeur, inscrire, entrer, Client, jusque, pause, RACINE, MDP, CODE, CODE_ADMIN, ADMIN } from '../tests/aide-serveur.mjs';
 
 let srv;
 let n = 0;
@@ -24,6 +24,8 @@ function resume(c, id) {
 const connecter = async (compte) => { const c = await new Client(srv, compte).ouvrir(); ouverts.push(c); return c; };
 
 before(async () => { srv = await lancerServeur(); });
+// Le compte admin du serveur commun : créé au premier appel, retrouvé ensuite.
+const compteAdmin = () => inscrire(srv, ADMIN, { admin: true }).catch(() => entrer(srv, ADMIN));
 after(async () => { ouverts.forEach((c) => c.fermer()); await srv.arreter(); });
 
 test('historique puis envoi dans la même rafale : la réponse à l’historique part avant la diffusion du message', async () => {
@@ -285,7 +287,7 @@ test('inscription : les pseudos qui imitent l’équipe sont réservés', async 
 });
 
 test('mot de passe provisoire : valable 24 heures, refusé ensuite', async () => {
-  const admin = await connecter(await inscrire(srv, ADMIN, { admin: true }));
+  const admin = await connecter(await compteAdmin());
   const eleve = await inscrire(srv, pseudo());
   const { tempPassword } = await admin.appel('admin:resetPassword', { userId: eleve.id });
   const entrer = () => fetch(`${srv.url}api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pseudo: eleve.pseudo, password: tempPassword }) });
@@ -315,5 +317,81 @@ test('inscriptions : plafond de 80 par heure pour tout le hub, même depuis des 
     assert.match((await suivante.json()).error, /inscriptions/);
   } finally {
     await s4.arreter();
+  }
+});
+
+test('inscriptions fermées par un admin : plus aucun compte ne se crée, bon ou mauvais code, sauf avec le code admin', async () => {
+  const admin = await connecter(await compteAdmin());
+  const essayer = (code, p = pseudo()) => fetch(`${srv.url}api/register`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ classCode: code, pseudo: p, password: MDP, acceptRules: true }) });
+  const eleve = await connecter(await inscrire(srv, pseudo()));
+  assert.equal((await eleve.appel('admin:setSignups', { open: false })).ok, false, 'un élève ne ferme pas les inscriptions');
+  assert.deepEqual(await admin.appel('admin:setSignups', { open: false }), { ok: true, signupsOpen: false });
+  try {
+    const bon = await essayer(CODE);
+    const mauvais = await essayer('un-mauvais-code');
+    assert.equal(bon.status, 403);
+    assert.equal(mauvais.status, 403);
+    assert.equal((await bon.json()).error, (await mauvais.json()).error, 'la réponse ne dit pas si le code était le bon');
+    assert.equal((await (await fetch(`${srv.url}api/options`)).json()).signupsOpen, false, 'l’écran d’accueil le sait');
+    assert.equal((await fetch(`${srv.url}api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pseudo: eleve.compte.pseudo, password: MDP }) })).status, 200, 'les comptes existants se connectent toujours');
+  } finally {
+    assert.deepEqual(await admin.appel('admin:setSignups', { open: true }), { ok: true, signupsOpen: true });
+  }
+  assert.equal((await essayer(CODE)).status, 201, 'rouvertes, les inscriptions marchent de nouveau');
+});
+
+test('journal des erreurs et état du serveur : lus par les admins seulement, une ligne par sorte d’erreur', async () => {
+  const admin = await connecter(await compteAdmin());
+  const eleve = await connecter(await inscrire(srv, pseudo()));
+  const erreur = { message: `zz-test : x is not a function ${pseudo('')}`, place: 'jeu morpion · /games/morpion/client.js:12 · #/t/3' };
+  assert.equal((await eleve.appel('client:error', erreur)).ok, true);
+  assert.equal((await eleve.appel('client:error', erreur)).ok, true);
+  assert.equal((await eleve.appel('admin:errors')).ok, false, 'un élève ne lit pas le journal');
+  assert.equal((await eleve.appel('admin:status')).ok, false, 'ni l’état du serveur');
+  const { entries } = await admin.appel('admin:errors');
+  const ligne = entries.filter((e) => e.message === erreur.message);
+  assert.equal(ligne.length, 1, 'la même erreur ne fait qu’une ligne');
+  assert.equal(ligne[0].count, 2);
+  assert.equal(ligne[0].who, eleve.compte.pseudo);
+  assert.equal(ligne[0].source, 'navigateur');
+  const { status } = await admin.appel('admin:status');
+  assert.equal(status.copies, 1, 'une seule copie de l’appli');
+  assert.ok(status.backups >= 1 && status.lastBackupAt > Date.now() - 3600_000, 'la sauvegarde du jour est faite');
+  assert.ok(status.accounts >= 2 && status.dbBytes > 0 && status.online >= 2 && /^[0-9a-f]{12}$/.test(status.version));
+  assert.ok(status.errors24h >= 2);
+  // Une deuxième copie de l'appli démarre sur la même base : l'écran Admin de la première le voit.
+  const copie = await lancerServeur({ dir: srv.dir });
+  try {
+    assert.equal((await admin.appel('admin:status')).status.copies, 2);
+  } finally {
+    await copie.arreter();
+  }
+});
+
+test('joueur hors ligne en pleine partie : un autre joueur peut le mettre en abandon, après le délai seulement', async () => {
+  const s5 = await lancerServeur({ env: { PLAYER_AWAY_MS: '500' } });
+  try {
+    const a = await new Client(s5, await inscrire(s5, pseudo())).ouvrir();
+    const b = await new Client(s5, await inscrire(s5, pseudo())).ouvrir();
+    const spectateur = await new Client(s5, await inscrire(s5, pseudo())).ouvrir();
+    try {
+      const { id } = await a.appel('table:create', { game: 'morpion' });
+      await b.appel('table:join', { id });
+      await a.appel('table:start', { id });
+      assert.equal((await a.appel('table:eject', { id, userId: b.compte.id })).ok, false, 'un joueur en ligne ne peut pas être mis en abandon');
+      b.fermer();
+      await jusque(async () => /encore/.test((await a.appel('table:eject', { id, userId: b.compte.id })).error ?? ''), 'juste après son départ : on lui laisse le temps de revenir');
+      assert.equal((await spectateur.appel('table:eject', { id, userId: b.compte.id })).ok, false, 'un spectateur ne décide pas');
+      await pause(600);
+      assert.equal((await a.appel('table:eject', { id, userId: b.compte.id })).ok, true);
+      await jusque(() => resume(a, id)?.status === 'over', 'la partie se termine');
+      assert.deepEqual(resume(a, id).winners, [a.compte.id]);
+      assert.deepEqual(resume(a, id).left, [b.compte.id]);
+    } finally {
+      a.fermer();
+      spectateur.fermer();
+    }
+  } finally {
+    await s5.arreter();
   }
 });

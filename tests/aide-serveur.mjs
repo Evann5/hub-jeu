@@ -71,6 +71,14 @@ export async function inscrire(srv, pseudo, { admin = false } = {}) {
   return { id: user.id, pseudo, cookie: r.headers.get('set-cookie').split(';')[0] };
 }
 
+// Se connecte à un compte qui existe déjà ; rend son identifiant et son cookie de session.
+export async function entrer(srv, pseudo) {
+  const r = await fetch(`${srv.url}api/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pseudo, password: MDP }) });
+  if (!r.ok) throw new Error(`connexion de ${pseudo} : ${r.status} ${await r.text()}`);
+  const { user } = await r.json();
+  return { id: user.id, pseudo, cookie: r.headers.get('set-cookie').split(';')[0] };
+}
+
 // Une connexion temps réel d'un compte. recus : tout ce que le serveur a envoyé, dans l'ordre ({ ev, data } ou { ack, data }).
 export class Client {
   constructor(srv, compte) {

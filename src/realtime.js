@@ -6,7 +6,7 @@ import { db, getSetting, setSetting } from './db.js';
 import { config } from './config.js';
 import { COLORS, AVATARS, LIMITS } from './options.js';
 import {
-  COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions, tokenHash, ownerId, TEMP_PASSWORD_MS,
+  COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions, tokenHash, ownerId, TEMP_PASSWORD_MS, signupsOpen,
 } from './auth.js';
 import { createEventLimiter, sameOrigin } from './securite.js';
 import { codeVersion } from './version.js';
@@ -14,7 +14,8 @@ import * as chat from './chat.js';
 import * as roles from './roles.js';
 import { logMod, recentMod } from './journal.js';
 import { initPlay, registerPlay, gamesCatalog, tableList, dropUserFromTables } from './play.js';
-import { tableExists, getTable, statusOf as tableStatus } from './tables.js';
+import { tableExists, getTable, statusOf as tableStatus, takeAsideNotices, asideCount } from './tables.js';
+import { logError, recentErrors, serverStatus } from './etat.js';
 
 const VERSION = codeVersion(config.root); // envoyée à chaque connexion : une page ouverte avant une mise à jour le voit
 let io;
@@ -35,6 +36,7 @@ const strictLimits = {
   'table:create': createEventLimiter(6, 60_000),
   'table:invite': createEventLimiter(10, 60_000),
   'table:watch': createEventLimiter(40, 60_000), // chaque entrée diffuse l'état de la table à ceux qui la regardent
+  'client:error': createEventLimiter(6, 60_000), // le navigateur se limite déjà ; ceci protège la base d'une page forgée
 };
 
 function allUsers() {
@@ -170,7 +172,10 @@ function handler(socket, fn, { admin = false, modo = false, event = null, muteBl
       const result = fn(payload ?? {}, me);
       reply({ ok: true, ...(result instanceof Promise ? await result : result) });
     } catch (err) {
-      if (!(err instanceof chat.ChatError)) console.error(err);
+      if (!(err instanceof chat.ChatError)) {
+        console.error(err);
+        logError('serveur', { who: getUser(socket.data.userId)?.pseudo, message: err?.message ?? err, place: String(err?.stack ?? '').split('\n')[1] });
+      }
       // Disque plein : rien n'est perdu de ce qui était déjà écrit, mais plus rien ne s'enregistre tant qu'on n'a pas fait de place.
       const full = /database or disk is full/i.test(String(err?.message));
       reply({ ok: false, error: err instanceof chat.ChatError ? err.message : full ? DISK_FULL : 'Erreur du serveur, réessaie dans un instant.' });
@@ -261,6 +266,11 @@ export function attachRealtime(httpServer) {
       version: VERSION,
     });
     if (!wasOnline) broadcastPresence(); // un onglet de plus ne change rien pour les autres
+    // Une partie de cette personne n'a pas survécu à une mise à jour de son jeu : on le lui dit, une fois, au lieu de la laisser chercher.
+    for (const game of takeAsideNotices(userId)) {
+      const name = gamesCatalog().find((g) => g.id === game)?.name ?? game;
+      socket.emit('notice', `Ta partie de ${name} a été interrompue par une mise à jour du jeu : elle ne peut pas reprendre. Tu peux en relancer une.`);
+    }
 
     socket.on('disconnect', () => {
       const n = (online.get(userId) || 1) - 1;
@@ -330,6 +340,12 @@ export function attachRealtime(httpServer) {
       broadcastUser(getUser(me.id));
       return {};
     }, { event: 'profile' }));
+
+    // Une erreur JavaScript dans le navigateur d'un élève : notée pour les admins (le navigateur n'envoie que la première de chaque sorte).
+    socket.on('client:error', handler(socket, ({ message, place }, me) => {
+      logError('navigateur', { who: me.pseudo, message, place });
+      return {};
+    }, { event: 'client:error', generalLimit: false }));
 
     registerPlay(socket, handler);
 
@@ -405,7 +421,22 @@ export function attachRealtime(httpServer) {
       return {};
     }, { admin: true }));
 
-    socket.on('admin:getClassCode', handler(socket, () => ({ classCode: classCode() }), { admin: true }));
+    socket.on('admin:getClassCode', handler(socket, () => ({ classCode: classCode(), signupsOpen: signupsOpen() }), { admin: true }));
+
+    // Fermer les inscriptions une fois la classe inscrite (et les rouvrir pour un nouvel élève).
+    socket.on('admin:setSignups', handler(socket, ({ open }, me) => {
+      setSetting('signups_open', open ? '1' : '0');
+      logMod(me, open ? 'a rouvert les inscriptions' : 'a fermé les inscriptions');
+      return { signupsOpen: signupsOpen() };
+    }, { admin: true }));
+
+    socket.on('admin:status', handler(socket, () => {
+      const list = tableList();
+      const by = (status) => list.filter((t) => t.status === status).length;
+      return { status: { ...serverStatus(), version: VERSION, online: online.size, sockets: io.sockets.sockets.size, lobby: by('lobby'), playing: by('playing'), over: by('over'), aside: asideCount(), signupsOpen: signupsOpen() } };
+    }, { admin: true }));
+
+    socket.on('admin:errors', handler(socket, () => ({ entries: recentErrors() }), { admin: true }));
 
     socket.on('admin:setClassCode', handler(socket, ({ code }, me) => {
       const clean = String(code ?? '').trim();

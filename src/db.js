@@ -98,6 +98,18 @@ db.exec(`
     detail TEXT NOT NULL DEFAULT ''
   );
 
+  -- Journal des erreurs (etat.js) : celles du serveur et celles des navigateurs, lues par les admins. Gardé 30 jours.
+  CREATE TABLE IF NOT EXISTS error_log (
+    id INTEGER PRIMARY KEY,
+    at INTEGER NOT NULL,
+    last_at INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    who TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL,
+    place TEXT NOT NULL DEFAULT '',
+    count INTEGER NOT NULL DEFAULT 1
+  );
+
   -- Tables de jeu : places (ids des joueurs, dans l'ordre), réglages et état du jeu en JSON.
   CREATE TABLE IF NOT EXISTS game_tables (
     id INTEGER PRIMARY KEY,

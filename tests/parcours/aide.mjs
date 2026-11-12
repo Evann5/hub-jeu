@@ -50,6 +50,7 @@ export async function lancerServeur(extra = {}) {
   srv.demarrer = async () => {
     srv.port ??= await portLibre();
     srv.url = `http://127.0.0.1:${srv.port}/`;
+    srv.journal = ''; // sinon la ligne « écoute sur le port » d'un démarrage précédent ferait croire que celui-ci est prêt
     const proc = spawn(process.execPath, ['server.js'], { cwd: RACINE, env: { ...env, PORT: String(srv.port) }, stdio: ['ignore', 'pipe', 'pipe'] });
     srv.proc = proc;
     proc.stdout.on('data', (d) => { srv.journal += d; });

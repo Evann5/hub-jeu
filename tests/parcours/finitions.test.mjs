@@ -1,6 +1,8 @@
 // Parcours « ce qu'on attend de moi » : invitation qui laisse une trace, « À toi de jouer » visible depuis un autre écran,
 // adversaire hors ligne, non-lus partagés entre deux onglets du même compte.
-import { monterSuite, jusque, aller, hashDe, ouvrirMessages, ouvrirTable, rejoindre, ecrire, messagesDe, titre } from './aide.mjs';
+import { DatabaseSync } from 'node:sqlite';
+import { join } from 'node:path';
+import { monterSuite, jusque, aller, hashDe, ouvrirMessages, ouvrirTable, rejoindre, ecrire, messagesDe, titre, CODE, MDP } from './aide.mjs';
 
 const S = monterSuite();
 
@@ -107,4 +109,81 @@ S.it('un clic n’est pas perdu quand l’écran se met à jour entre l’appui 
   await a.page.locator('.table-watchers').waitFor(); // le compteur de spectateurs est apparu : l'écran de A a bien été mis à jour
   await lacher();
   await a.page.getByRole('dialog').getByText('La partie et son chat disparaissent').waitFor({ timeout: 5000 });
+});
+
+S.it('Admin : fermer les inscriptions, lire l’état du serveur et une erreur survenue dans le navigateur d’un élève', async ({ ouvrir, S: suite }) => {
+  const admin = await suite.admin();
+  const eleve = await ouvrir();
+  // Une erreur JavaScript chez l'élève (comme un jeu qui plante) : elle remonte toute seule au serveur.
+  const marque = `zz-test erreur ${S.pseudo('')}`;
+  await eleve.page.evaluate((m) => { setTimeout(() => { throw new Error(m); }, 0); }, marque);
+  await jusque(() => eleve.erreurs.length > 0, 'l’erreur a bien eu lieu dans la page');
+  eleve.erreurs.length = 0; // voulue par le test
+
+  await aller(admin, '#/admin');
+  const etat = admin.page.locator('.status-list');
+  await etat.getByText('Copies de l’appli').waitFor();
+  const lignes = await etat.textContent();
+  if (!/Copies de l’appli1/.test(lignes)) throw new Error(`une seule copie attendue : ${lignes}`);
+  if (!/Sauvegardes1 gardée/.test(lignes)) throw new Error(`la sauvegarde du jour devrait apparaître : ${lignes}`);
+  if (await etat.locator('.status-warn').count()) throw new Error(`aucune alerte attendue : ${await etat.locator('.status-warn').first().textContent()}`);
+  const journal = admin.page.locator('section', { has: admin.page.getByRole('heading', { name: 'Journal des erreurs' }) });
+  await jusque(async () => {
+    await journal.getByRole('button', { name: 'Actualiser' }).click();
+    return (await journal.textContent()).includes(marque);
+  }, 'l’erreur de l’élève apparaît dans le journal des erreurs');
+  if (!(await journal.textContent()).includes(`Navigateur de ${eleve.pseudo}`)) throw new Error('le journal ne dit pas chez qui l’erreur a eu lieu');
+
+  // Inscriptions fermées : un nouveau venu arrive sur « Se connecter » et ne peut pas créer de compte.
+  const interrupteur = admin.page.getByRole('switch', { name: 'Inscriptions ouvertes' });
+  await interrupteur.click();
+  await jusque(async () => (await interrupteur.getAttribute('aria-checked')) === 'false', 'l’interrupteur est fermé');
+  const contexte = await suite.nav.newContext({ baseURL: suite.serveur.url });
+  try {
+    const page = await contexte.newPage();
+    await page.goto(suite.serveur.url);
+    await page.getByRole('heading', { name: 'Bon retour sur Hubuno' }).waitFor(); // et non « Rejoindre la classe »
+    await page.getByRole('tab', { name: 'Créer un compte' }).click();
+    await page.getByText('Les inscriptions sont fermées pour le moment').first().waitFor();
+    const form = page.locator('form');
+    await form.locator('[name=reg_code]').fill(CODE);
+    await form.locator('[name=reg_pseudo]').fill(S.pseudo('ferme'));
+    await form.locator('[name=reg_password]').fill(MDP);
+    await form.locator('[name=reg_rules]').check();
+    await form.getByRole('button', { name: 'Créer mon compte' }).click();
+    await form.locator('.form-error', { hasText: 'inscriptions sont fermées' }).waitFor();
+    // Rouvertes : un mauvais code remet le curseur sur le champ du code.
+    await interrupteur.click();
+    await jusque(async () => (await interrupteur.getAttribute('aria-checked')) === 'true', 'l’interrupteur est rouvert');
+    await form.locator('[name=reg_code]').fill('pas-le-bon-code');
+    await form.getByRole('button', { name: 'Créer mon compte' }).click();
+    await form.locator('.form-error', { hasText: 'code de classe' }).waitFor();
+    if ((await page.evaluate(() => document.activeElement?.name)) !== 'reg_code') throw new Error('après un mauvais code, le curseur devrait revenir sur le champ du code');
+  } finally {
+    await contexte.close();
+  }
+});
+
+S.it('partie abandonnée : « en cours » sans coup depuis plus de 3 heures, elle n’est plus listée chez les autres, ses joueurs la gardent', async ({ ouvrir, S: suite }) => {
+  const joueur = await ouvrir();
+  const autre = await ouvrir();
+  const passant = await ouvrir();
+  const idDe = (p) => p.page.evaluate(async () => (await import('./js/store.js')).state.me.id);
+  const [a, b] = [await idDe(joueur), await idDe(autre)];
+  const rules = await import('../../games/morpion/rules.js');
+  const state = rules.setup([{ id: a, pseudo: joueur.pseudo }, { id: b, pseudo: autre.pseudo }], {}, { now: Date.now(), random: Math.random });
+  await suite.serveur.couper();
+  const db = new DatabaseSync(join(suite.serveur.dir, 'hubuno.sqlite'));
+  const vieux = Date.now() - 5 * 3600_000;
+  db.prepare("INSERT INTO game_tables (game, host_id, status, seats, options, state, created_at, updated_at) VALUES ('morpion', ?, 'playing', ?, '{}', ?, ?, ?)").run(a, JSON.stringify([a, b]), JSON.stringify(state), vieux, vieux);
+  db.close();
+  await suite.serveur.demarrer();
+  for (const p of [joueur, passant]) {
+    await p.page.reload();
+    await p.page.locator('.navbar').waitFor();
+    await aller(p, '#/jouer');
+    await p.page.getByRole('heading', { name: 'Les jeux' }).waitFor();
+  }
+  await joueur.page.locator('.table-row', { hasText: 'Morpion' }).waitFor(); // son joueur la voit toujours, pour la reprendre ou la fermer
+  if (await passant.page.locator('.table-row', { hasText: 'Morpion' }).count()) throw new Error('la partie abandonnée est encore proposée à quelqu’un qui n’y joue pas');
 });

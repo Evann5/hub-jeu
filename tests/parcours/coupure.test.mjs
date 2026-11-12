@@ -188,3 +188,36 @@ S.it('coupure de wifi en pleine partie : le jeu n’est pas démonté, le coup j
   await a.page.locator('.mp-cell:not(.is-x):not(.is-o)').first().click();
   await jusque(async () => (await b.page.locator('.mp-cell.is-x, .mp-cell.is-o').count()) === avant + 2, 'le coup de A après la coupure arrive chez B');
 });
+
+S.it('mise à jour : une page qu’on ne regarde plus se recharge toute seule, sauf si un texte est commencé', async ({ ouvrir }) => {
+  const libre = await ouvrir();
+  const occupe = await ouvrir();
+  for (const p of [libre, occupe]) {
+    await aller(p, '#/c/1');
+    await p.page.locator('.composer textarea').waitFor();
+    await p.page.evaluate(() => { window.__avant = 'page d’avant la mise à jour'; });
+  }
+  await occupe.page.locator('.composer textarea').fill('un message commencé');
+  const fichier = join(RACINE, 'public', 'zz-test-version.txt');
+  await S.serveur.couper();
+  writeFileSync(fichier, `essai de rechargement ${Date.now()}\n`);
+  try {
+    await S.serveur.demarrer();
+    for (const p of [libre, occupe]) await p.page.locator('.update-banner').waitFor({ state: 'visible', timeout: 40_000 });
+    // L'élève passe sur un autre onglet : la page n'est plus regardée.
+    const cacher = (p) => p.page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await cacher(libre);
+    await jusque(() => libre.page.evaluate(() => window.__avant === undefined && Boolean(document.querySelector('.navbar'))).catch(() => false), 'la page libre s’est rechargée toute seule');
+    await libre.page.locator('.composer textarea').waitFor();
+    if (await libre.page.locator('.update-banner').count()) throw new Error('le bandeau revient après le rechargement automatique');
+    await cacher(occupe);
+    await occupe.page.waitForTimeout(800);
+    if (!(await occupe.page.evaluate(() => window.__avant))) throw new Error('la page a été rechargée alors qu’un message était commencé');
+    if ((await occupe.page.locator('.composer textarea').inputValue()) !== 'un message commencé') throw new Error('le message commencé a été perdu');
+  } finally {
+    rmSync(fichier, { force: true });
+  }
+});

@@ -1,5 +1,5 @@
-// Écran Administration (admins) : code de la classe, canaux, rôles, comptes bloqués, état de la connexion en direct.
-import { h, icon, token, toast, colorOf, stamp } from '../dom.js';
+// Écran Administration (admins) : code de la classe et inscriptions, canaux, rôles, comptes bloqués, état du serveur, journaux.
+import { h, icon, token, toast, colorOf, stamp, count } from '../dom.js';
 import { call } from '../net.js';
 import { state } from '../store.js';
 import { asyncForm, openChannelEditor, openRoleEditor } from '../dialogs.js';
@@ -26,8 +26,30 @@ export function render(container) {
     toast('Code de la classe changé.');
   });
 
+  // Inscriptions ouvertes ou fermées : une fois la classe inscrite, on ferme (plus de faux comptes, plus de code à deviner).
+  const signupSwitch = h('button.switch-btn', { type: 'button', role: 'switch', 'aria-checked': 'true', 'aria-label': 'Inscriptions ouvertes' }, h('span'));
+  const signupNote = h('small');
+  const showSignups = (open) => {
+    signupSwitch.setAttribute('aria-checked', String(open));
+    signupNote.textContent = open
+      ? 'Ferme-les quand toute la classe a son compte : plus personne ne pourra en créer.'
+      : 'Fermées : personne ne peut créer de compte. Rouvre-les pour un nouvel élève.';
+  };
+  showSignups(true);
+  signupSwitch.addEventListener('click', async () => {
+    try {
+      const { signupsOpen } = await call(state.socket, 'admin:setSignups', { open: signupSwitch.getAttribute('aria-checked') !== 'true' });
+      showSignups(signupsOpen);
+      toast(signupsOpen ? 'Inscriptions rouvertes.' : 'Inscriptions fermées.');
+    } catch (err) {
+      toast(err.message, { error: true });
+    }
+  });
+
   channelList = h('ul.row-list');
   renderChannels();
+  const status = h('dl.status-list', h('div', h('dt', 'État'), h('dd', 'Chargement…')));
+  const errorList = h('ul.mod-log', h('li', h('span.muted', 'Chargement…')));
   const journal = h('ul.mod-log', h('li', h('span.muted', 'Chargement…')));
   roleList = h('ul.row-list');
   renderRoles();
@@ -61,7 +83,8 @@ export function render(container) {
         h('p.share-line', address),
         codeBox,
         h('button.btn.share-copy', { type: 'button', onclick: copyInvite }, 'Copier le message pour la classe'),
-        codeForm),
+        codeForm,
+        h('div.setting-row', h('span.setting-text', h('b', 'Inscriptions ouvertes'), signupNote), signupSwitch)),
       h('section.card.card-panel',
         h('div.card-top', h('h2', 'Canaux'),
           h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => openChannelEditor() }, icon('plus'), 'Créer')),
@@ -76,17 +99,28 @@ export function render(container) {
         bannedList,
         h('p.card-text', 'Pour agir sur un membre (sourdine, mot de passe, blocage, niveau, rôles), ouvre sa fiche depuis Membres.')),
       h('section.card.card-panel',
-        h('h2', 'Connexion en direct'),
-        connection),
+        h('div.card-top', h('h2', 'État du serveur'),
+          h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => loadStatus(status) }, 'Actualiser')),
+        h('h3.sr-only', 'Connexion en direct'),
+        connection,
+        status),
       h('section.card.card-panel.card-wide',
         h('div.card-top', h('h2', 'Journal de modération'),
           h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => loadJournal(journal) }, 'Actualiser')),
         h('p.card-text', 'Ce que l’équipe a fait, du plus récent au plus ancien (gardé un an). Seuls les admins le voient.'),
-        journal))));
+        journal),
+      h('section.card.card-panel.card-wide',
+        h('div.card-top', h('h2', 'Journal des erreurs'),
+          h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => loadErrors(errorList) }, 'Actualiser')),
+        h('p.card-text', 'Ce qui a planté, sur le serveur ou dans le navigateur d’un élève, du plus récent au plus ancien (gardé 30 jours). À envoyer à la personne qui s’occupe du code.'),
+        errorList))));
   loadJournal(journal);
+  loadStatus(status);
+  loadErrors(errorList);
 
   Promise.all([call(state.socket, 'admin:getClassCode'), call(state.socket, 'admin:bannedList')])
-    .then(([{ classCode }, { users }]) => {
+    .then(([{ classCode, signupsOpen }, { users }]) => {
+      showSignups(signupsOpen !== false);
       codeBox.replaceChildren(h('span', classCode || 'Aucun code : les inscriptions sont fermées.'));
       const drawBanned = (list) => bannedList.replaceChildren(...(list.length ? list.map((u) => h('li',
         token(u, { size: 's' }), h('span.label', u.pseudo),
@@ -148,6 +182,50 @@ async function loadJournal(list) {
       h('time', { dateTime: new Date(e.at).toISOString() }, stamp(e.at)),
       h('span', h('b', e.actor), ` ${e.action}`, e.target ? [' ', h('b', e.target)] : null, e.detail ? h('span.muted', ` · ${e.detail}`) : null)))
       : [h('li', h('span.muted', 'Rien pour l’instant.'))]));
+  } catch (err) {
+    toast(err.message, { error: true });
+  }
+}
+
+const megas = (bytes) => `${(bytes / 1048576).toFixed(1).replace('.', ',')} Mo`;
+
+// État du serveur : ce qu'il faut pour savoir si tout va bien sans ouvrir de fichier chez l'hébergeur.
+async function loadStatus(list) {
+  try {
+    const { status: s } = await call(state.socket, 'admin:status');
+    const line = (label, value, warn = null) => h('div', h('dt', label), h('dd', value, warn ? h('p.status-warn', { role: 'alert' }, warn) : null));
+    const backupAge = s.lastBackupAt ? Date.now() - s.lastBackupAt : Infinity;
+    list.replaceChildren(
+      line('Copies de l’appli', String(s.copies), s.copies > 1
+        ? 'Il ne doit y en avoir qu’une : avec plusieurs, des gens paraissent hors ligne et des messages se perdent. Normal pendant la minute qui suit un redémarrage ; sinon, demande à l’hébergeur de limiter l’appli à une seule instance.'
+        : null),
+      line('En ligne', `${count(s.online, 'personne', 'personnes')} (${count(s.sockets, 'onglet', 'onglets')})`),
+      line('Comptes', String(s.accounts)),
+      line('Messages gardés', String(s.messages)),
+      line('Parties', `${s.lobby} en attente, ${s.playing} en cours, ${s.over} terminées`, s.aside
+        ? `${count(s.aside, 'partie illisible a été mise', 'parties illisibles ont été mises')} de côté au dernier démarrage (après une mise à jour d’un jeu).`
+        : null),
+      line('Base', megas(s.dbBytes)),
+      line('Sauvegardes', s.backups ? `${count(s.backups, 'gardée', 'gardées')} (${megas(s.backupsBytes)}), la dernière ${stamp(s.lastBackupAt)}` : 'aucune', backupAge > 36 * 3600_000
+        ? 'Pas de sauvegarde depuis plus d’un jour : regarde le journal des erreurs, le disque est peut-être plein.'
+        : null),
+      line('Erreurs sur 24 h', String(s.errors24h)),
+      line('Mémoire', megas(s.memoryBytes)),
+      line('Démarré', `${stamp(s.startedAt)} · version ${s.version} · Node ${s.node.replace(/^v/, '')}`));
+  } catch (err) {
+    toast(err.message, { error: true });
+  }
+}
+
+// Journal des erreurs : serveur et navigateurs, une ligne par sorte d'erreur avec son nombre.
+async function loadErrors(list) {
+  try {
+    const { entries } = await call(state.socket, 'admin:errors');
+    list.replaceChildren(...(entries.length ? entries.map((e) => h('li',
+      h('time', { dateTime: new Date(e.lastAt).toISOString() }, stamp(e.lastAt)),
+      h('span', h('b', e.source === 'serveur' ? 'Serveur' : `Navigateur${e.who ? ` de ${e.who}` : ''}`), ` · ${e.message}`,
+        e.count > 1 ? h('b', ` (${e.count} fois)`) : null, e.place ? h('span.muted', ` · ${e.place}`) : null)))
+      : [h('li', h('span.muted', 'Aucune erreur. Tant mieux.'))]));
   } catch (err) {
     toast(err.message, { error: true });
   }

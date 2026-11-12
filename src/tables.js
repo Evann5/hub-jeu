@@ -17,8 +17,24 @@ const save = db.prepare(
 
 // Une partie illisible (état d'un ancien format après la mise à jour d'un jeu, ligne abîmée) est mise de côté : elle reste dans la base
 // mais n'est plus chargée. Sans ça, une seule partie empêchait tout le hub de démarrer.
-function setAside(id, game, err) {
+const aside = []; // parties en cours mises de côté depuis le démarrage : { game, seats } (les joueurs pas encore prévenus)
+let asideTotal = 0;
+export const asideCount = () => asideTotal;
+// Les jeux dont une partie de cette personne a été mise de côté ; chaque partie n'est annoncée qu'une fois par personne.
+export function takeAsideNotices(userId) {
+  const mine = aside.filter((a) => a.seats.includes(userId));
+  for (const a of mine) a.seats = a.seats.filter((x) => x !== userId);
+  return mine.map((a) => a.game);
+}
+
+function setAside(id, game, err, row = null) {
   tables.delete(id);
+  asideTotal += 1;
+  if (row?.status === 'playing') {
+    let seats = [];
+    try { seats = [].concat(JSON.parse(row.seats)).map(Number); } catch { /* places illisibles : personne à prévenir */ }
+    aside.push({ game, seats });
+  }
   console.error(`Partie ${id} (${game}) illisible, mise de côté : ${err?.message ?? err}`);
 }
 
@@ -45,7 +61,7 @@ export function loadTables() {
       if (t.state) for (const who of [null, ...t.seats]) games.get(t.game).rules.view(t.state, who);
       tables.set(r.id, t);
     } catch (err) {
-      setAside(r.id, r.game, err);
+      setAside(r.id, r.game, err, r);
     }
   }
   return [...tables.values()];

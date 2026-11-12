@@ -1,6 +1,7 @@
 // Hubuno côté navigateur : démarrage, connexion temps réel, barre de navigation et choix de l'écran.
 import { h, changedOnly, icon, token, toast, setColors, count, keepFocus } from './dom.js';
 import { api, connect } from './net.js';
+import './erreurs.js'; // les erreurs JavaScript de la page remontent au serveur (Admin)
 import { renderAuth, renderForcedPassword } from './auth.js';
 import { state, actions, go, dmScope, unreadTotal, isAdmin, gameOf, myTurnTables } from './store.js';
 import * as home from './views/home.js';
@@ -46,7 +47,7 @@ function showAuth(mode) {
   state.socket?.disconnect();
   state.socket = null;
   ui = null;
-  renderAuth(root, { mode, onDone: afterLogin });
+  renderAuth(root, { mode, onDone: afterLogin, signupsOpen: state.options?.signupsOpen !== false });
 }
 
 // Quand la sourdine se termine, la zone de saisie revient sans changer d'écran.
@@ -141,6 +142,7 @@ function startRealtime() {
   });
   socket.on('connect', () => setBanner(null));
   socket.on('kicked', (reason) => actions.logout(reason));
+  socket.on('notice', (text) => toast(String(text), { ms: 20000, action: true })); // un mot du serveur (partie interrompue par une mise à jour)
   // Le compte est ouvert sur trop d'onglets : le serveur a fermé celui-ci, le plus ancien. Il ne se reconnecte pas tout seul (sinon les onglets se chasseraient à tour de rôle).
   socket.on('replaced', () => {
     state.socket = null;
@@ -347,7 +349,18 @@ function buildShell() {
 
 // Une notification qui reste là où arrivent les autres (elle ne cache ni l'en-tête ni la zone d'écriture) :
 // recharger maintenant, ou plus tard (elle ne revient alors qu'à la version suivante). Une partie en cours reprend après le rechargement.
+// Une page qui a l'ancien code se recharge toute seule dès qu'on ne la regarde plus, si rien n'est en cours :
+// ni partie ouverte, ni fenêtre, ni texte commencé. Sinon elle attend (le bandeau reste proposé).
+function reloadIfIdle() {
+  if (!state.updateReady || !document.hidden) return;
+  const typing = [...document.querySelectorAll('textarea, input:not([type=checkbox]):not([type=radio])')].some((el) => el.value.trim());
+  if (state.route.view !== 'table' && !document.querySelector('dialog[open]') && !typing) location.reload();
+}
+document.addEventListener('visibilitychange', reloadIfIdle);
+
 function showUpdate(version) {
+  state.updateReady = true;
+  reloadIfIdle();
   if (document.querySelector('.update-banner')) return;
   const el = toast([
     h('span', 'Hubuno a été mis à jour.'),

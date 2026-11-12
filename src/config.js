@@ -23,5 +23,7 @@ export const config = {
   messageRetentionDays: 365,
   // Dans un salon, un hôte hors ligne depuis ce délai laisse la main au joueur suivant (HOST_AWAY_MS sert aux tests).
   hostAwayMs: Number(process.env.HOST_AWAY_MS) || 60_000,
+  // En partie, un joueur hors ligne depuis ce délai peut être mis en abandon par un autre joueur (PLAYER_AWAY_MS sert aux tests).
+  playerAwayMs: Number(process.env.PLAYER_AWAY_MS) || 120_000,
   sessionDays: 60,
 };

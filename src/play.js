@@ -45,6 +45,8 @@ const isOnline = (userId) => Boolean(io.sockets.adapter.rooms.get(`u:${userId}`)
 
 // Un salon dont l'hôte est hors ligne : les autres ne peuvent pas lancer. Après config.hostAwayMs, la main passe au premier joueur assis en ligne.
 // On suit aussi l'hôte des parties terminées : la revanche lancée par un autre ne lui prend la main qu'après le même délai (un wifi qui saute 3 s ne coûte rien).
+const startedAt = Date.now();
+const awaySince = new Map(); // id d'une personne -> depuis quand elle n'a plus aucune connexion (absente de la table : en ligne, ou jamais vue depuis le démarrage)
 const hostAwaySince = new Map(); // id de la partie -> depuis quand son hôte est hors ligne
 const hostAway = (t) => !isOnline(t.hostId) && Date.now() - (hostAwaySince.get(t.id) ?? Infinity) >= config.hostAwayMs;
 function sweepHosts() {
@@ -184,10 +186,15 @@ export function registerPlay(socket, handler) {
     return n;
   };
 
-  // Les spectateurs qui partent : on met à jour le nombre de personnes qui regardent.
+  awaySince.delete(socket.data.userId); // de retour (ou toujours là)
+  // À la fermeture d'une connexion : on note depuis quand la personne est hors ligne, et le nombre de spectateurs est mis à jour.
   socket.on('disconnecting', () => {
+    const uid = socket.data.userId;
     const rooms = [...socket.rooms].filter((r) => r.startsWith('t:'));
-    if (rooms.length) setTimeout(() => rooms.forEach((r) => tables.tableExists(r.slice(2)) && pushTable(Number(r.slice(2)))), 50);
+    setTimeout(() => {
+      if (!isOnline(uid) && !awaySince.has(uid)) awaySince.set(uid, Date.now());
+      rooms.forEach((r) => tables.tableExists(r.slice(2)) && pushTable(Number(r.slice(2))));
+    }, 50);
   });
 
   socket.on('table:create', handler(socket, ({ game }, me) => {
@@ -219,6 +226,22 @@ export function registerPlay(socket, handler) {
   socket.on('table:leave', handler(socket, ({ id }, me) => {
     const n = tableId(id);
     changed(tables.leaveTable(n, me.id), n);
+    return {};
+  }));
+
+  // En partie, un joueur hors ligne bloque les autres quand le jeu n'a pas de minuteur : passé config.playerAwayMs,
+  // n'importe quel joueur de la partie peut le mettre en abandon (comme s'il avait cliqué « Abandonner »).
+  socket.on('table:eject', handler(socket, ({ id, userId: target }, me) => {
+    const n = tableId(id);
+    const t = tables.getTable(n);
+    const who = Number(target);
+    if (t.status !== 'playing') throw new ChatError('La partie n’est pas en cours.');
+    if (!t.seats.includes(me.id) || t.left.includes(me.id)) throw new ChatError('Seuls les joueurs de la partie peuvent faire ça.');
+    if (who === me.id || !t.seats.includes(who) || t.left.includes(who)) throw new ChatError('Cette personne ne joue pas dans cette partie.');
+    if (isOnline(who)) throw new ChatError('Cette personne est en ligne : elle peut jouer.');
+    const wait = config.playerAwayMs - (Date.now() - (awaySince.get(who) ?? startedAt));
+    if (wait > 0) throw new ChatError(`Laisse-lui encore ${Math.ceil(wait / 1000)} s pour revenir.`);
+    changed(tables.leaveTable(n, who), n);
     return {};
   }));
 

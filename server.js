@@ -12,10 +12,12 @@ import { loadGames, gamesDir } from './src/games.js';
 import { purgeTables } from './src/play.js';
 import { gzipped } from './src/gzip.js';
 import { backupIfDue } from './src/sauvegarde.js';
+import { startBeat, logError, purgeErrors } from './src/etat.js';
 
 // Filet de sécurité : une erreur imprévue est écrite dans le journal, sans arrêter le serveur (et donc sans déconnecter toute la classe).
-process.on('uncaughtException', (err) => console.error('Erreur non rattrapée :', err));
-process.on('unhandledRejection', (reason) => console.error('Promesse rejetée non rattrapée :', reason));
+const noteError = (err) => logError('serveur', { message: err?.message ?? err, place: String(err?.stack ?? '').split('\n')[1] }); // lisible dans Admin
+process.on('uncaughtException', (err) => { console.error('Erreur non rattrapée :', err); noteError(err); });
+process.on('unhandledRejection', (reason) => { console.error('Promesse rejetée non rattrapée :', reason); noteError(reason); });
 
 const app = express();
 app.set('trust proxy', 1); // derrière le proxy d'O2Switch : vraie IP et HTTPS
@@ -71,6 +73,7 @@ function housekeeping() {
   if (removed) console.log(`Ménage : ${removed} message(s) de plus d'un an effacé(s).`);
   purgeExpiredSessions();
   purgeOldMod();
+  purgeErrors();
   const tablesRemoved = purgeTables();
   if (tablesRemoved) console.log(`Ménage : ${tablesRemoved} table(s) inactive(s) fermée(s).`);
   // La sauvegarde du jour (data/sauvegardes/) : jamais une raison d'arrêter le serveur si elle échoue (disque plein, droits).
@@ -87,6 +90,7 @@ function housekeeping() {
 async function start() {
   await loadGames();
   attachRealtime(server);
+  startBeat(); // une copie de l'appli = un battement : l'écran Admin prévient s'il y en a deux
   housekeeping();
   setInterval(housekeeping, 3600_000).unref();
   server.listen(config.port, config.host, () => {

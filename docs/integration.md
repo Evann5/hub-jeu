@@ -47,6 +47,7 @@ Variables d'environnement (`src/config.js`) :
 | `DATA_DIR` | Dossier de la base SQLite, `data/` par défaut. |
 | `PORT` | Port d'écoute, fourni par O2Switch (Passenger). |
 | `ADMIN_CODE` | Protège les pseudos de `ADMINS` : il remplace le code de classe pour créer ces comptes, et un élève ne peut plus les prendre. |
+| `PLAYER_AWAY_MS` | Pour les tests seulement : délai avant de pouvoir mettre en abandon un joueur hors ligne (120 000 par défaut). |
 | `HOST_AWAY_MS` | Pour les tests seulement : délai avant qu'un hôte hors ligne laisse la main dans un salon (60 000 par défaut). |
 | `HOST` | Adresse d'écoute. Sur un VPS derrière nginx : `127.0.0.1`. Vide partout ailleurs. |
 
@@ -60,6 +61,7 @@ src/db.js              Base SQLite : schéma, canaux de départ, réglages, tran
 src/options.js         Couleurs, avatars, réactions et limites (partagés avec le navigateur par /api/options)
 src/auth.js            Mots de passe (scrypt), sessions (cookie httpOnly), validation, limite des essais de connexion
 src/api.js             Routes HTTP : inscription, connexion, déconnexion, mot de passe, suppression du compte
+src/etat.js            État du serveur pour l'écran Admin, journal des erreurs (table error_log), battement de cœur de chaque copie de l'appli
 src/erreurs.js         ChatError : l'erreur dont le message est montré tel quel à la personne
 src/sauvegarde.js      Sauvegarde quotidienne de la base dans data/sauvegardes/ (7 gardées)
 src/chat.js            Messagerie sans Socket.IO : accès aux conversations, historique, réactions, non-lus, canaux, purge
@@ -74,6 +76,7 @@ public/js/app.js       Démarrage, connexion temps réel, barre de navigation, c
 public/js/store.js     État partagé (moi, membres, canaux, non-lus, conversations chargées) et petites aides
 public/js/dom.js       h() pour créer des éléments, icônes SVG, avatars, notifications, dates
 public/js/net.js       api() (HTTP), connect() et call() (Socket.IO avec réponse)
+public/js/erreurs.js   Les erreurs JavaScript de la page remontent au serveur (reportError)
 public/js/auth.js      Écrans de connexion, d'inscription et de mot de passe imposé
 public/js/dialogs.js   Fenêtres : modal(), confirmDialog(), règles, fiche d'un membre avec outils admin, éditeur de canal
 public/js/views/*.js   Un fichier par écran : home, games (Jouer), table (une table #/t/:id), messages, members, profile, admin
@@ -135,6 +138,8 @@ Le client appelle `call(socket, 'événement', données)`. La réponse vaut `{ o
 | `table:join`, `table:leave`, `table:start`, `table:restart`, `table:close` | `{ id }` | rejoindre, quitter ou abandonner, lancer, revanche, fermer |
 | `table:options` | `{ id, options }` | réglages (hôte, dans le salon) |
 | `table:kick` | `{ id, userId }` | retirer quelqu'un du salon (hôte) |
+| `table:eject` | `{ id, userId }` | en partie, mettre en abandon un joueur hors ligne depuis 2 minutes (tout joueur de la partie) |
+| `client:error` | `{ message, place }` | une erreur JavaScript du navigateur, notée dans le journal des erreurs (envoyée par `public/js/erreurs.js`) |
 | `table:move` | `{ id, action }` | jouer un coup |
 | `table:invite` | `{ id, userIds }` | `{ sent }` |
 | `admin:deleteMessage`, `admin:mute`, `admin:ban`, `admin:bannedList`, `admin:resetPassword`, `admin:setRole`, `admin:getClassCode`, `admin:setClassCode`, `admin:createChannel`, `admin:updateChannel`, `admin:deleteChannel` | voir le code | réservés aux admins |
@@ -148,6 +153,7 @@ Le client appelle `call(socket, 'événement', données)`. La réponse vaut `{ o
 | `message`, `message:update`, `message:deleted` | messages et réactions |
 | `typing`, `muted`, `kicked` | frappe, sourdine, déconnexion forcée |
 | `read` | la conversation a été lue dans un autre onglet du même compte (`{ scope, lastId }`) |
+| `notice` | un mot du serveur à afficher tel quel (partie interrompue par une mise à jour) |
 | `replaced` | le compte a trop de connexions ouvertes (5) : celle-ci, la plus ancienne, est fermée et ne se reconnecte pas toute seule |
 | `tables:update` | une partie change ou disparaît : `{ table: résumé }` ou `{ removed: id }`. La liste complète (résumés : jeu, hôte, places, statut, à qui le tour) n'arrive qu'à la connexion, dans `state` ; rien n'est envoyé si le résumé public n'a pas changé |
 | `table` | à la salle d'une table : `{ table, view, watchers, events, serverNow }`, avec la vue propre à chaque personne |

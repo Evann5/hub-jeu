@@ -1530,3 +1530,20 @@ body:has(.view-messages.has-conv) #toasts { bottom: var(--toast-bottom, calc(max
 .secret-cover svg { width: 22px; height: 22px; opacity: 0.85; }
 .secret-box.is-shown .secret-cover { display: none; }
 .secret-box:not(.is-shown) { min-height: 64px; }
+
+/* Admin : inscriptions ouvertes ou fermées, état du serveur */
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--bg-3); }
+.setting-text { display: grid; gap: 2px; min-width: 0; }
+.setting-text small { color: var(--ink-3); }
+.setting-row .switch-btn { background: var(--bg-4); }
+.setting-row .switch-btn span { background: var(--ink-2); }
+.setting-row .switch-btn[aria-checked='true'] { background: var(--accent); }
+.setting-row .switch-btn[aria-checked='true'] span { background: var(--on-color); }
+.status-list { display: grid; gap: 6px; margin: 0; }
+.status-list > div { display: grid; grid-template-columns: minmax(120px, 36%) 1fr; gap: var(--sp-3); }
+.status-list dt { color: var(--ink-3); }
+.status-list dd { margin: 0; overflow-wrap: anywhere; }
+.status-warn { margin: 4px 0 0; color: var(--yellow); font-size: 0.875rem; }
+/* Partie : faire abandonner un joueur hors ligne */
+.seat-row { display: flex; align-items: center; gap: 4px; }
+.seat-row .seat-user { flex: 1; min-width: 0; }

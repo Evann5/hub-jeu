@@ -73,6 +73,9 @@ export function classCode() {
   return getSetting('class_code') ?? config.classCode;
 }
 
+// Un admin peut fermer les inscriptions une fois la classe inscrite : plus aucun compte ne se crée (sauf avec le code admin).
+export const signupsOpen = () => getSetting('signups_open') !== '0';
+
 export function validatePseudo(pseudo) {
   // Accents acceptés (Élodie, Trần) ; lettres qui imitent une lettre normale refusées (ｚ pleine chasse, ɑ, ı seul…).
   const plainEnough = pseudo.normalize('NFKC') === pseudo.normalize('NFC') && /^[a-z0-9_.-]*$/.test(plainPseudo(pseudo));

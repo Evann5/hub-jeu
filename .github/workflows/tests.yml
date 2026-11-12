@@ -1,0 +1,21 @@
+# À chaque poussée sur GitHub : les tests rapides (règles des 30 jeux et hub sans navigateur, environ une minute).
+# Si une croix rouge apparaît à côté du commit, quelque chose est cassé : ne pas mettre à jour O2Switch avant de l'avoir réglé.
+# Les tests dans un vrai navigateur (npm run test:parcours) restent à lancer sur l'ordinateur : ils demandent Playwright.
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test

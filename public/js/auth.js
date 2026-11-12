@@ -73,9 +73,9 @@ const hasAccountHere = () => {
   }
 };
 
-export function renderAuth(root, { mode = 'login', onDone: done }) {
-  // Sur un appareil jamais connecté, on arrive avec un lien et un code : on crée d'abord son compte.
-  if (mode === 'login' && !hasAccountHere()) mode = 'register';
+export function renderAuth(root, { mode = 'login', onDone: done, signupsOpen = true }) {
+  // Sur un appareil jamais connecté, on arrive avec un lien et un code : on crée d'abord son compte (sauf si les inscriptions sont fermées).
+  if (mode === 'login' && !hasAccountHere() && signupsOpen) mode = 'register';
   const onDone = (res) => {
     try {
       localStorage.setItem(SEEN_KEY, 'oui');
@@ -122,7 +122,7 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
         });
         onDone(res);
       } catch (err) {
-        showError(form, err.message);
+        showError(form, err.message, /incorrect/i.test(err.message) ? form.elements.login_password : null); // le curseur revient là où corriger
         submitting(form, false);
       }
     });
@@ -131,6 +131,7 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
 
   function registerForm() {
     const form = h('form', { novalidate: true },
+      signupsOpen ? null : h('p.hint', 'Les inscriptions sont fermées pour le moment. Si tu n’as pas encore de compte, demande à un admin de Hubuno.'),
       h('label.field', h('span', 'Code de la classe'),
         h('input.input', { name: 'reg_code', autocomplete: 'off', required: true, autocapitalize: 'none', spellcheck: false }),
         h('small', 'Un admin te le donne.')),
@@ -170,8 +171,10 @@ export function renderAuth(root, { mode = 'login', onDone: done }) {
         });
         onDone(res);
       } catch (err) {
-        showError(form, err.message);
-        if (/mot de passe/i.test(err.message)) form.elements.reg_password.setAttribute('aria-invalid', 'true');
+        // Le curseur revient sur le champ à corriger (le serveur dit lequel dans son message).
+        const m = err.message;
+        const field = /mot de passe/i.test(m) ? form.elements.reg_password : /pseudo/i.test(m) ? form.elements.reg_pseudo : /code/i.test(m) ? form.elements.reg_code : null;
+        showError(form, m, field);
         submitting(form, false);
       }
     });

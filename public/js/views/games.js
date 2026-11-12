@@ -24,6 +24,8 @@ const FILTERS = [
   { key: 'grand', label: '7 et plus', test: (g) => g.maxPlayers >= 7 },
 ];
 
+const STALE_MS = 3 * 3600_000;
+
 export function leave() {
   container = null;
 }
@@ -132,7 +134,8 @@ export function render(el) {
   const rank = (t) => (t.seats.includes(state.me.id) ? 0 : state.invites.has(t.id) ? 1 : 2);
   const mineFirst = (list) => [...list].sort((a, b) => rank(a) - rank(b));
   const open = mineFirst(tables.filter((t) => t.status === 'lobby'));
-  const playing = mineFirst(tables.filter((t) => t.status === 'playing'));
+  // Une partie « en cours » où personne n'a joué depuis 3 heures est abandonnée : seuls ses joueurs la voient encore (pour la reprendre ou la fermer).
+  const playing = mineFirst(tables.filter((t) => t.status === 'playing' && (t.seats.includes(state.me.id) || Date.now() - t.updatedAt < STALE_MS)));
   const over = tables.filter((t) => t.status === 'over' && t.seats.includes(state.me.id)).slice(0, 6);
   const turns = myTurnTables().length;
 
