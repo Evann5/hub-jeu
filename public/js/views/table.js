@@ -1,6 +1,6 @@
 // Écran d'une table (#/t/:id) : le salon (places, réglages, lancement), puis le jeu monté depuis games/<id>/client.js,
 // les joueurs et le chat de la table. Sur téléphone, deux onglets : « Partie » et « Chat ».
-import { h, icon, token, toast, colorOf, count, gameLogo, keepFocus, arrowKeys, announce, de } from '../dom.js';
+import { h, changedOnly, icon, token, toast, colorOf, count, gameLogo, keepFocus, arrowKeys, announce, de } from '../dom.js';
 import { call } from '../net.js';
 import { state, go, gameOf, isAdmin, isStaff } from '../store.js';
 import { modal, confirmDialog, openProfile } from '../dialogs.js';
@@ -170,8 +170,8 @@ function renderHead() {
     'aria-selected': String(cur.tab === key),
     onclick: () => setTab(key),
   }, text, extra);
-  keepFocus(cur.ui.head, () => cur.ui.head.replaceChildren(...[
-    h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux', onclick: () => { if (t.status === 'lobby' && seated()) toast('Ta place reste gardée. Un salon vide se ferme au bout de 5 minutes.'); } }, icon('back', 'Retour aux jeux')),
+  keepFocus(cur.ui.head, () => changedOnly(cur.ui.head).replaceChildren(...[
+    h('a.icon-btn.table-back', { href: '#/jouer', title: 'Retour aux jeux', onclick: () => { if (cur?.table?.status === 'lobby' && seated()) toast('Ta place reste gardée. Un salon vide se ferme au bout de 5 minutes.'); } }, icon('back', 'Retour aux jeux')),
     h('span.table-emoji', gameLogo(g)),
     h('div.table-title', h('h1', g.name), h('p', `Partie ${de(userOf(t.hostId).pseudo)}`)),
     h(`span.table-pill${t.status === 'playing' && myTurn ? '.is-turn' : ''}`, label),
@@ -207,7 +207,7 @@ function renderSide() {
   if (seated() && t.status === 'over') actions.push(h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: leaveTable }, icon('logout'), 'Quitter la partie'));
   // Un modo ne ferme que la partie d'un membre (le serveur le vérifie aussi).
   if (isHost() || isAdmin() || (isStaff() && state.users.get(t.hostId)?.role === 'membre')) actions.push(h('button.btn.btn-danger.btn-sm', { type: 'button', onclick: closeTable }, icon('trash'), 'Fermer la partie'));
-  keepFocus(cur.ui.players, () => cur.ui.players.replaceChildren(
+  keepFocus(cur.ui.players, () => changedOnly(cur.ui.players).replaceChildren(
     h('h2', 'Joueurs', h('span.section-count', `${t.seats.length}/${g.maxPlayers}`)),
     ...(inLobby ? [] : [h('ul.seat-list', rows)]),
     ...(actions.length ? [h('div.side-actions', actions)] : [])));
@@ -308,7 +308,7 @@ function renderLobby() {
     : isHost() ? 'Tout le monde est là ? Lance la partie.' : seated() ? (state.online.has(t.hostId) ? `${userOf(t.hostId).pseudo} peut lancer la partie.` : `${userOf(t.hostId).pseudo} est hors ligne : dans une minute, un autre joueur pourra lancer la partie.`) : null;
 
   // Le corps défile ; le pied (message + boutons) reste toujours visible en bas de la carte.
-  const fillMain = (node) => keepFocus(cur.ui.main, () => cur.ui.main.replaceChildren(node));
+  const fillMain = (node) => keepFocus(cur.ui.main, () => changedOnly(cur.ui.main, 0).replaceChildren(node)); // gardé seulement s'il est identique en entier : ses boutons retiennent les réglages affichés
   fillMain(h('div.lobby',
     h('section.lobby-card',
       h('div.lobby-body',
@@ -503,7 +503,7 @@ function renderEndBar() {
   endbar.hidden = t.status !== 'over' || (cur.turnGated && !cur.overShown);
   if (endbar.hidden) return;
   const names = t.winners.map((id) => userOf(id).pseudo);
-  endbar.replaceChildren(h('div.endbar',
+  changedOnly(endbar).replaceChildren(h('div.endbar',
     h('p', h('b', 'Partie terminée'), t.label ? ` · ${t.label.replace(new RegExp(`^${state.me.pseudo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} gagne$`), 'Tu gagnes')}` : names.length ? ` · ${names.length > 1 ? 'Gagnants' : 'Gagnant'} : ${names.join(', ')}` : ' · Personne ne gagne'),
     h('div.endbar-actions',
       // N'importe quel joueur de la partie peut lancer la revanche (l'hôte a pu partir).

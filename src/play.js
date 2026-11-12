@@ -44,18 +44,20 @@ function sweepLobbies() {
 const isOnline = (userId) => Boolean(io.sockets.adapter.rooms.get(`u:${userId}`)?.size);
 
 // Un salon dont l'hôte est hors ligne : les autres ne peuvent pas lancer. Après config.hostAwayMs, la main passe au premier joueur assis en ligne.
-const hostAwaySince = new Map();
+// On suit aussi l'hôte des parties terminées : la revanche lancée par un autre ne lui prend la main qu'après le même délai (un wifi qui saute 3 s ne coûte rien).
+const hostAwaySince = new Map(); // id de la partie -> depuis quand son hôte est hors ligne
+const hostAway = (t) => !isOnline(t.hostId) && Date.now() - (hostAwaySince.get(t.id) ?? Infinity) >= config.hostAwayMs;
 function sweepHosts() {
   const now = Date.now();
-  const open = tables.lobbies();
-  for (const id of hostAwaySince.keys()) if (!open.some((t) => t.id === id)) hostAwaySince.delete(id);
-  for (const t of open) {
+  const followed = tables.allTables().filter((t) => t.status !== 'playing');
+  for (const id of hostAwaySince.keys()) if (!followed.some((t) => t.id === id)) hostAwaySince.delete(id);
+  for (const t of followed) {
     if (isOnline(t.hostId)) {
       hostAwaySince.delete(t.id);
       continue;
     }
     if (!hostAwaySince.has(t.id)) hostAwaySince.set(t.id, now);
-    if (now - hostAwaySince.get(t.id) < config.hostAwayMs) continue;
+    if (t.status !== 'lobby' || !hostAway(t)) continue;
     const next = t.seats.find((x) => x !== t.hostId && isOnline(x));
     if (next === undefined) continue; // personne d'autre en ligne : le salon vide se fermera tout seul
     hostAwaySince.delete(t.id);
@@ -246,7 +248,7 @@ export function registerPlay(socket, handler) {
 
   socket.on('table:restart', handler(socket, ({ id }, me) => {
     const t = tables.getTable(tableId(id));
-    changed(tables.restartTable(t.id, me.id, { hostAway: !isOnline(t.hostId) }));
+    changed(tables.restartTable(t.id, me.id, { hostAway: hostAway(t) }));
     return {};
   }));
 

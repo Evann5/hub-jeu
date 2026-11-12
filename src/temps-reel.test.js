@@ -160,6 +160,18 @@ test('hôte absent : dans un salon, la main passe à un joueur en ligne ; après
       assert.equal((await ca.appel('table:restart', { id })).ok, true, 'un joueur resté lance la revanche');
       await jusque(() => table(id)?.status === 'lobby', 'retour au salon');
       assert.deepEqual(table(id).seats, [autre.id], 'celui qui a abandonné n’est pas rassis');
+      // 3. L'hôte perd sa connexion à l'instant de la revanche : il garde la main ; elle ne passe qu'après le délai, comme dans un salon.
+      const ch3 = await new Client(s3, hote).ouvrir();
+      const { id: id3 } = await ch3.appel('table:create', { game: 'morpion' });
+      await ca.appel('table:join', { id: id3 });
+      await ch3.appel('table:start', { id: id3 });
+      assert.equal((await ca.appel('table:leave', { id: id3 })).ok, true); // la partie est finie, l'hôte a gagné
+      await jusque(() => table(id3)?.status === 'over', 'partie terminée');
+      ch3.fermer();
+      assert.equal((await ca.appel('table:restart', { id: id3 })).ok, true);
+      await jusque(() => table(id3)?.status === 'lobby', 'retour au salon');
+      assert.equal(table(id3).hostId, hote.id, 'une coupure de quelques instants ne coûte pas la main à l’hôte');
+      await jusque(() => table(id3)?.hostId === autre.id, 'après le délai, la main passe au joueur en ligne', 5000);
     } finally {
       ch.fermer();
       ca.fermer();

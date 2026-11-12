@@ -218,7 +218,8 @@ function staffTools(u, close) {
           const { tempPassword } = await call(state.socket, 'admin:resetPassword', { userId: u.id });
           tempBox.replaceChildren(
             h('p', `Donne ce mot de passe provisoire à ${u.pseudo} :`),
-            h('div.code-box', { tabindex: '-1' }, h('span', tempPassword)));
+            h('div.code-box', { tabindex: '-1' }, h('span', tempPassword)),
+            h('p.dlg-note', 'Il sert 24 heures : passé ce délai, il faudra en redonner un.'));
           tempBox.querySelector('.code-box').focus();
           tempBox.scrollIntoView({ block: 'nearest' }); // sur petit écran, il apparaît sous le bord de la fiche
         }),

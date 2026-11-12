@@ -1,5 +1,5 @@
 // Écran Accueil : un tableau de bord en cartes — bonjour, qui est en ligne, messages non lus, jouer, mon profil.
-import { h, icon, token, count, gameLogo } from '../dom.js';
+import { h, changedOnly, icon, token, count, gameLogo } from '../dom.js';
 import { state, unreadTotal, sortedUsers, myTurnTables } from '../store.js';
 import { openProfile } from '../dialogs.js';
 
@@ -44,7 +44,7 @@ export function render(container) {
     : online.length ? `${nb} : lance une partie !`
       : 'Personne d’autre n’est connecté pour l’instant. Invite un ami avec le code de la classe.';
 
-  container.replaceChildren(h('div.home',
+  changedOnly(container).replaceChildren(h('div.home',
     h('section.card.card-hello',
       h('p.card-kicker', dateFmt.format(new Date())),
       h('h1', `${hello()} ${state.me.pseudo}`),

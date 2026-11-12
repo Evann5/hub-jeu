@@ -1,6 +1,6 @@
 // Parcours « ce qu'on attend de moi » : invitation qui laisse une trace, « À toi de jouer » visible depuis un autre écran,
 // adversaire hors ligne, non-lus partagés entre deux onglets du même compte.
-import { monterSuite, jusque, aller, ouvrirMessages, ouvrirTable, rejoindre, ecrire, titre } from './aide.mjs';
+import { monterSuite, jusque, aller, hashDe, ouvrirMessages, ouvrirTable, rejoindre, ecrire, messagesDe, titre } from './aide.mjs';
 
 const S = monterSuite();
 
@@ -64,4 +64,47 @@ S.it('deux onglets du même compte : lire dans l’un retire la pastille de l’
   await aller(b, '#/c/1');
   await jusque(async () => !/^\(/.test(await titre(b)), 'le premier onglet a lu');
   await jusque(async () => !/^\(/.test(await b2.title()), 'la pastille part aussi dans le second onglet');
+});
+
+// Appuie sur un élément sans relâcher ; rend de quoi relâcher au même endroit plus tard.
+async function appuyer(p, cible) {
+  const b = await cible.boundingBox();
+  await p.page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await p.page.mouse.down();
+  return () => p.page.mouse.up();
+}
+
+S.it('un clic n’est pas perdu quand l’écran se met à jour entre l’appui et le relâchement (navigation, liste des conversations, boutons d’une partie)', async ({ ouvrir }) => {
+  const a = await ouvrir();
+  const b = await ouvrir();
+  await ouvrirMessages(b);
+
+  // 1. Barre de navigation : un message arrive (la pastille change) pendant qu'on clique sur « Membres ».
+  let lacher = await appuyer(a, a.page.locator('.navbar').getByRole('link', { name: /^Membres/ }));
+  await ecrire(b, `pendant le clic ${S.pseudo('')}`);
+  await jusque(async () => /^\(1\) /.test(await titre(a)), 'la barre de A a été mise à jour pendant l’appui');
+  await lacher();
+  await jusque(async () => (await hashDe(a)) === '#/membres', 'le clic sur « Membres » a abouti');
+
+  // 2. Liste des conversations : un message arrive dans le salon ouvert pendant qu'on clique sur un autre canal.
+  await aller(a, '#/c/1');
+  await a.page.locator('.composer textarea').waitFor();
+  lacher = await appuyer(a, a.page.locator('.conv-list').getByRole('link', { name: /on-joue-quand/ }));
+  const texte = `encore pendant le clic ${S.pseudo('')}`;
+  await ecrire(b, texte);
+  await jusque(async () => (await messagesDe(a)).includes(texte), 'A a reçu le message pendant l’appui');
+  await lacher();
+  await jusque(async () => (await hashDe(a)) === '#/c/2', 'le clic sur le canal a abouti');
+
+  // 3. Partie : un spectateur arrive (l'en-tête et la colonne sont mis à jour) pendant que l'hôte clique sur « Fermer la partie ».
+  const adresse = await ouvrirTable(a, 'Morpion');
+  await rejoindre(b, adresse);
+  await a.page.getByRole('button', { name: 'Lancer la partie' }).click();
+  await a.page.locator('.mp-board').waitFor();
+  const c = await ouvrir();
+  lacher = await appuyer(a, a.page.getByRole('button', { name: 'Fermer la partie' }));
+  await aller(c, adresse);
+  await a.page.locator('.table-watchers').waitFor(); // le compteur de spectateurs est apparu : l'écran de A a bien été mis à jour
+  await lacher();
+  await a.page.getByRole('dialog').getByText('La partie et son chat disparaissent').waitFor({ timeout: 5000 });
 });

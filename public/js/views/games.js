@@ -1,5 +1,5 @@
 // Écran Jouer : les jeux de la classe (ouvrir une table) et les tables en cours (rejoindre, reprendre, regarder).
-import { h, de, icon, token, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
+import { h, changedOnly, de, icon, token, count, gameLogo, keepFocus, arrowKeys } from '../dom.js';
 import { call } from '../net.js';
 import { modal } from '../dialogs.js';
 import { wantJoin } from './table.js';
@@ -156,7 +156,7 @@ export function render(el) {
     chips('Type de jeu', FAMILIES, family, (k) => { family = k; }),
     chips('Nombre de joueurs', FILTERS.map((f) => (f.key === 'tous' ? { ...f, label: 'Tous joueurs' } : f)), filter, (k) => { filter = k; }));
 
-  keepFocus(el, () => el.replaceChildren(h('div.page',
+  keepFocus(el, () => changedOnly(el).replaceChildren(h('div.page',
     h('div.view-head.page-head',
       h('div', h('h1', 'Jouer'),
         h('p.view-sub', turns ? `C’est à toi de jouer sur ${count(turns, 'partie', 'parties')}.` : 'Crée une partie, invite la classe, joue en direct.'))),

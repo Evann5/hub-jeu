@@ -1,6 +1,6 @@
 // Écran Messages : liste des canaux et des messages privés, conversation, membres en ligne (grand écran).
 // Sur téléphone, la liste et la conversation s'affichent l'une après l'autre (#/messages puis #/c/1).
-import { h, icon, token, toast, colorOf, staffTag, mentions, timeOf, dayKey, dayLabel, stamp, richText, count, keepFocus, announce } from '../dom.js';
+import { h, changedOnly, icon, token, toast, colorOf, staffTag, mentions, timeOf, dayKey, dayLabel, stamp, richText, count, keepFocus, announce } from '../dom.js';
 import { call } from '../net.js';
 import { state, dmScope, otherOf, isAdmin, isStaff, roleColor, sortedUsers } from '../store.js';
 import { openProfile, openChannelEditor, confirmDialog } from '../dialogs.js';
@@ -74,7 +74,7 @@ export function renderList() {
     }, token(u, { size: 's', online: state.online.has(id) }), h('span.label', u.pseudo), badge(state.unread[s])));
   });
 
-  keepFocus(ui.list, () => ui.list.replaceChildren(
+  keepFocus(ui.list, () => changedOnly(ui.list).replaceChildren(
     h('div.view-head', h(scope ? 'h2' : 'h1', 'Messages')),
     h('div.conv-scroll',
       h('div.nav-title', h('h2', 'Canaux'),
@@ -92,7 +92,7 @@ export function renderOnline() {
   const on = users.filter((u) => state.online.has(u.id));
   const row = (u, isOn) => h(`button.member${isOn ? '' : '.offline'}`, { type: 'button', onclick: () => openProfile(u.id) },
     token(u, { online: isOn }), h('span.label', { style: roleColor(u) ? `color:${colorOf(roleColor(u))}` : null }, u.pseudo), staffTag(u));
-  keepFocus(ui.online, () => ui.online.replaceChildren(
+  keepFocus(ui.online, () => changedOnly(ui.online).replaceChildren(
     h('h2', `En ligne — ${on.length}`),
     ...(on.length ? on.map((u) => row(u, true)) : [h('p.nav-empty', 'Personne d’autre pour l’instant.')]),
     ...(users.length > on.length ? [h('h2', `Hors ligne — ${users.length - on.length}`), ...users.filter((u) => !state.online.has(u.id)).map((u) => row(u, false))] : []),

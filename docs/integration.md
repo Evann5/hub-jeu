@@ -47,6 +47,7 @@ Variables d'environnement (`src/config.js`) :
 | `DATA_DIR` | Dossier de la base SQLite, `data/` par défaut. |
 | `PORT` | Port d'écoute, fourni par O2Switch (Passenger). |
 | `ADMIN_CODE` | Protège les pseudos de `ADMINS` : il remplace le code de classe pour créer ces comptes, et un élève ne peut plus les prendre. |
+| `HOST_AWAY_MS` | Pour les tests seulement : délai avant qu'un hôte hors ligne laisse la main dans un salon (60 000 par défaut). |
 | `HOST` | Adresse d'écoute. Sur un VPS derrière nginx : `127.0.0.1`. Vide partout ailleurs. |
 
 ## 4. Organisation des fichiers
@@ -59,6 +60,8 @@ src/db.js              Base SQLite : schéma, canaux de départ, réglages, tran
 src/options.js         Couleurs, avatars, réactions et limites (partagés avec le navigateur par /api/options)
 src/auth.js            Mots de passe (scrypt), sessions (cookie httpOnly), validation, limite des essais de connexion
 src/api.js             Routes HTTP : inscription, connexion, déconnexion, mot de passe, suppression du compte
+src/erreurs.js         ChatError : l'erreur dont le message est montré tel quel à la personne
+src/sauvegarde.js      Sauvegarde quotidienne de la base dans data/sauvegardes/ (7 gardées)
 src/chat.js            Messagerie sans Socket.IO : accès aux conversations, historique, réactions, non-lus, canaux, purge
 src/realtime.js        Socket.IO : présence, envoi des messages, frappe, profil, actions admin
 src/games.js           Catalogue des jeux : lit games/*/game.json et rules.js au démarrage
@@ -74,6 +77,8 @@ public/js/net.js       api() (HTTP), connect() et call() (Socket.IO avec répons
 public/js/auth.js      Écrans de connexion, d'inscription et de mot de passe imposé
 public/js/dialogs.js   Fenêtres : modal(), confirmDialog(), règles, fiche d'un membre avec outils admin, éditeur de canal
 public/js/views/*.js   Un fichier par écran : home, games (Jouer), table (une table #/t/:id), messages, members, profile, admin
+tests/aide-serveur.mjs Tests du hub sans navigateur : serveur jetable et client Socket.IO minimal (src/temps-reel.test.js)
+tests/parcours/        Tests dans un vrai navigateur (Playwright)
 docs/                  Brief, décisions, mise en ligne, ce guide, captures, démo vidéo
 ```
 
@@ -90,7 +95,7 @@ docs/                  Brief, décisions, mise en ligne, ce guide, captures, dé
 | `messages` | id, scope, user_id, body, created_at |
 | `reactions` | message_id, user_id, emoji |
 | `reads` | user_id, scope, last_id (dernier message lu) |
-| `game_tables` | id, game, host_id, status (`lobby`, `playing`, `over`), seats (ids en JSON), left_ids (abandons), options et state (JSON), created_at, updated_at |
+| `game_tables` | id, game, host_id, status (`lobby`, `playing`, `over`), seats (ids en JSON), left_ids (abandons), options et state (JSON), created_at, updated_at, started_at (dernier lancement) |
 
 Le **scope** dit à quelle conversation appartient un message :
 - `c:<id du canal>` pour un canal ;
@@ -142,7 +147,9 @@ Le client appelle `call(socket, 'événement', données)`. La réponse vaut `{ o
 | `channels` | la liste des canaux change |
 | `message`, `message:update`, `message:deleted` | messages et réactions |
 | `typing`, `muted`, `kicked` | frappe, sourdine, déconnexion forcée |
-| `tables` | la liste des tables change (résumés : jeu, hôte, places, statut, à qui le tour) |
+| `read` | la conversation a été lue dans un autre onglet du même compte (`{ scope, lastId }`) |
+| `replaced` | le compte a trop de connexions ouvertes (5) : celle-ci, la plus ancienne, est fermée et ne se reconnecte pas toute seule |
+| `tables:update` | une partie change ou disparaît : `{ table: résumé }` ou `{ removed: id }`. La liste complète (résumés : jeu, hôte, places, statut, à qui le tour) n'arrive qu'à la connexion, dans `state` ; rien n'est envoyé si le résumé public n'a pas changé |
 | `table` | à la salle d'une table : `{ table, view, watchers, events, serverNow }`, avec la vue propre à chaque personne |
 | `table:closed`, `invite` | une table fermée ; une invitation à rejoindre |
 
@@ -153,6 +160,7 @@ Salles Socket.IO : `membres` (tout le monde), `u:<id>` (chaque personne) et `t:<
 - **Écrans** : `app.js` lit l'ancre et appelle `render(conteneur)` de l'écran voulu. Les adresses sont `#/`, `#/jouer`, `#/t/:id`, `#/messages`, `#/c/:id`, `#/dm/:id`, `#/membres`, `#/profil`, `#/admin`. Pour ajouter un écran : un fichier dans `public/js/views/`, une entrée dans `parseRoute()` et dans la table des écrans de `applyRoute()`, un lien dans `renderNav()`. Les écrans qui gardent des éléments en mémoire exportent `leave()`.
 - **État** : tout passe par `store.js`. Les événements du serveur mettent l'état à jour même quand l'écran concerné est fermé.
 - **Créer des éléments** : `h('button.btn', { type: 'button', onclick }, 'Texte')`. Le texte est toujours inséré comme texte, jamais comme HTML.
+- **Reconnexion** : à chaque reconnexion le serveur renvoie `state`. `app.js` ne reconstruit pas l'écran : il appelle `resync()` de l'écran ouvert (`table.js`, `messages.js`), qui redemande les données sans toucher à la saisie en cours ni au jeu monté. Un écran qui garde une saisie doit faire de même.
 - **Fenêtres** : `modal(titre, ...contenu)` et `await confirmDialog(titre, texte, { confirmLabel, danger })`. Ne jamais utiliser `alert` ni `confirm`.
 - **Formulaires** : `asyncForm(form, async () => {...})` désactive le bouton pendant l'envoi et affiche l'erreur sans effacer la saisie.
 
@@ -223,6 +231,7 @@ export function leave(state, playerId, ctx) { return { state }; }      // facult
 - `view()` ne reçoit pas `ctx` : tout ce qui dépend de l'heure (indice dévoilé, fin de phase) doit être écrit dans l'état par `move()` ou `timeout()`. Pour plusieurs échéances, `deadline` vaut la prochaine.
 - Les `events` renvoyés par `move()` partent à toute la salle (joueurs et spectateurs) : rien de secret dedans. Une information pour un seul joueur passe par `view()`.
 - Le hub limite chaque personne à 40 coups par 5 secondes.
+- **Changer la forme de l'état d'un jeu** : les parties en cours ou terminées gardent l'ancien état. Si `status()` ou `view()` plante dessus, le hub met la partie de côté au démarrage (journal : « Partie N illisible, mise de côté ») au lieu de planter ; mieux vaut que les règles lisent encore l'ancienne forme.
 - Sans `leave()`, le bouton « Abandonner » répond que le jeu ne le permet pas. Avec, il faut que la partie continue (ou se termine) sans ce joueur, même si c'était son tour.
 
 ### client.js

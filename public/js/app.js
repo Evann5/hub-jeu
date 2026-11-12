@@ -1,5 +1,5 @@
 // Hubuno côté navigateur : démarrage, connexion temps réel, barre de navigation et choix de l'écran.
-import { h, icon, token, toast, setColors, count, keepFocus } from './dom.js';
+import { h, changedOnly, icon, token, toast, setColors, count, keepFocus } from './dom.js';
 import { api, connect } from './net.js';
 import { renderAuth, renderForcedPassword } from './auth.js';
 import { state, actions, go, dmScope, unreadTotal, isAdmin, gameOf, myTurnTables } from './store.js';
@@ -85,6 +85,7 @@ function startRealtime() {
     if (state.version && s.version && s.version !== state.version && s.version !== state.laterVersion) showUpdate(s.version);
     state.version ??= s.version;
     const wasMuted = state.mutedUntil > Date.now();
+    if (state.me?.id !== s.me.id) state.invites.clear(); // un autre compte dans le même onglet ne voit pas les invitations du précédent
     state.me = s.me;
     state.mutedUntil = s.mutedUntil;
     armMuteEnd();
@@ -121,6 +122,10 @@ function startRealtime() {
     else if (view === 'home') keepFocus(ui.content, () => home.render(ui.content));
     else if (view === 'games') games.refresh();
     else if (view === 'members') members.renderGrid();
+    else if (view === 'admin') { // canaux et rôles ont pu changer pendant la coupure
+      admin.renderChannels();
+      admin.renderRoles();
+    }
     if (wasMuted !== state.mutedUntil > Date.now()) { // la sourdine a changé pendant la coupure
       messages.renderComposer();
       table.onMuted();
@@ -303,6 +308,7 @@ function applyRoute({ moved = false } = {}) {
   state.route = route;
   ui.content.className = `view view-${route.view === 'channel' || route.view === 'dm' ? 'messages' : route.view}`;
   ui.content.scrollTop = 0;
+  ui.content.replaceChildren(); // un autre écran repart d'une page vide : changedOnly() ne compare que deux dessins du même écran
   const view = {
     home, games, table, members, profile, admin,
     messages, channel: messages, dm: messages,
@@ -378,7 +384,7 @@ function renderNav() {
   const badge = total ? h('span.badge.nav-badge', { 'aria-hidden': 'true' }, total > 99 ? '99+' : String(total)) : null;
   const unreadText = total ? `, ${count(total, 'non lu', 'non lus')}` : null;
 
-  keepFocus(ui.nav, () => ui.nav.replaceChildren(
+  keepFocus(ui.nav, () => changedOnly(ui.nav).replaceChildren(
     h('a.nav-brand', { href: '#/', 'aria-label': 'Hubuno, accueil' }, h('span.brand-mark', 'H'), h('span.brand-name', 'Hubuno')),
     h('ul.nav-items',
       item('home', '#/', 'Accueil', icon('home')),

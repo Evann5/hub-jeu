@@ -208,8 +208,14 @@ export function leaveTable(id, userId) {
     if (t.left.includes(userId)) throw new ChatError('Tu as déjà quitté cette partie.');
     if (typeof rules.leave !== 'function') throw new ChatError('Ce jeu ne permet pas d’abandonner en cours de partie.');
     const result = runRules(() => rules.leave(t.state, userId, ctx()));
+    const before = t.left;
     t.left = [...t.left, userId];
-    apply(t, result);
+    try {
+      apply(t, result);
+    } catch (err) {
+      t.left = before; // l'abandon est refusé en entier : le joueur n'est pas marqué « parti » dans une partie qui le compte encore
+      throw err;
+    }
     return t;
   }
   t.seats = t.seats.filter((x) => x !== userId);

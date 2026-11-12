@@ -13,7 +13,10 @@ export function h(tag, props, ...children) {
   }
   for (const [k, v] of Object.entries(props || {})) {
     if (v === undefined || v === null || v === false) continue;
-    if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    if (k.startsWith('on')) {
+      el.addEventListener(k.slice(2), v);
+      el.hasHandler = true; // changedOnly() ne garde un tel élément que s'il est identique
+    }
     else if (k === 'dataset') Object.assign(el.dataset, v);
     else if (k === 'style') el.style.cssText = v;
     else if (k in el && !k.includes('-') && k !== 'list' && k !== 'form') el[k] = v;
@@ -157,12 +160,39 @@ export function keepFocus(zone, redraw) {
   if (key !== null && !active.isConnected) findByKey(zone, key)?.focus({ preventScroll: true });
 }
 
+// Redessiner sans tout remplacer : changedOnly(zone).replaceChildren(...) s'emploie comme zone.replaceChildren(...), mais garde en place
+// les éléments qui n'ont pas changé (même balise, mêmes attributs, même contenu). Pourquoi : un bouton remplacé entre l'appui et le
+// relâchement de la souris perd son clic. Avec un écran redessiné à chaque message ou à chaque coup, « le bouton ne répond pas ».
+// - deep : jusqu'où descendre dans un élément dont seul le contenu a changé (0 : on le remplace en entier) ;
+// - un élément qui porte un gestionnaire (onclick…) n'est jamais gardé à moitié : identique, il reste ; sinon il est remplacé avec son gestionnaire.
+function patch(zone, next, deep) {
+  const old = [...zone.childNodes];
+  next.forEach((n, i) => {
+    const o = old[i];
+    if (!o) zone.append(n);
+    else if (o.isEqualNode(n)) return;
+    else if (deep > 0 && o.nodeType === 1 && n.nodeType === 1 && !o.hasHandler && !n.hasHandler && o.cloneNode(false).isEqualNode(n.cloneNode(false))) patch(o, [...n.childNodes], deep - 1);
+    else o.replaceWith(n);
+  });
+  old.slice(next.length).forEach((o) => o.remove());
+}
+
+export function changedOnly(zone, deep = 6) {
+  return {
+    replaceChildren(...children) {
+      const next = children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false).map((c) => (c instanceof Node ? c : document.createTextNode(String(c))));
+      keepFocus(zone, () => patch(zone, next, deep));
+    },
+  };
+}
+
 // Un groupe de choix (radios, onglets) : un seul arrêt de tabulation, puis les flèches, comme son rôle le promet.
 export function arrowKeys(group) {
   const items = () => [...group.querySelectorAll('[role=radio], [role=tab]')];
   for (const x of items()) x.tabIndex = x.getAttribute('aria-checked') === 'true' || x.getAttribute('aria-selected') === 'true' ? 0 : -1;
   if (group.dataset.arrows) return group;
   group.dataset.arrows = '1';
+  group.hasHandler = true;
   group.addEventListener('keydown', (e) => {
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
     const list = items().filter((x) => !x.disabled);
