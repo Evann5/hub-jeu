@@ -236,6 +236,16 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) markRead();
 });
 
+// La conversation a été lue dans un autre onglet du même compte : la pastille part ici aussi (sauf si un message plus récent est arrivé depuis).
+export function onReadElsewhere({ scope, lastId }) {
+  const conv = state.convs.get(scope);
+  if (!state.unread[scope] || conv?.messages.some((m) => m.id > lastId && m.userId !== state.me.id)) return;
+  delete state.unread[scope];
+  if (conv) conv.pendingRead = false;
+  renderList();
+  onUnreadChange();
+}
+
 // Appelé par app.js pour rafraîchir la pastille de la barre de navigation.
 let onUnreadChange = () => {};
 export function setUnreadListener(fn) {

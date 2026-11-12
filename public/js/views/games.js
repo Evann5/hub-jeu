@@ -113,11 +113,12 @@ function tableRow(t) {
     ? (seated ? 'Ouvrir' : t.seats.length < g.maxPlayers ? 'Rejoindre' : 'Regarder')
     : seated && t.status === 'playing' ? 'Reprendre' : 'Regarder';
   const mine = t.status === 'playing' && t.turn.includes(state.me.id);
-  return h('li', h(`a.table-row${mine ? '.is-turn' : ''}`, { href: `#/t/${t.id}`, onclick: () => { if (action === 'Rejoindre') wantJoin(t.id); }, style: `--g:${g.color};--g-ink:${g.ink}` },
+  const inviter = action === 'Rejoindre' ? state.users.get(state.invites.get(t.id)) : null;
+  return h('li', h(`a.table-row${mine ? '.is-turn' : ''}${inviter ? '.is-invited' : ''}`, { href: `#/t/${t.id}`, onclick: () => { if (action === 'Rejoindre') wantJoin(t.id); }, style: `--g:${g.color};--g-ink:${g.ink}` },
     h('span.table-chip', gameLogo(g)),
     h('span.table-info',
       h('b', g.name),
-      h('span', host ? `Partie ${de(host.pseudo)}` : 'Partie', ' · ', statusLabel(t, g))),
+      h('span', inviter ? `Invité par ${inviter.pseudo} · ` : null, host ? `Partie ${de(host.pseudo)}` : 'Partie', ' · ', statusLabel(t, g))),
     h('span.table-seats', { 'aria-label': count(t.seats.length, 'joueur', 'joueurs') },
       t.seats.slice(0, 5).map((id) => token(state.users.get(id), { size: 's' })),
       t.seats.length > 5 ? h('span.more', `+${t.seats.length - 5}`) : null),
@@ -127,7 +128,9 @@ function tableRow(t) {
 export function render(el) {
   container = el;
   const tables = [...state.tables].sort((a, b) => b.updatedAt - a.updatedAt);
-  const mineFirst = (list) => [...list.filter((t) => t.seats.includes(state.me.id)), ...list.filter((t) => !t.seats.includes(state.me.id))];
+  // Les miennes d'abord, puis celles où l'on m'a invité, puis les autres.
+  const rank = (t) => (t.seats.includes(state.me.id) ? 0 : state.invites.has(t.id) ? 1 : 2);
+  const mineFirst = (list) => [...list].sort((a, b) => rank(a) - rank(b));
   const open = mineFirst(tables.filter((t) => t.status === 'lobby'));
   const playing = mineFirst(tables.filter((t) => t.status === 'playing'));
   const over = tables.filter((t) => t.status === 'over' && t.seats.includes(state.me.id)).slice(0, 6);

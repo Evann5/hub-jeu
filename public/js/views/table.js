@@ -156,7 +156,10 @@ function renderHead() {
   const { table: t, game: g } = cur;
   cur.ui.root.className = viewClass();
   const myTurn = cur.turnGated ? cur.turnShown : t.turn.includes(state.me.id); // un jeu peut retenir l'annonce jusqu'à la fin de son animation (api.showTurn)
-  const label = t.status === 'lobby' ? 'En attente' : t.status === 'over' ? 'Terminée' : myTurn ? 'À toi de jouer' : 'En cours';
+  // Ceux qu'on attend sont tous hors ligne (des joueurs de la partie, pas des robots) : on le dit, au lieu de laisser croire qu'ils réfléchissent.
+  const awaited = t.status === 'playing' ? t.turn.filter((id) => t.seats.includes(id)) : [];
+  const away = !myTurn && awaited.length > 0 && awaited.length === t.turn.length && awaited.every((id) => !state.online.has(id));
+  const label = t.status === 'lobby' ? 'En attente' : t.status === 'over' ? 'Terminée' : myTurn ? 'À toi de jouer' : away ? (awaited.length === 1 ? `${userOf(awaited[0]).pseudo} est hors ligne` : 'Joueurs hors ligne') : 'En cours';
   if (cur.spoken !== undefined && cur.spoken !== label && (label === 'À toi de jouer' || label === 'Terminée')) announce(label === 'Terminée' ? 'Partie terminée.' : 'À toi de jouer.');
   if (cur.spoken !== undefined && cur.spoken !== 'Terminée' && label === 'Terminée' && cur.tab === 'chat' && (mobile() || isWide())) toast('Partie terminée : regarde l’onglet Partie.');
   cur.spoken = label;
@@ -607,6 +610,7 @@ export function onMuted() {
 // Profils ou présence changés : on redessine les joueurs.
 export function refresh() {
   if (!cur?.ui || !cur.table) return;
+  renderHead();
   renderSide();
   if (cur.table.status === 'lobby') renderLobby();
 }

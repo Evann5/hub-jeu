@@ -299,6 +299,7 @@ export function attachRealtime(httpServer) {
     socket.on('read', handler(socket, ({ scope, lastId }, me) => {
       chat.checkScope(scope, me.id);
       chat.markRead(me.id, scope, lastId);
+      socket.to(`u:${me.id}`).emit('read', { scope, lastId: Number(lastId) || 0 }); // ses autres onglets et appareils
       return {};
     }));
 

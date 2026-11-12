@@ -117,6 +117,10 @@ export function toast(text, { error = false, ms = 3500, action = false } = {}) {
   const head = document.querySelector('.view-table .table-head');
   if (head) box.style.setProperty('--toast-top', `${Math.round(head.getBoundingClientRect().bottom) + 8}px`);
   else box.style.removeProperty('--toast-top');
+  // Dans une conversation, il se pose au-dessus de la zone d'écriture : le brouillon reste visible et cliquable.
+  const composer = document.querySelector('.view-messages.has-conv .composer-wrap');
+  if (composer) box.style.setProperty('--toast-bottom', `${Math.round(window.innerHeight - composer.getBoundingClientRect().top) + 8}px`);
+  else box.style.removeProperty('--toast-bottom');
   box.append(el);
   const end = () => {
     el.remove();

@@ -205,11 +205,17 @@ function startRealtime() {
   socket.on('message:update', messages.onMessageUpdate);
   socket.on('message:deleted', (m) => (m.scope.startsWith('t:') ? table.onMessageDeleted(m) : messages.onMessageDeleted(m)));
   socket.on('typing', messages.onTyping);
+  socket.on('read', messages.onReadElsewhere);
 
   // ——— Tables de jeu ———
   // La liste repart à chaque coup de chaque table : on ne redessine que si quelque chose de visible a changé.
   let tablesSeen = '';
   const onTables = () => {
+    // Une invitation ne vaut que tant que la partie attend des joueurs et que je n'y suis pas assis.
+    for (const id of state.invites.keys()) {
+      const t = state.tables.find((x) => x.id === id);
+      if (!t || t.status !== 'lobby' || t.seats.includes(state.me.id)) state.invites.delete(id);
+    }
     const seen = JSON.stringify(state.tables.map(({ updatedAt, deadline, ...visible }) => visible));
     if (seen === tablesSeen) return;
     tablesSeen = seen;
@@ -230,6 +236,8 @@ function startRealtime() {
   socket.on('invite', ({ tableId, game, from }) => {
     const g = gameOf(game);
     const who = state.users.get(from)?.pseudo || 'Quelqu’un';
+    state.invites.set(tableId, from); // la notification passe, la trace reste sur la page Jouer
+    games.refresh();
     toast([`${who} t’invite à jouer à ${g?.name || 'un jeu'}. `, h('a.toast-link', { href: `#/t/${tableId}`, onclick: (e) => { table.wantJoin(tableId); e.currentTarget.closest('.toast')?.remove(); } }, 'Rejoindre')], { ms: 30000, action: true });
   });
 }
@@ -355,7 +363,8 @@ function renderNav() {
   if (!ui) return;
   const { view } = state.route;
   const total = unreadTotal();
-  document.title = `${total ? `(${total > 99 ? '99+' : total}) ` : ''}${pageName(state.route)} · Hubuno`;
+  const turnsNow = myTurnTables().length; // visible depuis un autre onglet ou une autre fenêtre
+  document.title = `${total ? `(${total > 99 ? '99+' : total}) ` : ''}${turnsNow ? 'À toi de jouer · ' : ''}${pageName(state.route)} · Hubuno`;
   const section = ['messages', 'channel', 'dm'].includes(view) ? 'messages' : view === 'table' ? 'games' : view;
   const turns = myTurnTables().length;
   const turnBadge = turns ? h('span.badge.nav-badge.badge-turn', { 'aria-hidden': 'true' }, String(turns)) : null;
