@@ -3,7 +3,7 @@
 //  2. l'accusé de réception se perd (le serveur a reçu le message) : il ne doit pas apparaître deux fois.
 import { writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { monterSuite, jusque, ouvrirMessages, ecrire, messagesDe, RACINE, aller } from './aide.mjs';
+import { monterSuite, jusque, ouvrirMessages, ecrire, messagesDe, RACINE, aller, ouvrirTable, rejoindre } from './aide.mjs';
 
 const S = monterSuite();
 const copies = async (p, texte) => (await messagesDe(p)).filter((t) => t === texte).length;
@@ -117,4 +117,74 @@ S.it('mise à jour : après un redémarrage avec un autre code, la page propose 
   } finally {
     rmSync(fichier, { force: true });
   }
+});
+
+// Le wifi saute dans la page (le serveur, lui, tourne toujours), puis revient quand le test le décide.
+const couperWifi = (p) => p.page.evaluate(async () => {
+  const { state } = await import('./js/store.js');
+  window.__etats = 0;
+  state.socket.on('state', () => { window.__etats += 1; });
+  state.socket.io.reconnection(false);
+  state.socket.io.engine.close();
+});
+async function retrouverWifi(p) {
+  await p.page.evaluate(async () => {
+    const { state } = await import('./js/store.js');
+    state.socket.io.reconnection(true);
+    state.socket.connect();
+  });
+  await jusque(() => p.page.evaluate(() => window.__etats >= 1), 'la page a retrouvé le serveur');
+  await p.page.locator('.conn-banner').waitFor({ state: 'hidden' });
+}
+
+S.it('coupure de wifi dans la messagerie : le brouillon reste dans la zone d’écriture et les messages manqués arrivent', async ({ ouvrir }) => {
+  const a = await ouvrir();
+  const b = await ouvrir();
+  await ouvrirMessages(a);
+  await ouvrirMessages(b);
+  await ecrire(b, `avant ${S.pseudo('')}`);
+  const brouillon = 'Un long message que je suis en train d’écrire';
+  await a.page.locator('.composer textarea').fill(brouillon);
+  await a.page.evaluate(() => { document.querySelector('.composer textarea').__marque = 'même champ'; });
+  await couperWifi(a);
+  await a.page.locator('.conn-banner').waitFor({ state: 'visible' });
+  const manque = `pendant la coupure ${S.pseudo('')}`;
+  await ecrire(b, manque);
+  await retrouverWifi(a);
+  await jusque(async () => (await messagesDe(a)).includes(manque), 'le message envoyé pendant la coupure apparaît chez A');
+  if ((await a.page.locator('.composer textarea').inputValue()) !== brouillon) throw new Error('le brouillon a été effacé par la reconnexion');
+  if (!(await a.page.evaluate(() => document.querySelector('.composer textarea').__marque === 'même champ'))) throw new Error('la zone d’écriture a été reconstruite');
+  if ((await copies(a, manque)) !== 1) throw new Error('le message manqué apparaît plusieurs fois');
+});
+
+S.it('coupure de wifi en pleine partie : le jeu n’est pas démonté, le coup joué pendant la coupure apparaît, le brouillon du chat reste', async ({ ouvrir }) => {
+  const a = await ouvrir();
+  const b = await ouvrir();
+  const adresse = await ouvrirTable(a, 'Morpion');
+  await rejoindre(b, adresse);
+  await a.page.getByRole('button', { name: 'Lancer la partie' }).click();
+  for (const p of [a, b]) await p.page.locator('.mp-board').waitFor();
+  const aLaMain = (p) => p.page.locator('.table-head').textContent().then((t) => t.includes('À toi de jouer'));
+  await jusque(async () => (await aLaMain(a)) || (await aLaMain(b)), 'quelqu’un a la main');
+  if (await aLaMain(a)) { // A joue d'abord : pendant la coupure, ce sera à B
+    await a.page.locator('.mp-cell').first().click();
+    await jusque(() => aLaMain(b), 'la main passe à B');
+  }
+  const avant = await a.page.locator('.mp-cell.is-x, .mp-cell.is-o').count();
+  await a.page.evaluate(() => { document.querySelector('.game-stage').__marque = 'même jeu'; });
+  await a.page.locator('.tchat-form input').fill('je réfléchis');
+  await couperWifi(a);
+  await a.page.locator('.conn-banner').waitFor({ state: 'visible' });
+  await b.page.locator('.mp-cell:not(.is-x):not(.is-o)').first().click();
+  await b.page.locator('.tchat-form input').fill('à toi !');
+  await b.page.locator('.tchat-form button').click();
+  await retrouverWifi(a);
+  await jusque(async () => (await a.page.locator('.mp-cell.is-x, .mp-cell.is-o').count()) === avant + 1, 'le coup joué pendant la coupure apparaît chez A');
+  await jusque(() => aLaMain(a), 'A voit que c’est à lui');
+  await a.page.locator('.tchat-msg', { hasText: 'à toi !' }).waitFor();
+  if (!(await a.page.evaluate(() => document.querySelector('.game-stage')?.__marque === 'même jeu'))) throw new Error('le jeu a été démonté puis remonté par la reconnexion');
+  if ((await a.page.locator('.tchat-form input').inputValue()) !== 'je réfléchis') throw new Error('le brouillon du chat de la partie a été effacé');
+  // La partie continue normalement après la coupure.
+  await a.page.locator('.mp-cell:not(.is-x):not(.is-o)').first().click();
+  await jusque(async () => (await b.page.locator('.mp-cell.is-x, .mp-cell.is-o').count()) === avant + 2, 'le coup de A après la coupure arrive chez B');
 });

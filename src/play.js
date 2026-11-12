@@ -5,6 +5,7 @@ import { catalog } from './games.js';
 import { ChatError } from './chat.js';
 import { getUser } from './auth.js';
 import { logMod } from './journal.js';
+import { config } from './config.js';
 
 let io;
 const timers = new Map(); // tableId -> minuteur en cours
@@ -39,9 +40,34 @@ function sweepLobbies() {
   }
 }
 
+// Qui a au moins une connexion ouverte (salle « u:<id> » de chaque personne).
+const isOnline = (userId) => Boolean(io.sockets.adapter.rooms.get(`u:${userId}`)?.size);
+
+// Un salon dont l'hôte est hors ligne : les autres ne peuvent pas lancer. Après config.hostAwayMs, la main passe au premier joueur assis en ligne.
+const hostAwaySince = new Map();
+function sweepHosts() {
+  const now = Date.now();
+  const open = tables.lobbies();
+  for (const id of hostAwaySince.keys()) if (!open.some((t) => t.id === id)) hostAwaySince.delete(id);
+  for (const t of open) {
+    if (isOnline(t.hostId)) {
+      hostAwaySince.delete(t.id);
+      continue;
+    }
+    if (!hostAwaySince.has(t.id)) hostAwaySince.set(t.id, now);
+    if (now - hostAwaySince.get(t.id) < config.hostAwayMs) continue;
+    const next = t.seats.find((x) => x !== t.hostId && isOnline(x));
+    if (next === undefined) continue; // personne d'autre en ligne : le salon vide se fermera tout seul
+    hostAwaySince.delete(t.id);
+    const moved = tables.passHost(t.id, next);
+    if (moved) changed(moved);
+  }
+}
+
 export function initPlay(server) {
   io = server;
   setInterval(sweepLobbies, 30_000).unref();
+  setInterval(sweepHosts, Math.min(15_000, Math.max(200, config.hostAwayMs / 3))).unref();
   for (const t of tables.loadTables()) schedule(t);
 }
 
@@ -196,7 +222,8 @@ export function registerPlay(socket, handler) {
   }, { generalLimit: false, ownLimit: tooFast })); // les coups ont leur propre limite ; un refus compte pour couper la prise
 
   socket.on('table:restart', handler(socket, ({ id }, me) => {
-    changed(tables.restartTable(tableId(id), me.id));
+    const t = tables.getTable(tableId(id));
+    changed(tables.restartTable(t.id, me.id, { hostAway: !isOnline(t.hostId) }));
     return {};
   }));
 

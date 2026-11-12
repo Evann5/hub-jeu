@@ -21,5 +21,7 @@ export const config = {
   // Le code qui protège ces pseudos : à donner à la place du code de classe pour créer un compte admin. Vide : le code de classe suffit (en local).
   adminCode: process.env.ADMIN_CODE || '',
   messageRetentionDays: 365,
+  // Dans un salon, un hôte hors ligne depuis ce délai laisse la main au joueur suivant (HOST_AWAY_MS sert aux tests).
+  hostAwayMs: Number(process.env.HOST_AWAY_MS) || 60_000,
   sessionDays: 60,
 };

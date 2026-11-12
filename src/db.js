@@ -109,13 +109,19 @@ db.exec(`
     state TEXT,
     left_ids TEXT NOT NULL DEFAULT '[]',
     created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    updated_at INTEGER NOT NULL,
+    started_at INTEGER
   );
 `);
 
 // Colonne ajoutée après coup : joueurs qui ont abandonné la partie en cours.
 if (!db.prepare('PRAGMA table_info(game_tables)').all().some((c) => c.name === 'left_ids')) {
   db.exec("ALTER TABLE game_tables ADD COLUMN left_ids TEXT NOT NULL DEFAULT '[]'");
+}
+
+// Colonne ajoutée après coup : l'heure du dernier lancement de la partie (le navigateur y reconnaît une nouvelle manche).
+if (!db.prepare('PRAGMA table_info(game_tables)').all().some((c) => c.name === 'started_at')) {
+  db.exec('ALTER TABLE game_tables ADD COLUMN started_at INTEGER');
 }
 
 // Colonne ajoutée après coup : un canal réservé à l'équipe (modos et admins).

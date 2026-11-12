@@ -21,6 +21,15 @@ export function leave() {
   ui = null;
 }
 
+// Après une coupure de connexion : listes et messages rechargés, sans reconstruire l'écran (le brouillon en cours reste dans la zone d'écriture).
+export function resync() {
+  if (!ui) return;
+  renderList();
+  renderOnline();
+  const scope = currentScope();
+  if (scope) loadHistory(scope);
+}
+
 // ——— Rendu de l'écran ———
 
 export function render(container) {

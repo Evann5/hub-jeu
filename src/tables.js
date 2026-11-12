@@ -8,10 +8,11 @@ const tables = new Map(); // id -> { id, game, hostId, status, seats, left, opti
 const MAX_OPEN_PER_HOST = 3;
 
 const save = db.prepare(
-  `INSERT INTO game_tables (id, game, host_id, status, seats, left_ids, options, state, created_at, updated_at)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `INSERT INTO game_tables (id, game, host_id, status, seats, left_ids, options, state, created_at, updated_at, started_at)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    ON CONFLICT(id) DO UPDATE SET host_id = excluded.host_id, status = excluded.status, seats = excluded.seats,
-     left_ids = excluded.left_ids, options = excluded.options, state = excluded.state, updated_at = excluded.updated_at`,
+     left_ids = excluded.left_ids, options = excluded.options, state = excluded.state, updated_at = excluded.updated_at,
+     started_at = excluded.started_at`,
 );
 
 // Une partie illisible (état d'un ancien format après la mise à jour d'un jeu, ligne abîmée) est mise de côté : elle reste dans la base
@@ -36,6 +37,7 @@ export function loadTables() {
         state: r.state ? JSON.parse(r.state) : null,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
+        startedAt: r.started_at ?? null,
       };
       if (!Array.isArray(t.seats) || !Array.isArray(t.left)) throw new Error('places illisibles');
       // Les règles d'aujourd'hui savent-elles lire cet état ? (statut, puis vue d'un spectateur et de chaque joueur)
@@ -76,7 +78,7 @@ export function safeSummary(t) {
 function persist(t) {
   t.updatedAt = Date.now();
   save.run(t.id, t.game, t.hostId, t.status, JSON.stringify(t.seats), JSON.stringify(t.left), JSON.stringify(t.options),
-    t.state === null ? null : JSON.stringify(t.state), t.createdAt, t.updatedAt);
+    t.state === null ? null : JSON.stringify(t.state), t.createdAt, t.updatedAt, t.startedAt ?? null);
 }
 
 function remove(t) {
@@ -132,7 +134,7 @@ export function summary(t) {
   const { turn, over, winners, label, deadline, silent } = statusOf(t);
   return {
     id: t.id, game: t.game, hostId: t.hostId, status: t.status, seats: t.seats, left: t.left, kicked: t.kicked ?? [], options: t.options,
-    turn, over, winners, label, deadline, silent, createdAt: t.createdAt, updatedAt: t.updatedAt,
+    turn, over, winners, label, deadline, silent, createdAt: t.createdAt, updatedAt: t.updatedAt, startedAt: t.startedAt ?? null,
   };
 }
 
@@ -258,6 +260,7 @@ export function startTable(id, userId) {
   t.state = state;
   t.left = [];
   t.status = over ? 'over' : 'playing';
+  t.startedAt = Date.now(); // une nouvelle manche : le navigateur remonte le jeu, même s'il a raté le retour au salon
   persist(t);
   return t;
 }
@@ -283,12 +286,23 @@ export function runTimeout(id) {
   return { table: t, events };
 }
 
-// Revanche : la table revient au salon avec les mêmes joueurs et réglages.
-export function restartTable(id, userId) {
+// L'hôte d'un salon est hors ligne : la main passe à un autre joueur assis (l'ancien hôte garde sa place).
+export function passHost(id, nextId) {
   const t = getTable(id);
-  mustHost(t, userId);
+  if (t.status !== 'lobby' || !t.seats.includes(nextId)) return null;
+  t.hostId = nextId;
+  persist(t);
+  return t;
+}
+
+// Revanche : la table revient au salon avec les mêmes réglages et les joueurs restés jusqu'au bout. N'importe quel joueur de la partie
+// peut la lancer (celui qui a abandonné aussi : il se rassoit). Si l'hôte est parti (abandon, ou hors ligne : hostAway), celui qui la lance devient l'hôte.
+export function restartTable(id, userId, { hostAway = false } = {}) {
+  const t = getTable(id);
   if (t.status !== 'over') throw new ChatError('La partie n’est pas terminée.');
-  t.seats = t.seats.filter((id) => !t.left.includes(id));
+  if (!t.seats.includes(userId)) throw new ChatError('Seuls les joueurs de la partie peuvent lancer la revanche.');
+  if (userId !== t.hostId && (hostAway || t.left.includes(t.hostId))) t.hostId = userId;
+  t.seats = t.seats.filter((x) => !t.left.includes(x) || x === userId);
   if (!t.seats.includes(t.hostId)) t.seats.unshift(t.hostId);
   t.left = [];
   t.status = 'lobby';

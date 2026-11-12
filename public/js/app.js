@@ -84,6 +84,7 @@ function startRealtime() {
     // Le serveur a redémarré avec un autre code (mise à jour) : cette page a l’ancien, on propose de recharger.
     if (state.version && s.version && s.version !== state.version && s.version !== state.laterVersion) showUpdate(s.version);
     state.version ??= s.version;
+    const wasMuted = state.mutedUntil > Date.now();
     state.me = s.me;
     state.mutedUntil = s.mutedUntil;
     armMuteEnd();
@@ -105,8 +106,26 @@ function startRealtime() {
       renderForcedPassword(root, { onDone: startRealtime });
       return;
     }
-    if (!ui) buildShell();
-    applyRoute();
+    // Première connexion, ou l'écran affiché n'existe plus (canal supprimé, compte parti, droits retirés) : on affiche l'écran de l'adresse.
+    // Simple reconnexion : on rafraîchit l'écran en place, sans le reconstruire (ni brouillon perdu, ni jeu remonté).
+    const first = !ui;
+    if (first) buildShell();
+    const now = parseRoute();
+    if (first || now.view !== state.route.view || now.id !== state.route.id) {
+      applyRoute();
+      return;
+    }
+    const { view } = state.route;
+    if (view === 'table') table.resync();
+    else if (['messages', 'channel', 'dm'].includes(view)) messages.resync();
+    else if (view === 'home') keepFocus(ui.content, () => home.render(ui.content));
+    else if (view === 'games') games.refresh();
+    else if (view === 'members') members.renderGrid();
+    if (wasMuted !== state.mutedUntil > Date.now()) { // la sourdine a changé pendant la coupure
+      messages.renderComposer();
+      table.onMuted();
+    }
+    renderNav();
   });
 
   socket.on('connect_error', (err) => {

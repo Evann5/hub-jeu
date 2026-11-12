@@ -123,3 +123,65 @@ test('sessions : 10 par compte au plus, la plus récente reste valable', async (
   assert.equal((await fetch(`${srv.url}api/me`, { headers: { cookie } })).status, 200, 'la dernière connexion marche');
   assert.equal((await fetch(`${srv.url}api/me`, { headers: { cookie: compte.cookie } })).status, 401, 'la plus ancienne session a été retirée');
 });
+
+test('hôte absent : dans un salon, la main passe à un joueur en ligne ; après la partie, un joueur resté peut lancer la revanche', async () => {
+  const s3 = await lancerServeur({ env: { HOST_AWAY_MS: '600' } });
+  try {
+    const hote = await inscrire(s3, pseudo());
+    const autre = await inscrire(s3, pseudo());
+    const ch = await new Client(s3, hote).ouvrir();
+    const ca = await new Client(s3, autre).ouvrir();
+    try {
+      const table = (id) => ca.dernier('tables')?.find((t) => t.id === id) ?? ca.recus.findLast((r) => r.ev === 'tables:update' && r.data.table?.id === id)?.data.table;
+      // 1. Salon : l'hôte ferme son onglet, l'autre joueur attend.
+      const { id } = await ch.appel('table:create', { game: 'morpion' });
+      await ca.appel('table:watch', { id });
+      assert.equal((await ca.appel('table:join', { id })).ok, true);
+      assert.equal((await ca.appel('table:start', { id })).ok, false, 'tant que l’hôte est là, lui seul lance');
+      ch.fermer();
+      await jusque(() => table(id)?.hostId === autre.id, 'la main est passée au joueur en ligne', 5000);
+      assert.deepEqual(table(id).seats, [hote.id, autre.id], 'l’ancien hôte garde sa place');
+      assert.equal((await ca.appel('table:start', { id })).ok, true, 'le nouvel hôte lance la partie');
+      // 2. Fin de partie : l'ancien hôte, revenu, abandonne puis repart ; l'autre lance la revanche.
+      const ch2 = await new Client(s3, hote).ouvrir();
+      assert.equal((await ch2.appel('table:leave', { id })).ok, true);
+      await jusque(() => table(id)?.status === 'over', 'la partie est terminée');
+      ch2.fermer();
+      assert.equal((await ca.appel('table:restart', { id })).ok, true, 'un joueur resté lance la revanche');
+      await jusque(() => table(id)?.status === 'lobby', 'retour au salon');
+      assert.deepEqual(table(id).seats, [autre.id], 'celui qui a abandonné n’est pas rassis');
+    } finally {
+      ch.fermer();
+      ca.fermer();
+    }
+  } finally {
+    await s3.arreter();
+  }
+});
+
+test('revanche : refusée à un spectateur, ouverte à tous les joueurs de la partie ; si l’hôte a abandonné, celui qui relance devient l’hôte', async () => {
+  const a = await inscrire(srv, pseudo());
+  const b = await inscrire(srv, pseudo());
+  const ca = await connecter(a);
+  const cb = await connecter(b);
+  const cs = await connecter(await inscrire(srv, pseudo()));
+  const { id } = await ca.appel('table:create', { game: 'morpion' });
+  await cb.appel('table:join', { id });
+  await ca.appel('table:start', { id });
+  assert.equal((await cb.appel('table:leave', { id })).ok, true); // b abandonne : la partie est finie
+  assert.equal((await cs.appel('table:restart', { id })).ok, false, 'un spectateur ne relance pas');
+  assert.equal((await cb.appel('table:restart', { id })).ok, true, 'un joueur qui n’est pas l’hôte relance, même après avoir abandonné');
+  const salon = () => ca.dernier('tables')?.find((t) => t.id === id) ?? ca.recus.findLast((r) => r.ev === 'tables:update' && r.data.table?.id === id)?.data.table;
+  await jusque(() => salon()?.status === 'lobby', 'retour au salon');
+  assert.equal(salon().hostId, a.id, 'l’hôte, toujours là, reste l’hôte');
+  assert.deepEqual(salon().seats, [a.id, b.id]);
+  // L'hôte abandonne : l'autre joueur, resté jusqu'au bout, relance et devient l'hôte.
+  const { id: id2 } = await ca.appel('table:create', { game: 'morpion' });
+  await cb.appel('table:join', { id: id2 });
+  await ca.appel('table:start', { id: id2 });
+  assert.equal((await ca.appel('table:leave', { id: id2 })).ok, true);
+  assert.equal((await cb.appel('table:restart', { id: id2 })).ok, true, 'le joueur resté relance');
+  const vue = () => cb.dernier('tables')?.find((t) => t.id === id2) ?? cb.recus.findLast((r) => r.ev === 'tables:update' && r.data.table?.id === id2)?.data.table;
+  await jusque(() => vue()?.status === 'lobby' && vue().hostId === b.id, 'retour au salon, le joueur resté est l’hôte');
+  assert.deepEqual(vue().seats, [b.id]);
+});

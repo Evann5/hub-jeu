@@ -63,10 +63,25 @@ export function onTable(payload) {
     unmountGame();
     renderLobby();
   } else {
+    // Une autre manche que celle qui est montée (revanche lancée pendant une coupure) : le jeu repart de zéro.
+    if (cur.mounted && cur.mountedFor !== table.startedAt) unmountGame();
     if (!cur.mounted) mountGame();
     else notifyGame();
     renderEndBar();
   }
+}
+
+// Après une coupure de connexion : on redemande la partie et son chat, sans rien démonter. Le jeu reçoit l'état à jour,
+// la saisie en cours (chat) et ce que le joueur regardait restent en place.
+export function resync() {
+  if (!cur) return;
+  const id = cur.id;
+  call(state.socket, 'table:watch', { id }).catch((err) => {
+    if (cur?.id !== id) return;
+    toast(err.message, { error: true });
+    go('#/jouer');
+  });
+  loadChat(id, cur.chat);
 }
 
 // Rejoindre depuis la liste ou une invitation : on s'assoit en arrivant, sans second clic.
@@ -287,7 +302,7 @@ function renderLobby() {
   }
   const hint = missing > 0
     ? `Encore ${count(missing, 'joueur', 'joueurs')} pour lancer.`
-    : isHost() ? 'Tout le monde est là ? Lance la partie.' : seated() ? `${userOf(t.hostId).pseudo} peut lancer la partie.` : null;
+    : isHost() ? 'Tout le monde est là ? Lance la partie.' : seated() ? (state.online.has(t.hostId) ? `${userOf(t.hostId).pseudo} peut lancer la partie.` : `${userOf(t.hostId).pseudo} est hors ligne : dans une minute, un autre joueur pourra lancer la partie.`) : null;
 
   // Le corps défile ; le pied (message + boutons) reste toujours visible en bas de la carte.
   const fillMain = (node) => keepFocus(cur.ui.main, () => cur.ui.main.replaceChildren(node));
@@ -407,6 +422,7 @@ async function mountGame() {
   const mine = cur;
   const g = cur.game;
   mine.mounted = true;
+  mine.mountedFor = mine.table.startedAt;
   mine.stage = h(`div.game-stage.g-${g.id}`);
   mine.endbar = h('div.table-endbar', { hidden: true });
   cur.ui.main.replaceChildren(mine.endbar, mine.stage);
@@ -466,6 +482,8 @@ async function mountGame() {
 function unmountGame() {
   if (!cur?.mounted) return;
   cur.mounted = false;
+  cur.turnGated = false;
+  cur.overShown = false;
   cur.listeners.clear();
   try {
     if (typeof cur.cleanup === 'function') cur.cleanup();
@@ -485,18 +503,21 @@ function renderEndBar() {
   endbar.replaceChildren(h('div.endbar',
     h('p', h('b', 'Partie terminée'), t.label ? ` · ${t.label.replace(new RegExp(`^${state.me.pseudo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} gagne$`), 'Tu gagnes')}` : names.length ? ` · ${names.length > 1 ? 'Gagnants' : 'Gagnant'} : ${names.join(', ')}` : ' · Personne ne gagne'),
     h('div.endbar-actions',
-      isHost() ? h('button.btn.btn-sm', { type: 'button', onclick: (e) => act(e, 'table:restart') }, 'Revanche') : seated() ? h('span.endbar-note', `${userOf(t.hostId).pseudo} peut lancer la revanche.`) : null,
+      // N'importe quel joueur de la partie peut lancer la revanche (l'hôte a pu partir).
+      seated() ? h('button.btn.btn-sm', { type: 'button', onclick: (e) => act(e, 'table:restart') }, 'Revanche') : null,
       h('a.btn.btn-ghost.btn-sm', { href: '#/jouer' }, 'Retour aux jeux'))));
 }
 
 // ——— Chat de la table ———
 
-async function loadChat(id) {
+// before : les messages déjà affichés avant une coupure (ils sont remplacés par l'historique à jour : un message effacé entre-temps disparaît).
+async function loadChat(id, before = []) {
+  const stale = new Set(before.map((m) => m.id));
   try {
     const res = await call(state.socket, 'history', { scope: `t:${id}` });
     if (cur?.id !== id) return;
     const known = new Set(res.messages.map((m) => m.id));
-    cur.chat = [...res.messages, ...cur.chat.filter((m) => !known.has(m.id))]; // ceux arrivés pendant le chargement restent
+    cur.chat = [...res.messages, ...cur.chat.filter((m) => !known.has(m.id) && !stale.has(m.id))]; // ceux arrivés pendant le chargement restent
     renderChatList();
   } catch {
     // La table n'existe plus : l'erreur est déjà affichée par table:watch.
