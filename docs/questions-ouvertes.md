@@ -13,4 +13,4 @@
 | Espions : « équipe » ou « agence » : le mélange est-il voulu pour le thème | Minh | Quand il veut |
 | Hubuno est-il déjà en ligne sur O2Switch, et la classe l'utilise-t-elle ? (si oui, chaque poussée est une mise à jour pour de vrais élèves) | Minh | Avant la prochaine poussée |
 | Sur O2Switch : quelle adresse le serveur voit-il pour un élève (les limites d'inscription et de connexion comptent par adresse), l'appli tourne-t-elle bien en une seule copie, est-elle mise en veille au repos ? | L'ami de Minh, sur place | À l'installation |
-| Le dépôt `minh54500/hub-jeu` est **public** (constaté le 16/11/2026) alors que la doc le dit privé : le repasser en privé (Settings > General > Danger Zone), ou assumer qu'il est public et alléger la clé de déploiement | Minh | Avant la mise en ligne |
+| Le dépôt `Evann5/hub-jeu` est **public** (c'est un fork d'un dépôt public, GitHub ne permet pas de le passer en privé) : le garder ainsi, ou recréer un dépôt privé à partir de lui | Evan | Avant la mise en ligne |

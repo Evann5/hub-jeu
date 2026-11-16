@@ -11,7 +11,7 @@ Tu vas m'aider à installer une application web sur mon hébergement O2Switch (c
 - **Hubuno** : un hub privé de jeux et de messagerie pour la classe de mon ami Minh (20 à 40 étudiants).
 - **Technique** : une appli Node.js. Le serveur Express et Socket.IO tourne en temps réel, avec le fichier de démarrage `server.js` à la racine. La base est SQLite, intégrée à Node (`node:sqlite`). Il n'y a aucune étape de build et aucune dépendance native à compiler.
 - **Version de Node** : il faut **la 22.13 ou plus** (le `package.json` déclare `"engines": {"node": ">=22.13"}`). En dessous, l'appli ne démarre pas, parce que `node:sqlite` n'y existe pas sans option.
-- **Code** : sur GitHub, dépôt **privé** `minh54500/hub-jeu`, branche `main`, adresse `git@github.com:minh54500/hub-jeu.git`. J'y accède avec une **clé de déploiement en lecture seule** que Minh ajoute de son côté.
+- **Code** : sur GitHub, dépôt `Evann5/hub-jeu`, branche `main`, adresse `git@github.com:Evann5/hub-jeu.git`. J'y accède avec une **clé de déploiement en lecture seule** qu'Evan, propriétaire du dépôt, ajoute de son côté.
 - **Données** : comptes et messages dans `hubuno/data/` (fichiers `hubuno.sqlite*`), créé au premier démarrage. Ce dossier n'est pas dans Git, et `git pull` n'y touche jamais.
 - **Une seule instance** : l'appli garde en mémoire qui est connecté et les parties en cours. Elle ne doit jamais tourner en plusieurs copies en parallèle.
 
@@ -40,8 +40,8 @@ ssh-keygen -t ed25519 -f ~/.ssh/hubuno_github -N "" -C "o2switch-hubuno"
 cat ~/.ssh/hubuno_github.pub
 ```
 
-J'envoie à Minh la ligne qui commence par `ssh-ed25519`. Ce n'est pas un secret : c'est la partie publique de la clé.
-Minh l'ajoute dans GitHub (dépôt > Settings > Deploy keys > Add deploy key, **sans** cocher « Allow write access »). J'attends qu'il me dise que c'est fait.
+J'envoie à Evan la ligne qui commence par `ssh-ed25519`. Ce n'est pas un secret : c'est la partie publique de la clé.
+Evan l'ajoute dans GitHub (dépôt > Settings > Deploy keys > Add deploy key, **sans** cocher « Allow write access »). J'attends qu'il me dise que c'est fait.
 
 ### Étape 2 : relier la clé à GitHub et tester
 
@@ -52,13 +52,13 @@ ssh -T git@github.com
 ```
 
 Ce réglage passe par le port 443, qui n'est jamais bloqué, au lieu du port 22. À la question « Are you sure you want to continue connecting », répondre `yes`.
-- **Attendu** : `Hi minh54500/hub-jeu! You've successfully authenticated, but GitHub does not provide shell access.`
+- **Attendu** : `Hi Evann5/hub-jeu! You've successfully authenticated, but GitHub does not provide shell access.`
 - **`Permission denied (publickey)`** : la clé n'est pas encore dans les Deploy keys, ou `~/.ssh/config` contient un ancien bloc `Host github.com` qui passe avant le nôtre (`cat ~/.ssh/config` pour vérifier).
 
 ### Étape 3 : récupérer le code
 
 ```sh
-git clone git@github.com:minh54500/hub-jeu.git ~/hubuno
+git clone git@github.com:Evann5/hub-jeu.git ~/hubuno
 ls ~/hubuno
 ```
 

@@ -12,7 +12,7 @@ Avec Claude pour se faire guider pas à pas : copier le texte de `docs/installat
   - le **code de la classe** : au moins 10 caractères, c'est la seule barrière à l'inscription ;
   - son **pseudo** d'admin ;
   - un **code admin**, différent du code de classe, connu de lui seul.
-- L'accès au dépôt GitHub de Minh (`minh54500/hub-jeu`, privé) : l'étape 1 explique comment, avec une clé en lecture seule.
+- L'accès au dépôt GitHub d'Evan (`Evann5/hub-jeu`) : l'étape 1 explique comment, avec une clé en lecture seule.
 
 ## 1. Récupérer le code depuis GitHub
 
@@ -23,15 +23,15 @@ ssh-keygen -t ed25519 -f ~/.ssh/hubuno_github -N "" -C "o2switch-hubuno"
 cat ~/.ssh/hubuno_github.pub
 ```
 
-Envoyer à Minh la ligne affichée (elle commence par `ssh-ed25519`). Ce n'est pas un secret : c'est la partie publique de la clé.
-**Minh** l'ajoute dans GitHub : son dépôt > *Settings* > *Deploy keys* > *Add deploy key*, un titre (« O2Switch »), la ligne collée, **sans** cocher *Allow write access*. Le serveur pourra lire le code, jamais le modifier.
+Envoyer à Evan la ligne affichée (elle commence par `ssh-ed25519`). Ce n'est pas un secret : c'est la partie publique de la clé.
+**Evan** l'ajoute dans GitHub : son dépôt > *Settings* > *Deploy keys* > *Add deploy key*, un titre (« O2Switch »), la ligne collée, **sans** cocher *Allow write access*. Le serveur pourra lire le code, jamais le modifier.
 
-Une fois la clé ajoutée par Minh :
+Une fois la clé ajoutée par Evan :
 
 ```sh
 printf 'Host github.com\n  HostName ssh.github.com\n  Port 443\n  User git\n  IdentityFile ~/.ssh/hubuno_github\n  IdentitiesOnly yes\n' >> ~/.ssh/config
 chmod 600 ~/.ssh/config
-git clone git@github.com:minh54500/hub-jeu.git ~/hubuno
+git clone git@github.com:Evann5/hub-jeu.git ~/hubuno
 ls ~/hubuno   # on doit voir server.js, package.json, src, public, games
 ```
 
