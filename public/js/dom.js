@@ -97,10 +97,29 @@ export const colorOf = (name) => colors[name] || '#6B7F78';
 export const staffTag = (u) => (u?.role === 'admin' ? h('span.tag-admin', 'admin') : u?.role === 'modo' ? h('span.tag-admin.tag-modo', 'modo') : null);
 
 // Jeton (avatar) : couleur du joueur, emoji au centre, point vert s'il est en ligne.
+// Un membre qui a créé son personnage : sa tête remplace l'emoji. L'emoji reste affiché tant que l'image se dessine (ou si la 3D est indisponible).
+const heads = new Map(); // personnage -> data URL déjà dessinée, pour poser l'image tout de suite au prochain affichage
 export function token(user, { size = '', online = false } = {}) {
-  return h(`span.token${size ? `.token-${size}` : ''}${online ? '.is-online' : ''}`,
+  const el = h(`span.token${size ? `.token-${size}` : ''}${online ? '.is-online' : ''}`,
     { style: `--c:${colorOf(user?.color)}`, 'aria-hidden': 'true' },
     h('span', user?.avatar || '?'));
+  if (user?.character) {
+    const key = JSON.stringify(user.character);
+    const put = (url) => {
+      if (!url) return;
+      el.append(h('img', { src: url, alt: '', decoding: 'async' }));
+      el.classList.add('has-head');
+    };
+    if (heads.has(key)) put(heads.get(key));
+    else {
+      // Chargé à la demande : la page d'accueil n'attend pas three pour s'afficher.
+      import('./character.js').then((m) => m.characterImage(user.character, { head: true })).then((url) => {
+        if (url) heads.set(key, url);
+        put(url);
+      }).catch(() => {});
+    }
+  }
+  return el;
 }
 
 // Un même message envoyé plusieurs fois reste affiché une seule fois, et dure un peu plus.

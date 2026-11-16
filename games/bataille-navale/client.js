@@ -80,7 +80,7 @@ export function mount(root, api) {
   const timerEl = h('span.bn-timer', { hidden: true, role: 'timer' });
   const report = h('p.bn-report', { 'aria-live': 'polite' });
   const targetPane = h('section.bn-pane.bn-pane-target', h('h2.bn-title', 'Radar ennemi'), target.el, h('div.bn-fleet.bn-fleet-target'));
-  const minePane = h('section.bn-pane.bn-pane-mine', h('h2.bn-title', 'Ma flotte'), mine.el, h('div.bn-fleet.bn-fleet-mine'));
+  const minePane = h('section.bn-pane.bn-pane-mine', h('h2.bn-title', 'Ma flotte'), (api.peek ?? ((x) => x))(mine.el, { label: 'ta flotte' }), h('div.bn-fleet.bn-fleet-mine'));
   const dock = h('div.bn-dock');
   const boards = h('div.bn-boards', targetPane, minePane);
   const wrap = h('div.bn', h('div.bn-top', status, timerEl), report, boards, dock);

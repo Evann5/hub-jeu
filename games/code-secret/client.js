@@ -234,7 +234,7 @@ export function mount(root, api) {
       secretBar.hidden = false;
       secretBar.replaceChildren(
         h('span.cs-secret-label', 'Ton code secret'),
-        h('span.cs-secret-pegs', { role: 'img', 'aria-label': `Ton code : ${codeLabel(mySecret)}` }, mySecret.map((c) => peg(c))),
+        (api.secret ?? ((x) => x))(h('span.cs-secret-pegs', { role: 'img', 'aria-label': `Ton code : ${codeLabel(mySecret)}` }, mySecret.map((c) => peg(c))), { label: 'ton code' }),
       );
     } else {
       secretBar.hidden = true;

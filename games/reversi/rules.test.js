@@ -1,4 +1,4 @@
-// Tests des règles de « Retourne » : node --test "games/reversi/*.test.js"
+// Tests des règles de « Reversi » : node --test "games/reversi/*.test.js"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, move, view, status, timeout, leave, legalCells, flipsFor, counts } from './rules.js';

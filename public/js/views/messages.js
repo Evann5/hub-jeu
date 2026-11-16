@@ -4,6 +4,7 @@ import { h, changedOnly, icon, token, toast, colorOf, staffTag, mentions, timeOf
 import { call } from '../net.js';
 import { state, dmScope, otherOf, isAdmin, isStaff, roleColor, sortedUsers } from '../store.js';
 import { openProfile, openChannelEditor, confirmDialog } from '../dialogs.js';
+import { notifyDM, closeDMNotif, setAfterRead } from '../notifs.js';
 
 let ui = null; // éléments de l'écran ouvert, null quand on est ailleurs
 
@@ -43,6 +44,7 @@ export function render(container) {
   container.replaceChildren(ui.list, ui.conv, ui.online);
   renderList();
   renderOnline();
+  if (scope?.startsWith('dm:')) closeDMNotif(otherOf(scope)); // la conversation est ouverte : sa notification ne sert plus
   if (scope) openConversation(scope);
   else ui.conv.replaceChildren(h('div.conv-empty', h('p', 'Choisis un canal ou une conversation.')));
 }
@@ -251,6 +253,11 @@ let onUnreadChange = () => {};
 export function setUnreadListener(fn) {
   onUnreadChange = fn;
 }
+// Une réponse depuis une notification marque la conversation comme lue : la liste et la navigation suivent.
+setAfterRead(() => {
+  renderList();
+  onUnreadChange();
+});
 
 function conversationStart() {
   if (state.route.view === 'channel') {
@@ -633,7 +640,10 @@ export function onMessage(m) {
   }
   const viewing = Boolean(ui?.messages) && m.scope === currentScope();
   const seen = viewing && !document.hidden && nearBottom();
-  if (m.userId !== state.me.id && !seen && mentions(m.body, state.me.pseudo)) notifyMention(m);
+  // Un message privé reçu ailleurs que dans sa conversation : une carte pour le lire et répondre sur place.
+  const dmElsewhere = m.scope.startsWith('dm:') && m.userId !== state.me.id && !viewing;
+  if (dmElsewhere) notifyDM(m);
+  else if (m.userId !== state.me.id && !seen && mentions(m.body, state.me.pseudo)) notifyMention(m);
   if (m.userId !== state.me.id) {
     const typers = state.typing.get(m.scope);
     if (typers?.has(m.userId)) {

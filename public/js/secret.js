@@ -16,11 +16,16 @@ export function hideSecrets() {
   }
 }
 
+// Le réglage s'applique tout de suite, partie en cours comprise : les caches restent posés, une classe sur la page les ouvre ou les ferme.
+const applyClass = () => document.documentElement.classList.toggle('secrets-shown', !hideSecrets());
+applyClass();
+
 export function setHideSecrets(on) {
   try {
     if (on) localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, 'non');
   } catch { /* navigateur sans stockage : on garde le réglage par défaut */ }
+  applyClass();
 }
 
 function release() {
@@ -32,10 +37,31 @@ window.addEventListener('pointercancel', release);
 window.addEventListener('blur', release);
 document.addEventListener('visibilitychange', release);
 
+// Pour une main qu'on joue à la souris (cartes, dominos) : elle se dévoile tant que la souris est dessus ou que le clavier y est,
+// comme des cartes tenues contre soi. Le jeu peut la redessiner à chaque coup : la nouvelle main reste dévoilée si la souris n'a pas bougé.
+let pointerInPeek = false;
+document.addEventListener('pointermove', (e) => {
+  const inside = e.target instanceof Element ? e.target.closest('.peek-box') : null;
+  pointerInPeek = Boolean(inside);
+  for (const box of document.querySelectorAll('.peek-box')) box.classList.toggle('is-shown', box === inside);
+}, { passive: true });
+document.addEventListener('pointerleave', () => {
+  pointerInPeek = false;
+  for (const box of document.querySelectorAll('.peek-box.is-shown')) box.classList.remove('is-shown');
+});
+
+export function peek(content, { label = 'tes cartes' } = {}) {
+  if (!isDesktop()) return content;
+  const box = h(`div.peek-box${pointerInPeek ? '.is-shown' : ''}`, { 'aria-label': `Passe la souris dessus pour voir ${label}` },
+    h('div.secret-content', content),
+    h('div.secret-cover', { 'aria-hidden': 'true' }, icon('eye'), h('span', `Passe la souris ici pour voir ${label}`)));
+  return box;
+}
+
 // Entoure un affichage secret (sans bouton à l'intérieur : un clic maintenu ne peut pas aussi cliquer dedans).
 // `label` complète « Maintiens le clic pour voir … » : « ton rôle », « ton mot », « tes cartes »…
 export function secret(content, { label = 'ton secret' } = {}) {
-  if (!isDesktop() || !hideSecrets()) return content;
+  if (!isDesktop()) return content;
   const box = h('div.secret-box', {
     tabindex: '0',
     role: 'button',

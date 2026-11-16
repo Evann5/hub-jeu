@@ -1,5 +1,5 @@
 {
-  "name": "Retourne",
+  "name": "Reversi",
   "tagline": "Encadre les pions de l’autre pour les retourner.",
   "description": "Un plateau de 8 sur 8, des pions fuchsia et bleu nuit. Pose un pion pour encadrer ceux de l’adversaire : ils se retournent. À la fin, la couleur la plus nombreuse l’emporte.",
   "how": [

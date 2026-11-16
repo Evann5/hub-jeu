@@ -84,7 +84,7 @@ export function mount(root, api) {
     board,
     h('div.sx-field', h('div.sx-lanes', lanes), h('div.sx-table', strip, stripNote)),
     log,
-    h('div.sx-handbox', hand, bar));
+    h('div.sx-handbox', (api.peek ?? ((x) => x))(hand, { label: 'ta main' }), bar));
   root.append(wrap);
 
   // ——— Actions ———

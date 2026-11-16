@@ -101,7 +101,7 @@ export function mount(root, api) {
   const statusEl = h('p.pk-status', { 'aria-live': 'polite' });
   const actionsEl = h('div.pk-actions');
   const raiseEl = h('div.pk-raise', { hidden: true });
-  const panel = h('div.pk-panel', handEl, h('div.pk-ctrl', statusEl, actionsEl), raiseEl);
+  const panel = h('div.pk-panel', (api.secret ?? ((x) => x))(handEl, { label: 'tes cartes' }), h('div.pk-ctrl', statusEl, actionsEl), raiseEl);
   // Aide-mémoire « Mains » : l'ordre des combinaisons, ouvert à la demande et refermé d'un tap ailleurs (jamais permanent).
   const HANDS = [
     ['Quinte flush', '5 cartes qui se suivent, de la même couleur'],

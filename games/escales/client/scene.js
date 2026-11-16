@@ -730,12 +730,33 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       g.beginPath();
       g.arc(64, 64, 60, 0, Math.PI * 2);
       g.fill();
-      const name = view?.players.find((p) => p.seat === seat)?.pseudo ?? '?';
-      g.fillStyle = 0.3 * color.r + 0.59 * color.g + 0.11 * color.b > 0.45 ? INK : '#FFFFFF';
-      g.font = '800 84px "ES Barlow", system-ui, sans-serif';
-      g.textAlign = 'center';
-      g.textBaseline = 'middle';
-      g.fillText(name.slice(0, 1).toUpperCase(), 64, 70);
+      // Le visage du joueur (son personnage, ou le voyageur de sa place) dans le rond ; à défaut, son initiale.
+      let face = null;
+      try {
+        const look = lookOf(seat);
+        face = snapshot(`p${seat}${look ? JSON.stringify(look) : ''}`, () => buildCharacter(seat, PAWN_COLORS[seat], look), PORTRAIT);
+      } catch { /* pas de portrait : l'initiale suffit */ }
+      if (face) {
+        const tmp = document.createElement('canvas');
+        tmp.width = face.width;
+        tmp.height = face.height;
+        tmp.getContext('2d').putImageData(face, 0, 0);
+        g.save();
+        g.beginPath();
+        g.arc(64, 64, 52, 0, Math.PI * 2);
+        g.clip();
+        g.fillStyle = '#FFFFFF';
+        g.fill();
+        g.drawImage(tmp, 4, 4, 120, 120);
+        g.restore();
+      } else {
+        const name = view?.players.find((p) => p.seat === seat)?.pseudo ?? '?';
+        g.fillStyle = 0.3 * color.r + 0.59 * color.g + 0.11 * color.b > 0.45 ? INK : '#FFFFFF';
+        g.font = '800 84px "ES Barlow", system-ui, sans-serif';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(name.slice(0, 1).toUpperCase(), 64, 70);
+      }
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
       t.anisotropy = 4;

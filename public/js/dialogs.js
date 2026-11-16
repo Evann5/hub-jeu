@@ -122,7 +122,7 @@ export function openProfile(userId) {
         rolesOf(u).length ? h('p.role-chips', rolesOf(u).map((r) => h('span.role-chip', { style: `--rc:${colorOf(r.color)}` }, r.name))) : null,
         h(online ? 'p.status.is-online' : 'p.status', online ? 'En ligne' : 'Hors ligne'),
         h('p.bio', u.bio || 'Pas encore de bio.'))),
-    u.character ? h('div.character-stage.is-small', { style: `--c:${colorOf(u.color)}` }, characterPicture(u.character, u.color, 'character-big'), h('small', 'Son personnage en partie')) : null,
+    u.character ? h('div.character-stage.is-small', { style: `--c:${colorOf(u.color)}` }, characterPicture(u.character, 'character-big'), h('small', 'Son personnage en partie')) : null,
     h('div.dlg-actions',
       h('button.btn', {
         type: 'button',

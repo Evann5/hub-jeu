@@ -1,4 +1,4 @@
-Polices du jeu « Retourne », toutes sous licence SIL Open Font License 1.1 (texte complet : OFL.txt).
+Polices du jeu « Reversi », toutes sous licence SIL Open Font License 1.1 (texte complet : OFL.txt).
 
 - Rubik (rubik.woff2) : Copyright 2015 The Rubik Project Authors (https://github.com/googlefonts/rubik)
 - Inter Tight (inter-tight.woff2) : Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter)

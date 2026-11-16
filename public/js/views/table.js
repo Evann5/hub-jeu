@@ -4,8 +4,9 @@ import { h, changedOnly, icon, token, toast, colorOf, count, gameLogo, keepFocus
 import { call } from '../net.js';
 import { state, go, gameOf, isAdmin, isStaff } from '../store.js';
 import { modal, confirmDialog, openProfile } from '../dialogs.js';
-import { secret, isDesktop, hideSecrets } from '../secret.js';
+import { secret, peek, isDesktop, hideSecrets, setHideSecrets } from '../secret.js';
 import { reportError } from '../erreurs.js';
+import { lookOf } from '../character.js';
 
 let cur = null; // la table ouverte, null quand on est ailleurs
 // Les fichiers des jeux gardent la même adresse d'une visite à l'autre : le serveur les fait revérifier à chaque fois (réponse 304, quasi gratuite).
@@ -179,6 +180,13 @@ function renderHead() {
     h(`span.table-pill${t.status === 'playing' && myTurn ? '.is-turn' : ''}`, label),
     cur.watchers ? h('span.table-watchers', { title: count(cur.watchers, 'spectateur', 'spectateurs') }, icon('eye'), String(cur.watchers)) : null,
     seated() || t.status === 'lobby' ? null : h('span.table-pill.is-watch', 'Spectateur'),
+    // En classe : cacher ou montrer ses cartes d'un clic, sans passer par le Profil (le bouton n'apparaît que si le jeu a des secrets).
+    isDesktop() ? h('button.btn.btn-ghost.btn-sm.table-secrets', {
+      type: 'button',
+      'aria-pressed': String(hideSecrets()),
+      title: hideSecrets() ? 'Tes cartes sont cachées aux voisins. Clique pour les laisser visibles.' : 'Tes cartes sont visibles. Clique pour les cacher aux voisins.',
+      onclick: () => { setHideSecrets(!hideSecrets()); renderHead(); toast(hideSecrets() ? 'Tes cartes sont cachées : survole ta main (ou maintiens le clic) pour les voir.' : 'Tes cartes restent visibles sur cet écran.'); },
+    }, icon('eye'), hideSecrets() ? 'Cartes cachées' : 'Cartes visibles') : null,
     arrowKeys(h('div.table-tabs', { role: 'tablist', 'aria-label': 'Affichage' },
       // Depuis le chat, on garde un œil sur la partie : à qui c'est, et le temps qu'il reste.
       tab('game', 'Partie', cur.tab !== 'game' && t.status === 'over' ? h('span.tab-turn', { title: 'Partie terminée' }) : cur.tab !== 'game' && t.status === 'playing' ? [myTurn ? h('span.tab-turn', { title: 'À toi de jouer' }) : null, t.deadline ? h('span.tab-time', timeLeft(t.deadline)) : null] : null),
@@ -471,13 +479,8 @@ async function mountGame() {
     players: mine.table.seats.map(userOf),
     user: userOf,
     colorOf,
-    // Le personnage d'un joueur (créé dans son profil), couleurs en hex : { style, skin, hair }, ou null s'il n'en a pas.
-    character(id) {
-      const c = userOf(id)?.character;
-      const o = state.options?.character;
-      if (!c || !o) return null;
-      return { style: c.style, skin: o.skins[c.skin], hair: o.hairs[c.hair] };
-    },
+    // Le personnage d'un joueur (créé dans son profil), couleurs en hex, ou null s'il n'en a pas.
+    character: (id) => lookOf(userOf(id)?.character),
     onState(cb) {
       mine.listeners.add(cb);
       if (mine.view !== null) cb(mine.view, info());
@@ -510,6 +513,7 @@ async function mountGame() {
     toast,
     hidesSecrets: () => isDesktop() && hideSecrets(), // vrai si les secrets sont masqués sur cet écran
     secret, // en classe, sur ordinateur : masque un rôle, un mot, une main secrète (maintenir le clic pour voir)
+    peek, // pareil pour une main qu'on joue à la souris : dévoilée tant que la souris est dessus
   };
   try {
     const mod = await import(`../../games/${g.id}/client.js`);

@@ -355,7 +355,7 @@ export function mount(root, api) {
       felt,
       h('p.bl-status', { 'aria-live': 'polite', role: 'status' }, statusText()),
       showMe || actions ? h('div.bl-row', showMe ? h('div.bl-me', seatBadge(mySeat())) : null, actions) : null,
-      h('div.bl-hand', { role: 'group', 'aria-label': 'Ta main', onkeydown: handKeys }, hand.map((c) => cardButton(c, { legal: playing && v.legal.includes(c), interactive: playing }))),
+      (api.peek ?? ((x) => x))(h('div.bl-hand', { role: 'group', 'aria-label': 'Ta main', onkeydown: handKeys }, hand.map((c) => cardButton(c, { legal: playing && v.legal.includes(c), interactive: playing }))), { label: 'ta main' }),
     ].filter(Boolean));
     fitHand();
     tick();

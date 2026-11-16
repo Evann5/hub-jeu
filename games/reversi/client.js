@@ -1,4 +1,4 @@
-// « Retourne » côté navigateur : l'affichage et les clics (voir docs/integration.md §8).
+// « Reversi » côté navigateur : l'affichage et les clics (voir docs/integration.md §8).
 // Le serveur envoie, avec le plateau, la liste des coups possibles (view().legal) : le client ne recalcule aucune règle.
 
 const SIZE = 8;

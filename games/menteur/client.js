@@ -185,13 +185,13 @@ export function mount(root, api) {
   function myDice() {
     if (!(v.phase === 'bid' && v.mine)) return null;
     const fresh = !reduced && seenRound !== v.round;
-    return h('div.mt-hand',
+    return (api.secret ?? ((x) => x))(h('div.mt-hand',
       h('p.mt-handlabel', 'Tes dés', h('span.mt-long', ' sous ton gobelet')),
       h('div.mt-hand-dice', v.mine.map((d, i) => {
         const el = die(d, fresh ? '.is-rolling' : '');
         el.style.setProperty('--i', String(i));
         return el;
-      })));
+      }))), { label: 'tes dés' });
   }
 
   function renderDock(focusKey) {

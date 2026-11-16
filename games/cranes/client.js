@@ -192,10 +192,10 @@ export function mount(root, api) {
       type: 'button', disabled: !can, 'aria-label': label, dataset: { key }, onclick,
     }, art(kind));
     return h('div.cr-hand-row',
-      h('div.cr-hand', { role: 'group', 'aria-label': 'Ta main' },
+      (api.peek ?? ((x) => x))(h('div.cr-hand', { role: 'group', 'aria-label': 'Ta main' },
         roses.map((i) => btn('rose', `Poser une rose (${hd.roses} en main)`, () => send({ type: 'place', disc: 'rose' }), `rose-${i}`)),
         hd.skull ? btn('skull', 'Poser le crâne', () => send({ type: 'place', disc: 'skull' }), 'skull') : null,
-        !hd.roses && !hd.skull ? h('span.cr-empty', 'Tout est posé : lance un défi.') : null));
+        !hd.roses && !hd.skull ? h('span.cr-empty', 'Tout est posé : lance un défi.') : null), { label: 'tes disques' }));
   }
 
   function bidPanel() {

@@ -23,7 +23,7 @@ Précision de Minh (29/10/2026) : **« un style différent à chaque jeu, pas vi
 | Quiz | `games/quiz` | Plateau de jeu télé d'aujourd'hui : violet électrique, spots, tuiles bonbon, gros chiffres |
 | Mytho | `games/mytho` | Bulles de BD pop et stickers : jaune citron, bulles blanches à gros contour, tampons « MYTHO ! » |
 | Quatre à la suite | `games/quatre` | Arcade gélatine : grille violette, jetons bonbon rose et turquoise qui rebondissent |
-| Retourne | `games/reversi` | Galets kawaii : plateau menthe, pions rose fuchsia contre bleu nuit, visages qui changent en se retournant |
+| Reversi | `games/reversi` | Galets kawaii : plateau menthe, pions rose fuchsia contre bleu nuit, visages qui changent en se retournant |
 | Dames | `games/dames` | Damier bubble-gum : rose et lilas, pions macarons brillants, couronne sticker (rien qui rappelle le bar-tabac) |
 | Pioche ! | `games/pioche` | Cartes pop géantes aux couleurs franches |
 | Président | `games/president` | Soirée étudiante fluo : confettis, couronne sticker, néons roses |

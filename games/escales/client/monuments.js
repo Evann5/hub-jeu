@@ -502,12 +502,32 @@ const NAVY = '#27304D';
 const SAND = '#D9BF8C';
 const SHOE = '#23202A';
 
-function person(k, { skin, hair, brow = null, top, bottom = NAVY, skirt = false, short = false }) {
+// Les yeux et la bouche : chaque expression reste lisible même à la taille d'un pion.
+const EYE = '#16151C';
+const EYES = {
+  normaux: (k) => { for (const s of [-1, 1]) { k.ball(0.044, '#FFFFFF', s * 0.076, 0.765, 0.158); k.ball(0.027, EYE, s * 0.076, 0.765, 0.192); } },
+  grands: (k) => { for (const s of [-1, 1]) { k.ball(0.054, '#FFFFFF', s * 0.078, 0.768, 0.152); k.ball(0.034, EYE, s * 0.078, 0.768, 0.192); k.ball(0.011, '#FFFFFF', s * 0.078 + 0.012, 0.782, 0.222); } },
+  joyeux: (k) => { for (const s of [-1, 1]) { const a = k.torus(0.03, 0.008, Math.PI, EYE, s * 0.076, 0.755, 0.196); a.scale.z = 0.4; } },
+  clin: (k) => {
+    k.ball(0.044, '#FFFFFF', -0.076, 0.765, 0.158); k.ball(0.027, EYE, -0.076, 0.765, 0.192);
+    const w = k.torus(0.03, 0.008, Math.PI, EYE, 0.076, 0.755, 0.196); w.scale.z = 0.4;
+  },
+  endormis: (k, skin) => { for (const s of [-1, 1]) { k.ball(0.044, '#FFFFFF', s * 0.076, 0.765, 0.158); k.ball(0.027, EYE, s * 0.076, 0.755, 0.192); const lid = k.ball(0.047, skin, s * 0.076, 0.778, 0.16); lid.scale.y = 0.6; } },
+};
+const MOUTHS = {
+  sourire: (k) => { const m = k.ball(0.05, '#8E2F2F', 0, 0.672, 0.176); m.scale.set(1, 0.32, 0.45); },
+  grand: (k) => { const m = k.ball(0.06, '#7A2430', 0, 0.668, 0.172); m.scale.set(1.1, 0.55, 0.45); const t = k.box(0.07, 0.016, 0.02, '#FFFFFF', 0, 0.684, 0.2); t.scale.x = 1; },
+  neutre: (k) => k.box(0.07, 0.014, 0.014, '#8E2F2F', 0, 0.672, 0.198),
+  surpris: (k) => { const m = k.ball(0.03, '#7A2430', 0, 0.668, 0.182); m.scale.set(1, 1.2, 0.6); },
+  langue: (k) => { const m = k.ball(0.05, '#8E2F2F', 0, 0.672, 0.176); m.scale.set(1, 0.32, 0.45); const t = k.ball(0.026, '#E46B7A', 0.012, 0.655, 0.195); t.scale.set(1, 0.8, 0.6); },
+};
+
+function person(k, { skin, hair, brow = null, top, bottom = NAVY, skirt = false, short = false, shoes = SHOE, eyes = 'normaux', mouth = 'sourire', cheeks = false }) {
   for (const x of [-0.078, 0.078]) {
     if (!skirt) k.cyl(0.056, 0.05, 0.24, 8, short ? skin : bottom, x, 0.03, 0);
     if (short) k.cyl(0.066, 0.064, 0.11, 8, bottom, x, 0.17, 0);
     if (skirt) k.cyl(0.04, 0.04, 0.2, 8, skin, x, 0.03, 0);
-    k.box(0.1, 0.05, 0.17, SHOE, x, 0, 0.025);
+    k.box(0.1, 0.05, 0.17, shoes, x, 0, 0.025);
   }
   if (skirt) k.cyl(0.11, 0.19, 0.2, 12, bottom, 0, 0.17, 0);
   k.cyl(0.125, 0.145, 0.27, 12, top, 0, 0.26, 0);
@@ -520,19 +540,34 @@ function person(k, { skin, hair, brow = null, top, bottom = NAVY, skirt = false,
     k.ball(0.042, skin, s * 0.19, 0.285, 0);
   }
   k.ball(0.205, skin, 0, 0.74, 0);
-  // Le visage : de grands yeux, des sourcils et un sourire, lisibles même à petite taille.
-  for (const s of [-1, 1]) {
-    k.ball(0.044, '#FFFFFF', s * 0.076, 0.765, 0.158);
-    k.ball(0.027, '#16151C', s * 0.076, 0.765, 0.192);
-    k.box(0.07, 0.014, 0.012, hair ?? brow ?? '#3A2A20', s * 0.076, 0.83, 0.18);
-  }
-  const smile = k.ball(0.05, '#8E2F2F', 0, 0.672, 0.176);
-  smile.scale.set(1, 0.32, 0.45);
+  // Le visage : des yeux, des sourcils et une bouche, lisibles même à petite taille.
+  (EYES[eyes] ?? EYES.normaux)(k, skin);
+  for (const s of [-1, 1]) k.box(0.07, 0.014, 0.012, hair ?? brow ?? '#3A2A20', s * 0.076, 0.83, 0.18);
+  (MOUTHS[mouth] ?? MOUTHS.sourire)(k);
+  if (cheeks) for (const s of [-1, 1]) { const c = k.ball(0.03, '#F28B9B', s * 0.125, 0.7, 0.15); c.scale.set(1, 0.6, 0.4); }
   if (hair) {
     const h = k.dome(0.226, hair, 0, 0.75, -0.016);
     h.scale.y = 0.92;
   }
 }
+
+// Le haut du personnage, posé par-dessus le corps : sweat à capuche, veste ouverte, robe, pull rayé (le t-shirt est le corps nu).
+const TOPS = {
+  tshirt: () => {},
+  sweat: (k, top) => {
+    const hood = k.ball(0.13, top, 0, 0.56, -0.13); hood.scale.set(1.1, 0.8, 0.6);
+    k.box(0.16, 0.08, 0.02, top, 0, 0.3, 0.14);
+    for (const s of [-1, 1]) k.cyl(0.006, 0.006, 0.09, 4, WHITE, s * 0.03, 0.42, 0.15);
+  },
+  veste: (k, top) => {
+    k.box(0.07, 0.25, 0.02, WHITE, 0, 0.28, 0.14);
+    for (const s of [-1, 1]) { const l = k.box(0.05, 0.16, 0.02, top, s * 0.06, 0.38, 0.15); l.rotation.z = s * 0.3; }
+    for (const y of [0.32, 0.38]) k.ball(0.009, INK_DARK_TOP, 0.0, y, 0.152);
+  },
+  robe: (k, top) => { k.cyl(0.13, 0.2, 0.24, 12, top, 0, 0.1, 0); },
+  raye: (k) => { for (const y of [0.31, 0.38, 0.45]) k.cyl(0.14, 0.142, 0.03, 12, WHITE, 0, y, 0); },
+};
+const INK_DARK_TOP = '#16151C';
 
 export const CAST = [
   (k, c, L = {}) => { // La pilote
@@ -767,12 +802,106 @@ export function buildProp(name) {
   return g;
 }
 
-// look (facultatif) : le personnage créé par le joueur dans son profil, { style, skin, hair } avec les couleurs en hex.
-// Sans lui, chaque place a son voyageur.
+// Le personnage créé par un joueur dans son profil, pièce par pièce (couleurs en hex) :
+// { v: 2, skin, hair, hairStyle, hat, glasses, beard, accessory, legs, top, bottom }. Mêmes proportions que les voyageurs.
+const INK_DARK = '#16151C';
+const HAIR_STYLES = {
+  court: (k, c) => { const h = k.dome(0.226, c, 0, 0.75, -0.016); h.scale.y = 0.92; },
+  mi: (k, c) => {
+    HAIR_STYLES.court(k, c);
+    k.box(0.4, 0.2, 0.13, c, 0, 0.55, -0.12);
+  },
+  long: (k, c) => {
+    HAIR_STYLES.court(k, c);
+    k.box(0.42, 0.42, 0.13, c, 0, 0.36, -0.13);
+    for (const s of [-1, 1]) k.box(0.07, 0.3, 0.14, c, s * 0.19, 0.5, -0.02);
+  },
+  chignon: (k, c) => { HAIR_STYLES.court(k, c); k.ball(0.08, c, 0, 0.94, -0.07); },
+  tresse: (k, c) => {
+    HAIR_STYLES.court(k, c);
+    for (let i = 0; i < 4; i += 1) k.ball(0.042 - i * 0.004, c, 0.02, 0.6 - i * 0.075, -0.2);
+  },
+  boucles: (k, c) => {
+    HAIR_STYLES.court(k, c);
+    for (let i = 0; i < 9; i += 1) {
+      const a = (i / 9) * Math.PI * 2;
+      k.ball(0.07, c, Math.cos(a) * 0.19, 0.86 + (i % 2) * 0.04, Math.sin(a) * 0.17 - 0.02);
+    }
+    k.ball(0.09, c, 0, 0.95, -0.02);
+  },
+  crete: (k, c) => k.box(0.05, 0.13, 0.38, c, 0, 0.88, -0.03),
+  rase: () => {},
+};
+const HATS = {
+  aucun: () => {},
+  casquette: (k, t) => { const d = k.dome(0.215, t, 0, 0.8, 0); d.scale.y = 0.7; k.box(0.22, 0.02, 0.15, t, 0, 0.83, 0.2); },
+  bonnet: (k, t) => { const d = k.dome(0.215, t, 0, 0.78, 0); d.scale.y = 1.05; k.cyl(0.222, 0.222, 0.06, 14, WHITE, 0, 0.76, 0); k.ball(0.05, WHITE, 0, 1.01, 0); },
+  paille: (k) => { k.cyl(0.23, 0.25, 0.022, 18, '#EBCF7E', 0, 0.9, 0); k.cyl(0.14, 0.16, 0.1, 14, '#EBCF7E', 0, 0.88, 0); k.cyl(0.165, 0.165, 0.02, 14, NAVY, 0, 0.88, 0); },
+  explorateur: (k) => { k.cyl(0.22, 0.235, 0.025, 16, '#8A6A3F', 0, 0.9, 0); k.cyl(0.13, 0.165, 0.12, 12, '#8A6A3F', 0, 0.89, 0); k.cyl(0.167, 0.167, 0.025, 12, '#4F3325', 0, 0.89, 0); },
+  beret: (k) => { const b = k.ball(0.195, NAVY, 0.015, 0.895, -0.015); b.scale.y = 0.34; k.cyl(0.012, 0.012, 0.03, 5, NAVY, 0, 0.955, 0); },
+  pilote: (k) => { k.cyl(0.17, 0.18, 0.08, 14, WHITE, 0, 0.87, 0); k.cyl(0.2, 0.17, 0.035, 14, NAVY, 0, 0.95, 0); k.box(0.22, 0.02, 0.1, NAVY, 0, 0.86, 0.16); },
+  casque: (k, t) => { const h = k.dome(0.2, WHITE, 0, 0.79, -0.01); h.scale.set(1, 0.85, 1.12); for (const x of [-0.07, 0, 0.07]) k.box(0.03, 0.03, 0.27, t, x, 0.935, -0.01); },
+  toque: (k) => { k.cyl(0.165, 0.15, 0.13, 14, WHITE, 0, 0.87, 0); const p = k.ball(0.205, WHITE, 0, 1.08, 0); p.scale.y = 0.72; },
+  couronne: (k) => {
+    k.cyl(0.17, 0.17, 0.07, 14, '#F2C14E', 0, 0.9, 0);
+    for (let i = 0; i < 6; i += 1) { const a = (i / 6) * Math.PI * 2; k.cone(0.035, 0.08, 4, '#F2C14E', Math.cos(a) * 0.15, 0.97, Math.sin(a) * 0.15); }
+    k.ball(0.025, '#E5213C', 0, 0.94, 0.17);
+  },
+  bandeau: (k, t) => k.cyl(0.214, 0.214, 0.045, 16, t, 0, 0.8, -0.005),
+};
+const GLASSES = {
+  aucune: () => {},
+  rondes: (k) => { for (const s of [-1, 1]) { const g = k.torus(0.038, 0.009, Math.PI * 2, INK_DARK, s * 0.076, 0.765, 0.19); g.scale.z = 0.5; } k.box(0.04, 0.008, 0.01, INK_DARK, 0, 0.77, 0.2); },
+  carrees: (k) => { for (const s of [-1, 1]) { k.box(0.09, 0.012, 0.012, INK_DARK, s * 0.076, 0.795, 0.2); k.box(0.09, 0.012, 0.012, INK_DARK, s * 0.076, 0.733, 0.2); for (const e of [-1, 1]) k.box(0.012, 0.07, 0.012, INK_DARK, s * 0.076 + e * 0.04, 0.735, 0.2); } },
+  soleil: (k) => { for (const s of [-1, 1]) k.box(0.1, 0.055, 0.02, INK_DARK, s * 0.07, 0.74, 0.19); k.box(0.05, 0.012, 0.012, INK_DARK, 0, 0.775, 0.2); },
+};
+const BEARDS = {
+  aucune: () => {},
+  moustache: (k, c) => { for (const s of [-1, 1]) { const m = k.box(0.07, 0.025, 0.02, c, s * 0.035, 0.7, 0.19); m.rotation.z = s * -0.25; } },
+  courte: (k, c) => { const b = k.ball(0.125, c, 0, 0.66, 0.08); b.scale.set(1, 0.6, 0.78); },
+  longue: (k, c) => { const b = k.ball(0.13, c, 0, 0.6, 0.08); b.scale.set(1, 1, 0.8); },
+};
+const ACCESSORIES = {
+  aucun: () => {},
+  sac: (k) => { k.box(0.27, 0.42, 0.19, '#5D7A52', 0, 0.26, -0.22); k.box(0.22, 0.14, 0.04, '#46603E', 0, 0.3, -0.33); },
+  valise: (k) => { k.box(0.2, 0.32, 0.12, NAVY, 0.34, 0.03, 0.02); k.bars([[[0.3, 0.35, 0.02], [0.27, 0.5, 0.02], 0.009], [[0.38, 0.35, 0.02], [0.35, 0.5, 0.02], 0.009]], '#9AA5B8'); k.box(0.1, 0.018, 0.02, '#9AA5B8', 0.31, 0.5, 0.02); },
+  appareil: (k) => { k.box(0.15, 0.1, 0.07, '#23202A', 0, 0.33, 0.14); const l = k.cyl(0.033, 0.033, 0.04, 10, '#6C7690', 0, 0, 0); l.rotation.x = Math.PI / 2; l.position.set(0, 0.38, 0.195); },
+  planche: (k, t) => { const b = k.ball(0.17, WHITE, 0.36, 0.62, -0.04); b.scale.set(0.72, 3.5, 0.14); k.box(0.04, 1.02, 0.05, t, 0.36, 0.12, -0.04); },
+  canne: (k) => { k.cyl(0.014, 0.014, 0.33, 6, '#6B4A2E', 0.24, 0, 0.05); k.ball(0.028, '#6B4A2E', 0.24, 0.34, 0.05); },
+  sacoche: (k) => { k.box(0.15, 0.13, 0.06, '#4F3325', -0.17, 0.2, 0.06); k.bars([[[-0.17, 0.33, 0.06], [0.1, 0.56, 0.09], 0.012]], '#4F3325'); },
+  guitare: (k) => {
+    const a = k.ball(0.12, '#B5652B', 0, 0.3, -0.2); a.scale.z = 0.35;
+    const b = k.ball(0.09, '#B5652B', 0, 0.47, -0.2); b.scale.z = 0.35;
+    k.box(0.04, 0.38, 0.03, '#3A2A20', 0, 0.55, -0.2);
+  },
+  ballon: (k) => { k.ball(0.09, WHITE, 0.25, 0.09, 0.08); k.ball(0.035, INK_DARK, 0.25, 0.16, 0.13); },
+};
+
+function buildLook(k, look) {
+  const { skin, hair, top, bottom } = look;
+  const dress = look.topStyle === 'robe'; // une robe : la jupe prend la couleur du haut
+  person(k, {
+    skin, hair: null, brow: hair, top,
+    bottom: dress ? top : bottom,
+    short: !dress && look.legs === 'short',
+    skirt: dress || look.legs === 'jupe',
+    shoes: look.shoes ?? SHOE,
+    eyes: look.eyes, mouth: look.mouth, cheeks: look.cheeks === 'rosees',
+  });
+  (TOPS[look.topStyle] ?? TOPS.tshirt)(k, top);
+  // Sous un chapeau, seul ce qui dépasse compte : la coupe se dessine quand même (nuque, tresse, chignon).
+  (HAIR_STYLES[look.hairStyle] ?? HAIR_STYLES.court)(k, hair);
+  (HATS[look.hat] ?? HATS.aucun)(k, top);
+  (GLASSES[look.glasses] ?? GLASSES.aucune)(k);
+  (BEARDS[look.beard] ?? BEARDS.aucune)(k, hair);
+  (ACCESSORIES[look.accessory] ?? ACCESSORIES.aucun)(k, top);
+}
+
+// look (facultatif) : le personnage du joueur. Sans lui, chaque place a son voyageur, la tenue à la couleur de la place.
 export function buildCharacter(seat, color, look = null) {
   const g = new THREE.Group();
-  const style = look && Number.isInteger(look.style) ? look.style : seat;
-  CAST[style % CAST.length](kit(g), color, look ? { skin: look.skin, hair: look.hair } : {});
+  if (look?.v === 2) buildLook(kit(g), look);
+  else CAST[seat % CAST.length](kit(g), color);
   return g;
 }
 

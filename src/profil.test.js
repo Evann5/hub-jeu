@@ -19,13 +19,14 @@ test('personnage : enregistré s’il est valable, refusé sinon, gardé quand o
   const c = await connecter(compte);
   const moi = () => c.recus.filter((r) => r.ev === 'user' && r.data.id === compte.id).at(-1)?.data;
 
-  assert.equal((await c.appel('profile', { ...profil, character: { style: 3, skin: 2, hair: 'roux' } })).ok, true);
+  const perso = { v: 2, skin: 2, hair: 'roux', hairStyle: 'tresse', hat: 'bonnet', glasses: 'rondes', beard: 'aucune', accessory: 'guitare', legs: 'jupe', top: 'menthe', bottom: 'noir', topStyle: 'sweat', shoes: 'rouge', eyes: 'clin', mouth: 'langue', cheeks: 'rosees' };
+  assert.equal((await c.appel('profile', { ...profil, character: perso })).ok, true);
   await jusque(() => moi()?.character?.hair === 'roux', 'le personnage diffusé aux membres');
-  assert.deepEqual(moi().character, { style: 3, skin: 2, hair: 'roux' });
+  assert.deepEqual(moi().character, perso);
 
   // Un autre compte pour les essais refusés : le profil se change 5 fois par minute au plus.
   const essais = await connecter(await inscrire(srv, pseudo()));
-  for (const faux of [{ style: 99, skin: 0, hair: 'noir' }, { style: 1, skin: -1, hair: 'noir' }, { style: 1, skin: 0, hair: 'vert fluo' }, { style: '1; DROP', skin: 0, hair: 'noir' }, 'texte']) {
+  for (const faux of [{ ...perso, hat: 'casque à pointe' }, { ...perso, skin: -1 }, { ...perso, hair: 'vert fluo' }, { ...perso, top: '#FF0000' }, { ...perso, eyes: 'laser' }]) {
     const r = await essais.appel('profile', { ...profil, character: faux });
     assert.equal(r.ok, false, `refusé : ${JSON.stringify(faux)}`);
   }
@@ -33,10 +34,21 @@ test('personnage : enregistré s’il est valable, refusé sinon, gardé quand o
   const debut = c.recus.length;
   assert.equal((await c.appel('profile', { ...profil, bio: 'salut' })).ok, true);
   await jusque(() => c.recus.slice(debut).some((r) => r.ev === 'user' && r.data.id === compte.id), 'profil diffusé');
-  assert.deepEqual(moi().character, { style: 3, skin: 2, hair: 'roux' }, 'sans personnage envoyé, celui d’avant reste');
+  assert.deepEqual(moi().character, perso, 'sans personnage envoyé, celui d’avant reste');
 
   assert.equal((await c.appel('profile', { ...profil, character: null })).ok, true);
   await jusque(() => moi()?.character === null, 'personnage retiré');
+});
+
+test('un ancien personnage (une tenue parmi 10) devient un personnage pièce par pièce', async () => {
+  const { cleanCharacter, readCharacter } = await import('./options.js');
+  const marin = cleanCharacter({ style: 3, skin: 2, hair: 'gris' });
+  assert.equal(marin.v, 2);
+  assert.equal(marin.hat, 'bonnet');
+  assert.equal(marin.beard, 'courte');
+  assert.equal(marin.hair, 'gris');
+  assert.deepEqual(readCharacter(JSON.stringify({ style: 9, skin: 0, hair: 'noir' })), { ...cleanCharacter({ style: 9, skin: 0, hair: 'noir' }) });
+  assert.equal(cleanCharacter({ style: 42, skin: 0, hair: 'noir' }), null);
 });
 
 test('renommer : l’équipe seulement, avec les règles de l’inscription, et noté au journal', async () => {

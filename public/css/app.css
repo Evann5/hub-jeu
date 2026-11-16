@@ -1568,3 +1568,64 @@ body:has(.view-messages.has-conv) #toasts { bottom: var(--toast-bottom, calc(max
 .member-admin-list .label { display: grid; min-width: 0; }
 .member-bio { overflow: hidden; color: var(--ink-2); font-size: 0.8125rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 .tag-soft { padding: 1px 8px; border-radius: 999px; background: var(--bg-3); color: var(--ink-2); font-size: 0.75rem; white-space: nowrap; }
+
+/* Le créateur de personnage (Profil) : l'aperçu à gauche, les pièces à droite, par onglets. */
+.studio { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
+.studio-left { display: grid; gap: var(--sp-3); }
+.character-stage.is-studio .character-big { width: 100%; max-width: 280px; height: auto; aspect-ratio: 1; cursor: grab; touch-action: pan-y; user-select: none; }
+.character-stage.is-studio .character-big:active { cursor: grabbing; }
+.character-turn { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); color: var(--ink-2); font-size: 0.8125rem; }
+.studio-avatar { display: flex; align-items: center; gap: var(--sp-3); }
+.studio-avatar span { display: grid; gap: 2px; }
+.studio-avatar small { color: var(--ink-2); font-size: 0.8125rem; }
+.character-head { width: 56px; height: 56px; flex: none; border-radius: 50%; background: var(--bg-2); box-shadow: inset 0 0 0 2px var(--bg-3); object-fit: cover; }
+.studio-right { display: grid; gap: var(--sp-3); min-width: 0; }
+.studio-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 999px; background: var(--bg-2); }
+.studio-tab { flex: 1 1 auto; min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-2); font: 600 0.875rem var(--font-body, inherit); cursor: pointer; }
+.studio-tab[aria-selected='true'] { background: var(--bg-1); color: var(--ink); box-shadow: 0 1px 0 rgb(0 0 0 / 0.3); }
+.studio-tab:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.studio-panel { display: grid; gap: var(--sp-3); min-height: 180px; }
+@media (max-width: 760px) {
+  .studio { grid-template-columns: minmax(0, 1fr); }
+  .character-stage.is-studio .character-big { max-width: 220px; }
+}
+
+/* L'avatar d'un membre qui a un personnage : sa tête, à la place de l'emoji. */
+.token.has-head > span { display: none; }
+.token.has-head img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+
+/* Notifications de messages privés : lire et répondre sans quitter l'écran en cours. */
+#dm-notifs { position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 60; display: grid; gap: 10px; width: min(360px, calc(100vw - 28px)); pointer-events: none; }
+.dm-notif { display: grid; gap: 8px; padding: 12px; border-radius: var(--radius-l, 18px); background: var(--bg-1); box-shadow: inset 0 0 0 1px var(--bg-3), 0 18px 40px rgb(0 0 0 / 0.5); color: var(--ink); pointer-events: auto; animation: dm-notif-in 0.22s ease-out; }
+@keyframes dm-notif-in { from { opacity: 0; transform: translateY(-8px); } }
+@media (prefers-reduced-motion: reduce) { .dm-notif { animation: none; } }
+.dm-notif-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; }
+.dm-notif-head span { display: grid; min-width: 0; line-height: 1.2; }
+.dm-notif-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-notif-head small { color: var(--ink-2); font-size: 0.75rem; }
+.dm-notif-close { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 10px; background: var(--bg-2); color: var(--ink); cursor: pointer; }
+.dm-notif-list { display: grid; gap: 4px; max-height: 160px; overflow-y: auto; }
+.dm-notif-line { margin: 0; padding: 6px 10px; border-radius: 12px; background: var(--bg-2); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.dm-notif-line.is-mine { justify-self: end; background: color-mix(in srgb, var(--accent) 24%, var(--bg-2)); }
+.dm-notif-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.dm-notif-input { min-height: 40px; }
+.dm-notif-status { margin: 0; color: var(--ink-2); font-size: 0.8125rem; }
+.dm-notif-status:empty { display: none; }
+.dm-notif-status.is-error { color: var(--danger, #F87171); }
+@media (max-width: 760px) { #dm-notifs { right: 8px; left: 8px; width: auto; } }
+
+/* Une main qu'on joue à la souris : cachée tant que la souris n'est pas dessus (ni le clavier dedans). */
+.peek-box { position: relative; display: block; border-radius: 16px; }
+.peek-box:not(.is-shown):not(:focus-within) .secret-content { visibility: hidden; }
+.peek-box.is-shown .secret-cover, .peek-box:focus-within .secret-cover { display: none; }
+.peek-box:not(.is-shown):not(:focus-within) { min-height: 64px; }
+.peek-box .secret-cover { pointer-events: none; }
+
+/* « Cartes visibles » : les caches restent posés, mais ouverts (le réglage s'applique sans recharger la partie). */
+html.secrets-shown .secret-box .secret-content, html.secrets-shown .peek-box .secret-content { visibility: visible !important; }
+html.secrets-shown .secret-box .secret-cover, html.secrets-shown .peek-box .secret-cover { display: none; }
+html.secrets-shown .secret-box, html.secrets-shown .peek-box { min-height: 0 !important; cursor: auto; }
+/* Le bouton de l'en-tête n'apparaît que dans les jeux qui ont quelque chose à cacher. */
+.table-secrets { display: none; }
+body:has(.secret-box, .peek-box) .table-secrets { display: inline-flex; }
+.table-secrets[aria-pressed='true'] { box-shadow: inset 0 0 0 2px var(--accent); }

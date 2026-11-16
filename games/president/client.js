@@ -184,7 +184,7 @@ export function mount(root, api) {
     els.felt,
     h('div.pr-news', els.say, els.old),
     els.actions,
-    els.hand,
+    (api.peek ?? ((x) => x))(els.hand, { label: 'ta main' }),
     els.overlay));
 
   // ——— Dessin ———

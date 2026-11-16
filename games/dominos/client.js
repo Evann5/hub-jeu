@@ -288,7 +288,7 @@ export function mount(root, api) {
           showRecap && v.phase === 'over' && (v.seat < 0 || v.winner === v.seat) ? confetti() : null),
         h('p.dm-status', { 'aria-live': 'polite', role: 'status' }, statusText()),
         actionBar(),
-        mine && !showRecap ? h(`div.dm-hand${hand.length > 7 ? '.is-many' : ''}`, { role: 'group', 'aria-label': 'Ta main', onkeydown: handKeys }, hand.map((id) => handTile(id, byTile.get(id)))) : null));
+        mine && !showRecap ? (api.peek ?? ((x) => x))(h(`div.dm-hand${hand.length > 7 ? '.is-many' : ''}`, { role: 'group', 'aria-label': 'Ta main', onkeydown: handKeys }, hand.map((id) => handTile(id, byTile.get(id)))), { label: 'tes dominos' }) : null));
     layoutChain();
     tick();
     if (focused) {

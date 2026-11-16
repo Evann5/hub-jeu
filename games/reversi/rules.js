@@ -1,4 +1,4 @@
-// « Retourne » : les règles du Reversi sur un plateau de 8 × 8.
+// « Reversi » : les règles sur un plateau de 8 × 8.
 // Règles pures (ni réseau, ni base, ni Date.now()) : l'heure et le hasard arrivent par ctx = { now, random }.
 
 export const SIZE = 8;
