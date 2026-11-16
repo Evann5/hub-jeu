@@ -227,3 +227,6 @@ button.uc-card:active { cursor: grabbing; }
 @media (prefers-reduced-motion: reduce) {
   .g-undercover, .g-undercover * { animation: none !important; transition: none !important; }
 }
+/* « Passer » au vote : une ligne à part, plus discrète que les joueurs. */
+.g-undercover .uc-skip { border-style: dashed; }
+.g-undercover .uc-skip-ico { display: grid; place-items: center; width: 34px; height: 34px; font-size: 1.1rem; }

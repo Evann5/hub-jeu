@@ -29,16 +29,28 @@ export function render(container) {
       'aria-label': c,
       title: c,
       onclick: () => { draft.color = c; draw(); },
-    }, token({ color: c, avatar: draft.avatar })))));
+    }, token({ ...state.me, color: c, avatar: draft.avatar })))));
   }
   draw();
+
+  // Avec un personnage, l'avatar est sa tête : on ne propose plus d'emoji (il ne sert qu'à qui n'a pas de personnage).
+  const avatarField = h('div.field', h('span', 'Avatar'), avatarGrid);
+  const avatarNote = h('p.card-text.avatar-note', 'Ton avatar, c’est la tête de ton personnage : pour le changer, modifie ton personnage. La couleur ci-dessous colore le fond de ta tête.');
+  const syncAvatar = () => {
+    const has = Boolean(state.me.character);
+    avatarField.style.display = has ? 'none' : '';
+    avatarNote.style.display = has ? '' : 'none';
+    draw();
+  };
+  syncAvatar();
 
   const bio = h('textarea.input', { name: 'bio_text', maxlength: limits.bioMax, rows: 2, placeholder: 'Ex. : toujours partant pour une partie le soir' });
   bio.value = state.me.bio;
   const profileForm = asyncForm(h('form.stack',
     preview,
-    h('div.field', h('span', 'Avatar'), avatarGrid),
-    h('div.field', h('span', 'Couleur'), colorRow),
+    avatarNote,
+    avatarField,
+    h('div.field', h('span', 'Couleur du fond'), colorRow),
     h('label.field', h('span', 'Bio'), bio, h('small', `${limits.bioMax} caractères au plus.`)),
     h('div.card-actions', h('button.btn', { type: 'submit' }, 'Enregistrer le profil'))),
   async () => {
@@ -62,7 +74,7 @@ export function render(container) {
   container.replaceChildren(h('div.page',
     h('div.view-head.page-head', h('div', h('h1', 'Profil'), h('p.view-sub', 'Ce que les autres voient de toi, et ton compte.'))),
     h('div.page-grid',
-      characterCard(),
+      characterCard(syncAvatar),
       h('section.card.card-panel', h('h2', 'Mon profil'), profileForm),
       h('div.page-col',
         h('section.card.card-panel', h('h2', 'Mot de passe'), passForm),
@@ -87,7 +99,7 @@ export function render(container) {
 }
 
 // Mon personnage, pièce par pièce. Les autres le voient sur ma fiche, sa tête sert d'avatar partout, et c'est mon pion dans Escales.
-function characterCard() {
+function characterCard(onSaved = () => {}) {
   const o = state.options.character;
   const keys = (list) => Object.keys(list);
   const any = (list) => list[Math.floor(Math.random() * list.length)];
@@ -210,6 +222,8 @@ function characterCard() {
   async () => {
     await call(state.socket, 'profile', { avatar: state.me.avatar, color: state.me.color, bio: state.me.bio, character: { ...draft } });
     note.textContent = 'Personnage enregistré : sa tête est ton avatar, et c’est ton pion dans Escales.';
+    state.me = { ...state.me, character: { ...draft } }; // le serveur le confirme aussi par « user » ; l'écran suit tout de suite
+    onSaved();
     toast('Personnage enregistré.');
   });
   return h('section.card.card-panel.card-wide', h('h2', 'Mon personnage'), form);

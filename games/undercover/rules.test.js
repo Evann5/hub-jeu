@@ -252,3 +252,40 @@ test('seul Mr. White éliminé propose un mot', () => {
   const other = s.order.find((id) => id !== white);
   assert.throws(() => move(s, other, { type: 'guess', text: s.words.civil }, ctx()), /Mr. White/);
 });
+
+// On arrive au vote à 4 joueurs sans Mr. White (même mise en place que le test « vote : l’Undercover éliminé… »).
+function toVote() {
+  let s = setup(players(4), { ...opts, mrWhite: false }, ctx());
+  s = pastWord(s);
+  s = allClues(s);
+  s = pastWord(s);
+  assert.equal(s.phase, 'vote');
+  return s;
+}
+
+test('passer le vote : si « Passer » fait au moins autant que le plus désigné, personne n’est éliminé', () => {
+  let s = toVote();
+  const [a, b, c, d] = s.players;
+  s = play(s, a, { type: 'vote', target: 0 });
+  s = play(s, b, { type: 'vote', target: 0 });
+  s = play(s, c, { type: 'vote', target: a });
+  s = play(s, d, { type: 'vote', target: a });
+  assert.equal(s.phase, 'verdict');
+  assert.deepEqual(s.out, [], 'égalité entre « Passer » et le plus désigné : personne ne sort');
+  assert.equal(s.verdicts.at(-1).by, 'passé');
+  assert.ok(s.verdicts.at(-1).tally.some((r) => r.id === 0 && r.n === 2), 'le décompte montre les « Passer »');
+  for (const id of s.players) s = play(s, id, { type: 'ready' });
+  assert.equal(s.phase, 'clues', 'manche suivante');
+  assert.equal(s.round, 2);
+});
+
+test('passer le vote : minoritaire, il n’empêche pas l’élimination', () => {
+  let s = toVote();
+  const [a, b, c, d] = s.players;
+  s = play(s, a, { type: 'vote', target: 0 });
+  s = play(s, b, { type: 'vote', target: a });
+  s = play(s, c, { type: 'vote', target: a });
+  s = play(s, d, { type: 'vote', target: a });
+  assert.deepEqual(s.out, [a]);
+  assert.throws(() => move(toVote(), a, { type: 'vote', target: 99 }, ctx()), /ou passe/);
+});

@@ -1,6 +1,7 @@
 // Undercover côté navigateur, DA « Code » : une couleur plein écran par phase, la carte à jouer comme signature.
 // Le mot n'est écrit dans la page que pendant qu'on maintient la carte (personne ne le lit par-dessus l'épaule).
 
+const SKIP_VOTE = 0; // « Passer » au vote (même valeur que SKIP dans rules.js)
 const PHASES = { word: 'Ton mot', clues: 'Indices', debate: 'Débat', vote: 'Vote', verdict: 'Verdict', white: 'Dernière chance', over: 'Fin de partie' };
 const ROLE = { civil: 'Civil', under: 'Undercover', white: 'Mr. White' };
 const SVG = 'http://www.w3.org/2000/svg';
@@ -232,15 +233,22 @@ export function mount(root, api) {
         av(id), h('span.uc-name', name(id), clue ? h('small', ` · ${clue}`) : null),
         chosen ? h('em', m?.voted ? 'Ton vote' : 'Choisi') : h('span'));
     });
+    // « Passer » : personne ne sort cette manche si c'est au moins autant choisi que le plus désigné.
+    const skipChosen = (m?.voted ?? picked) === SKIP_VOTE;
+    const skipRow = h(`button.uc-r.is-pick.uc-skip${skipChosen ? '.is-sel' : ''}`, voting
+      ? { type: 'button', 'aria-pressed': String(skipChosen), onclick: () => { picked = SKIP_VOTE; render(); } }
+      : { type: 'button', disabled: true },
+    h('span.uc-skip-ico', { 'aria-hidden': 'true' }, '⏭'), h('span.uc-name', 'Passer', h('small', ' · personne n’est éliminé')), skipChosen ? h('em', m?.voted === SKIP_VOTE ? 'Ton vote' : 'Choisi') : h('span'));
     const nodes = [bar(), h('h2.uc-title', v.candidates ? 'Égalité : on revote' : 'Qui est l’intrus ?')];
     if (v.candidates) nodes.push(h('p.uc-sub', `Second vote entre ${v.candidates.map(name).join(', ').replace(/, ([^,]*)$/, ' et $1')}. En cas de nouvelle égalité, tirage au sort.`));
-    nodes.push(rows, note(`${v.voted.length} sur ${v.alive.length} ont voté.`), h('div.uc-grow'));
+    nodes.push(rows, skipRow, note(`${v.voted.length} sur ${v.alive.length} ont voté. Si « Passer » fait au moins autant de voix que le plus désigné, personne ne sort.`), h('div.uc-grow'));
+    const hasPick = picked !== null && picked !== undefined;
     if (voting) {
-      const b = btn(picked ? `Voter contre ${name(picked)}` : 'Choisis un joueur', () => picked && send({ type: 'vote', target: picked }));
-      b.disabled = !picked;
+      const b = btn(!hasPick ? 'Choisis un joueur ou passe' : picked === SKIP_VOTE ? 'Passer le vote' : `Voter contre ${name(picked)}`, () => hasPick && send({ type: 'vote', target: picked }));
+      b.disabled = !hasPick;
       nodes.push(b);
-    } else if (m?.voted) {
-      nodes.push(h('div.uc-wait', 'Vote enregistré. En attente des autres.'));
+    } else if (m && m.voted !== null && m.voted !== undefined) {
+      nodes.push(h('div.uc-wait', m.voted === SKIP_VOTE ? 'Tu as passé. En attente des autres.' : 'Vote enregistré. En attente des autres.'));
     }
     return nodes;
   }
@@ -248,7 +256,7 @@ export function mount(root, api) {
   function tally() {
     const rows = v.verdict?.tally || [];
     const max = Math.max(1, ...rows.map((r) => r.n));
-    return h('div.uc-tally', rows.map((r) => h('div', h('span', name(r.id)), h('i', h('b', { style: `width:${(r.n / max) * 100}%` })), h('span', String(r.n)))));
+    return h('div.uc-tally', rows.map((r) => h('div', h('span', r.id === SKIP_VOTE ? 'Passer' : name(r.id)), h('i', h('b', { style: `width:${(r.n / max) * 100}%` })), h('span', String(r.n)))));
   }
 
   function screenVerdict() {
@@ -257,6 +265,8 @@ export function mount(root, api) {
     if (v.whiteGuess && !v.whiteGuess.right && vd?.role === 'white' && vd.round === v.round) {
       nodes.push(h('h2.uc-title', 'Raté pour Mr. White'),
         h('p.uc-sub', v.whiteGuess.text ? `${name(v.whiteGuess.id)} a proposé « ${v.whiteGuess.text} ». Ce n’était pas ça : la partie continue.` : `${name(v.whiteGuess.id)} n’a rien proposé à temps. La partie continue.`));
+    } else if (vd?.by === 'passé') {
+      nodes.push(h('h2.uc-title', 'Vote passé'), h('p.uc-sub', 'Personne n’est éliminé : on repart pour une manche.'), tally());
     } else if (!vd || vd.id === null) {
       nodes.push(h('h2.uc-title', 'Personne n’est éliminé'), h('p.uc-sub', 'Aucun vote : on repart pour une manche.'));
     } else {

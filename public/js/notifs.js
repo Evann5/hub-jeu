@@ -1,4 +1,4 @@
-// Notifications de messages privés : une carte par personne, en haut à droite (en haut de l'écran sur téléphone),
+// Notifications de messages privés : une carte par personne, en bas à gauche (au-dessus de la barre du bas sur téléphone),
 // avec les derniers messages reçus et un champ pour répondre sans quitter ce qu'on fait (une partie, un autre salon).
 // La carte reste tant qu'on y écrit ou qu'on la survole ; sinon elle s'en va seule au bout de 25 s.
 import { h, icon, token, richText } from './dom.js';
@@ -21,6 +21,11 @@ function box() {
     el = h('div#dm-notifs', { 'aria-live': 'polite', 'aria-label': 'Messages privés reçus' });
     document.body.append(el);
   }
+  // En bas à gauche, juste à droite de la barre de navigation quand elle est sur le côté (ordinateur).
+  const nav = document.querySelector('.navbar');
+  const r = nav?.getBoundingClientRect();
+  const side = r && r.width > 0 && r.height > window.innerHeight / 2;
+  el.style.setProperty('--dm-left', side ? `${Math.round(r.right + 14)}px` : '14px');
   return el;
 }
 

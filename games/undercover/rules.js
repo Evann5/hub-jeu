@@ -111,15 +111,26 @@ function eliminate(s, id, by, tally, ctx) {
 }
 
 // Dépouillement : le plus de voix est éliminé ; égalité = second vote entre ex æquo, puis tirage au sort.
+// On peut aussi « passer » (cible 0) : si « passer » fait au moins autant que le plus désigné, personne n'est éliminé.
+export const SKIP = 0;
 function countVotes(s, ctx) {
   const tally = {};
-  for (const target of Object.values(s.votes)) tally[target] = (tally[target] || 0) + 1;
+  let skips = 0;
+  for (const target of Object.values(s.votes)) {
+    if (target === SKIP) skips += 1;
+    else tally[target] = (tally[target] || 0) + 1;
+  }
   const rows = Object.entries(tally).map(([id, n]) => ({ id: Number(id), n })).sort((a, b) => b.n - a.n);
-  if (!rows.length) {
+  if (!rows.length && !skips) {
     // Personne n'a voté : personne n'est éliminé, on passe à la manche suivante.
     return nextPhase({ ...s, verdicts: [...s.verdicts, { round: s.round, id: null, role: null, tally: [], by: 'personne' }], votes: {}, candidates: null }, 'verdict', ctx);
   }
-  const top = rows.filter((r) => r.n === rows[0].n).map((r) => r.id);
+  if (!rows.length || skips >= rows[0].n) {
+    const shown = [...rows, { id: SKIP, n: skips }].sort((a, b) => b.n - a.n);
+    return nextPhase({ ...s, verdicts: [...s.verdicts, { round: s.round, id: null, role: null, tally: shown, by: 'passé' }], votes: {}, candidates: null, tie: null }, 'verdict', ctx);
+  }
+  if (skips) rows.push({ id: SKIP, n: skips });
+  const top = rows.filter((r) => r.id !== SKIP && r.n === rows[0].n).map((r) => r.id);
   if (top.length === 1) return eliminate(s, top[0], 'vote', rows, ctx);
   if (!s.candidates) return nextPhase({ ...s, votes: {}, candidates: top, tie: rows }, 'vote', ctx);
   return eliminate(s, top[Math.floor(ctx.random() * top.length)], 'tirage', rows, ctx);
@@ -161,7 +172,7 @@ export function move(s, playerId, action, ctx) {
       const target = Number(action.target);
       const pool = s.candidates || alive(s);
       if (target === playerId) throw new Error('Tu ne peux pas voter pour toi-même.');
-      if (!pool.includes(target)) throw new Error('Choisis un joueur encore en jeu.');
+      if (target !== SKIP && !pool.includes(target)) throw new Error('Choisis un joueur encore en jeu, ou passe.');
       const t = { ...s, votes: { ...s.votes, [playerId]: target } };
       if (alive(t).every((id) => id in t.votes)) return { state: countVotes(t, ctx) };
       return { state: t };
