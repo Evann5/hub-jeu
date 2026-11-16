@@ -2,6 +2,7 @@
 import { h, icon, token, toast, focusKey, findByKey, colorOf, staffTag } from './dom.js';
 import { call } from './net.js';
 import { state, go, isAdmin, isStaff, LEVELS, rolesOf } from './store.js';
+import { characterPicture } from './character.js';
 
 // Ouvre une fenêtre modale ; elle se retire du DOM à la fermeture et rend le focus à l'élément d'avant.
 export function modal(title, ...content) {
@@ -121,6 +122,7 @@ export function openProfile(userId) {
         rolesOf(u).length ? h('p.role-chips', rolesOf(u).map((r) => h('span.role-chip', { style: `--rc:${colorOf(r.color)}` }, r.name))) : null,
         h(online ? 'p.status.is-online' : 'p.status', online ? 'En ligne' : 'Hors ligne'),
         h('p.bio', u.bio || 'Pas encore de bio.'))),
+    u.character ? h('div.character-stage.is-small', { style: `--c:${colorOf(u.color)}` }, characterPicture(u.character, u.color, 'character-big'), h('small', 'Son personnage en partie')) : null,
     h('div.dlg-actions',
       h('button.btn', {
         type: 'button',
@@ -156,6 +158,43 @@ function staffTools(u, close) {
   };
 
   const tempBox = h('div.dlg-sub', { role: 'status' });
+
+  // Le profil : renommer (pseudo inapproprié), effacer la bio ou le personnage. Modérateurs (sur les membres) et admins.
+  const pseudoInput = h('input.input', { name: 'new_pseudo', value: u.pseudo, autocomplete: 'off', spellcheck: false, maxlength: state.options.limits.pseudoMax, 'aria-label': `Nouveau pseudo pour ${u.pseudo}` });
+  const profileRows = [
+    h('div.dlg-actions.start',
+      pseudoInput,
+      h('button.btn.btn-ghost', {
+        type: 'button',
+        onclick: act(async () => {
+          const next = pseudoInput.value.trim();
+          if (!next || next === u.pseudo) return;
+          const old = u.pseudo;
+          await call(state.socket, 'admin:rename', { userId: u.id, pseudo: next });
+          toast(`${old} s’appelle maintenant ${next}.`);
+          close();
+        }),
+      }, 'Renommer')),
+    h('div.dlg-actions.start',
+      h('button.btn.btn-ghost', {
+        type: 'button',
+        disabled: !u.bio,
+        onclick: act(async () => {
+          await call(state.socket, 'admin:clearProfile', { userId: u.id, part: 'bio' });
+          toast(`Bio de ${u.pseudo} effacée.`);
+          close();
+        }),
+      }, 'Effacer la bio'),
+      h('button.btn.btn-ghost', {
+        type: 'button',
+        disabled: !u.character,
+        onclick: act(async () => {
+          await call(state.socket, 'admin:clearProfile', { userId: u.id, part: 'character' });
+          toast(`Personnage de ${u.pseudo} effacé.`);
+          close();
+        }),
+      }, 'Effacer le personnage')),
+  ];
   const muteRow = h('div.dlg-actions.start',
     mute,
     h('button.btn.btn-ghost', {
@@ -166,7 +205,7 @@ function staffTools(u, close) {
         toast(minutes ? `${u.pseudo} est en sourdine.` : `${u.pseudo} peut de nouveau écrire.`);
       }),
     }, 'Mettre en sourdine'));
-  if (!isAdmin()) return h('div.dlg-sub.staff-tools', h('hr'), h('h3', 'Outils de modération'), muteRow);
+  if (!isAdmin()) return h('div.dlg-sub.staff-tools', h('hr'), h('h3', 'Outils de modération'), ...profileRows, muteRow);
 
   // Niveau : ce que la personne a le droit de faire.
   const level = h('select.input', { 'aria-label': `Niveau de ${u.pseudo}` },
@@ -205,6 +244,7 @@ function staffTools(u, close) {
   return h('div.dlg-sub.staff-tools',
     h('hr'),
     h('h3', 'Outils admin'),
+    ...profileRows,
     levelRow,
     rolesBlock,
     muteRow,

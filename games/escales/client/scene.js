@@ -157,12 +157,35 @@ function buildPrint(focusU) {
     c.strokeStyle = 'rgba(18,21,31,0.2)';
     c.lineWidth = 2;
     c.stroke();
+    // La couleur du pays, franche, sur l'étiquette de chaque ville : on reconnaît d'un coup d'œil à quel pays elle appartient.
+    // À l'ordinateur, une bande en haut ; sur téléphone, où le nom prend toute l'étiquette, un cadre épais.
+    const isCity = t.type === 'city';
+    const banded = isCity && !NAMES_ONLY;
+    const BAND = 34;
+    if (isCity) {
+      const tone = REGIONS[t.region].color;
+      c.save();
+      c.beginPath();
+      c.roundRect(lx, cy - LH / 2, LW, LH, 20);
+      c.clip();
+      if (banded) {
+        c.fillStyle = tone;
+        c.fillRect(lx, cy - LH / 2, LW, BAND);
+        c.fillStyle = 'rgba(18,21,31,0.25)';
+        c.fillRect(lx, cy - LH / 2 + BAND - 3, LW, 3);
+      } else {
+        c.strokeStyle = tone;
+        c.lineWidth = 28;
+        c.stroke();
+      }
+      c.restore();
+    }
     const fontAt = (px) => `800 ${px}px "ES Barlow", system-ui, sans-serif`;
     const fits = (text, px) => {
       c.font = fontAt(px);
-      return c.measureText(text).width <= CW - (NAMES_ONLY ? 40 : 48);
+      return c.measureText(text).width <= CW - (NAMES_ONLY ? (isCity ? 60 : 40) : 48);
     };
-    let size = t.price && NAMES_ONLY ? 124 : 72;
+    let size = t.price && NAMES_ONLY ? 124 : banded ? 60 : 72;
     while (!fits(name, size) && size > 28) size -= 2;
     // Sur téléphone, un nom en deux mots passe sur deux lignes s'il y gagne en taille : « San / Francisco ».
     let lines = [name];
@@ -184,7 +207,7 @@ function buildPrint(focusU) {
       c.fillText(lines[0], cx, cy + 3 - size * 0.5);
       c.fillText(lines[1], cx, cy + 3 + size * 0.5);
     } else {
-      c.fillText(name, cx, nameOnly ? cy + 3 : cy - 32);
+      c.fillText(name, cx, nameOnly ? cy + 3 : banded ? cy - 8 : cy - 32);
     }
     if (!nameOnly) {
       // Le prix à gauche : à droite, la place est gardée pour le visage du propriétaire.
@@ -192,15 +215,16 @@ function buildPrint(focusU) {
       c.font = '700 50px "ES Barlow", system-ui, sans-serif';
       c.textAlign = 'left';
       let x = lx + 14;
-      if (t.type === 'city') {
-        FLAGS[REGIONS[t.region].id](c, x, cy + 14, 66, 44);
+      const rowY = banded ? cy + 24 : cy + 14; // sous la bande, la ligne du prix descend un peu
+      if (isCity) {
+        FLAGS[REGIONS[t.region].id](c, x, rowY, 63, 42);
         c.strokeStyle = 'rgba(18,21,31,0.55)';
         c.lineWidth = 2;
-        c.strokeRect(x, cy + 14, 66, 44);
-        x += 78;
+        c.strokeRect(x, rowY, 63, 42);
+        x += 75;
       }
       c.fillStyle = INK;
-      c.fillText(label, x, cy + 38);
+      c.fillText(label, x, rowY + 23);
       c.textAlign = 'center';
     }
     const f = tileFrame(t.pos);
@@ -517,7 +541,8 @@ function makeDie() {
 const DIE_TOP = { 1: [0, 0, 0], 2: [-Math.PI / 2, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 5: [Math.PI / 2, 0, 0], 6: [Math.PI, 0, 0] };
 const DIE_Y = 0.75;
 
-export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70, rightInset = () => 0, onFit, onStill }) {
+// lookOf(seat) : le personnage créé par le joueur assis à cette place (ou null : le voyageur de la place).
+export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70, rightInset = () => 0, onFit, onStill, lookOf = () => null }) {
   const startDpr = Math.min(window.devicePixelRatio || 1, 2);
   const renderer = new THREE.WebGLRenderer({ antialias: startDpr < 2, alpha: true });
   renderer.setClearColor(0x000000, 0);
@@ -1572,7 +1597,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       let pawn = pawns.get(p.id);
       if (!pawn) {
         // Chaque personnage est fondu en une seule forme, sa tenue à la couleur du joueur.
-        const mesh = new THREE.Mesh(bake([{ object: buildCharacter(p.seat, PAWN_COLORS[p.seat]) }], { fullColor: true }), personMat);
+        const mesh = new THREE.Mesh(bake([{ object: buildCharacter(p.seat, PAWN_COLORS[p.seat], lookOf(p.seat)) }], { fullColor: true }), personMat);
         mesh.renderOrder = 10;
         mesh.scale.setScalar(PAWN_SCALE);
         mesh.rotation.set(LEAN, FACING, 0);
@@ -1733,7 +1758,7 @@ export function createWorld(host, { onTile, onHover, onStep, topInset = () => 70
       applyFocus();
     },
     // Le visage d'un voyageur, de près.
-    portrait: (seat) => snapshot(`p${seat}`, () => buildCharacter(seat, PAWN_COLORS[seat]), PORTRAIT),
+    portrait: (seat) => { const look = lookOf(seat); return snapshot(`p${seat}${look ? JSON.stringify(look) : ''}`, () => buildCharacter(seat, PAWN_COLORS[seat], look), PORTRAIT); },
     // Le monument entier d'une ville.
     monument: (pos) => snapshot(`m${pos}`, () => (TILES[pos].type === 'city' ? buildMonument(TILES[pos].model) : buildSpecial(TILES[pos].type)), {
       turn: 0.55,

@@ -170,7 +170,9 @@ function startRealtime() {
     refreshPeople();
     messages.onUsersChange();
     admin.renderRoles(); // le nombre de membres de chaque rôle
+    admin.renderMembers();
   });
+  socket.on('renamed', (pseudo) => toast(`Un membre de l’équipe a changé ton pseudo : tu t’appelles maintenant ${pseudo}.`, { ms: 8000 }));
   socket.on('user:removed', (id) => {
     state.users.delete(id);
     state.dms = state.dms.filter((d) => d.otherId !== id);

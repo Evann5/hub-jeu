@@ -4,9 +4,10 @@ import { randomInt } from 'node:crypto';
 import { Server } from 'socket.io';
 import { db, getSetting, setSetting } from './db.js';
 import { config } from './config.js';
-import { COLORS, AVATARS, LIMITS } from './options.js';
+import { COLORS, AVATARS, LIMITS, cleanCharacter } from './options.js';
 import {
   COOKIE, readCookie, userFromToken, getUser, publicUser, classCode, hashPassword, deleteUserSessions, tokenHash, ownerId, TEMP_PASSWORD_MS, signupsOpen,
+  validatePseudo, reservedPseudo, pseudoTakenByOther,
 } from './auth.js';
 import { createEventLimiter, sameOrigin } from './securite.js';
 import { codeVersion } from './version.js';
@@ -331,13 +332,21 @@ export function attachRealtime(httpServer) {
       return {};
     }, { event: 'typing' }));
 
-    socket.on('profile', handler(socket, ({ avatar, color, bio }, me) => {
+    socket.on('profile', handler(socket, ({ avatar, color, bio, character }, me) => {
       if (!AVATARS.includes(avatar)) throw new chat.ChatError('Avatar inconnu.');
+      // Le personnage : absent, on garde celui d'avant ; null, on l'enlève ; sinon il doit être valable.
+      let look = me.character;
+      if (character === null) look = '';
+      else if (character !== undefined) {
+        const clean = cleanCharacter(character);
+        if (!clean) throw new chat.ChatError('Personnage invalide.');
+        look = JSON.stringify(clean);
+      }
       if (!Object.hasOwn(COLORS, color)) throw new chat.ChatError('Couleur inconnue.');
       const cleanBio = String(bio ?? '').trim();
       if (cleanBio.length > LIMITS.bioMax) throw new chat.ChatError(`La bio dépasse ${LIMITS.bioMax} caractères.`);
       if (cleanBio !== me.bio) assertNotMuted(me); // en sourdine, on peut changer d'avatar mais pas écrire une nouvelle bio
-      db.prepare('UPDATE users SET avatar = ?, color = ?, bio = ? WHERE id = ?').run(avatar, color, cleanBio, me.id);
+      db.prepare('UPDATE users SET avatar = ?, color = ?, bio = ?, character = ? WHERE id = ?').run(avatar, color, cleanBio, look, me.id);
       broadcastUser(getUser(me.id));
       return {};
     }, { event: 'profile' }));
@@ -379,6 +388,33 @@ export function attachRealtime(httpServer) {
       io.to(`u:${user.id}`).emit('muted', until);
       logMod(me, m === 0 ? 'a levé la sourdine de' : 'a mis en sourdine', { target: user.pseudo, detail: m === 0 ? '' : m >= 1440 ? `${Math.round(m / 1440)} j` : m >= 60 ? `${Math.round(m / 60)} h` : `${m} min` });
       return { mutedUntil: until };
+    }, { modo: true }));
+
+    // Renommer un membre (pseudo inapproprié, faute de frappe) : mêmes règles qu'à l'inscription, et noté au journal de modération.
+    socket.on('admin:rename', handler(socket, ({ userId, pseudo }, me) => {
+      const user = withinReach(notOwner(targetUser(userId, me), 'renommer le propriétaire du hub'), me);
+      const next = String(pseudo ?? '').trim().normalize('NFC');
+      const problem = validatePseudo(next);
+      if (problem) throw new chat.ChatError(problem);
+      if (next === user.pseudo) return { pseudo: next };
+      if (reservedPseudo(next)) throw new chat.ChatError('Ce pseudo est réservé à l’équipe de Hubuno.');
+      if (pseudoTakenByOther(next, user.id)) throw new chat.ChatError('Ce pseudo est déjà pris (ou ressemble trop à un autre).');
+      db.prepare('UPDATE users SET pseudo = ? WHERE id = ?').run(next, user.id);
+      broadcastUser(getUser(user.id));
+      io.to(`u:${user.id}`).emit('renamed', next);
+      logMod(me, 'a renommé', { target: user.pseudo, detail: `en ${next}` });
+      return { pseudo: next };
+    }, { modo: true }));
+
+    // Effacer ce qu'un membre a mis sur son profil : sa bio, ou son personnage (il en recrée un s'il veut).
+    socket.on('admin:clearProfile', handler(socket, ({ userId, part }, me) => {
+      const user = withinReach(notOwner(targetUser(userId, me), 'modifier le profil du propriétaire du hub'), me);
+      if (part === 'bio') db.prepare("UPDATE users SET bio = '' WHERE id = ?").run(user.id);
+      else if (part === 'character') db.prepare("UPDATE users SET character = '' WHERE id = ?").run(user.id);
+      else throw new chat.ChatError('Rien à effacer.');
+      broadcastUser(getUser(user.id));
+      logMod(me, part === 'bio' ? 'a effacé la bio de' : 'a effacé le personnage de', { target: user.pseudo });
+      return {};
     }, { modo: true }));
 
     socket.on('admin:ban', handler(socket, ({ userId, banned }, me) => {

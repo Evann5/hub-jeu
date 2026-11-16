@@ -807,6 +807,7 @@ body:has(.table-view[data-game='escales']) { --bg-0: var(--es-nav); --bg-1: var(
 .member-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; font-size: 1.05rem; overflow-wrap: anywhere; }
 .member-status { color: var(--ink-3); font-size: 0.8125rem; }
 .member-card:not(.offline) .member-status { color: var(--accent); }
+.member-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .member-bio {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1547,3 +1548,23 @@ body:has(.view-messages.has-conv) #toasts { bottom: var(--toast-bottom, calc(max
 /* Partie : faire abandonner un joueur hors ligne */
 .seat-row { display: flex; align-items: center; gap: 4px; }
 .seat-row .seat-user { flex: 1; min-width: 0; }
+
+/* Mon personnage (Profil) et celui d'un membre (sa fiche) : rendu en 3D comme son pion d'Escales. */
+.character-stage { display: grid; justify-items: center; gap: var(--sp-2); padding: var(--sp-3); border-radius: var(--radius-l); background: radial-gradient(circle at 50% 70%, color-mix(in srgb, var(--c, var(--violet)) 32%, var(--bg-1)), var(--bg-1) 72%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, var(--violet)) 35%, transparent); }
+.character-stage small { color: var(--ink-2); font-size: 0.8125rem; }
+.character-big { width: 200px; height: 200px; object-fit: contain; }
+.character-stage.is-small { margin-top: var(--sp-3); }
+.character-stage.is-small .character-big { width: 140px; height: 140px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-pick { min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--bg-2); color: var(--ink); font: 600 0.875rem var(--font-body, inherit); cursor: pointer; }
+.chip-pick:hover { background: var(--bg-3); }
+.chip-pick[aria-pressed='true'] { background: var(--accent); color: var(--on-accent, #111); }
+.swatch-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--sw); box-shadow: inset 0 0 0 2px rgb(0 0 0 / 0.25); cursor: pointer; }
+.swatch[aria-pressed='true'] { box-shadow: 0 0 0 3px var(--bg-1), 0 0 0 5px var(--accent); }
+.chip-pick:focus-visible, .swatch:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* Admin › Membres */
+.member-admin-list { max-height: 420px; overflow-y: auto; margin-top: var(--sp-2); }
+.member-admin-list .label { display: grid; min-width: 0; }
+.member-bio { overflow: hidden; color: var(--ink-2); font-size: 0.8125rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.tag-soft { padding: 1px 8px; border-radius: 999px; background: var(--bg-3); color: var(--ink-2); font-size: 0.75rem; white-space: nowrap; }

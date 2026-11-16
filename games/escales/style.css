@@ -105,6 +105,10 @@
 .g-escales .es-trades:empty { display: none; }
 .g-escales .es-trades { display: grid; gap: 10px; padding: 10px; border-radius: 14px; background: var(--es-panel); box-shadow: 0 10px 26px rgb(0 0 0 / 0.35); }
 .g-escales .es-trade { display: grid; gap: 8px; }
+.g-escales .es-trades-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; color: var(--soft); font-size: 0.8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.g-escales .es-trades-title b { padding: 1px 8px; border-radius: 999px; background: var(--es-accent); color: #16142E; text-transform: none; letter-spacing: 0; }
+.g-escales .es-trade-acts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g-escales .es-trade-acts > :last-child { grid-column: 1 / -1; }
 .g-escales .es-trade + .es-trade { padding-top: 10px; border-top: 1px solid var(--line); }
 .g-escales .es-trade-who { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 800; }
 .g-escales .es-trade-sum { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; margin: 0; font-size: 0.9375rem; }
@@ -117,6 +121,18 @@
 /* La carte du joueur sélectionné : elle résume sans cacher le plateau. */
 .g-escales .es-focus { display: grid; gap: 8px; padding: 10px; border-radius: 14px; background: var(--es-panel); box-shadow: inset 0 0 0 2px var(--p), 0 10px 26px rgb(0 0 0 / 0.3); }
 .g-escales .es-focus[hidden] { display: none; }
+.g-escales .es-dock { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: var(--es-panel); box-shadow: inset 0 0 0 1px var(--es-rule), 0 10px 26px rgb(0 0 0 / 0.3); }
+.g-escales .es-dock[hidden] { display: none; }
+.g-escales .es-dock-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; color: var(--soft); font-size: 0.8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.g-escales .es-dock-more { padding: 2px 8px; border: 0; border-radius: 6px; background: var(--quiet); color: var(--ink); font: 700 0.75rem var(--es-text); text-transform: none; letter-spacing: 0; cursor: pointer; }
+.g-escales .es-mine-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; width: 100%; min-height: 36px; padding: 4px 8px; border: 0; border-radius: 8px; background: color-mix(in srgb, var(--c, var(--es-rule)) 22%, var(--es-panel)); box-shadow: inset 4px 0 0 var(--c, var(--es-rule)); color: var(--ink); font: 700 0.875rem var(--es-text); text-align: left; cursor: pointer; }
+.g-escales .es-mine-row:hover { background: color-mix(in srgb, var(--c, var(--es-rule)) 34%, var(--es-panel)); }
+.g-escales .es-mine-row .es-flag { width: 21px; height: 14px; }
+.g-escales .es-mine-row > span:not(.es-pips-line) { display: grid; min-width: 0; line-height: 1.15; }
+.g-escales .es-mine-row small { color: var(--soft); font-size: 0.75rem; font-weight: 600; }
+.g-escales .es-mine-row em { grid-column: 2 / -1; justify-self: start; padding: 1px 8px; border-radius: 999px; background: var(--es-accent); color: #16142E; font-size: 0.75rem; font-style: normal; font-weight: 800; }
+.g-escales .es-mine-dot { width: 21px; height: 14px; border-radius: 3px; background: var(--es-rule); }
+.g-escales .es-journal .es-history { gap: 4px; font-size: 0.8125rem; }
 .g-escales .es-focus-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .g-escales .es-focus-head span { display: grid; min-width: 0; line-height: 1.15; }
 .g-escales .es-focus-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -224,6 +240,9 @@
 .g-escales .es-picks { display: flex; flex-wrap: wrap; align-content: start; gap: 4px; }
 .g-escales .es-pick { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px 0 7px; border: 0; border-radius: 8px; background: var(--es-panel); color: var(--ink); font: 700 0.875rem var(--es-text); cursor: pointer; }
 .g-escales .es-pick .es-flag { width: 21px; height: 14px; }
+.g-escales .es-pick[style*='--c'] { box-shadow: inset 4px 0 0 var(--c); padding-left: 10px; }
+.g-escales .es-pick small { color: var(--soft); font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.g-escales .es-pick.is-on small { color: inherit; opacity: 0.75; }
 .g-escales .es-pick.is-on { background: var(--es-accent); color: #16142E; }
 .g-escales .es-pick.is-on::before { content: '✓'; font-weight: 800; }
 .g-escales .es-trade-note { margin: 0; color: #FF9A5C; font-size: 0.8125rem; font-weight: 700; }
@@ -350,7 +369,7 @@
 }
 
 /* Tout l'habillage en verre sombre : le plateau reste le seul objet clair de la scène. */
-.g-escales :is(.es-panel, .es-focus, .es-trades, .es-action:not(.is-plain), .es-sheet, .es-tip) {
+.g-escales :is(.es-panel, .es-focus, .es-trades, .es-dock, .es-action:not(.is-plain), .es-sheet, .es-tip) {
   --es-panel: var(--es-nav2); --paper: var(--es-nav2); --quiet: var(--es-nav3); --ink: #FFFFFF; --soft: var(--es-inv); --line: rgb(255 255 255 / 0.12); --es-rule: rgb(255 255 255 / 0.14); --es-edge: var(--es-nav);
   color: #FFFFFF;
   border-radius: 18px;
@@ -383,3 +402,6 @@
   .g-escales .es-cell { padding: 6px 5px; }
   .g-escales .es-cell b { font-size: 0.75rem; overflow-wrap: normal; word-break: normal; }
 }
+.g-escales .es-mine-row .es-pips-line i { width: 13px; height: 7px; }
+/* Téléphone, ou écran très bas : la colonne n'a pas la place ; tes villes et l'historique restent dans Villes et Plus. */
+@media (max-width: 760px), (max-height: 500px) { .g-escales .es-dock { display: none; } }

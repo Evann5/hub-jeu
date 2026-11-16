@@ -3,7 +3,7 @@ import { scrypt, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { db, getSetting } from './db.js';
 import { config } from './config.js';
-import { COLORS, AVATARS, LIMITS } from './options.js';
+import { COLORS, AVATARS, LIMITS, readCharacter } from './options.js';
 import { createLimiter, passwordProblem, safeEqual, PASSWORD_MAX } from './securite.js';
 
 export const COOKIE = 'hubuno_session';
@@ -66,7 +66,7 @@ export const tokenHash = sha256;
 const rolesOfUser = db.prepare('SELECT r.id FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ? ORDER BY r.position, r.id');
 
 export function publicUser(u) {
-  return { id: u.id, pseudo: u.pseudo, avatar: u.avatar, color: u.color, bio: u.bio, role: u.role, roles: rolesOfUser.all(u.id).map((r) => r.id) };
+  return { id: u.id, pseudo: u.pseudo, avatar: u.avatar, color: u.color, bio: u.bio, character: readCharacter(u.character), role: u.role, roles: rolesOfUser.all(u.id).map((r) => r.id) };
 }
 
 export function classCode() {
@@ -124,6 +124,13 @@ export function pseudoTaken(pseudo) {
   const wanted = lookalike(pseudo);
   if (config.admins.some((a) => lookalike(a) === wanted && a !== plainPseudo(pseudo) && a !== pseudo.toLowerCase())) return true;
   return db.prepare('SELECT pseudo FROM users').all().some((u) => lookalike(u.pseudo) === wanted);
+}
+
+// Pour renommer un compte : le nouveau pseudo ne doit ressembler à aucun autre compte, ni à un pseudo réservé aux admins (ADMINS).
+export function pseudoTakenByOther(pseudo, exceptId) {
+  const wanted = lookalike(pseudo);
+  if (config.admins.some((a) => lookalike(a) === wanted)) return true;
+  return db.prepare('SELECT id, pseudo FROM users').all().some((u) => u.id !== exceptId && lookalike(u.pseudo) === wanted);
 }
 
 // Pseudos qui feraient passer un élève pour l'équipe ou pour Hubuno lui-même (comparés comme l'œil les lit : « adm1n », « Admin »).

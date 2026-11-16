@@ -186,6 +186,11 @@ if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'temp_u
   db.exec('ALTER TABLE users ADD COLUMN temp_until INTEGER NOT NULL DEFAULT 0');
 }
 
+// Colonne ajoutée après coup : le personnage de chacun (JSON { style, skin, hair }), vide tant qu'il n'en a pas créé.
+if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'character')) {
+  db.exec("ALTER TABLE users ADD COLUMN character TEXT NOT NULL DEFAULT ''");
+}
+
 if (!db.prepare('SELECT 1 FROM channels LIMIT 1').get()) {
   const add = db.prepare('INSERT INTO channels (name, topic, position, created_at) VALUES (?, ?, ?, ?)');
   add.run('général', 'Le salon de toute la classe', 0, Date.now());

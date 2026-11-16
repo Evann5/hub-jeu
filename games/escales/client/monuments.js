@@ -502,7 +502,7 @@ const NAVY = '#27304D';
 const SAND = '#D9BF8C';
 const SHOE = '#23202A';
 
-function person(k, { skin, hair, top, bottom = NAVY, skirt = false, short = false }) {
+function person(k, { skin, hair, brow = null, top, bottom = NAVY, skirt = false, short = false }) {
   for (const x of [-0.078, 0.078]) {
     if (!skirt) k.cyl(0.056, 0.05, 0.24, 8, short ? skin : bottom, x, 0.03, 0);
     if (short) k.cyl(0.066, 0.064, 0.11, 8, bottom, x, 0.17, 0);
@@ -524,7 +524,7 @@ function person(k, { skin, hair, top, bottom = NAVY, skirt = false, short = fals
   for (const s of [-1, 1]) {
     k.ball(0.044, '#FFFFFF', s * 0.076, 0.765, 0.158);
     k.ball(0.027, '#16151C', s * 0.076, 0.765, 0.192);
-    k.box(0.07, 0.014, 0.012, hair ?? '#3A2A20', s * 0.076, 0.83, 0.18);
+    k.box(0.07, 0.014, 0.012, hair ?? brow ?? '#3A2A20', s * 0.076, 0.83, 0.18);
   }
   const smile = k.ball(0.05, '#8E2F2F', 0, 0.672, 0.176);
   smile.scale.set(1, 0.32, 0.45);
@@ -535,15 +535,15 @@ function person(k, { skin, hair, top, bottom = NAVY, skirt = false, short = fals
 }
 
 export const CAST = [
-  (k, c) => { // La pilote
-    person(k, { skin: SKIN[0], hair: HAIR.brun, top: c });
+  (k, c, L = {}) => { // La pilote
+    person(k, { skin: L.skin ?? SKIN[0], hair: L.hair ?? HAIR.brun, top: c });
     k.cyl(0.17, 0.18, 0.08, 14, WHITE, 0, 0.87, 0);
     k.cyl(0.2, 0.17, 0.035, 14, NAVY, 0, 0.95, 0);
     k.box(0.22, 0.02, 0.1, NAVY, 0, 0.86, 0.16);
     k.box(0.05, 0.16, 0.012, NAVY, 0, 0.34, 0.14);
   },
-  (k, c) => { // Le routard, et son gros sac
-    person(k, { skin: SKIN[1], hair: HAIR.noir, top: c, bottom: SAND, short: true });
+  (k, c, L = {}) => { // Le routard, et son gros sac
+    person(k, { skin: L.skin ?? SKIN[1], hair: L.hair ?? HAIR.noir, top: c, bottom: SAND, short: true });
     k.box(0.27, 0.42, 0.19, '#5D7A52', 0, 0.26, -0.22);
     k.box(0.22, 0.14, 0.04, '#46603E', 0, 0.3, -0.33);
     const roll = k.cyl(0.075, 0.075, 0.32, 10, '#C4562B', 0, 0, 0);
@@ -552,8 +552,8 @@ export const CAST = [
     k.cyl(0.12, 0.2, 0.09, 12, c, 0, 0.87, 0);
     k.cyl(0.105, 0.12, 0.06, 12, c, 0, 0.95, 0);
   },
-  (k, c) => { // Le touriste : chapeau de paille et appareil photo
-    person(k, { skin: SKIN[2], hair: null, top: c, bottom: SAND, short: true });
+  (k, c, L = {}) => { // Le touriste : chapeau de paille et appareil photo
+    person(k, { skin: L.skin ?? SKIN[2], hair: null, brow: L.hair, top: c, bottom: SAND, short: true });
     k.cyl(0.23, 0.25, 0.022, 18, '#EBCF7E', 0, 0.9, 0);
     k.cyl(0.14, 0.16, 0.1, 14, '#EBCF7E', 0, 0.88, 0);
     k.cyl(0.165, 0.165, 0.02, 14, NAVY, 0, 0.88, 0);
@@ -563,51 +563,51 @@ export const CAST = [
     lens.position.set(0, 0.38, 0.195);
     for (const s of [-1, 1]) k.box(0.1, 0.05, 0.02, '#16151C', s * 0.062, 0.725, 0.165);
   },
-  (k, c) => { // Le marin : marinière, bonnet et barbe
-    person(k, { skin: SKIN[3], hair: null, top: WHITE, bottom: NAVY });
+  (k, c, L = {}) => { // Le marin : marinière, bonnet et barbe
+    person(k, { skin: L.skin ?? SKIN[3], hair: null, brow: L.hair, top: WHITE, bottom: NAVY });
     for (const y of [0.3, 0.38, 0.46]) k.cyl(0.14, 0.142, 0.035, 12, c, 0, y, 0);
     k.dome(0.183, c, 0, 0.77, 0);
     k.cyl(0.187, 0.187, 0.055, 14, WHITE, 0, 0.75, 0);
-    const beard = k.ball(0.125, HAIR.gris, 0, 0.64, 0.075);
+    const beard = k.ball(0.125, L.hair ?? HAIR.gris, 0, 0.64, 0.075);
     beard.scale.set(1, 0.72, 0.8);
   },
-  (k, c) => { // L'hôtesse : chignon, foulard, jupe et valise à roulettes
-    person(k, { skin: SKIN[4], hair: HAIR.roux, top: c, bottom: c, skirt: true });
-    k.ball(0.07, HAIR.roux, 0, 0.92, -0.05);
+  (k, c, L = {}) => { // L'hôtesse : chignon, foulard, jupe et valise à roulettes
+    person(k, { skin: L.skin ?? SKIN[4], hair: L.hair ?? HAIR.roux, top: c, bottom: c, skirt: true });
+    k.ball(0.07, L.hair ?? HAIR.roux, 0, 0.92, -0.05);
     k.box(0.14, 0.05, 0.1, WHITE, 0, 0.53, 0.1);
     k.box(0.2, 0.32, 0.12, NAVY, 0.34, 0.03, 0.02);
     k.bars([[[0.3, 0.35, 0.02], [0.27, 0.5, 0.02], 0.009], [[0.38, 0.35, 0.02], [0.35, 0.5, 0.02], 0.009]], '#9AA5B8');
     k.box(0.1, 0.018, 0.02, '#9AA5B8', 0.31, 0.5, 0.02);
   },
-  (k, c) => { // La cycliste : casque et short
-    person(k, { skin: SKIN[5], hair: HAIR.noir, top: c, bottom: '#23202A', short: true });
+  (k, c, L = {}) => { // La cycliste : casque et short
+    person(k, { skin: L.skin ?? SKIN[5], hair: L.hair ?? HAIR.noir, top: c, bottom: '#23202A', short: true });
     const helmet = k.dome(0.2, WHITE, 0, 0.79, -0.01);
     helmet.scale.set(1, 0.85, 1.12);
     for (const x of [-0.07, 0, 0.07]) k.box(0.03, 0.03, 0.27, c, x, 0.935, -0.01);
     k.box(0.15, 0.02, 0.04, '#16151C', 0, 0.8, 0.17);
-    k.ball(0.04, HAIR.noir, 0, 0.72, -0.19);
+    k.ball(0.04, L.hair ?? HAIR.noir, 0, 0.72, -0.19);
   },
-  (k, c) => { // L'exploratrice : chapeau à large bord, tresse et sacoche
-    person(k, { skin: SKIN[6], hair: HAIR.noir, top: c, bottom: '#7A6240' });
+  (k, c, L = {}) => { // L'exploratrice : chapeau à large bord, tresse et sacoche
+    person(k, { skin: L.skin ?? SKIN[6], hair: L.hair ?? HAIR.noir, top: c, bottom: '#7A6240' });
     k.cyl(0.22, 0.235, 0.025, 16, '#8A6A3F', 0, 0.9, 0);
     k.cyl(0.13, 0.165, 0.12, 12, '#8A6A3F', 0, 0.89, 0);
     k.cyl(0.167, 0.167, 0.025, 12, '#4F3325', 0, 0.89, 0);
-    k.cyl(0.035, 0.022, 0.26, 7, HAIR.noir, 0.12, 0.45, -0.13);
+    k.cyl(0.035, 0.022, 0.26, 7, L.hair ?? HAIR.noir, 0.12, 0.45, -0.13);
     k.box(0.15, 0.13, 0.06, '#4F3325', -0.17, 0.2, 0.06);
     k.bars([[[-0.17, 0.33, 0.06], [0.1, 0.56, 0.09], 0.012]], '#4F3325');
   },
-  (k, c) => { // Le surfeur et sa planche
-    person(k, { skin: SKIN[7], hair: HAIR.blond, top: c, bottom: '#19A7C8', short: true });
+  (k, c, L = {}) => { // Le surfeur et sa planche
+    person(k, { skin: L.skin ?? SKIN[7], hair: L.hair ?? HAIR.blond, top: c, bottom: '#19A7C8', short: true });
     const board = k.ball(0.17, WHITE, 0.36, 0.62, -0.04);
     board.scale.set(0.72, 3.5, 0.14);
     const stripe = k.box(0.04, 1.02, 0.05, c, 0.36, 0.12, -0.04);
     stripe.scale.z = 1;
     for (const s of [-1, 1]) k.box(0.1, 0.05, 0.02, '#16151C', s * 0.062, 0.725, 0.168);
-    const lock = k.ball(0.07, HAIR.blond, 0.1, 0.87, 0.06);
+    const lock = k.ball(0.07, L.hair ?? HAIR.blond, 0.1, 0.87, 0.06);
     lock.scale.y = 0.6;
   },
-  (k, c) => { // La cheffe : toque et tablier
-    person(k, { skin: SKIN[8], hair: HAIR.brun, top: c, bottom: NAVY });
+  (k, c, L = {}) => { // La cheffe : toque et tablier
+    person(k, { skin: L.skin ?? SKIN[8], hair: L.hair ?? HAIR.brun, top: c, bottom: NAVY });
     k.cyl(0.165, 0.15, 0.13, 14, WHITE, 0, 0.87, 0);
     const puff = k.ball(0.205, WHITE, 0, 1.08, 0);
     puff.scale.y = 0.72;
@@ -617,8 +617,8 @@ export const CAST = [
     spoon.position.set(0.22, 0.4, 0.04);
     k.ball(0.04, '#8A6A3F', 0.22, 0.57, 0.04);
   },
-  (k, c) => { // Le grand-père : béret, lunettes, canne
-    person(k, { skin: SKIN[9], hair: HAIR.gris, top: c, bottom: '#5A5F6E' });
+  (k, c, L = {}) => { // Le grand-père : béret, lunettes, canne
+    person(k, { skin: L.skin ?? SKIN[9], hair: L.hair ?? HAIR.gris, top: c, bottom: '#5A5F6E' });
     const beret = k.ball(0.195, NAVY, 0.015, 0.895, -0.015);
     beret.scale.y = 0.34;
     k.cyl(0.012, 0.012, 0.03, 5, NAVY, 0, 0.955, 0);
@@ -767,9 +767,12 @@ export function buildProp(name) {
   return g;
 }
 
-export function buildCharacter(seat, color) {
+// look (facultatif) : le personnage créé par le joueur dans son profil, { style, skin, hair } avec les couleurs en hex.
+// Sans lui, chaque place a son voyageur.
+export function buildCharacter(seat, color, look = null) {
   const g = new THREE.Group();
-  CAST[seat % CAST.length](kit(g), color);
+  const style = look && Number.isInteger(look.style) ? look.style : seat;
+  CAST[style % CAST.length](kit(g), color, look ? { skin: look.skin, hair: look.hair } : {});
   return g;
 }
 

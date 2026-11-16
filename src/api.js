@@ -2,7 +2,7 @@
 import express from 'express';
 import { db, transaction } from './db.js';
 import { config } from './config.js';
-import { COLORS, AVATARS, REACTIONS, LIMITS } from './options.js';
+import { COLORS, AVATARS, REACTIONS, LIMITS, CHARACTER } from './options.js';
 import * as auth from './auth.js';
 import { markAllChannelsRead, deleteUserData } from './chat.js';
 import { createLimiter } from './securite.js';
@@ -56,7 +56,7 @@ function requireUser(req) {
 const str = (v) => (typeof v === 'string' ? v : '');
 
 api.get('/options', (req, res) => {
-  res.json({ colors: COLORS, avatars: AVATARS, reactions: REACTIONS, limits: LIMITS, signupsOpen: auth.signupsOpen(), playerAwayMs: config.playerAwayMs });
+  res.json({ colors: COLORS, avatars: AVATARS, reactions: REACTIONS, limits: LIMITS, character: CHARACTER, signupsOpen: auth.signupsOpen(), playerAwayMs: config.playerAwayMs });
 });
 
 api.get('/me', (req, res) => {

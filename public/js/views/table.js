@@ -471,6 +471,13 @@ async function mountGame() {
     players: mine.table.seats.map(userOf),
     user: userOf,
     colorOf,
+    // Le personnage d'un joueur (créé dans son profil), couleurs en hex : { style, skin, hair }, ou null s'il n'en a pas.
+    character(id) {
+      const c = userOf(id)?.character;
+      const o = state.options?.character;
+      if (!c || !o) return null;
+      return { style: c.style, skin: o.skins[c.skin], hair: o.hairs[c.hair] };
+    },
     onState(cb) {
       mine.listeners.add(cb);
       if (mine.view !== null) cb(mine.view, info());

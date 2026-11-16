@@ -1,15 +1,31 @@
 // Écran Administration (admins) : code de la classe et inscriptions, canaux, rôles, comptes bloqués, état du serveur, journaux.
-import { h, icon, token, toast, colorOf, stamp, count } from '../dom.js';
+import { h, icon, token, toast, colorOf, stamp, count, keepFocus, staffTag } from '../dom.js';
 import { call } from '../net.js';
-import { state } from '../store.js';
-import { asyncForm, openChannelEditor, openRoleEditor } from '../dialogs.js';
+import { state, sortedUsers } from '../store.js';
+import { asyncForm, openChannelEditor, openRoleEditor, openProfile } from '../dialogs.js';
 
 let channelList = null;
 let roleList = null;
+let memberList = null;
+let memberFilter = '';
 
 export function leave() {
   channelList = null;
   roleList = null;
+  memberList = null;
+}
+
+// Tous les membres, avec une recherche : « Gérer » ouvre la fiche (renommer, effacer la bio ou le personnage, sourdine, niveau…).
+export function renderMembers() {
+  if (!memberList) return;
+  const q = memberFilter.trim().toLowerCase();
+  const users = sortedUsers().filter((u) => !q || u.pseudo.toLowerCase().includes(q));
+  keepFocus(memberList, () => memberList.replaceChildren(...(users.length ? users.map((u) => h('li',
+    token(u, { size: 's' }),
+    h('span.label', h('span.member-name', u.pseudo, staffTag(u)), u.bio ? h('small.member-bio', u.bio) : null),
+    u.character ? h('span.tag-soft', 'personnage') : null,
+    u.id === state.me.id ? h('span.muted', 'toi') : h('button.btn.btn-ghost.btn-sm', { type: 'button', 'aria-label': `Gérer ${u.pseudo}`, onclick: () => openProfile(u.id) }, 'Gérer')))
+    : [h('li', h('span.label.muted', q ? 'Personne ne correspond.' : 'Aucun membre.'))])));
 }
 
 export function render(container) {
@@ -94,10 +110,15 @@ export function render(container) {
           h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => openRoleEditor() }, icon('plus'), 'Créer')),
         h('p.card-text', 'Un nom et une couleur, sans aucun droit. Le premier rôle d’un membre colore son pseudo et le range dans Membres. Pour en donner un, ouvre la fiche du membre.'),
         roleList),
+      h('section.card.card-panel.card-wide',
+        h('div.card-top', h('h2', 'Membres'), h('span.muted', `${state.users.size}`)),
+        h('p.card-text', 'Un pseudo ou une bio inappropriés ? « Gérer » ouvre la fiche : renommer, effacer la bio ou le personnage, sourdine, niveau. Tout est noté au journal de modération.'),
+        h('input.input', { type: 'search', placeholder: 'Chercher un pseudo', 'aria-label': 'Chercher un membre', value: memberFilter, oninput: (e) => { memberFilter = e.currentTarget.value; renderMembers(); } }),
+        memberList = h('ul.row-list.member-admin-list')),
       h('section.card.card-panel',
         h('h2', 'Comptes bloqués'),
         bannedList,
-        h('p.card-text', 'Pour agir sur un membre (sourdine, mot de passe, blocage, niveau, rôles), ouvre sa fiche depuis Membres.')),
+        h('p.card-text', 'Pour agir sur un membre (renommer, sourdine, mot de passe, blocage, niveau, rôles), clique sur « Gérer » dans la liste des membres.')),
       h('section.card.card-panel',
         h('div.card-top', h('h2', 'État du serveur'),
           h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => loadStatus(status) }, 'Actualiser')),
@@ -114,6 +135,7 @@ export function render(container) {
           h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => loadErrors(errorList) }, 'Actualiser')),
         h('p.card-text', 'Ce qui a planté, sur le serveur ou dans le navigateur d’un élève, du plus récent au plus ancien (gardé 30 jours). À envoyer à la personne qui s’occupe du code.'),
         errorList))));
+  renderMembers();
   loadJournal(journal);
   loadStatus(status);
   loadErrors(errorList);

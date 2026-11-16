@@ -57,7 +57,10 @@ export function mount(root, api) {
   const action = h('section.es-action', { hidden: true }, timing, prompt);
   const flash = h('p.es-flash', { 'aria-live': 'polite' });
   const focusCard = h('section.es-focus', { hidden: true });
-  const side = h('aside.es-side', h('div.es-panel', round, players), tools, trades, focusCard);
+  // À l'ordinateur, toujours sous les yeux : tes villes pays par pays, et les derniers coups de la partie.
+  const mine = h('section.es-dock.es-mine', { 'aria-label': 'Tes villes' });
+  const journal = h('section.es-dock.es-journal', { 'aria-label': 'Derniers coups' });
+  const side = h('aside.es-side', h('div.es-panel', round, players), tools, trades, focusCard, mine, journal);
   const layer = h('div.es-layer');
   const loading = h('p.es-loading', 'Le plateau arrive…');
   const turnBox = h('div.es-turn', { hidden: true, 'aria-hidden': 'true' }); // le bandeau du hub et la liste des joueurs le disent déjà aux lecteurs d'écran
@@ -90,6 +93,11 @@ export function mount(root, api) {
       if (gone) return;
       try {
         world = createWorld(stage, {
+          // Les joueurs humains apparaissent avec le personnage de leur profil ; les robots gardent le voyageur de leur place.
+          lookOf: (seat) => {
+            const p = v?.players.find((x) => x.seat === seat);
+            return p && !p.bot ? api.character?.(p.id) ?? null : null;
+          },
           onStep: sound.step,
           onHover: showTip,
           onStill: () => { if (uiTimer) applyUI(); },
@@ -579,6 +587,7 @@ export function mount(root, api) {
     renderTurn(!action.hidden && !plain);
 
     renderTrades();
+    renderDock();
     tools.hidden = v.over;
     tradeLink.hidden = !me() || me().out; // un spectateur regarde, il n'échange pas
     renderFlash(!action.hidden && !plain);
@@ -590,7 +599,43 @@ export function mount(root, api) {
     const tradesKey = JSON.stringify(mineTrades);
     if (tradesKey === shownTrades) return; // recréer les boutons pendant un clic le ferait échouer
     shownTrades = tradesKey;
-    trades.replaceChildren(...mineTrades.map(tradeCard));
+    const waiting = mineTrades.filter((t) => t.to === meId).length;
+    trades.replaceChildren(...(mineTrades.length ? [h('h3.es-trades-title', 'Échanges en cours', waiting ? h('b', `${waiting} pour toi`) : null)] : []), ...mineTrades.map(tradeCard));
+  }
+
+  // Tes villes, pays par pays : combien tu en as, à qui sont les autres, et si tu peux y construire.
+  let dockKey = null;
+  function renderDock() {
+    const key = JSON.stringify([v.props, v.actions.build, v.log.at(-1)?.n, v.over, Boolean(world), me()?.out]);
+    if (key === dockKey) return;
+    dockKey = key;
+    const owner = (pos) => (v.props[pos] ? v.players.find((p) => p.id === v.props[pos].owner) : null);
+    const pipsOf = (group) => h('span.es-pips-line', { 'aria-hidden': 'true' }, group.map((x) => {
+      const o = owner(x.pos);
+      const pip = h('i');
+      if (o) pip.style.background = PAWN_COLORS[o.seat];
+      return pip;
+    }));
+    const rows = REGIONS.map((reg, i) => {
+      const group = TILES.filter((t) => t.region === i && t.type === 'city');
+      const n = group.filter((t) => v.props[t.pos]?.owner === meId).length;
+      if (!n) return null;
+      const canBuild = group.some((t) => v.actions.build.includes(t.pos));
+      const row = h('button.es-mine-row', { type: 'button', onclick: () => openOverlay({ kind: canBuild ? 'build' : 'cities' }) },
+        flagOf(i), h('span', reg.name, h('small', `${n} sur 4`)), pipsOf(group), canBuild ? h('em', 'Construire') : null);
+      row.style.setProperty('--c', reg.color);
+      return row;
+    }).filter(Boolean);
+    const escales = TILES.filter((t) => t.type === 'escale');
+    const nEscales = escales.filter((t) => v.props[t.pos]?.owner === meId).length;
+    if (nEscales) rows.push(h('button.es-mine-row', { type: 'button', onclick: () => openOverlay({ kind: 'cities' }) }, h('i.es-mine-dot'), h('span', 'Escales', h('small', `${nEscales} sur 4`)), pipsOf(escales)));
+    mine.hidden = !me() || me().out || v.over;
+    mine.replaceChildren(h('h3.es-dock-title', 'Tes villes'), ...(rows.length ? rows : [h('p.es-note', 'Pas encore de ville. Achète-en une en t’y arrêtant.')]));
+    const last = v.log.slice(-5).reverse();
+    journal.hidden = !last.length;
+    journal.replaceChildren(
+      h('h3.es-dock-title', 'Derniers coups', h('button.es-dock-more', { type: 'button', onclick: () => openOverlay({ kind: 'log' }) }, 'Tout voir')),
+      h('ol.es-history', last.map((l) => h('li', spoken(l.text, true)))));
   }
 
   function offerText(o) {
@@ -621,9 +666,13 @@ export function mount(root, api) {
         h('dt', 'Tu reçois'), h('dd', offerText(incoming ? t.give : t.get)),
         h('dt', 'Tu donnes'), h('dd', offerText(incoming ? t.get : t.give))),
       tradeNote(incoming ? t.give.cities : t.get.cities, incoming ? t.get.cities : t.give.cities, other),
-      h('div.es-choice',
+      h(`div.es-choice${incoming ? '.es-trade-acts' : ''}`,
         incoming ? btn('Accepter', { type: 'tradeAccept', id: t.id }, '.is-small') : null,
-        btn(incoming ? 'Refuser' : 'Retirer', { type: 'tradeReject', id: t.id }, '.is-ghost.is-small')));
+        btn(incoming ? 'Refuser' : 'Retirer', { type: 'tradeReject', id: t.id }, '.is-ghost.is-small'),
+        // Contre-proposer : l'échange reçu, à l'envers, prêt à être retouché. Envoyer le nouveau refuse l'ancien.
+        incoming && me() && !me().out ? h('button.es-btn.is-ghost.is-small', { type: 'button', onclick: () => openTrade({
+          to: other.id, give: new Set(t.get.cities), get: new Set(t.give.cities), giveCash: t.get.cash, getCash: t.give.cash, counter: t.id,
+        }) }, 'Contre-proposer') : null));
   }
 
   // ——— Fenêtres ———
@@ -787,10 +836,17 @@ export function mount(root, api) {
 
   // L'échange a des jauges : on ne le redessine pas à chaque changement d'état. Seules les jauges et les listes se remettent à jour, sans perdre ce qui est saisi.
   let tradeLive = null;
-  function openTrade() {
+  function openTrade(prefill = null) {
     const others = v.players.filter((p) => !p.out && p.id !== meId);
     if (!others.length) return;
-    draft = { to: others[0].id, give: new Set(), get: new Set(), giveCash: 0, getCash: 0 };
+    draft = prefill && others.some((p) => p.id === prefill.to) ? prefill : { to: others[0].id, give: new Set(), get: new Set(), giveCash: 0, getCash: 0 };
+    // Une contre-proposition reprend l'échange reçu : on ne garde que ce qui peut encore s'échanger.
+    const tradable = (id) => (pos) => v.props[pos]?.owner === id && !v.props[pos].level;
+    draft.give = new Set([...draft.give].filter(tradable(meId)));
+    draft.get = new Set([...draft.get].filter(tradable(draft.to)));
+    const tens = (n) => Math.floor(n / 10) * 10; // la jauge avance de 10 en 10
+    draft.giveCash = tens(Math.min(draft.giveCash, me().cash));
+    draft.getCash = tens(Math.min(draft.getCash, v.players.find((p) => p.id === draft.to).cash));
     openOverlay({ kind: 'trade' });
   }
 
@@ -849,7 +905,8 @@ export function mount(root, api) {
             el.setAttribute('aria-pressed', String(set.has(pos)));
             update();
           },
-        }, t.type === 'city' ? flagOf(t.region) : null, t.short ?? t.name);
+        }, t.type === 'city' ? flagOf(t.region) : null, h('span', t.short ?? t.name), h('small', v.props[pos].mortgaged ? 'en gage' : money(t.price)));
+        if (t.type === 'city') el.style.setProperty('--c', REGIONS[t.region].color); // la couleur du pays, sur le bord
         return el;
       }));
     };
@@ -877,14 +934,21 @@ export function mount(root, api) {
       });
       return h('section.es-tcol', { style: `--p:${PAWN_COLORS[p.seat]}` }, h('header.es-tcol-head', picture(world?.portrait(p.seat), '.es-face'), h('b', title), wallet), list, gauge);
     };
+    const counter = draft.counter ?? null;
+    if (counter) send.textContent = 'Envoyer la contre-proposition';
     send.addEventListener('click', () => {
       send.disabled = true;
       api.sendMove({ type: 'trade', to: target().id, give: { cash: draft.giveCash, cities: [...draft.give] }, get: { cash: draft.getCash, cities: [...draft.get] } })
-        .then(closeOverlay).catch(() => { send.disabled = false; });
+        .then(() => {
+          // La nouvelle proposition est partie : l'ancienne est refusée (déjà retirée entre-temps, peu importe).
+          if (counter && v.trades.some((t) => t.id === counter)) api.sendMove({ type: 'tradeReject', id: counter }).catch(() => {});
+          closeOverlay();
+        }).catch(() => { send.disabled = false; });
     });
     update();
-    const el = shell('Échanger', h('h2', 'Échanger'),
-      others.length > 1 ? h('div.es-whos', { role: 'group', 'aria-label': 'Avec qui échanger' }, others.map((p) => {
+    const title = counter ? `Contre-proposition à ${target().pseudo}` : 'Échanger';
+    const el = shell(title, h('h2', title),
+      others.length > 1 && !counter ? h('div.es-whos', { role: 'group', 'aria-label': 'Avec qui échanger' }, others.map((p) => {
         const who = h(`button.es-whom${p.id === target().id ? '.is-on' : ''}`, {
           type: 'button',
           'aria-pressed': String(p.id === target().id),
