@@ -1,6 +1,6 @@
-// Six Savoirs : un circuit de 30 cases aux couleurs de 6 catégories. À ton tour, tu lances le dé, tu choisis d'avancer ou de
-// reculer, puis tu réponds à une question à 4 choix de la catégorie de ta case. Bonne réponse : tu rejoues, et sur une case
-// Sceau tu gagnes le sceau de sa catégorie. Le premier à réunir le nombre de sceaux demandé gagne.
+// Six Savoirs : un plateau en roue aux couleurs de 6 catégories. À ton tour, tu lances le dé, tu choisis ta case parmi celles
+// qu'on atteint en avançant d'autant, puis tu réponds à une question à 4 choix de sa catégorie. Bonne réponse : tu rejoues, et
+// sur une case Sceau tu gagnes le sceau de sa catégorie. Avec tous tes sceaux, tu rejoins le Centre : réussis la question finale et tu gagnes.
 // Les questions viennent du Quiz (games/quiz/questions.js), regroupées en 6 catégories.
 import { QUESTIONS } from '../quiz/questions.js';
 
@@ -10,12 +10,57 @@ export const CAT_NAMES = { geo: 'Géographie', histoire: 'Histoire', sciences: '
 const FROM_QUIZ = { geo: 'geo', histoire: 'histoire', sciences: 'sciences', pop: 'divert', table: 'divert', sport: 'sport', arts: 'lettres', langue: 'lettres' };
 const BANK = Object.fromEntries(CATS.map((c) => [c, QUESTIONS.filter((q) => FROM_QUIZ[q.t] === c)]));
 
-export const SIZE = 30; // cases du circuit
-// Toutes les 5 cases, un Sceau (une catégorie chacun) ; entre deux, les catégories tournent pour que chaque coup de dé varie.
-export const BOARD = Array.from({ length: SIZE }, (_, i) => {
-  const block = Math.floor(i / 5);
-  return i % 5 === 0 ? { cat: CATS[block], seal: true } : { cat: CATS[(block + i % 5) % 6], seal: false };
-});
+// Le plateau en roue : un anneau de 36 cases (un Sceau toutes les 6 cases, une case « Rejoue » au milieu de chaque arc),
+// 6 rayons de 4 cases qui partent des Sceaux vers le Centre. On part du Centre ; on y revient, tous ses sceaux en poche,
+// pour la question finale.
+export const RING = 36;
+export const SPOKE = 4;
+export const HUB = RING + 6 * SPOKE; // la case du Centre
+export const SIZE = HUB + 1;
+const RING_CATS = [null, 2, 4, null, 3, 5]; // décalage de catégorie pour chaque case d'un arc (0 = Sceau, 3 = Rejoue)
+const SPOKE_CATS = [1, 3, 5, 2];
+const SPOKE_R = [360, 290, 220, 150]; // rayon de chaque case d'un rayon, sur un plateau de 1000 × 1000
+
+const at = (deg, r) => ({ x: Math.round(500 + r * Math.cos((deg * Math.PI) / 180)), y: Math.round(500 + r * Math.sin((deg * Math.PI) / 180)) });
+
+export const BOARD = [];
+export const ADJ = [];
+for (let i = 0; i < RING; i++) {
+  const k = Math.floor(i / 6);
+  const r = i % 6;
+  const pos = at(-90 + i * 10, 440);
+  if (r === 0) BOARD.push({ ...pos, cat: CATS[k], seal: true });
+  else if (r === 3) BOARD.push({ ...pos, cat: null, again: true });
+  else BOARD.push({ ...pos, cat: CATS[(k + RING_CATS[r]) % 6] });
+  ADJ.push([(i + 1) % RING, (i + RING - 1) % RING]);
+}
+for (let k = 0; k < 6; k++) {
+  for (let j = 0; j < SPOKE; j++) {
+    const i = RING + k * SPOKE + j;
+    BOARD.push({ ...at(-90 + k * 60, SPOKE_R[j]), cat: CATS[(k + SPOKE_CATS[j]) % 6], spoke: true });
+    ADJ.push([j === 0 ? k * 6 : i - 1, j === SPOKE - 1 ? HUB : i + 1]);
+    if (j === 0) ADJ[k * 6].push(i);
+  }
+}
+BOARD.push({ x: 500, y: 500, cat: null, hub: true });
+ADJ.push(Array.from({ length: 6 }, (_, k) => RING + k * SPOKE + SPOKE - 1));
+
+// Les cases où l'on peut finir en avançant de `steps` cases sans repasser deux fois par la même.
+export function reach(from, steps) {
+  const out = new Set();
+  const seen = new Set([from]);
+  const walk = (node, left) => {
+    if (!left) { out.add(node); return; }
+    for (const next of ADJ[node]) {
+      if (seen.has(next)) continue;
+      seen.add(next);
+      walk(next, left - 1);
+      seen.delete(next);
+    }
+  };
+  walk(from, steps);
+  return [...out].sort((a, b) => a - b);
+}
 
 const ROLL_MS = 30_000; // pour lancer le dé
 const MOVE_MS = 20_000; // pour choisir sa case
@@ -36,7 +81,7 @@ export function setup(players, options, ctx) {
   return {
     players: ids,
     left: [],
-    pos: Object.fromEntries(ids.map((id) => [id, 0])),
+    pos: Object.fromEntries(ids.map((id) => [id, HUB])), // tout le monde part du Centre
     seals: Object.fromEntries(ids.map((id) => [id, []])),
     goal,
     time: ([15, 20, 30].includes(Number(options.time)) ? Number(options.time) : 20) * 1000,
@@ -86,15 +131,22 @@ function nextPlayer(s, ctx) {
 
 function roll(s, ctx) {
   const die = 1 + Math.floor(ctx.random() * 6);
-  const p = s.pos[current(s)];
-  const dests = [...new Set([(p + die) % SIZE, (p - die + SIZE) % SIZE])];
+  const dests = reach(s.pos[current(s)], die);
   return { ...s, phase: 'move', die, dests, deadline: ctx.now + MOVE_MS, log: say(s, `#${current(s)} lance ${die}.`) };
 }
 
+const ready = (s, id) => s.seals[id].length >= s.goal; // tous ses sceaux : direction le Centre
+
 function goTo(s, to, ctx) {
   const id = current(s);
-  const { used, question } = draw(s, BOARD[to].cat, ctx);
-  return { ...s, pos: { ...s.pos, [id]: to }, phase: 'question', used, question, answer: null, deadline: ctx.now + s.time };
+  const sq = BOARD[to];
+  const pos = { ...s.pos, [id]: to };
+  if (sq.again) return { ...s, pos, phase: 'roll', die: null, dests: [], deadline: ctx.now + ROLL_MS, log: say(s, `#${id} tombe sur une case Rejoue.`) };
+  // Au Centre, une catégorie au hasard ; avec tous ses sceaux, c'est la question finale.
+  const cat = sq.hub ? CATS[Math.floor(ctx.random() * CATS.length)] : sq.cat;
+  const { used, question } = draw(s, cat, ctx);
+  const final = Boolean(sq.hub && ready(s, id));
+  return { ...s, pos, phase: 'question', used, question: { ...question, final }, answer: null, deadline: ctx.now + s.time };
 }
 
 function answer(s, choice, ctx) {
@@ -111,7 +163,8 @@ function answer(s, choice, ctx) {
     ? gained ? `#${id} répond juste et gagne le sceau ${CAT_NAMES[gained]} !` : `#${id} répond juste.`
     : choice === null ? `#${id} n’a pas répondu à temps.` : `#${id} se trompe.`;
   const t = { ...s, seals, phase: 'reveal', answer: { choice, right, gained }, streak: right ? s.streak + 1 : 0, deadline: ctx.now + REVEAL_MS, log: say(s, text) };
-  if (seals[id].length >= s.goal) return { ...t, winner: id, log: say(t, `#${id} réunit ${s.goal} sceaux et gagne la partie !`) };
+  if (right && s.question.final) return { ...t, winner: id, log: say(t, `#${id} réussit la question finale et gagne la partie !`) };
+  if (gained && seals[id].length >= s.goal) return { ...t, log: say(t, `#${id} a ses ${s.goal} sceaux : direction le Centre !`) };
   return t;
 }
 
@@ -156,8 +209,9 @@ export function timeout(s, ctx) {
     case 'roll': return { state: roll(s, ctx) };
     case 'move': {
       const id = current(s);
-      // Une case Sceau qui manque, sinon la première.
-      const best = s.dests.find((d) => BOARD[d].seal && !s.seals[id].includes(BOARD[d].cat)) ?? s.dests[0];
+      // Le Centre si tous les sceaux sont là, sinon une case Sceau qui manque, sinon la première.
+      const best = (ready(s, id) && s.dests.includes(HUB) ? HUB : null)
+        ?? s.dests.find((d) => BOARD[d].seal && !s.seals[id].includes(BOARD[d].cat)) ?? s.dests[0];
       return { state: goTo(s, best, ctx) };
     }
     case 'question': return { state: answer(s, null, ctx) };
@@ -193,10 +247,12 @@ export function view(s) {
     cat: s.question.cat,
     q: s.question.q,
     choices: s.question.choices,
+    final: s.question.final,
     correct: s.phase === 'reveal' || s.phase === 'over' ? s.question.correct : null,
   };
   return {
     board: BOARD,
+    hub: HUB,
     cats: CATS,
     catNames: CAT_NAMES,
     players: s.players,

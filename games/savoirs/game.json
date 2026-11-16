@@ -1,14 +1,14 @@
 {
   "name": "Six Savoirs",
   "tagline": "Un dé, six catégories, six sceaux à conquérir.",
-  "description": "Un jeu de culture générale sur plateau : avance au dé, réponds aux questions de la case où tu t’arrêtes, et réunis les sceaux des six catégories avant les autres.",
+  "description": "Un jeu de culture générale sur un plateau en roue : avance au dé, réponds aux questions de la case où tu t’arrêtes, réunis les sceaux des catégories puis rejoins le Centre pour la question finale.",
   "how": [
-    "Le circuit a 30 cases, chacune de la couleur d’une catégorie : Géographie, Histoire, Sciences, Divertissement, Sport, Arts et lettres.",
-    "À ton tour, lance le dé puis choisis d’avancer ou de reculer d’autant de cases.",
-    "Réponds à la question à quatre choix de la catégorie de ta case avant la fin du chrono.",
+    "Le plateau est une roue : un anneau de 36 cases, six rayons vers le Centre. Chaque case a la couleur d’une catégorie : Géographie, Histoire, Sciences, Divertissement, Sport, Arts et lettres.",
+    "Tout le monde part du Centre. À ton tour, lance le dé et choisis une des cases en surbrillance (on avance d’autant, sans revenir sur ses pas).",
+    "Réponds à la question à quatre choix de la catégorie de ta case avant la fin du chrono. Les cases ↻ font rejouer sans question.",
     "Bonne réponse : tu rejoues. Mauvaise réponse : la main passe au joueur suivant.",
-    "Les six grandes cases sont des Sceaux : y répondre juste te donne le sceau de leur catégorie.",
-    "Le premier à réunir le nombre de sceaux choisi par l’hôte gagne."
+    "Seules les six grandes cases rondes, au bout des rayons, donnent un sceau : y répondre juste te donne le sceau de leur catégorie.",
+    "Avec le nombre de sceaux choisi par l’hôte, rejoins le Centre : réussis la question finale et tu gagnes."
   ],
   "minPlayers": 1,
   "maxPlayers": 6,
@@ -19,9 +19,46 @@
   "ink": "#FFFFFF",
   "order": 22,
   "options": [
-    { "key": "goal", "label": "Sceaux pour gagner", "help": "6 pour une longue partie, 3 pour une partie rapide", "type": "choice", "default": 4,
-      "choices": [{ "value": 3, "label": "3" }, { "value": 4, "label": "4" }, { "value": 6, "label": "Les 6" }] },
-    { "key": "time", "label": "Temps pour répondre", "type": "choice", "default": 20,
-      "choices": [{ "value": 15, "label": "15 s" }, { "value": 20, "label": "20 s" }, { "value": 30, "label": "30 s" }] }
+    {
+      "key": "goal",
+      "label": "Sceaux pour gagner",
+      "help": "6 pour une longue partie, 3 pour une partie rapide",
+      "type": "choice",
+      "default": 4,
+      "choices": [
+        {
+          "value": 3,
+          "label": "3"
+        },
+        {
+          "value": 4,
+          "label": "4"
+        },
+        {
+          "value": 6,
+          "label": "Les 6"
+        }
+      ]
+    },
+    {
+      "key": "time",
+      "label": "Temps pour répondre",
+      "type": "choice",
+      "default": 20,
+      "choices": [
+        {
+          "value": 15,
+          "label": "15 s"
+        },
+        {
+          "value": 20,
+          "label": "20 s"
+        },
+        {
+          "value": 30,
+          "label": "30 s"
+        }
+      ]
+    }
   ]
 }
