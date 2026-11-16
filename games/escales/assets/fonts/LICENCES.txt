@@ -1,9 +1,6 @@
 Polices du jeu Escales, toutes sous SIL Open Font License 1.1 (texte complet : OFL.txt).
 
-- Figtree (figtree.woff2) : Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
-- Unbounded (unbounded.woff2) : Copyright 2022 The Unbounded Project Authors (https://github.com/googlefonts/unbounded)
-- Alfa Slab One (alfa-slab-*.woff2) : Copyright 2011 JM Solé (https://github.com/googlefonts/alfa-slab-one)
 - Barlow Semi Condensed (barlow-*.woff2) : Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
 - Baloo 2 (baloo-800-*.woff2) : Copyright 2019 The Baloo 2 Project Authors (https://github.com/EkType/Baloo2)
 
-Carte des continents (assets/continents.png, globe-*.svg) : d'après Natural Earth, domaine public (https://www.naturalearthdata.com).
+Globe (assets/globe-ardoise.svg) : d'après Natural Earth, domaine public (https://www.naturalearthdata.com).
