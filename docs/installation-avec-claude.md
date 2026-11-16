@@ -90,7 +90,9 @@ Puis **Create**, ensuite **Run NPM Install** (attendre la fin), puis **Restart**
 
 1. J'ouvre l'adresse dans un navigateur : l'écran de connexion de Hubuno doit s'afficher, avec le cadenas HTTPS. S'il n'y a pas de cadenas : cPanel > **SSL/TLS Status** > « Run AutoSSL » pour ce domaine, puis attendre quelques minutes.
 2. Je dis à Minh que c'est en ligne. Il crée son compte avec son pseudo et le **code admin** à la place du code de classe, puis il doit voir l'écran **Admin**.
-3. Minh regarde dans **Admin** la ligne **Connexion en direct**. « Connexion directe », c'est parfait. « Connexion de secours » marche aussi, avec un peu de délai : on le note, sans rien changer.
+3. Minh regarde dans **Admin** la carte **État du serveur** :
+   - **Copies de l'appli** doit valoir 1 (juste après un Restart, 2 pendant une minute, c'est normal). Si ça reste à 2 ou plus, on demande au support O2Switch de limiter l'appli à une seule instance.
+   - « Connexion directe », c'est parfait. « Connexion de secours » marche aussi, avec un peu de délai : on le note, sans rien changer.
 4. Test à deux appareils : un message envoyé de l'un doit apparaître sur l'autre en une seconde environ.
 
 C'est terminé. Dis-moi de garder cette conversation pour les mises à jour.
