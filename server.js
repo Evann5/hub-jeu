@@ -1,6 +1,7 @@
 // Point d'entrée de Hubuno (fichier de démarrage à indiquer dans cPanel > Setup Node.js App).
 import { createServer } from 'node:http';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
 import express from 'express';
 import { config } from './src/config.js';
 import { api } from './src/api.js';
@@ -47,15 +48,25 @@ router.use('/api', (req, res, next) => {
 // L'adresse du site : sans session, la page d'accueil publique (ce qu'est Hubuno, bouton Connexion) ; connecté, l'appli.
 // « connexion » ouvre l'écran de connexion ; déjà connecté, on repart vers le hub. Une fois connecté, on ne voit plus l'accueil public.
 const page = (name) => join(config.root, 'public', name);
-router.get('/', (req, res, next) => {
+// La page de l'appli annonce d'un coup tous ses modules (modulepreload) : le navigateur les demande en parallèle au lieu de les
+// découvrir un import après l'autre (une dizaine d'allers-retours en chaîne, chacun lent sur un hébergement mutualisé).
+// character.js n'en fait pas partie : il tire three, chargé seulement si une tête doit être dessinée.
+const appHtml = (() => {
+  const js = join(config.root, 'public', 'js');
+  const files = readdirSync(js, { recursive: true }).map(String).filter((f) => f.endsWith('.js') && f !== 'character.js').sort();
+  const links = files.map((f) => `  <link rel="modulepreload" href="${relative(join(config.root, 'public'), join(js, f)).split('\\').join('/')}">`).join('\n');
+  return readFileSync(page('index.html'), 'utf8').replace('</head>', `${links}\n</head>`);
+})();
+const sendApp = (res) => res.type('html').send(appHtml);
+router.get('/', (req, res) => {
   res.set({ 'Cache-Control': 'no-store', Vary: 'Cookie' });
-  if (userFromToken(readCookie(req.headers.cookie, COOKIE))) return next();
+  if (userFromToken(readCookie(req.headers.cookie, COOKIE))) return sendApp(res);
   return res.sendFile(page('accueil.html'));
 });
 router.get('/connexion', (req, res) => {
   res.set({ 'Cache-Control': 'no-store', Vary: 'Cookie' });
   if (userFromToken(readCookie(req.headers.cookie, COOKIE))) return res.redirect(`${config.basePath}/`); // déjà connecté : droit au hub
-  return res.sendFile(page('index.html'));
+  return sendApp(res);
 });
 router.use(gzipped(join(config.root, 'public')), express.static(join(config.root, 'public'), { maxAge: 0 }));
 // Fichiers des jeux pour le navigateur : client.js, style.css, client/ et assets/ seulement (jamais rules.js).

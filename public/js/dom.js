@@ -98,7 +98,31 @@ export const staffTag = (u) => (u?.role === 'admin' ? h('span.tag-admin', 'admin
 
 // Jeton (avatar) : couleur du joueur, emoji au centre, point vert s'il est en ligne.
 // Un membre qui a créé son personnage : sa tête remplace l'emoji. L'emoji reste affiché tant que l'image se dessine (ou si la 3D est indisponible).
-const heads = new Map(); // personnage -> data URL déjà dessinée, pour poser l'image tout de suite au prochain affichage
+// personnage -> data URL déjà dessinée, pour poser l'image tout de suite au prochain affichage.
+// Gardées aussi dans le navigateur (localStorage) : à la visite suivante, les têtes s'affichent sans charger three ni rien redessiner.
+// Changer HEADS_KEY quand le dessin des personnages change, pour repartir de zéro.
+const HEADS_KEY = 'hubuno:tetes:1';
+const HEADS_MAX = 120;
+const heads = (() => {
+  try {
+    return new Map(Object.entries(JSON.parse(localStorage.getItem(HEADS_KEY) || '{}')));
+  } catch {
+    return new Map();
+  }
+})();
+let saveHeadsTimer = null;
+function keepHead(key, url) {
+  heads.set(key, url);
+  while (heads.size > HEADS_MAX) heads.delete(heads.keys().next().value);
+  clearTimeout(saveHeadsTimer);
+  saveHeadsTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(HEADS_KEY, JSON.stringify(Object.fromEntries(heads)));
+    } catch {
+      // stockage plein ou interdit (navigation privée) : on redessinera à la prochaine visite
+    }
+  }, 1000);
+}
 export function token(user, { size = '', online = false } = {}) {
   const el = h(`span.token${size ? `.token-${size}` : ''}${online ? '.is-online' : ''}`,
     { style: `--c:${colorOf(user?.color)}`, 'aria-hidden': 'true' },
@@ -114,7 +138,7 @@ export function token(user, { size = '', online = false } = {}) {
     else {
       // Chargé à la demande : la page d'accueil n'attend pas three pour s'afficher.
       import('./character.js').then((m) => m.characterImage(user.character, { head: true })).then((url) => {
-        if (url) heads.set(key, url);
+        if (url) keepHead(key, url);
         put(url);
       }).catch(() => {});
     }
