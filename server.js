@@ -7,7 +7,7 @@ import { api } from './src/api.js';
 import { attachRealtime } from './src/realtime.js';
 import { purgeOldMessages } from './src/chat.js';
 import { purgeOldMod } from './src/journal.js';
-import { purgeExpiredSessions, classCode } from './src/auth.js';
+import { purgeExpiredSessions, classCode, readCookie, userFromToken, COOKIE } from './src/auth.js';
 import { loadGames, gamesDir } from './src/games.js';
 import { purgeTables } from './src/play.js';
 import { gzipped } from './src/gzip.js';
@@ -44,6 +44,19 @@ router.use('/api', (req, res, next) => {
 }, api);
 // maxAge 0 : le navigateur revérifie chaque fichier (un 304 ne coûte rien). Avec un cache, une mise à jour qui ajoute un export casserait
 // le chargement chez qui garde l'ancien module, car les imports d'un module ne portent pas le ?v= de la page.
+// L'adresse du site : sans session, la page d'accueil publique (ce qu'est Hubuno, bouton Connexion) ; connecté, l'appli.
+// « connexion » ouvre l'écran de connexion ; déjà connecté, on repart vers le hub. Une fois connecté, on ne voit plus l'accueil public.
+const page = (name) => join(config.root, 'public', name);
+router.get('/', (req, res, next) => {
+  res.set({ 'Cache-Control': 'no-store', Vary: 'Cookie' });
+  if (userFromToken(readCookie(req.headers.cookie, COOKIE))) return next();
+  return res.sendFile(page('accueil.html'));
+});
+router.get('/connexion', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store', Vary: 'Cookie' });
+  if (userFromToken(readCookie(req.headers.cookie, COOKIE))) return res.redirect(`${config.basePath}/`); // déjà connecté : droit au hub
+  return res.sendFile(page('index.html'));
+});
 router.use(gzipped(join(config.root, 'public')), express.static(join(config.root, 'public'), { maxAge: 0 }));
 // Fichiers des jeux pour le navigateur : client.js, style.css, client/ et assets/ seulement (jamais rules.js).
 router.use('/games', (req, res, next) => (

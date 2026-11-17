@@ -59,6 +59,8 @@ function armMuteEnd() {
 }
 
 function afterLogin({ mustChangePassword }) {
+  // Connecté depuis la page « connexion » : l'adresse redevient celle du hub (même dossier, l'ancre est gardée).
+  if (/\/connexion$/.test(location.pathname)) history.replaceState(null, '', location.pathname.replace(/connexion$/, '') + location.hash);
   if (mustChangePassword) renderForcedPassword(root, { onDone: startRealtime });
   else startRealtime();
 }
