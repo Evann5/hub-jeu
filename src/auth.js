@@ -65,8 +65,31 @@ export const tokenHash = sha256;
 // Rôles décoratifs d'un compte, dans l'ordre de la liste des rôles (le premier colore le pseudo).
 const rolesOfUser = db.prepare('SELECT r.id FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ? ORDER BY r.position, r.id');
 
-export function publicUser(u) {
-  return { id: u.id, pseudo: u.pseudo, avatar: u.avatar, color: u.color, bio: u.bio, character: readCharacter(u.character), role: u.role, roles: rolesOfUser.all(u.id).map((r) => r.id) };
+// L'avatar affiché : la photo envoyée, la tête du personnage ou la silhouette par défaut. Sans choix (''), le personnage s'il existe.
+export function picOf(u) {
+  const character = readCharacter(u.character);
+  if (u.pic === 'photo' && u.photo) return 'photo';
+  if (u.pic === 'silhouette') return 'silhouette';
+  if ((u.pic === '' || u.pic === 'personnage' || u.pic === undefined) && character) return 'personnage';
+  return 'silhouette';
+}
+
+// Ce que les autres voient d'un compte. Le niveau (admin, modo) ne se montre qu'à l'équipe : pour les membres, tout le monde
+// est « membre » (staff: false). Un compte voit toujours son propre niveau (state.me).
+export function publicUser(u, { staff = true } = {}) {
+  const pic = picOf(u);
+  return {
+    id: u.id,
+    pseudo: u.pseudo,
+    avatar: u.avatar,
+    color: u.color,
+    bio: u.bio,
+    character: readCharacter(u.character),
+    pic,
+    photo: pic === 'photo' ? `photos/${u.photo}` : null,
+    role: staff ? u.role : 'membre',
+    roles: rolesOfUser.all(u.id).map((r) => r.id),
+  };
 }
 
 export function classCode() {

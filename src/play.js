@@ -73,6 +73,8 @@ export function initPlay(server) {
   setInterval(sweepLobbies, 30_000).unref();
   setInterval(sweepHosts, Math.min(15_000, Math.max(200, config.hostAwayMs / 3))).unref();
   for (const t of tables.loadTables()) schedule(t);
+  // Une partie terminée change les stats : les pages ouvertes sur Jouer ou sur un profil les redemandent.
+  tables.onResults(() => io.to('membres').emit('stats:changed'));
 }
 
 export const gamesCatalog = catalog;

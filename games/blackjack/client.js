@@ -87,7 +87,7 @@ export function mount(root, api) {
     const node = h(`article.bj-seat${mine ? '.is-me' : ''}${turn ? '.is-turn' : ''}${seat.out ? '.is-out' : ''}${waiting ? '.is-wait' : ''}`,
       { 'aria-label': `${user.pseudo}${mine ? ' (toi)' : ''}, ${fmt(seat.chips)} jeton${seat.chips > 1 ? 's' : ''}${bits.length ? `, ${bits[0]}` : ''}` },
       h('header.bj-who',
-        h('span.bj-av', { 'aria-hidden': 'true' }, user.avatar || '🙂'),
+        h('span.bj-av', api.token(user, { size: 's' })),
         h('span.bj-name', user.pseudo),
         h('b.bj-chips', fmt(seat.chips))),
       h('div.bj-hands', seat.hands.map((hd, k) => handEl(seat, hd, k, { mine, active: turn && seat.cur === k && !hd.done }))),

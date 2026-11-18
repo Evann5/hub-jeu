@@ -99,7 +99,8 @@
 .g-blackjack .bj-seat.is-turn { border-color: var(--lemon); box-shadow: 0 3px 0 #000, 0 0 22px 4px rgb(255 226 58 / 0.6); }
 .g-blackjack .bj-seat.is-out { opacity: 0.45; filter: grayscale(0.7); }
 .g-blackjack .bj-who { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; }
-.g-blackjack .bj-av { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--pink-soft); font-size: 0.95rem; line-height: 1; }
+.g-blackjack .bj-av { display: grid; flex: none; }
+.g-blackjack .bj-av .token { --s: 24px; border-radius: 50%; }
 .g-blackjack .bj-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; font-size: 0.85rem; }
 .g-blackjack .bj-chips { font: 800 0.82rem/1 'BJ Unbounded', system-ui, sans-serif; color: var(--lemon); font-variant-numeric: tabular-nums; }
 .g-blackjack .bj-hands { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; min-height: 8px; }

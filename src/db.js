@@ -191,6 +191,29 @@ if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'charac
   db.exec("ALTER TABLE users ADD COLUMN character TEXT NOT NULL DEFAULT ''");
 }
 
+// Colonnes ajoutées après coup (18/11/2026) : jeux favoris (JSON, visibles de leur seul propriétaire), photo envoyée (nom du fichier
+// dans data/photos) et choix de l'avatar : '' (le personnage s'il existe, sinon la silhouette), 'personnage', 'photo' ou 'silhouette'.
+for (const [name, def] of [['favorites', "TEXT NOT NULL DEFAULT '[]'"], ['photo', "TEXT NOT NULL DEFAULT ''"], ['pic', "TEXT NOT NULL DEFAULT ''"]]) {
+  if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === name)) db.exec(`ALTER TABLE users ADD COLUMN ${name} ${def}`);
+}
+
+// Résultats des parties terminées, pour les stats (séries, classements) et les succès des profils.
+// Sans clé étrangère vers users : un compte supprimé voit ses lignes effacées à la main (deleteUserData).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS game_results (
+    table_id INTEGER NOT NULL,
+    round INTEGER NOT NULL,
+    game TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    won INTEGER NOT NULL,
+    players INTEGER NOT NULL,
+    at INTEGER NOT NULL,
+    PRIMARY KEY (table_id, round, user_id)
+  );
+  CREATE INDEX IF NOT EXISTS game_results_user ON game_results (user_id, at);
+  CREATE INDEX IF NOT EXISTS game_results_at ON game_results (at);
+`);
+
 if (!db.prepare('SELECT 1 FROM channels LIMIT 1').get()) {
   const add = db.prepare('INSERT INTO channels (name, topic, position, created_at) VALUES (?, ?, ?, ?)');
   add.run('général', 'Le salon de toute la classe', 0, Date.now());

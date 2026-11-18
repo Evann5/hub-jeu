@@ -18,6 +18,7 @@ export const state = {
   invites: new Map(), // parties où l'on m'a invité : id de la partie -> id de la personne qui invite
   joinOnOpen: null, // la partie à rejoindre dès qu'elle s'affiche (bouton Rejoindre, invitation)
   roles: [], // rôles décoratifs : [{ id, name, color }], dans l'ordre (le premier d'un membre colore son pseudo)
+  favorites: new Set(), // mes jeux favoris (ids), à moi seul
   tables: [], // résumés des tables : [{ id, game, hostId, status, seats, turn… }]
 };
 

@@ -1,5 +1,6 @@
 // Tables de jeu : salon, places, lancement, coups, minuteurs, fin et revanche. Ne connaît pas Socket.IO.
 // Les tables vivent en mémoire et sont recopiées en base à chaque changement : une partie survit à un redémarrage.
+import { recordResults } from './stats.js';
 import { db, getSetting, setSetting } from './db.js';
 import { games, cleanOptions } from './games.js';
 import { ChatError } from './erreurs.js';
@@ -182,13 +183,28 @@ function mustLobby(t) {
   if (t.status !== 'lobby') throw new ChatError('La partie a déjà commencé.');
 }
 
+// Les résultats d'une partie terminée, pour les stats et les succès (stats.js). Une erreur ici ne doit jamais bloquer la partie.
+const resultListeners = [];
+export const onResults = (fn) => resultListeners.push(fn);
+function noteResults(t) {
+  try {
+    const { winners } = statusOf(t);
+    if (recordResults(t, winners)) for (const fn of resultListeners) fn(t);
+  } catch (err) {
+    console.error('Résultats de partie non enregistrés :', err);
+  }
+}
+
 // Applique le résultat d'un coup ou d'un minuteur, et passe la table en « terminée » si besoin.
 function apply(t, result) {
   if (!result || typeof result !== 'object' || !('state' in result)) throw new ChatError('Le jeu a renvoyé un état invalide.');
   // Le statut est calculé sur le nouvel état AVANT de le garder : si le jeu plante dessus, le coup est refusé et la partie reste jouable.
   const { over } = runRules(() => statusOf({ ...t, state: result.state, status: 'playing' }));
   t.state = result.state;
-  if (over) t.status = 'over';
+  if (over) {
+    t.status = 'over';
+    noteResults(t);
+  }
   persist(t);
   return result.events || [];
 }
@@ -291,6 +307,7 @@ export function startTable(id, userId) {
   t.left = [];
   t.status = over ? 'over' : 'playing';
   t.startedAt = Date.now(); // une nouvelle manche : le navigateur remonte le jeu, même s'il a raté le retour au salon
+  if (over) noteResults(t);
   persist(t);
   return t;
 }

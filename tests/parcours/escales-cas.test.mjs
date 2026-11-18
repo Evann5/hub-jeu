@@ -31,7 +31,7 @@ async function preparer(id, monId, changer) {
 S.it('Escales : Douane, ville en gage, dette impossible et faillite s’affichent et se jouent', async ({ ouvrir }) => {
   const h = await ouvrir(S.pseudo(), { viewport: { width: 390, height: 844 }, tactile: true });
   await aller(h, '#/jouer');
-  await h.page.locator('.game-hero').getByRole('button', { name: 'Jouer à Escales' }).click();
+  await h.page.getByRole('button', { name: 'Jouer à Escales' }).click();
   await h.page.getByRole('dialog').getByRole('button', { name: 'Créer une partie' }).click();
   await h.page.locator('.lobby-card').waitFor();
   const id = Number((await h.page.evaluate(() => location.hash)).match(/\d+/)[0]);
@@ -83,7 +83,7 @@ S.it('Escales à 5 (2 élèves + 3 robots) avec seulement 4 pays choisis : la pa
   const a = await ouvrir();
   const b = await ouvrir();
   await aller(a, '#/jouer'); // Escales est le jeu vedette : sa grande carte, en haut de Jouer
-  await a.page.locator('.game-hero').getByRole('button', { name: 'Jouer à Escales' }).click();
+  await a.page.getByRole('button', { name: 'Jouer à Escales' }).click();
   await a.page.getByRole('dialog').getByRole('button', { name: 'Créer une partie' }).click();
   await a.page.locator('.lobby-card').waitFor();
   const adresse = await a.page.evaluate(() => location.hash);

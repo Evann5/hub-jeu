@@ -1,4 +1,4 @@
-// Écran Administration (admins) : code de la classe et inscriptions, canaux, rôles, comptes bloqués, état du serveur, journaux.
+// Écran Administration (admins) : code de la classe et inscriptions, canaux, rôles, comptes bloqués (anciens), état du serveur, journaux.
 import { h, icon, token, toast, colorOf, stamp, count, keepFocus, staffTag } from '../dom.js';
 import { call } from '../net.js';
 import { state, sortedUsers } from '../store.js';
@@ -69,7 +69,8 @@ export function render(container) {
   const journal = h('ul.mod-log', h('li', h('span.muted', 'Chargement…')));
   roleList = h('ul.row-list');
   renderRoles();
-  const bannedList = h('ul.row-list', h('li', h('span.label', 'Chargement…')));
+  const bannedList = h('ul.row-list');
+  let bannedSection = null;
   const address = `${location.origin}${location.pathname}`;
   const copyInvite = async () => {
     const text = `Rejoins Hubuno, les jeux de la classe : ${address}\nCode de la classe : ${codeBox.textContent}`;
@@ -112,13 +113,13 @@ export function render(container) {
         roleList),
       h('section.card.card-panel.card-wide',
         h('div.card-top', h('h2', 'Membres'), h('span.muted', `${state.users.size}`)),
-        h('p.card-text', 'Un pseudo ou une bio inappropriés ? « Gérer » ouvre la fiche : renommer, effacer la bio ou le personnage, sourdine, niveau. Tout est noté au journal de modération.'),
+        h('p.card-text', 'Un pseudo ou une bio inappropriés ? « Gérer » ouvre la fiche : renommer, effacer la bio, la photo ou le personnage, sourdine, niveau, supprimer le compte. Tout est noté au journal de modération.'),
         h('input.input', { type: 'search', placeholder: 'Chercher un pseudo', 'aria-label': 'Chercher un membre', value: memberFilter, oninput: (e) => { memberFilter = e.currentTarget.value; renderMembers(); } }),
         memberList = h('ul.row-list.member-admin-list')),
-      h('section.card.card-panel',
+      bannedSection = h('section.card.card-panel', { hidden: true },
         h('h2', 'Comptes bloqués'),
-        bannedList,
-        h('p.card-text', 'Pour agir sur un membre (renommer, sourdine, mot de passe, blocage, niveau, rôles), clique sur « Gérer » dans la liste des membres.')),
+        h('p.card-text', 'Bloqués avant que le blocage ne soit remplacé par la suppression : débloque-les ou supprime-les.'),
+        bannedList),
       h('section.card.card-panel',
         h('div.card-top', h('h2', 'État du serveur'),
           h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => loadStatus(status) }, 'Actualiser')),
@@ -144,21 +145,27 @@ export function render(container) {
     .then(([{ classCode, signupsOpen }, { users }]) => {
       showSignups(signupsOpen !== false);
       codeBox.replaceChildren(h('span', classCode || 'Aucun code : les inscriptions sont fermées.'));
-      const drawBanned = (list) => bannedList.replaceChildren(...(list.length ? list.map((u) => h('li',
-        token(u, { size: 's' }), h('span.label', u.pseudo),
-        h('button.btn.btn-ghost.btn-sm', {
-          type: 'button',
-          'aria-label': `Débloquer ${u.pseudo}`,
-          onclick: async () => {
-            try {
-              await call(state.socket, 'admin:ban', { userId: u.id, banned: false });
-              toast(`Compte débloqué : ${u.pseudo}.`);
-              drawBanned(list.filter((x) => x.id !== u.id));
-            } catch (err) {
-              toast(err.message, { error: true });
-            }
-          },
-        }, 'Débloquer'))) : [h('li', h('span.label.muted', 'Aucun compte bloqué.'))]));
+      // Comptes bloqués avant le 18/11/2026 : le blocage n'existe plus, on les débloque ou on les supprime.
+      const banAction = (u, list, label, event, done) => h(`button.btn.btn-sm${event === 'admin:deleteBanned' ? '.btn-danger' : '.btn-ghost'}`, {
+        type: 'button',
+        'aria-label': `${label} ${u.pseudo}`,
+        onclick: async () => {
+          try {
+            await call(state.socket, event, { userId: u.id });
+            toast(`${done} : ${u.pseudo}.`);
+            drawBanned(list.filter((x) => x.id !== u.id));
+          } catch (err) {
+            toast(err.message, { error: true });
+          }
+        },
+      }, label);
+      const drawBanned = (list) => {
+        bannedSection.hidden = !list.length;
+        bannedList.replaceChildren(...list.map((u) => h('li',
+          token(u, { size: 's' }), h('span.label', u.pseudo),
+          banAction(u, list, 'Débloquer', 'admin:unban', 'Compte débloqué'),
+          banAction(u, list, 'Supprimer', 'admin:deleteBanned', 'Compte supprimé'))));
+      };
       drawBanned(users);
     })
     .catch((err) => toast(err.message, { error: true }));

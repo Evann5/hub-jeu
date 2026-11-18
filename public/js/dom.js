@@ -53,6 +53,12 @@ const PATHS = {
   up: 'M18 15l-6-6-6 6',
   down: 'M6 9l6 6 6-6',
   search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z M21 21l-4.3-4.3',
+  star: 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8Z',
+  'star-fill': 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8Z',
+  sun: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z M12 1v2 M12 21v2 M4.2 4.2l1.4 1.4 M18.4 18.4l1.4 1.4 M1 12h2 M21 12h2 M4.2 19.8l1.4-1.4 M18.4 5.6l1.4-1.4',
+  moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z',
+  camera: 'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+  trophy: 'M8 21h8 M12 17v4 M7 4h10v5a5 5 0 0 1-10 0Z M17 5h3v2a3 3 0 0 1-3 3 M7 5H4v2a3 3 0 0 0 3 3',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9',
   open: 'M7 17 17 7 M8 7h9v9',
   user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
@@ -80,6 +86,7 @@ export function icon(name, label) {
   } else {
     svg.setAttribute('aria-hidden', 'true');
   }
+  if (name === 'star-fill') svg.setAttribute('fill', 'currentColor');
   const path = document.createElementNS(SVG_NS, 'path');
   path.setAttribute('d', PATHS[name]);
   svg.append(path);
@@ -96,8 +103,7 @@ export const colorOf = (name) => colors[name] || '#6B7F78';
 // Petite étiquette à côté du pseudo de l'équipe : « admin » ou « modo ».
 export const staffTag = (u) => (u?.role === 'admin' ? h('span.tag-admin', 'admin') : u?.role === 'modo' ? h('span.tag-admin.tag-modo', 'modo') : null);
 
-// Jeton (avatar) : couleur du joueur, emoji au centre, point vert s'il est en ligne.
-// Un membre qui a créé son personnage : sa tête remplace l'emoji. L'emoji reste affiché tant que l'image se dessine (ou si la 3D est indisponible).
+// Jeton (avatar) : la photo, la tête du personnage (sur sa couleur) ou la silhouette, et un point vert s'il est en ligne.
 // personnage -> data URL déjà dessinée, pour poser l'image tout de suite au prochain affichage.
 // Gardées aussi dans le navigateur (localStorage) : à la visite suivante, les têtes s'affichent sans charger three ni rien redessiner.
 // Changer HEADS_KEY quand le dessin des personnages change, pour repartir de zéro.
@@ -123,22 +129,33 @@ function keepHead(key, url) {
     }
   }, 1000);
 }
+// Ce que montre l'avatar : la photo envoyée, la tête du personnage, ou la silhouette par défaut (comme sur les réseaux sociaux).
+// user.pic vient du serveur ; un objet sans pic (ancien, ou dessiné par un jeu) : le personnage s'il existe, sinon la silhouette.
+export function picOf(user) {
+  if (user?.pic === 'photo' && user.photo) return 'photo';
+  if (user?.pic === 'silhouette') return 'silhouette';
+  return user?.character ? 'personnage' : 'silhouette';
+}
+const SILHOUETTE = 'img/silhouette.svg';
+
 export function token(user, { size = '', online = false } = {}) {
-  const el = h(`span.token${size ? `.token-${size}` : ''}${online ? '.is-online' : ''}`,
-    { style: `--c:${colorOf(user?.color)}`, 'aria-hidden': 'true' },
-    h('span', user?.avatar || '?'));
-  if (user?.character) {
+  const pic = picOf(user);
+  const el = h(`span.token${size ? `.token-${size}` : ''}${online ? '.is-online' : ''}.has-head${pic === 'silhouette' ? '.is-silhouette' : ''}`,
+    { style: `--c:${colorOf(user?.color)}`, 'aria-hidden': 'true' });
+  const put = (url) => el.append(h('img', { src: url, alt: '', decoding: 'async' }));
+  if (pic === 'photo') put(user.photo);
+  else if (pic === 'silhouette') put(SILHOUETTE);
+  else {
     const key = JSON.stringify(user.character);
-    const put = (url) => {
-      if (!url) return;
-      el.append(h('img', { src: url, alt: '', decoding: 'async' }));
-      el.classList.add('has-head');
-    };
     if (heads.has(key)) put(heads.get(key));
     else {
-      // Chargé à la demande : la page d'accueil n'attend pas three pour s'afficher.
+      // Chargé à la demande : la page n'attend pas three pour s'afficher ; la silhouette tient la place pendant le dessin.
+      const wait = h('img.is-wait', { src: SILHOUETTE, alt: '' });
+      el.append(wait);
       import('./character.js').then((m) => m.characterImage(user.character, { head: true })).then((url) => {
-        if (url) keepHead(key, url);
+        if (!url) return;
+        keepHead(key, url);
+        wait.remove();
         put(url);
       }).catch(() => {});
     }

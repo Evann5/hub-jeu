@@ -2,6 +2,7 @@
 import { h, changedOnly, icon, token, toast, setColors, count, keepFocus } from './dom.js';
 import { api, connect } from './net.js';
 import './erreurs.js'; // les erreurs JavaScript de la page remontent au serveur (Admin)
+import './theme.js'; // thème clair ou sombre, posé avant le premier écran
 import { renderAuth, renderForcedPassword } from './auth.js';
 import { state, actions, go, dmScope, unreadTotal, isAdmin, gameOf, myTurnTables } from './store.js';
 import * as home from './views/home.js';
@@ -100,6 +101,7 @@ function startRealtime() {
     state.games = s.games;
     state.tables = s.tables;
     state.roles = s.roles ?? [];
+    state.favorites = new Set(s.favorites ?? []);
     // Après une coupure, on recharge les conversations : des messages ont pu arriver entre-temps.
     // Les messages pas encore partis restent à l'écran, avec « Réessayer ».
     const unsent = [...state.convs].map(([scope, c]) => [scope, c.messages.filter((m) => m.id < 0)]).filter(([, list]) => list.length);
@@ -166,12 +168,32 @@ function startRealtime() {
     // Mon niveau change : une fiche ouverte avec des outils d'équipe n'est plus à jour, on la ferme.
     if (u.id === state.me.id && u.role !== state.me.role) document.querySelectorAll('dialog[open]').forEach((d) => d.querySelector('.staff-tools') && d.close());
     state.users.set(u.id, u);
-    if (u.id === state.me.id) state.me = u;
+    if (u.id === state.me.id) {
+      state.me = u;
+      profile.onMeChange();
+    }
     if (u.id === state.me.id && state.route.view === 'admin' && !isAdmin()) go('#/'); // rétrogradé pendant qu'il regardait l'écran admin
     renderNav();
     refreshPeople();
     messages.onUsersChange();
     admin.renderRoles(); // le nombre de membres de chaque rôle
+    admin.renderMembers();
+  });
+  socket.on('favorites', (list) => {
+    state.favorites = new Set(list);
+    games.refresh();
+  });
+  // Une partie s'est terminée : les stats de la page Jouer sont à redemander (seulement si elle est ouverte).
+  socket.on('stats:changed', () => {
+    if (state.route.view === 'games') games.loadStats();
+    else games.forgetStats();
+  });
+  // La liste entière (mon niveau a changé : je vois, ou plus, ceux des autres).
+  socket.on('users', (list) => {
+    state.users = new Map(list.map((u) => [u.id, u]));
+    renderNav();
+    refreshPeople();
+    messages.onUsersChange();
     admin.renderMembers();
   });
   socket.on('renamed', (pseudo) => toast(`Un membre de l’équipe a changé ton pseudo : tu t’appelles maintenant ${pseudo}.`, { ms: 8000 }));

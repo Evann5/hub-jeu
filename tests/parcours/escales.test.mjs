@@ -15,7 +15,7 @@ const NOTER_LES_LIGNES = () => {
 S.it('Escales : les messages des robots se lisent chacun leur tour, sans jamais parler des dés', async ({ ouvrir }) => {
   const h = await ouvrir(S.pseudo(), { init: NOTER_LES_LIGNES });
   await aller(h, '#/jouer');
-  await h.page.locator('.game-hero').getByRole('button', { name: 'Jouer à Escales' }).click();
+  await h.page.getByRole('button', { name: 'Jouer à Escales' }).click();
   await h.page.getByRole('dialog').getByRole('button', { name: 'Créer une partie' }).click();
   await h.page.locator('.lobby-card').waitFor();
   await h.page.getByRole('button', { name: 'Lancer la partie' }).click();

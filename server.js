@@ -12,6 +12,7 @@ import { purgeExpiredSessions, classCode, readCookie, userFromToken, COOKIE } fr
 import { loadGames, gamesDir } from './src/games.js';
 import { purgeTables } from './src/play.js';
 import { gzipped } from './src/gzip.js';
+import { photosDir, validPhotoName } from './src/photos.js';
 import { backupIfDue } from './src/sauvegarde.js';
 import { startBeat, logError, purgeErrors } from './src/etat.js';
 
@@ -67,6 +68,12 @@ router.get('/connexion', (req, res) => {
   res.set({ 'Cache-Control': 'no-store', Vary: 'Cookie' });
   if (userFromToken(readCookie(req.headers.cookie, COOKIE))) return res.redirect(`${config.basePath}/`); // déjà connecté : droit au hub
   return sendApp(res);
+});
+// Photos d'avatar (data/photos) : seulement pour les personnes connectées. Leur nom change à chaque envoi : elles restent en cache.
+router.get('/photos/:name', (req, res) => {
+  if (!validPhotoName(req.params.name) || !userFromToken(readCookie(req.headers.cookie, COOKIE))) return res.sendStatus(404);
+  res.set('Cache-Control', 'private, max-age=31536000, immutable');
+  return res.sendFile(join(photosDir, req.params.name), (err) => { if (err && !res.headersSent) res.sendStatus(404); });
 });
 router.use(gzipped(join(config.root, 'public')), express.static(join(config.root, 'public'), { maxAge: 0 }));
 // Fichiers des jeux pour le navigateur : client.js, style.css, client/ et assets/ seulement (jamais rules.js).

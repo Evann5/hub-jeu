@@ -25,9 +25,9 @@ S.it('fiche de jeu : la carte ouvre une fiche, « Annuler » ne crée rien, « C
   if (!/^#\/t\/\d+$/.test(adresse)) throw new Error(`adresse de la table : ${adresse}`);
   await h.page.locator('.lobby-seat', { hasText: h.pseudo }).waitFor();
 
-  // Le jeu phare a aussi sa fiche.
+  // Escales est un jeu comme les autres : sa carte ouvre sa fiche.
   await aller(h, '#/jouer');
-  await h.page.locator('.game-hero').getByRole('button', { name: /^Jouer à/ }).click();
+  await h.page.getByRole('button', { name: 'Jouer à Escales' }).click();
   await h.page.getByRole('dialog').getByRole('button', { name: 'Créer une partie' }).waitFor();
 });
 
@@ -168,7 +168,7 @@ S.it('Escales fermée pendant qu’on regarde : le canvas 3D disparaît, le titr
   const h = await ouvrir();
   const g = await ouvrir(S.pseudo(), { init: SUIVRE_ECOUTEURS_ESCALES });
   await aller(h, '#/jouer');
-  await h.page.locator('.game-hero').getByRole('button', { name: 'Jouer à Escales' }).click();
+  await h.page.getByRole('button', { name: 'Jouer à Escales' }).click();
   await h.page.getByRole('dialog').getByRole('button', { name: 'Créer une partie' }).click();
   await h.page.locator('.lobby-card').waitFor();
   const adresse = await hashDe(h);

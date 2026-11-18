@@ -77,7 +77,8 @@
 .g-mytho .my-roster b { display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--yellow); font: 900 0.8rem 'MY Unbounded', sans-serif; font-variant-numeric: tabular-nums; }
 .g-mytho .my-roster em { margin-right: 4px; font-style: normal; font-weight: 900; }
 .g-mytho .my-roster li:not(.is-done):has(em) { border-style: solid; background: #fff; }
-.g-mytho .my-av { display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid var(--ink); border-radius: 50%; background: #fff; font-size: 0.9rem; }
+.g-mytho .my-av { display: grid; flex: none; }
+.g-mytho .my-av .token { --s: 28px; border-radius: 50%; box-shadow: 0 0 0 2px var(--ink); }
 
 /* Vote : des bulles numérotées */
 .g-mytho .my-ask { margin: 12px 0 6px; font-weight: 800; }

@@ -32,7 +32,7 @@ export function mount(root, api) {
     return h('ul.my-roster', { 'aria-label': label ? `${done.length} sur ${people.length} ${label}` : 'Scores' }, people.map((id) => {
       const gain = v.phase === 'reveal' ? v.gained[id] : 0;
       return h(`li${done && done.includes(id) ? '.is-done' : ''}${id === api.me.id ? '.is-me' : ''}`,
-        h('span.my-av', api.user(id).avatar), h('span.my-name', pseudo(id)),
+        h('span.my-av', api.token(api.user(id), { size: 's' })), h('span.my-name', pseudo(id)),
         h('b', String(v.scores[id] || 0)), gain ? h('em', `+${gain}`) : null);
     }));
   }
@@ -116,7 +116,7 @@ export function mount(root, api) {
     const rank = [...v.players].filter((id) => !v.left.includes(id)).sort((a, b) => v.scores[b] - v.scores[a]);
     const top = Math.max(...rank.map((id) => v.scores[id]));
     return h('ol.my-scores', rank.map((id) => h(`li${id === api.me.id ? '.is-me' : ''}${v.scores[id] === top ? '.is-top' : ''}`,
-      h('span.my-av', api.user(id).avatar), h('span.my-name', pseudo(id)), h('b', String(v.scores[id])))));
+      h('span.my-av', api.token(api.user(id), { size: 's' })), h('span.my-name', pseudo(id)), h('b', String(v.scores[id])))));
   }
 
   function screenOver() {

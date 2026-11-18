@@ -1,5 +1,5 @@
 // Fenêtres : confirmation, règles, profil d'un membre (avec les outils admin), création et modification de canal.
-import { h, icon, token, toast, focusKey, findByKey, colorOf, staffTag } from './dom.js';
+import { h, icon, token, toast, focusKey, findByKey, colorOf } from './dom.js';
 import { call } from './net.js';
 import { state, go, isAdmin, isStaff, LEVELS, rolesOf } from './store.js';
 import { characterPicture } from './character.js';
@@ -104,6 +104,33 @@ export function openRules() {
       h('p', 'Dans ton profil, « Supprimer mon compte » efface tout de suite ton compte, tes messages et tes réactions. Pour toute question, écris à un admin.')));
 }
 
+// ——— Succès (profil d'un membre et mon profil) ———
+
+// Les stats d'un membre et ses succès : gagnés en couleur, les autres grisés avec où il en est.
+export function badgesCard(userId) {
+  const box = h('div.ach-box', { 'aria-busy': 'true' }, h('p.dlg-note', 'Chargement…'));
+  const draw = (s) => {
+    box.removeAttribute('aria-busy');
+    const earned = s.badges.filter((b) => b.earned).length;
+    const best = s.topGames[0];
+    const bestGame = best?.wins ? state.games.find((g) => g.id === best.game) : null;
+    box.replaceChildren(...[
+      h('dl.stat-row',
+        h('div', h('dt', 'Parties'), h('dd', String(s.played))),
+        h('div', h('dt', 'Victoires'), h('dd', String(s.wins))),
+        h('div', h('dt', 'Meilleure série'), h('dd', String(s.bestStreak))),
+        h('div', h('dt', 'Succès'), h('dd', `${earned}/${s.badges.length}`))),
+      bestGame ? h('p.dlg-note', `Meilleur jeu : ${bestGame.name} (${best.wins} victoire${best.wins > 1 ? 's' : ''}).`) : null,
+      h('ul.ach-grid', s.badges.map((b) => h(`li.ach${b.earned ? '.is-earned' : ''}`, { title: b.text },
+        h('span.ach-icon', { 'aria-hidden': 'true' }, b.icon),
+        h('span.ach-text', h('b', b.name), h('small', b.earned ? b.text : `${b.text} · ${b.value}/${b.goal}`)),
+        b.earned ? h('span.sr-only', '(obtenu)') : null))),
+      s.played ? null : h('p.dlg-note', 'Les succès se débloquent en jouant à plusieurs : les parties seul ne comptent pas.')].filter(Boolean));
+  };
+  call(state.socket, 'stats:user', { userId }).then(draw).catch((err) => box.replaceChildren(h('p.dlg-note', err.message)));
+  return box;
+}
+
 // ——— Profil d'un membre ———
 
 export function openProfile(userId) {
@@ -118,11 +145,12 @@ export function openProfile(userId) {
     h('div.profile-card', { style: `--c:${colorOf(u.color)}` },
       token(u, { size: 'l', online }),
       h('div',
-        h('p.pseudo', u.pseudo, staffTag(u)),
+        h('p.pseudo', u.pseudo),
         rolesOf(u).length ? h('p.role-chips', rolesOf(u).map((r) => h('span.role-chip', { style: `--rc:${colorOf(r.color)}` }, r.name))) : null,
         h(online ? 'p.status.is-online' : 'p.status', online ? 'En ligne' : 'Hors ligne'),
         h('p.bio', u.bio || 'Pas encore de bio.'))),
     u.character ? h('div.character-stage.is-small', { style: `--c:${colorOf(u.color)}` }, characterPicture(u.character, 'character-big'), h('small', 'Son personnage en partie')) : null,
+    h('div.dlg-sub', h('h3', 'Succès'), badgesCard(u.id)),
     h('div.dlg-actions',
       h('button.btn', {
         type: 'button',
@@ -193,7 +221,16 @@ function staffTools(u, close) {
           toast(`Personnage de ${u.pseudo} effacé.`);
           close();
         }),
-      }, 'Effacer le personnage')),
+      }, 'Effacer le personnage'),
+      h('button.btn.btn-ghost', {
+        type: 'button',
+        disabled: !u.photo,
+        onclick: act(async () => {
+          await call(state.socket, 'admin:clearProfile', { userId: u.id, part: 'photo' });
+          toast(`Photo de ${u.pseudo} effacée.`);
+          close();
+        }),
+      }, 'Effacer la photo')),
   ];
   const muteRow = h('div.dlg-actions.start',
     mute,
@@ -267,15 +304,15 @@ function staffTools(u, close) {
       h('button.btn.btn-danger', {
         type: 'button',
         onclick: act(async () => {
-          const ok = await confirmDialog('Bloquer le compte',
-            `${u.pseudo} ne pourra plus se connecter tant qu’un admin ne le débloque pas.`,
-            { confirmLabel: 'Bloquer', danger: true });
+          const ok = await confirmDialog('Supprimer ce compte',
+            `Le compte de ${u.pseudo}, ses messages, ses réactions, sa photo et ses stats seront effacés tout de suite. Ça ne peut pas être annulé. ${u.pseudo} pourra se réinscrire avec le code de la classe si les inscriptions sont ouvertes.`,
+            { confirmLabel: 'Supprimer le compte', danger: true });
           if (!ok) return;
-          await call(state.socket, 'admin:ban', { userId: u.id, banned: true });
-          toast(`Compte bloqué : ${u.pseudo}.`);
+          await call(state.socket, 'admin:deleteUser', { userId: u.id });
+          toast(`Compte supprimé : ${u.pseudo}.`);
           close();
         }),
-      }, 'Bloquer le compte')),
+      }, icon('trash'), 'Supprimer ce compte')),
     tempBox);
 }
 

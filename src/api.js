@@ -1,12 +1,12 @@
 // Routes HTTP : inscription, connexion, mot de passe, suppression du compte.
 import express from 'express';
-import { db, transaction } from './db.js';
+import { db } from './db.js';
 import { config } from './config.js';
 import { COLORS, AVATARS, REACTIONS, LIMITS, CHARACTER } from './options.js';
 import * as auth from './auth.js';
-import { markAllChannelsRead, deleteUserData } from './chat.js';
+import { markAllChannelsRead } from './chat.js';
 import { createLimiter } from './securite.js';
-import { broadcastUser, disconnectUser, disconnectOtherSessions, disconnectSession, removeUser } from './realtime.js';
+import { broadcastUser, disconnectOtherSessions, disconnectSession, deleteAccount } from './realtime.js';
 import { sameOrigin } from './securite.js';
 
 export const api = express.Router();
@@ -176,12 +176,7 @@ api.post('/delete-account', async (req, res) => {
   await checkCurrent(user, req.body.password, 'Mot de passe incorrect.');
   if (user.role === 'admin' && db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND banned = 0").get().n <= 1) throw new ApiError(400, 'Tu es le dernier admin : nomme d’abord un autre admin.');
   // Supprime le compte, ses sessions, ses messages et ses réactions (clés étrangères en cascade), puis ses messages privés et ses lectures.
-  transaction(() => {
-    deleteUserData(user.id);
-    db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
-  });
-  disconnectUser(user.id, 'Ton compte a été supprimé.');
-  removeUser(user.id, { deleted: true });
+  deleteAccount(user);
   res.clearCookie(auth.COOKIE, { path: config.basePath || '/' });
   res.json({ ok: true });
 });

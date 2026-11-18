@@ -2,7 +2,9 @@
 // L'état « qui est en ligne » vit en mémoire : l'appli doit tourner en une seule instance.
 import { randomInt } from 'node:crypto';
 import { Server } from 'socket.io';
-import { db, getSetting, setSetting } from './db.js';
+import { db, getSetting, setSetting, transaction } from './db.js';
+import { savePhoto, removePhoto, PhotoError } from './photos.js';
+import { classStats, userStats, forgetUser } from './stats.js';
 import { config } from './config.js';
 import { COLORS, AVATARS, LIMITS, cleanCharacter } from './options.js';
 import {
@@ -34,14 +36,16 @@ const REFUSED_MAX = 500; // refusés d'affilée : ce n'est plus un humain, on co
 const strictLimits = {
   typing: createEventLimiter(10, 5000),
   profile: createEventLimiter(5, 60_000),
+  photo: createEventLimiter(8, 10 * 60_000), // une photo pèse jusqu'à 150 Ko : pas de remplissage du disque
   'table:create': createEventLimiter(6, 60_000),
   'table:invite': createEventLimiter(10, 60_000),
   'table:watch': createEventLimiter(40, 60_000), // chaque entrée diffuse l'état de la table à ceux qui la regardent
   'client:error': createEventLimiter(6, 60_000), // le navigateur se limite déjà ; ceci protège la base d'une page forgée
 };
 
-function allUsers() {
-  return db.prepare('SELECT * FROM users WHERE banned = 0 ORDER BY pseudo COLLATE NOCASE').all().map(publicUser);
+// staff : l'équipe voit les niveaux (admin, modo) ; les membres voient tout le monde « membre ».
+function allUsers(staff) {
+  return db.prepare('SELECT * FROM users WHERE banned = 0 ORDER BY pseudo COLLATE NOCASE').all().map((u) => publicUser(u, { staff }));
 }
 
 // Envoie un événement à toutes les personnes concernées par un scope.
@@ -60,8 +64,11 @@ function broadcastPresence() {
   io.to('membres').emit('presence', [...online.keys()]);
 }
 
+// Le niveau d'un compte ne part qu'à l'équipe et à son propriétaire ; les autres membres le reçoivent « membre ».
 export function broadcastUser(user) {
-  io?.to('membres').emit('user', publicUser(user));
+  if (!io) return;
+  io.to('equipe').to(`u:${user.id}`).emit('user', publicUser(user));
+  io.to('membres').except('equipe').except(`u:${user.id}`).emit('user', publicUser(user, { staff: false }));
 }
 
 // Les canaux : la liste complète pour l'équipe (salle « equipe »), sans les canaux d'équipe pour les autres.
@@ -80,6 +87,7 @@ async function syncStaffRoom(user) {
     else s.leave('equipe');
   }
   io.to(`u:${user.id}`).emit('channels', chat.listChannels(user.id));
+  io.to(`u:${user.id}`).emit('users', allUsers(staff)); // les niveaux des autres apparaissent (ou disparaissent) avec le sien
 }
 
 // Un message effacé, pour le journal : seulement l'endroit, jamais le texte (sinon effacer puis lire le journal
@@ -117,6 +125,28 @@ export function disconnectSession(token) {
 export function removeUser(userId, { deleted = false } = {}) {
   io?.to('membres').emit('user:removed', userId);
   if (io) dropUserFromTables(userId, { deleted });
+}
+
+export const favoritesOf = (u) => {
+  try {
+    const list = JSON.parse(u.favorites || '[]');
+    return Array.isArray(list) ? list.filter((g) => typeof g === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
+// Supprime un compte et tout ce qui lui appartient (par lui-même depuis son profil, ou par un admin).
+export function deleteAccount(user) {
+  transaction(() => {
+    chat.deleteUserData(user.id);
+    forgetUser(user.id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+  });
+  removePhoto(user.photo);
+  deleteUserSessions(user.id);
+  disconnectUser(user.id, 'Ton compte a été supprimé.');
+  removeUser(user.id, { deleted: true });
 }
 
 function rateLimited(userId) {
@@ -256,7 +286,8 @@ export function attachRealtime(httpServer) {
       me: publicUser(me),
       mustChangePassword: Boolean(me.must_change_password),
       mutedUntil: me.muted_until,
-      users: allUsers(),
+      users: allUsers(isStaff(me)),
+      favorites: favoritesOf(me),
       channels: chat.listChannels(userId),
       dms: chat.dmList(userId),
       unread: chat.unreadCounts(userId),
@@ -332,8 +363,12 @@ export function attachRealtime(httpServer) {
       return {};
     }, { event: 'typing' }));
 
-    socket.on('profile', handler(socket, ({ avatar, color, bio, character }, me) => {
+    socket.on('profile', handler(socket, ({ avatar: sentAvatar, color, bio, character, pic: sentPic }, me) => {
+      const avatar = sentAvatar ?? me.avatar;
+      const pic = sentPic ?? me.pic;
       if (!AVATARS.includes(avatar)) throw new chat.ChatError('Avatar inconnu.');
+      if (!['', 'personnage', 'photo', 'silhouette'].includes(pic)) throw new chat.ChatError('Choix d’avatar inconnu.');
+      if (pic === 'photo' && !me.photo) throw new chat.ChatError('Envoie d’abord une photo.');
       // Le personnage : absent, on garde celui d'avant ; null, on l'enlève ; sinon il doit être valable.
       let look = me.character;
       if (character === null) look = '';
@@ -346,10 +381,50 @@ export function attachRealtime(httpServer) {
       const cleanBio = String(bio ?? '').trim();
       if (cleanBio.length > LIMITS.bioMax) throw new chat.ChatError(`La bio dépasse ${LIMITS.bioMax} caractères.`);
       if (cleanBio !== me.bio) assertNotMuted(me); // en sourdine, on peut changer d'avatar mais pas écrire une nouvelle bio
-      db.prepare('UPDATE users SET avatar = ?, color = ?, bio = ?, character = ? WHERE id = ?').run(avatar, color, cleanBio, look, me.id);
+      db.prepare('UPDATE users SET avatar = ?, color = ?, bio = ?, character = ?, pic = ? WHERE id = ?').run(avatar, color, cleanBio, look, pic, me.id);
       broadcastUser(getUser(me.id));
       return {};
     }, { event: 'profile' }));
+
+    // Photo d'avatar : remplace la précédente et devient l'avatar affiché. null : la photo est retirée (retour au personnage ou à la silhouette).
+    socket.on('profile:photo', handler(socket, ({ data }, me) => {
+      if (data === null) {
+        removePhoto(me.photo);
+        db.prepare("UPDATE users SET photo = '', pic = CASE WHEN pic = 'photo' THEN '' ELSE pic END WHERE id = ?").run(me.id);
+      } else {
+        let name;
+        try {
+          name = savePhoto(me.id, data);
+        } catch (err) {
+          if (err instanceof PhotoError) throw new chat.ChatError(err.message);
+          throw err;
+        }
+        removePhoto(me.photo);
+        db.prepare("UPDATE users SET photo = ?, pic = 'photo' WHERE id = ?").run(name, me.id);
+      }
+      broadcastUser(getUser(me.id));
+      return {};
+    }, { event: 'photo' }));
+
+    // Mes jeux favoris : à moi seul (jamais envoyés aux autres).
+    socket.on('favorite', handler(socket, ({ game, on }, me) => {
+      if (!gamesCatalog().some((g) => g.id === game)) throw new chat.ChatError('Jeu inconnu.');
+      const set = new Set(favoritesOf(me));
+      if (on) set.add(game);
+      else set.delete(game);
+      const list = [...set].slice(0, 50);
+      db.prepare('UPDATE users SET favorites = ? WHERE id = ?').run(JSON.stringify(list), me.id);
+      io.to(`u:${me.id}`).emit('favorites', list); // mes autres onglets suivent
+      return { favorites: list };
+    }));
+
+    // Stats : celles de la classe (page Jouer) et celles d'un membre (succès de son profil).
+    socket.on('stats:class', handler(socket, () => classStats()));
+    socket.on('stats:user', handler(socket, ({ userId }) => {
+      const user = getUser(Number(userId));
+      if (!user || user.banned) throw new chat.ChatError('Ce compte n’existe plus.');
+      return userStats(user.id);
+    }));
 
     // Une erreur JavaScript dans le navigateur d'un élève : notée pour les admins (le navigateur n'envoie que la première de chaque sorte).
     socket.on('client:error', handler(socket, ({ message, place }, me) => {
@@ -411,28 +486,44 @@ export function attachRealtime(httpServer) {
       const user = withinReach(notOwner(targetUser(userId, me), 'modifier le profil du propriétaire du hub'), me);
       if (part === 'bio') db.prepare("UPDATE users SET bio = '' WHERE id = ?").run(user.id);
       else if (part === 'character') db.prepare("UPDATE users SET character = '' WHERE id = ?").run(user.id);
-      else throw new chat.ChatError('Rien à effacer.');
+      else if (part === 'photo') {
+        removePhoto(user.photo);
+        db.prepare("UPDATE users SET photo = '', pic = CASE WHEN pic = 'photo' THEN '' ELSE pic END WHERE id = ?").run(user.id);
+      } else throw new chat.ChatError('Rien à effacer.');
       broadcastUser(getUser(user.id));
-      logMod(me, part === 'bio' ? 'a effacé la bio de' : 'a effacé le personnage de', { target: user.pseudo });
+      logMod(me, { bio: 'a effacé la bio de', character: 'a effacé le personnage de', photo: 'a effacé la photo de' }[part], { target: user.pseudo });
       return {};
     }, { modo: true }));
 
-    socket.on('admin:ban', handler(socket, ({ userId, banned }, me) => {
-      const user = notOwner(targetUser(userId, me), 'bloquer le propriétaire du hub');
-      db.prepare('UPDATE users SET banned = ? WHERE id = ?').run(banned ? 1 : 0, user.id);
-      logMod(me, banned ? 'a bloqué' : 'a débloqué', { target: user.pseudo });
-      if (banned) {
-        deleteUserSessions(user.id);
-        disconnectUser(user.id, 'Un admin a bloqué ton compte.');
-        removeUser(user.id);
-      } else {
-        broadcastUser(getUser(user.id));
-      }
+    // Supprimer un compte (remplace l'ancien « Bloquer ») : le compte, ses messages, ses réactions, sa photo et ses résultats disparaissent.
+    // La personne peut se réinscrire avec le code de la classe si les inscriptions sont ouvertes.
+    socket.on('admin:deleteUser', handler(socket, ({ userId }, me) => {
+      const user = notOwner(targetUser(userId, me), 'supprimer le compte du propriétaire du hub');
+      if (user.id === me.id) throw new chat.ChatError('Pour supprimer ton propre compte, passe par ton profil.');
+      deleteAccount(user);
+      logMod(me, 'a supprimé le compte de', { target: user.pseudo });
+      return {};
+    }, { admin: true }));
+
+    // Les comptes bloqués avant le 18/11/2026 (le blocage n'existe plus) : un admin peut les débloquer ou les supprimer.
+    socket.on('admin:unban', handler(socket, ({ userId }, me) => {
+      const user = db.prepare('SELECT * FROM users WHERE id = ? AND banned = 1').get(Number(userId));
+      if (!user) throw new chat.ChatError('Ce compte n’est pas bloqué.');
+      db.prepare('UPDATE users SET banned = 0 WHERE id = ?').run(user.id);
+      logMod(me, 'a débloqué', { target: user.pseudo });
+      broadcastUser(getUser(user.id));
+      return {};
+    }, { admin: true }));
+    socket.on('admin:deleteBanned', handler(socket, ({ userId }, me) => {
+      const user = db.prepare('SELECT * FROM users WHERE id = ? AND banned = 1').get(Number(userId));
+      if (!user) throw new chat.ChatError('Ce compte n’est pas bloqué.');
+      deleteAccount(user);
+      logMod(me, 'a supprimé le compte de', { target: user.pseudo });
       return {};
     }, { admin: true }));
 
     socket.on('admin:bannedList', handler(socket, () => ({
-      users: db.prepare('SELECT * FROM users WHERE banned = 1 ORDER BY pseudo COLLATE NOCASE').all().map(publicUser),
+      users: db.prepare('SELECT * FROM users WHERE banned = 1 ORDER BY pseudo COLLATE NOCASE').all().map((u) => publicUser(u)),
     }), { admin: true }));
 
     socket.on('admin:resetPassword', handler(socket, async ({ userId }, me) => {

@@ -1,6 +1,6 @@
 // Écran Membres : toute la classe en cartes, en ligne d'abord, avec une recherche par pseudo.
 // Avec des rôles, rangée comme sur Discord : un groupe par rôle (le premier rôle de chacun), puis les autres membres.
-import { h, changedOnly, icon, token, count, keepFocus, staffTag, colorOf } from '../dom.js';
+import { h, changedOnly, icon, token, count, keepFocus, colorOf } from '../dom.js';
 import { state, sortedUsers, rolesOf, roleColor } from '../store.js';
 import { openProfile } from '../dialogs.js';
 
@@ -57,7 +57,7 @@ export function renderGrid() {
       onclick: () => openProfile(u.id),
     },
     token(u, { size: 'l', online: isOn }),
-    h('span.member-name', { style: roleColor(u) ? `color:${colorOf(roleColor(u))}` : null }, u.pseudo, me ? h('span.tag-me', 'toi') : null, staffTag(u)),
+    h('span.member-name', { style: roleColor(u) ? `color:${colorOf(roleColor(u))}` : null }, u.pseudo, me ? h('span.tag-me', 'toi') : null),
     isOn ? h('span.sr-only', 'En ligne') : h('span.member-status', 'Hors ligne'), // la pastille le dit déjà : on n'écrit que l'exception
     h('span.member-bio', u.bio || ' ')));
   };

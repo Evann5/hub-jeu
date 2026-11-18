@@ -1,62 +1,141 @@
-// Écran Profil : mon avatar, ma couleur, ma bio, mon mot de passe, les règles, la déconnexion et la suppression du compte.
-import { h, icon, token, toast, keepFocus, colorOf } from '../dom.js';
+// Écran Profil : mon avatar (personnage, photo ou silhouette), ma couleur, ma bio, mes succès, le thème, mon mot de passe, les règles, la déconnexion et la suppression du compte.
+import { h, icon, token, toast, keepFocus, colorOf, picOf } from '../dom.js';
 import { api, call } from '../net.js';
 import { state, actions, isAdmin, LEVELS } from '../store.js';
 import { isDesktop, hideSecrets, setHideSecrets } from '../secret.js';
 import { modal, asyncForm, openRules } from '../dialogs.js';
 import { characterImage } from '../character.js';
+import { badgesCard } from '../dialogs.js';
+import { themeCard } from '../theme.js';
+
+// Redessine la carte « Mon profil » quand le serveur confirme un changement (photo envoyée ou retirée).
+let syncProfile = () => {};
+export const onMeChange = () => syncProfile();
+
+// Une photo choisie sur l'appareil -> un carré de 256 px en JPEG (data URL), recadré au centre. Le serveur n'accepte que ce format.
+async function squarePhoto(file) {
+  if (!/^image\//.test(file.type)) throw new Error('Choisis une image (JPEG, PNG ou WebP).');
+  if (file.size > 15 * 1024 * 1024) throw new Error('Cette image est trop lourde (15 Mo au plus).');
+  const bitmap = await createImageBitmap(file).catch(() => { throw new Error('Image illisible : essaie une autre photo.'); });
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#FFFFFF'; // une image transparente garde un fond blanc
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 256, 256);
+  bitmap.close?.();
+  for (const quality of [0.86, 0.75, 0.6]) {
+    const url = canvas.toDataURL('image/jpeg', quality);
+    if (url.length * 0.75 < 140 * 1024) return url;
+  }
+  throw new Error('Cette image ne passe pas : essaie une autre photo.');
+}
+
+const PICS = [
+  { key: 'personnage', label: 'Mon personnage', hint: 'La tête de ton personnage' },
+  { key: 'photo', label: 'Une photo', hint: 'Envoyée depuis ton appareil' },
+  { key: 'silhouette', label: 'Par défaut', hint: 'La silhouette grise' },
+];
 
 export function render(container) {
-  const { colors, avatars, limits } = state.options;
-  const draft = { avatar: state.me.avatar, color: state.me.color };
+  const { colors, limits } = state.options;
+  const draft = { color: state.me.color, pic: state.me.pic };
   const preview = h('div.preview');
-  const avatarGrid = h('div.avatar-grid', { role: 'group', 'aria-label': 'Avatar' });
-  const colorRow = h('div.color-row', { role: 'group', 'aria-label': 'Couleur de l’avatar' });
+  const picRow = h('div.pic-row', { role: 'radiogroup', 'aria-label': 'Ce que montre ton avatar' });
+  const colorRow = h('div.color-row', { role: 'group', 'aria-label': 'Couleur du fond de ta tête' });
+  const photoInput = h('input', { type: 'file', accept: 'image/*', hidden: true, name: 'photo_file' });
+  const photoNote = h('p.dlg-note.photo-note', { role: 'status' });
+  const sending = { on: false };
+
+  const look = () => ({ ...state.me, ...draft, photo: state.me.photo });
+  const available = (key) => (key === 'personnage' ? Boolean(state.me.character) : key === 'photo' ? Boolean(state.me.photo) : true);
 
   function draw() {
     preview.style.setProperty('--c', colorOf(draft.color));
-    preview.replaceChildren(token({ ...state.me, ...draft }, { size: 'l' }),
+    preview.replaceChildren(token(look(), { size: 'l' }),
       h('div', h('strong', state.me.pseudo), h('span', LEVELS[state.me.role] ?? 'Membre')));
-    keepFocus(avatarGrid, () => avatarGrid.replaceChildren(...avatars.map((a) => h('button', {
-      type: 'button',
-      'aria-pressed': String(a === draft.avatar),
-      'aria-label': `Avatar ${a}`,
-      onclick: () => { draft.avatar = a; draw(); },
-    }, a))));
+    keepFocus(picRow, () => picRow.replaceChildren(...PICS.map((p) => {
+      const on = picOf(look()) === p.key;
+      return h(`button.pic-choice${on ? '.is-on' : ''}`, {
+        type: 'button',
+        role: 'radio',
+        'aria-checked': String(on),
+        disabled: !available(p.key) && p.key !== 'photo',
+        onclick: () => {
+          if (p.key === 'photo' && !state.me.photo) { photoInput.click(); return; }
+          draft.pic = p.key;
+          draw();
+        },
+      }, token({ ...look(), pic: p.key }, { size: 's' }), h('span', h('b', p.label), h('small', p.key === 'personnage' && !state.me.character ? 'Crée-le plus bas' : p.key === 'photo' && !state.me.photo ? 'Choisir une photo' : p.hint)));
+    })));
     keepFocus(colorRow, () => colorRow.replaceChildren(...Object.keys(colors).map((c) => h('button', {
       type: 'button',
       'aria-pressed': String(c === draft.color),
       'aria-label': c,
       title: c,
       onclick: () => { draft.color = c; draw(); },
-    }, token({ ...state.me, color: c, avatar: draft.avatar })))));
+    }, token({ ...look(), pic: 'personnage', color: c })))));
+    colorField.hidden = picOf(look()) !== 'personnage';
+    removePhoto.hidden = !state.me.photo;
   }
-  draw();
 
-  // Avec un personnage, l'avatar est sa tête : on ne propose plus d'emoji (il ne sert qu'à qui n'a pas de personnage).
-  const avatarField = h('div.field', h('span', 'Avatar'), avatarGrid);
-  const avatarNote = h('p.card-text.avatar-note', 'Ton avatar, c’est la tête de ton personnage : pour le changer, modifie ton personnage. La couleur ci-dessous colore le fond de ta tête.');
-  const syncAvatar = () => {
-    const has = Boolean(state.me.character);
-    avatarField.style.display = has ? 'none' : '';
-    avatarNote.style.display = has ? '' : 'none';
-    draw();
+  photoInput.addEventListener('change', async () => {
+    const file = photoInput.files?.[0];
+    photoInput.value = '';
+    if (!file || sending.on) return;
+    sending.on = true;
+    photoNote.textContent = 'Envoi de la photo…';
+    try {
+      const data = await squarePhoto(file);
+      await call(state.socket, 'profile:photo', { data });
+      draft.pic = 'photo';
+      photoNote.textContent = '';
+      draw();
+      toast('Photo enregistrée : c’est ton avatar.');
+    } catch (err) {
+      photoNote.textContent = err.message;
+    } finally {
+      sending.on = false;
+    }
+  });
+  const removePhoto = h('button.btn.btn-ghost.btn-sm', {
+    type: 'button',
+    onclick: async () => {
+      try {
+        await call(state.socket, 'profile:photo', { data: null });
+        if (draft.pic === 'photo') draft.pic = '';
+        draw();
+        toast('Photo retirée.');
+      } catch (err) {
+        toast(err.message, { error: true });
+      }
+    },
+  }, icon('trash'), 'Retirer ma photo');
+  const colorField = h('div.field', h('span', 'Couleur du fond de ta tête'), colorRow);
+  // Le serveur confirme une photo envoyée ou retirée par « user » : la fiche suit (sans perdre ce qui est en cours d'écriture).
+  syncProfile = () => {
+    if (draft.pic === 'photo' && !state.me.photo) draft.pic = '';
+    if (container.isConnected) draw();
   };
-  syncAvatar();
 
   const bio = h('textarea.input', { name: 'bio_text', maxlength: limits.bioMax, rows: 2, placeholder: 'Ex. : toujours partant pour une partie le soir' });
   bio.value = state.me.bio;
   const profileForm = asyncForm(h('form.stack',
     preview,
-    avatarNote,
-    avatarField,
-    h('div.field', h('span', 'Couleur du fond'), colorRow),
+    h('div.field', h('span', 'Mon avatar'), picRow,
+      h('div.card-actions.start', h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => photoInput.click() }, icon('camera'), state.me.photo ? 'Changer de photo' : 'Envoyer une photo'), removePhoto),
+      photoInput, photoNote),
+    colorField,
     h('label.field', h('span', 'Bio'), bio, h('small', `${limits.bioMax} caractères au plus.`)),
     h('div.card-actions', h('button.btn', { type: 'submit' }, 'Enregistrer le profil'))),
   async () => {
-    await call(state.socket, 'profile', { ...draft, bio: bio.value });
+    await call(state.socket, 'profile', { color: draft.color, pic: draft.pic, bio: bio.value });
     toast('Profil enregistré.');
   });
+  draw();
+  const syncAvatar = () => draw();
 
   const passForm = asyncForm(h('form.stack',
     h('label.field', h('span', 'Mot de passe actuel'),
@@ -76,7 +155,9 @@ export function render(container) {
     h('div.page-grid',
       characterCard(syncAvatar),
       h('section.card.card-panel', h('h2', 'Mon profil'), profileForm),
+      h('section.card.card-panel.card-wide', h('h2', 'Mes succès'), badgesCard(state.me.id)),
       h('div.page-col',
+        themeCard(),
         h('section.card.card-panel', h('h2', 'Mot de passe'), passForm),
         isDesktop() ? h('section.card.card-panel',
           h('h2', 'En classe'),
@@ -210,18 +291,18 @@ function characterCard(onSaved = () => {}) {
   }
   draw();
 
-  const note = h('p.card-text', state.me.character ? 'Personnage enregistré : sa tête est ton avatar, et c’est ton pion dans Escales.' : 'Pas encore enregistré : ton avatar reste l’emoji de ton profil.');
+  const note = h('p.card-text', state.me.character ? 'Personnage enregistré : c’est ton pion dans Escales, et ton avatar si tu le choisis.' : 'Pas encore enregistré : crée-le pour t’en servir comme avatar.');
   const form = asyncForm(h('form.stack',
     h('div.studio',
-      h('div.studio-left', stage, h('div.studio-avatar', face, h('span', h('b', 'Ton avatar'), h('small', 'La tête de ton personnage, partout dans Hubuno.')))),
+      h('div.studio-left', stage, h('div.studio-avatar', face, h('span', h('b', 'Ton avatar'), h('small', 'Si tu choisis « Mon personnage » comme avatar.')))),
       h('div.studio-right', tabBar, panel)),
     note,
     h('div.card-actions',
       h('button.btn.btn-ghost', { type: 'button', onclick: () => { Object.assign(draft, random()); draw(); } }, 'Au hasard'),
       h('button.btn', { type: 'submit' }, 'Enregistrer le personnage'))),
   async () => {
-    await call(state.socket, 'profile', { avatar: state.me.avatar, color: state.me.color, bio: state.me.bio, character: { ...draft } });
-    note.textContent = 'Personnage enregistré : sa tête est ton avatar, et c’est ton pion dans Escales.';
+    await call(state.socket, 'profile', { color: state.me.color, bio: state.me.bio, character: { ...draft } });
+    note.textContent = 'Personnage enregistré : c’est ton pion dans Escales, et ton avatar si tu le choisis.';
     state.me = { ...state.me, character: { ...draft } }; // le serveur le confirme aussi par « user » ; l'écran suit tout de suite
     onSaved();
     toast('Personnage enregistré.');

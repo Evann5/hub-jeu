@@ -76,7 +76,7 @@ S.it('modérateur : sourdine et suppression sur un membre, rien sur un admin, au
     const fiche = modo.page.getByRole('dialog');
     await fiche.getByRole('heading', { name: 'Outils de modération' }).waitFor();
     await capture(modo, '4-fiche-modo');
-    for (const interdit of ['Bloquer le compte', 'Réinitialiser le mot de passe', 'Changer le niveau']) {
+    for (const interdit of ['Supprimer ce compte', 'Réinitialiser le mot de passe', 'Changer le niveau']) {
       if (await fiche.getByRole('button', { name: interdit }).count()) throw new Error(`un modo ne doit pas voir « ${interdit} »`);
     }
     await modo.page.keyboard.press('Escape');
@@ -89,7 +89,7 @@ S.it('modérateur : sourdine et suppression sur un membre, rien sur un admin, au
     await appel(modo, 'admin:mute', { userId: mId, minutes: 0 });
     const surAdmin = await appel(modo, 'admin:mute', { userId: adminId, minutes: 10 });
     if (surAdmin.ok || !/membres|propriétaire/.test(surAdmin.error)) throw new Error(`un modo ne doit pas toucher un admin : ${JSON.stringify(surAdmin)}`);
-    for (const [ev, data] of [['admin:setRole', { userId: mId, role: 'admin' }], ['admin:ban', { userId: mId, banned: true }], ['admin:createRole', { name: 'Pirate', color: 'rouge' }], ['admin:resetPassword', { userId: mId }]]) {
+    for (const [ev, data] of [['admin:setRole', { userId: mId, role: 'admin' }], ['admin:deleteUser', { userId: mId }], ['admin:createRole', { name: 'Pirate', color: 'rouge' }], ['admin:resetPassword', { userId: mId }]]) {
       const res = await appel(modo, ev, data);
       if (res.ok || res.error !== 'Réservé aux admins.') throw new Error(`${ev} devrait être réservé aux admins : ${JSON.stringify(res)}`);
     }
