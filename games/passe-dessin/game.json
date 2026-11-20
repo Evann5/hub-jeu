@@ -1,0 +1,30 @@
+{
+  "name": "Passe-Dessin",
+  "tagline": "Écris, dessine, devine : la phrase fait le tour.",
+  "description": "Chacun écrit une phrase. Elle passe au voisin, qui la dessine ; le suivant décrit le dessin sans voir la phrase, et ainsi de suite. À la fin, on découvre ensemble ce que chaque phrase est devenue.",
+  "how": [
+    "Au début, chacun écrit une phrase à faire dessiner (le bouton « Une idée » en propose).",
+    "Ta phrase part chez ton voisin, qui la dessine. Toi, tu reçois la phrase de quelqu’un d’autre.",
+    "À l’étape suivante, tu reçois un dessin sans sa phrase : écris ce que tu y vois. Puis tu dessines une description, et ainsi de suite.",
+    "Tout le monde joue en même temps. Tu peux modifier ta copie tant que l’étape n’est pas finie ; à la fin du temps, ce que tu as fait part tout seul.",
+    "Quand chaque phrase a fait le tour, l’album s’ouvre : l’hôte dévoile les chaînes une page après l’autre. Mets des cœurs à tes pages préférées !",
+    "Pas de points ni de gagnant : le but, c’est de rire de ce qu’est devenue ta phrase."
+  ],
+  "minPlayers": 3,
+  "maxPlayers": 12,
+  "duration": "15 min",
+  "emoji": "🖍️",
+  "family": "ambiance",
+  "color": "#FF8FB1",
+  "ink": "#1E0B16",
+  "order": 32,
+  "wide": true,
+  "options": [
+    { "key": "drawSec", "label": "Temps pour dessiner", "type": "choice", "default": 90,
+      "choices": [{ "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }, { "value": 120, "label": "2 min" }, { "value": 180, "label": "3 min" }] },
+    { "key": "writeSec", "label": "Temps pour écrire", "type": "choice", "default": 45,
+      "choices": [{ "value": 30, "label": "30 s" }, { "value": 45, "label": "45 s" }, { "value": 60, "label": "1 min" }, { "value": 90, "label": "1 min 30" }] },
+    { "key": "steps", "label": "Longueur des chaînes", "help": "Un tour complet : chaque phrase passe par tout le monde.", "type": "choice", "default": 0,
+      "choices": [{ "value": 0, "label": "Tour complet" }, { "value": 4, "label": "4 étapes" }, { "value": 6, "label": "6 étapes" }, { "value": 8, "label": "8 étapes" }] }
+  ]
+}

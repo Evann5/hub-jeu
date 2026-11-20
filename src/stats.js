@@ -1,5 +1,5 @@
 // Stats de la classe et succès des profils, tirés des résultats des parties terminées (table game_results).
-// Seules les parties à 2 joueurs ou plus comptent : une partie seul ne fait gagner ni série ni succès.
+// Seules les parties à 2 joueurs ou plus, avec au moins un gagnant, comptent : une partie seul ne fait gagner ni série ni succès.
 import { db } from './db.js';
 
 const insert = db.prepare('INSERT OR IGNORE INTO game_results (table_id, round, game, user_id, won, players, at) VALUES (?, ?, ?, ?, ?, ?, ?)');
@@ -9,6 +9,8 @@ export function recordResults(t, winners) {
   const seats = t.seats.filter((id) => Number.isInteger(id));
   if (seats.length < 2) return false;
   const won = new Set(winners.filter((id) => Number.isInteger(id)));
+  // Une partie sans gagnant (jeu d'ambiance comme Passe-Dessin, ou match nul) ne compte pas : elle ne casserait que des séries.
+  if (!won.size) return false;
   const at = Date.now();
   const round = t.startedAt ?? t.createdAt ?? 0;
   let added = 0;
